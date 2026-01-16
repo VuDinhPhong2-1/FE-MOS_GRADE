@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import {  useState } from 'react';
+import { useState } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import type { LucideIcon } from 'lucide-react';
@@ -11,6 +11,7 @@ interface LayoutProps {
 }
 
 const Layout = ({ children, navItems, userName }: LayoutProps) => {
+  console.log("userName", userName)
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   return (
@@ -20,7 +21,7 @@ const Layout = ({ children, navItems, userName }: LayoutProps) => {
       <main className="flex-1 flex flex-col min-w-0">
         <Header
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-          userName={userName}
+          fullName={userName}
         />
 
         <div className="flex-1 overflow-auto">{children}</div>

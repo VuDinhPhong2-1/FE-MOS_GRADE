@@ -2,10 +2,10 @@ import { Menu } from 'lucide-react';
 
 interface HeaderProps {
   onToggleSidebar: () => void;
-  userName?: string;
+  fullName?: string;
 }
 
-const Header = ({ onToggleSidebar, userName = "Giáo viên" }: HeaderProps) => {
+const Header = ({ onToggleSidebar, fullName = "Giáo viên" }: HeaderProps) => {
   return (
     <header className="bg-white shadow-sm h-16 flex items-center px-6">
       <button 
@@ -17,7 +17,7 @@ const Header = ({ onToggleSidebar, userName = "Giáo viên" }: HeaderProps) => {
       
       <div className="ml-auto flex items-center gap-4">
         <span className="text-sm text-gray-600">
-          Xin chào, <strong>{userName}</strong>
+          Xin chào, <strong>{fullName}</strong>
         </span>
         <div className="w-8 h-8 bg-gray-200 rounded-full"></div>
       </div>

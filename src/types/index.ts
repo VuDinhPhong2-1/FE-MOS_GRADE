@@ -1,3 +1,7 @@
+export * from './school.types'
+export * from './auth.types'
+export * from './class.types'
+export * from './student.types'
 export interface TaskResult {
   taskId: string;
   taskName: string;
@@ -18,20 +22,3 @@ export interface GradingResult {
   gradedAt: string;
   taskResults: TaskResult[];
 }
-
-export type School = {
-  id: number;
-  name: string;
-};
-export type Class = {
-  id: number;
-  name: string;
-  schoolId: number;
-};
-export type Student = {
-  id: number;
-  hoDem: string;
-  ten: string;
-  lop: string;
-  truong: string;
-};

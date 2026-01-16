@@ -1,0 +1,46 @@
+/* src/components/GradingModal.css */
+
+.grading-table-container {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.student-row {
+    transition: all 0.2s ease;
+}
+
+.student-row:hover {
+    background-color: #f9fafb;
+    transform: translateX(2px);
+}
+
+.score-display {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.file-input-wrapper {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+.file-input-wrapper input[type=file] {
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.file-input-wrapper input[type=file]:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
