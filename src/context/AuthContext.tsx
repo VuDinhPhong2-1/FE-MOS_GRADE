@@ -1,90 +1,232 @@
+﻿/* eslint-disable react-refresh/only-export-components */
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import React, { createContext, useContext, useState, useEffect } from 'react';
 import { jwtDecode } from 'jwt-decode';
-import type { User, AuthContextType } from '../types/auth.types';
+import type { AuthContextType, User } from '../types/auth.types';
 
-interface JwtPayload { exp: number; [key: string]: any }
+interface JwtPayload {
+  exp?: number;
+}
+
+interface AuthProviderProps {
+  children: ReactNode;
+}
+
+const API_BASE_URL = 'https://localhost:7223/api/auth';
+const REFRESH_EARLY_MS = 5 * 60 * 1000;
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-interface AuthProviderProps { children: ReactNode; }
+const getTokenExpiryMs = (token: string | null): number | null => {
+  if (!token) return null;
 
-// --- Hàm kiểm tra accessToken hết hạn chưa ---
-const isTokenExpired = (token: string | null): boolean => {
-  if (!token) return true;
   try {
     const { exp } = jwtDecode<JwtPayload>(token);
-    if (!exp) return true;
-    return exp * 1000 < Date.now();
+    return exp ? exp * 1000 : null;
   } catch {
-    return true;
-  }
-};
-
-// --- Hàm dùng refreshToken để lấy lại accessToken mới ---
-const refreshAccessToken = async (): Promise<string | null> => {
-  const refreshToken = localStorage.getItem('refreshToken');
-  if (!refreshToken) return null;
-  try {
-    const res = await fetch('https://localhost:7223/api/auth/refresh-token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refreshToken }),
-    });
-    if (!res.ok) return null;
-    const data = await res.json();
-    localStorage.setItem('accessToken', data.accessToken);
-    localStorage.setItem('refreshToken', data.refreshToken);
-    return data.accessToken;
-  } catch (err) {
     return null;
   }
 };
 
-// --- Hàm luôn trả về accessToken hợp lệ (refresh nếu cần) ---
-const getValidAccessToken = async (): Promise<string | null> => {
-  let accessToken = localStorage.getItem('accessToken');
-  if (isTokenExpired(accessToken)) {
-    accessToken = await refreshAccessToken();
-  }
-  return accessToken;
+const isTokenExpired = (token: string | null): boolean => {
+  const expiryMs = getTokenExpiryMs(token);
+  if (!expiryMs) return true;
+  return expiryMs <= Date.now();
 };
 
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+const clearSession = () => {
+  localStorage.removeItem('accessToken');
+  localStorage.removeItem('refreshToken');
+  localStorage.removeItem('user');
+};
+
+const getInitialUser = (): User | null => {
+  const savedUser = localStorage.getItem('user');
+  if (!savedUser) return null;
+
+  try {
+    return JSON.parse(savedUser) as User;
+  } catch {
+    clearSession();
+    return null;
+  }
+};
+
+export const AuthProvider = ({ children }: AuthProviderProps) => {
+  const [user, setUser] = useState<User | null>(() => getInitialUser());
   const [loading, setLoading] = useState<boolean>(true);
 
-  useEffect(() => {
-    const accessToken = localStorage.getItem('accessToken');
-    const refreshToken = localStorage.getItem('refreshToken');
-    const savedUser = localStorage.getItem('user');
-    if (accessToken && refreshToken && savedUser) {
-      try {
-        const parsedUser = JSON.parse(savedUser) as User;
-        setUser(parsedUser);
-      } catch {
-        localStorage.clear();
-      }
+  const refreshPromiseRef = useRef<Promise<string | null> | null>(null);
+  const proactiveTimerRef = useRef<number | null>(null);
+
+  const scheduleProactiveRefresh = (token: string | null) => {
+    if (proactiveTimerRef.current) {
+      window.clearTimeout(proactiveTimerRef.current);
+      proactiveTimerRef.current = null;
     }
-    setLoading(false);
-  }, []);
+
+    const expiryMs = getTokenExpiryMs(token);
+    if (!expiryMs) return;
+
+    const delay = Math.max(0, expiryMs - Date.now() - REFRESH_EARLY_MS);
+    proactiveTimerRef.current = window.setTimeout(() => {
+      void getAccessToken(true);
+    }, delay);
+  };
+
+  const refreshAccessToken = async (): Promise<string | null> => {
+    if (refreshPromiseRef.current) {
+      return refreshPromiseRef.current;
+    }
+
+    refreshPromiseRef.current = (async () => {
+      const refreshToken = localStorage.getItem('refreshToken');
+      if (!refreshToken) {
+        clearSession();
+        setUser(null);
+        return null;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/refresh-token`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refreshToken }),
+        });
+
+        if (!response.ok) {
+          clearSession();
+          setUser(null);
+          return null;
+        }
+
+        const data = await response.json();
+        if (!data?.accessToken || !data?.refreshToken) {
+          clearSession();
+          setUser(null);
+          return null;
+        }
+
+        localStorage.setItem('accessToken', data.accessToken);
+        localStorage.setItem('refreshToken', data.refreshToken);
+        scheduleProactiveRefresh(data.accessToken);
+
+        return data.accessToken;
+      } catch {
+        clearSession();
+        setUser(null);
+        return null;
+      }
+    })();
+
+    try {
+      return await refreshPromiseRef.current;
+    } finally {
+      refreshPromiseRef.current = null;
+    }
+  };
+
+  const getAccessToken = async (forceRefresh = false): Promise<string | null> => {
+    const accessToken = localStorage.getItem('accessToken');
+
+    if (!forceRefresh && accessToken && !isTokenExpired(accessToken)) {
+      return accessToken;
+    }
+
+    return refreshAccessToken();
+  };
+
+  const getRefreshToken = (): string | null => localStorage.getItem('refreshToken');
 
   const login = (userData: User, accessToken: string, refreshToken: string): void => {
     localStorage.setItem('accessToken', accessToken);
     localStorage.setItem('refreshToken', refreshToken);
     localStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);
+    scheduleProactiveRefresh(accessToken);
   };
 
-  const logout = (): void => {
-    localStorage.clear();
+  const logout = () => {
+    const accessToken = localStorage.getItem('accessToken');
+    clearSession();
     setUser(null);
+
+    void fetch(`${API_BASE_URL}/logout`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
+      },
+    }).finally(() => {
+      if (proactiveTimerRef.current) {
+        window.clearTimeout(proactiveTimerRef.current);
+        proactiveTimerRef.current = null;
+      }
+    });
   };
 
+  useEffect(() => {
+    let mounted = true;
 
-  const getAccessToken = (): Promise<string | null> => getValidAccessToken();
+    const initializeSession = async () => {
+      const savedUser = getInitialUser();
+      const refreshToken = localStorage.getItem('refreshToken');
+      if (!savedUser || !refreshToken) {
+        if (mounted) {
+          setUser(null);
+          setLoading(false);
+        }
+        return;
+      }
 
-  const getRefreshToken = (): string | null => localStorage.getItem('refreshToken');
+      setUser(savedUser);
+
+      let token = localStorage.getItem('accessToken');
+      if (!token || isTokenExpired(token)) {
+        token = await refreshAccessToken();
+      }
+
+      if (!token) {
+        if (mounted) {
+          setUser(null);
+          setLoading(false);
+        }
+        return;
+      }
+
+      scheduleProactiveRefresh(token);
+
+      try {
+        const meResponse = await fetch(`${API_BASE_URL}/me`, {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!meResponse.ok && meResponse.status !== 404) {
+          clearSession();
+          if (mounted) setUser(null);
+        }
+      } catch {
+        clearSession();
+        if (mounted) setUser(null);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    void initializeSession();
+
+    return () => {
+      mounted = false;
+      if (proactiveTimerRef.current) {
+        window.clearTimeout(proactiveTimerRef.current);
+        proactiveTimerRef.current = null;
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, login, logout, loading, getAccessToken, getRefreshToken }}>

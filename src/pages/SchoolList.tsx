@@ -1,6 +1,7 @@
-// src/pages/SchoolList.tsx
-import { useState, useEffect, type FormEvent, type ChangeEvent } from 'react';
+﻿// src/pages/SchoolList.tsx
+import { useState, useEffect, useCallback, type FormEvent, type ChangeEvent } from 'react';
 import { Plus, X, Building2, Loader2, RefreshCw, Trash2, Edit } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 import ClassList from './Classlist';
 import { schoolService } from '../services/school.service';
 import type { School } from '../types';
@@ -9,15 +10,15 @@ import { useAuth } from '../context/AuthContext';
 
 const SchoolList = () => {
   const { getAccessToken } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [schools, setSchools] = useState<School[]>([]);
   const [selectedSchool, setSelectedSchool] = useState<School | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Modal state
   const [showModal, setShowModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [editingSchool, setEditingSchool] = useState<School | null>(null); // ✅ Thêm state cho edit
+  const [editingSchool, setEditingSchool] = useState<School | null>(null);
   const [formData, setFormData] = useState<CreateSchoolRequest>({
     name: '',
     address: '',
@@ -27,8 +28,7 @@ const SchoolList = () => {
     description: '',
   });
 
-  // Fetch danh sách trường
-  const fetchSchools = async () => {
+  const fetchSchools = useCallback(async () => {
     setIsLoading(true);
     setError('');
     try {
@@ -39,18 +39,43 @@ const SchoolList = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [getAccessToken]);
 
   useEffect(() => {
     fetchSchools();
-  }, []);
+  }, [fetchSchools]);
 
-  // Handle form change
+  useEffect(() => {
+    const schoolId = searchParams.get('schoolId');
+    if (!schoolId) {
+      setSelectedSchool(null);
+      return;
+    }
+
+    const matchedSchool = schools.find((school) => school.id === schoolId) || null;
+    setSelectedSchool(matchedSchool);
+  }, [schools, searchParams]);
+
+  const handleSelectSchool = (school: School) => {
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set('schoolId', school.id);
+    nextParams.delete('classId');
+    setSearchParams(nextParams);
+    setSelectedSchool(school);
+  };
+
+  const handleBackToSchools = () => {
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete('schoolId');
+    nextParams.delete('classId');
+    setSearchParams(nextParams);
+    setSelectedSchool(null);
+  };
+
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // ✅ Mở modal thêm mới
   const handleOpenAddModal = () => {
     setEditingSchool(null);
     setFormData({
@@ -64,7 +89,6 @@ const SchoolList = () => {
     setShowModal(true);
   };
 
-  // ✅ Mở modal chỉnh sửa
   const handleOpenEditModal = (school: School) => {
     setEditingSchool(school);
     setFormData({
@@ -78,7 +102,6 @@ const SchoolList = () => {
     setShowModal(true);
   };
 
-  // ✅ Handle submit (Thêm mới hoặc Cập nhật)
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -86,14 +109,11 @@ const SchoolList = () => {
 
     try {
       if (editingSchool) {
-        // ✅ Cập nhật trường
         await schoolService.updateSchool(editingSchool.id, formData, getAccessToken);
       } else {
-        // ✅ Thêm mới trường
         await schoolService.createSchool(formData, getAccessToken);
       }
 
-      // Reset form và đóng modal
       setFormData({
         name: '',
         address: '',
@@ -105,7 +125,6 @@ const SchoolList = () => {
       setEditingSchool(null);
       setShowModal(false);
 
-      // Refresh danh sách
       await fetchSchools();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Có lỗi xảy ra');
@@ -114,7 +133,6 @@ const SchoolList = () => {
     }
   };
 
-  // ✅ Handle delete
   const handleDelete = async (id: string, name: string) => {
     if (!confirm(`Bạn có chắc muốn xóa trường "${name}"?`)) return;
 
@@ -126,7 +144,6 @@ const SchoolList = () => {
     }
   };
 
-  // Loading state
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -140,7 +157,6 @@ const SchoolList = () => {
     <div className="p-4">
       {!selectedSchool ? (
         <>
-          {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-2xl font-bold flex items-center gap-2">
               <Building2 className="text-blue-600" />
@@ -164,14 +180,12 @@ const SchoolList = () => {
             </div>
           </div>
 
-          {/* Error message */}
           {error && (
             <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg">
               ⚠️ {error}
             </div>
           )}
 
-          {/* Table */}
           <div className="bg-white shadow rounded-lg overflow-hidden">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
@@ -200,12 +214,11 @@ const SchoolList = () => {
                       <td className="px-6 py-4 text-center">
                         <div className="flex items-center justify-center gap-2">
                           <button
-                            onClick={() => setSelectedSchool(sch)}
+                            onClick={() => handleSelectSchool(sch)}
                             className="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 text-sm"
                           >
                             Xem lớp học
                           </button>
-                          {/* ✅ Nút Sửa */}
                           <button
                             onClick={() => handleOpenEditModal(sch)}
                             className="p-1 text-green-600 hover:bg-green-100 rounded"
@@ -213,7 +226,6 @@ const SchoolList = () => {
                           >
                             <Edit size={18} />
                           </button>
-                          {/* ✅ Nút Xóa */}
                           <button
                             onClick={() => handleDelete(sch.id, sch.name)}
                             className="p-1 text-red-600 hover:bg-red-100 rounded"
@@ -230,14 +242,12 @@ const SchoolList = () => {
             </table>
           </div>
 
-          {/* Modal Thêm/Sửa trường */}
           {showModal && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
               <div className="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4">
-                {/* Modal Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b">
                   <h2 className="text-xl font-semibold">
-                    {editingSchool ? '✏️ Chỉnh sửa trường' : '🏫 Thêm trường mới'}
+                    {editingSchool ? 'Chỉnh sửa trường' : 'Thêm trường mới'}
                   </h2>
                   <button
                     onClick={() => setShowModal(false)}
@@ -247,7 +257,6 @@ const SchoolList = () => {
                   </button>
                 </div>
 
-                {/* Modal Body */}
                 <form onSubmit={handleSubmit} className="p-6 space-y-4">
                   {error && (
                     <div className="p-3 bg-red-100 text-red-700 rounded text-sm">
@@ -271,9 +280,7 @@ const SchoolList = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Địa chỉ
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Địa chỉ</label>
                     <input
                       type="text"
                       name="address"
@@ -286,9 +293,7 @@ const SchoolList = () => {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Số điện thoại
-                      </label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Số điện thoại</label>
                       <input
                         type="tel"
                         name="phoneNumber"
@@ -299,9 +304,7 @@ const SchoolList = () => {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Email
-                      </label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                       <input
                         type="email"
                         name="email"
@@ -314,9 +317,7 @@ const SchoolList = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Website
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Website</label>
                     <input
                       type="url"
                       name="website"
@@ -328,9 +329,7 @@ const SchoolList = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Mô tả
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả</label>
                     <textarea
                       name="description"
                       value={formData.description}
@@ -341,7 +340,6 @@ const SchoolList = () => {
                     />
                   </div>
 
-                  {/* Modal Footer */}
                   <div className="flex justify-end gap-3 pt-4 border-t">
                     <button
                       type="button"
@@ -382,7 +380,7 @@ const SchoolList = () => {
         <>
           <button
             className="mb-4 flex items-center gap-2 px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition"
-            onClick={() => setSelectedSchool(null)}
+            onClick={handleBackToSchools}
           >
             ← Quay lại danh sách trường
           </button>

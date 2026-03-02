@@ -1,16 +1,20 @@
 import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
-import { BookOpen, GraduationCap, LayoutDashboard } from 'lucide-react';
+import { GraduationCap, LayoutDashboard } from 'lucide-react';
 import Layout from './components/Layout/Layout';
 import GradingView from './pages/GradingView';
 import Dashboard from './pages/Dashboard';
 import SchoolList from './pages/SchoolList';
 import AuthPage from './pages/AuthPage';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import StudentList from './pages/StudentList';
 
 // Protected Route Component
 const ProtectedRoute: React.FC = () => {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return <div className="min-h-screen bg-gray-100" />;
+  }
+
   return user ? <Outlet /> : <Navigate to="/login" replace />;
 };
 

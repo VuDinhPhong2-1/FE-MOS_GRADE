@@ -1,9 +1,22 @@
-// src/pages/ClassList.tsx
-import React, { useState, useEffect } from 'react';
-import { Plus, BookOpen, Users, Calendar, User, Loader2, AlertCircle, Edit, Trash2, X, Filter } from 'lucide-react';
+﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  Plus,
+  BookOpen,
+  Users,
+  Calendar,
+  User,
+  Loader2,
+  AlertCircle,
+  Edit,
+  Trash2,
+  X,
+  Filter,
+} from 'lucide-react';
 import StudentList from './StudentList';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { classService } from '../services/class.service';
+import { ApiServiceError, classService } from '../services/class.service';
+import studentService from '../services/student.service';
 import type { School } from '../types';
 import type { Class, CreateClassRequest, UpdateClassRequest } from '../types/class.types';
 
@@ -11,22 +24,25 @@ interface ClassListProps {
   selectedSchool: School;
 }
 
+const OBJECT_ID_REGEX = /^[a-fA-F0-9]{24}$/;
+
 const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
-  const { getAccessToken } = useAuth();
+  const { getAccessToken, logout } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+
   const [classes, setClasses] = useState<Class[]>([]);
   const [selectedClass, setSelectedClass] = useState<Class | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string>('');
+  const [error, setError] = useState('');
 
-  // ✅ Thêm state cho filter
   const [showInactive, setShowInactive] = useState(false);
 
-  // Modal state
   const [showModal, setShowModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingClass, setEditingClass] = useState<Class | null>(null);
   const [isActive, setIsActive] = useState(true);
-  
+  const [formError, setFormError] = useState('');
+
   const [formData, setFormData] = useState<CreateClassRequest>({
     name: '',
     schoolId: selectedSchool.id,
@@ -34,34 +50,116 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
     maxStudents: undefined,
     academicYear: '2024-2025',
     grade: '',
-    teacherId: ''
+    teacherId: '',
   });
 
-  useEffect(() => {
-    fetchClasses();
-  }, [selectedSchool.id, showInactive]); // ✅ Thêm showInactive vào dependency
+  const schoolIdForCreate = selectedSchool.id || formData.schoolId || '';
 
-  const fetchClasses = async () => {
+  const createFormValidation = useMemo(() => {
+    const name = (formData.name || '').trim();
+    if (!name) return 'Tên lớp là bắt buộc.';
+
+    if (!OBJECT_ID_REGEX.test(schoolIdForCreate)) {
+      return 'School không hợp lệ.';
+    }
+
+    if (typeof formData.maxStudents === 'number') {
+      if (!Number.isInteger(formData.maxStudents) || formData.maxStudents < 1 || formData.maxStudents > 200) {
+        return 'Sĩ số tối đa phải từ 1 đến 200.';
+      }
+    }
+
+    if (formData.academicYear && formData.academicYear.length > 20) {
+      return 'Năm học không được quá 20 ký tự.';
+    }
+
+    if (formData.grade && formData.grade.length > 20) {
+      return 'Khối không được quá 20 ký tự.';
+    }
+
+    if (formData.description && formData.description.length > 500) {
+      return 'Mô tả không được quá 500 ký tự.';
+    }
+
+    return '';
+  }, [formData, schoolIdForCreate]);
+
+  const isSubmitDisabled = isSubmitting || (!editingClass && !!createFormValidation);
+
+  const fetchClasses = useCallback(async () => {
     setIsLoading(true);
     setError('');
 
     try {
-      // ✅ Truyền includeInactive vào API
-      const data = await classService.getClassesBySchool(
-        selectedSchool.id, 
-        getAccessToken,
-        showInactive
+      const data = await classService.getClassesBySchool(selectedSchool.id, getAccessToken, showInactive);
+      const classListWithStudents = await Promise.all(
+        data.map(async (cls) => {
+          try {
+            const students = await studentService.getStudentsByClassId(cls.id, getAccessToken);
+            return { ...cls, currentStudents: students.length };
+          } catch {
+            return { ...cls, currentStudents: cls.studentIds?.length ?? cls.currentStudents ?? 0 };
+          }
+        })
       );
-      setClasses(data);
+
+      setClasses(classListWithStudents);
     } catch (err) {
       setError('Không thể tải danh sách lớp học');
       console.error('Error fetching classes:', err);
     } finally {
       setIsLoading(false);
     }
+  }, [selectedSchool.id, getAccessToken, showInactive]);
+
+  useEffect(() => {
+    fetchClasses();
+  }, [fetchClasses]);
+
+  useEffect(() => {
+    const classId = searchParams.get('classId');
+    if (!classId) {
+      setSelectedClass(null);
+      return;
+    }
+
+    const matchedClass = classes.find((cls) => cls.id === classId) || null;
+    setSelectedClass(matchedClass);
+  }, [classes, searchParams]);
+
+  const handleSelectClass = (cls: Class) => {
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set('schoolId', selectedSchool.id);
+    nextParams.set('classId', cls.id);
+    setSearchParams(nextParams);
+    setSelectedClass(cls);
   };
 
-  // ... (giữ nguyên các hàm handleOpenAddModal, handleOpenEditModal, handleSubmit, handleDeleteClass, handleChange)
+  const handleBackToClassList = () => {
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set('schoolId', selectedSchool.id);
+    nextParams.delete('classId');
+    setSearchParams(nextParams);
+    setSelectedClass(null);
+  };
+
+  const mapClassApiError = (err: unknown): string => {
+    if (err instanceof ApiServiceError) {
+      if (err.status === 401) {
+        logout();
+        window.location.href = '/login';
+        return 'Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.';
+      }
+      if (err.status === 403) return 'Bạn không có quyền tạo lớp trong trường này.';
+      if (err.status === 404) return 'Không tìm thấy trường.';
+      if (err.status === 400) return err.message || 'Dữ liệu không hợp lệ.';
+      if (err.status >= 500) return 'Có lỗi hệ thống, vui lòng thử lại.';
+      return err.message || 'Có lỗi xảy ra.';
+    }
+
+    if (err instanceof Error) return err.message;
+    return 'Có lỗi xảy ra.';
+  };
 
   const handleOpenAddModal = () => {
     setEditingClass(null);
@@ -73,8 +171,9 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
       maxStudents: undefined,
       academicYear: '2024-2025',
       grade: '',
-      teacherId: ''
+      teacherId: '',
     });
+    setFormError('');
     setShowModal(true);
   };
 
@@ -88,8 +187,9 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
       maxStudents: cls.maxStudents,
       academicYear: cls.academicYear || '2024-2025',
       grade: cls.grade || '',
-      teacherId: ''
+      teacherId: '',
     });
+    setFormError('');
     setShowModal(true);
   };
 
@@ -97,61 +197,65 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
     e.preventDefault();
     setIsSubmitting(true);
     setError('');
+    setFormError('');
+
+    if (!editingClass && createFormValidation) {
+      setFormError(createFormValidation);
+      setIsSubmitting(false);
+      return;
+    }
 
     try {
       if (editingClass) {
         const updateData: UpdateClassRequest = {
           ...formData,
-          isActive: isActive
+          isActive,
         };
         await classService.updateClass(editingClass.id, updateData, getAccessToken);
       } else {
         await classService.createClass(
           {
             ...formData,
-            schoolId: selectedSchool.id
+            schoolId: selectedSchool.id,
           },
           getAccessToken
         );
       }
 
-      setFormData({
-        name: '',
-        schoolId: selectedSchool.id,
-        description: '',
-        maxStudents: undefined,
-        academicYear: '2024-2025',
-        grade: '',
-        teacherId: ''
-      });
+      setShowModal(false);
       setEditingClass(null);
       setIsActive(true);
-      setShowModal(false);
 
       await fetchClasses();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Có lỗi xảy ra');
+      const mapped = mapClassApiError(err);
+      setFormError(mapped);
+      setError(mapped);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleDeleteClass = async (classId: string, className: string) => {
-    if (!confirm(`⚠️ BẠN CÓ CHẮC MUỐN XÓA VĨNH VIỄN LỚP "${className}"?\n\nHành động này KHÔNG THỂ HOÀN TÁC!`)) return;
+    if (!confirm(`Bạn có chắc muốn xóa vĩnh viễn lớp "${className}"?\n\nHành động này không thể hoàn tác.`)) {
+      return;
+    }
 
     try {
       await classService.deleteClass(classId, getAccessToken);
       await fetchClasses();
-    } catch (err) {
+    } catch {
       alert('Không thể xóa lớp học');
     }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    if (formError) setFormError('');
+
+    setFormData((prev) => ({
       ...prev,
-      [name]: name === 'maxStudents' ? (value ? parseInt(value) : undefined) : value
+      [name]: ['maxStudents'].includes(name) ? (value ? parseInt(value, 10) : undefined) : value,
     }));
   };
 
@@ -160,7 +264,7 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
       <>
         <button
           className="mb-4 flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
-          onClick={() => setSelectedClass(null)}
+          onClick={handleBackToClassList}
         >
           ← Quay lại danh sách lớp
         </button>
@@ -180,16 +284,16 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
 
   return (
     <div>
-      {/* Header */}
       <div className="mb-6">
         <h2 className="text-2xl font-bold flex items-center gap-2 mb-2">
           <BookOpen className="text-blue-600" />
           Danh sách lớp học
         </h2>
-        <p className="text-gray-600">Trường: <span className="font-semibold">{selectedSchool.name}</span></p>
+        <p className="text-gray-600">
+          Trường: <span className="font-semibold">{selectedSchool.name}</span>
+        </p>
       </div>
 
-      {/* Error message */}
       {error && (
         <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg flex items-center gap-2">
           <AlertCircle size={20} />
@@ -197,7 +301,6 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
         </div>
       )}
 
-      {/* Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-white p-4 rounded-lg shadow">
           <div className="flex items-center justify-between">
@@ -213,9 +316,7 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-500 text-sm">Đang hoạt động</p>
-              <p className="text-2xl font-bold text-green-600">
-                {classes.filter(c => c.isActive).length}
-              </p>
+              <p className="text-2xl font-bold text-green-600">{classes.filter((c) => c.isActive).length}</p>
             </div>
             <Users className="w-8 h-8 text-green-500 opacity-50" />
           </div>
@@ -225,9 +326,7 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-500 text-sm">Tổng học sinh</p>
-              <p className="text-2xl font-bold">
-                {classes.reduce((sum, cls) => sum + cls.currentStudents, 0)}
-              </p>
+              <p className="text-2xl font-bold">{classes.reduce((sum, cls) => sum + cls.currentStudents, 0)}</p>
             </div>
             <User className="w-8 h-8 text-purple-500 opacity-50" />
           </div>
@@ -244,9 +343,7 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
         </div>
       </div>
 
-      {/* ✅ Filter & Add button */}
       <div className="flex justify-between items-center mb-4">
-        {/* ✅ Toggle hiển thị lớp không hoạt động */}
         <div className="flex items-center gap-2">
           <Filter size={18} className="text-gray-600" />
           <label className="flex items-center gap-2 cursor-pointer">
@@ -256,9 +353,7 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
               onChange={(e) => setShowInactive(e.target.checked)}
               className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
             />
-            <span className="text-sm text-gray-700">
-              Hiển thị lớp không hoạt động
-            </span>
+            <span className="text-sm text-gray-700">Hiển thị lớp không hoạt động</span>
           </label>
         </div>
 
@@ -271,34 +366,32 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
         </button>
       </div>
 
-      {/* Classes Grid */}
       {classes.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {classes.map(cls => (
+          {classes.map((cls) => (
             <div
               key={cls.id}
               className={`bg-white shadow-md rounded-lg overflow-hidden hover:shadow-lg transition-shadow ${
-                !cls.isActive ? 'opacity-60' : '' // ✅ Làm mờ lớp không hoạt động
+                !cls.isActive ? 'opacity-60' : ''
               }`}
             >
-              {/* Card Header */}
-              <div className={`bg-gradient-to-r ${
-                cls.isActive 
-                  ? 'from-blue-500 to-blue-600' 
-                  : 'from-gray-400 to-gray-500' // ✅ Đổi màu nếu không hoạt động
-              } text-white p-4`}>
+              <div
+                className={`bg-gradient-to-r ${
+                  cls.isActive ? 'from-blue-500 to-blue-600' : 'from-gray-400 to-gray-500'
+                } text-white p-4`}
+              >
                 <div className="flex justify-between items-start mb-2">
                   <h3 className="text-lg font-bold">{cls.name}</h3>
-                  <span className={`px-2 py-1 text-xs rounded-full ${cls.isActive
-                    ? 'bg-green-400 bg-opacity-30 text-white'
-                    : 'bg-red-400 bg-opacity-30 text-white' // ✅ Đổi màu badge
-                    }`}>
+                  <span
+                    className={`px-2 py-1 text-xs rounded-full ${
+                      cls.isActive ? 'bg-green-400 bg-opacity-30 text-white' : 'bg-red-400 bg-opacity-30 text-white'
+                    }`}
+                  >
                     {cls.isActive ? 'Hoạt động' : 'Ngừng'}
                   </span>
                 </div>
               </div>
 
-              {/* Card Body */}
               <div className="p-4">
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center justify-between">
@@ -317,16 +410,11 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
                   </div>
                 </div>
 
-                {cls.description && (
-                  <p className="text-xs text-gray-600 mt-3 italic line-clamp-2">
-                    {cls.description}
-                  </p>
-                )}
+                {cls.description && <p className="text-xs text-gray-600 mt-3 italic line-clamp-2">{cls.description}</p>}
 
-                {/* Card Actions */}
                 <div className="flex gap-2 mt-4">
                   <button
-                    onClick={() => setSelectedClass(cls)}
+                    onClick={() => handleSelectClass(cls)}
                     className="flex-1 bg-blue-100 text-blue-700 rounded px-3 py-2 hover:bg-blue-200 transition text-sm font-medium"
                   >
                     Xem học sinh
@@ -364,28 +452,18 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
         </div>
       )}
 
-      {/* Modal - giữ nguyên code cũ */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4">
             <div className="flex items-center justify-between px-6 py-4 border-b">
-              <h2 className="text-xl font-semibold">
-                {editingClass ? '✏️ Chỉnh sửa lớp học' : '📚 Thêm lớp học mới'}
-              </h2>
-              <button
-                onClick={() => setShowModal(false)}
-                className="p-1 hover:bg-gray-100 rounded"
-              >
+              <h2 className="text-xl font-semibold">{editingClass ? 'Chỉnh sửa lớp học' : 'Thêm lớp học mới'}</h2>
+              <button onClick={() => setShowModal(false)} className="p-1 hover:bg-gray-100 rounded">
                 <X size={24} />
               </button>
             </div>
 
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              {error && (
-                <div className="p-3 bg-red-100 text-red-700 rounded text-sm">
-                  ⚠️ {error}
-                </div>
-              )}
+              {(formError || error) && <div className="p-3 bg-red-100 text-red-700 rounded text-sm">{formError || error}</div>}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -404,9 +482,7 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Khối
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Khối</label>
                   <select
                     name="grade"
                     value={formData.grade}
@@ -420,9 +496,7 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Sĩ số tối đa
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Sĩ số tối đa</label>
                   <input
                     type="number"
                     name="maxStudents"
@@ -437,9 +511,7 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Năm học
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Năm học</label>
                 <input
                   type="text"
                   name="academicYear"
@@ -451,9 +523,7 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Mô tả
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả</label>
                 <textarea
                   name="description"
                   value={formData.description}
@@ -489,7 +559,7 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
                 </button>
                 <button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={isSubmitDisabled}
                   className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
                 >
                   {isSubmitting ? (

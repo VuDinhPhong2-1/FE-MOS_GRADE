@@ -29,6 +29,7 @@ export interface CreateClassRequest {
   schoolId: string;
   description?: string;
   maxStudents?: number;
+  currentStudents?: number;
   academicYear?: string;
   grade?: string;
   teacherId?: string;

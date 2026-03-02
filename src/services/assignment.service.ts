@@ -1,161 +1,131 @@
-// src/services/assignment.service.ts
-import type {
+﻿import type {
   Assignment,
   AssignmentWithStats,
   CreateAssignmentRequest,
-  UpdateAssignmentRequest,
   GradingEndpointInfo,
+  UpdateAssignmentRequest,
 } from '../types/assignment.types';
+import { authFetch } from './auth-fetch';
 
 const API_BASE_URL = 'https://localhost:7223/api';
 
+const jsonHeaders = { 'Content-Type': 'application/json' };
+
 export const assignmentService = {
-  // Lấy danh sách bài tập theo lớp
   async getByClass(
     classId: string,
-    getAccessToken: () => Promise<string | null>
+    getAccessToken: (forceRefresh?: boolean) => Promise<string | null>
   ): Promise<Assignment[]> {
-    const accessToken = await getAccessToken();
+    const response = await authFetch(
+      `${API_BASE_URL}/assignment/class/${classId}`,
+      { method: 'GET', headers: jsonHeaders },
+      getAccessToken
+    );
 
-    const response = await fetch(`${API_BASE_URL}/assignment/class/${classId}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
-      },
-    });
+    if (!response.ok) {
+      throw new Error('Khong the lay danh sach bai tap');
+    }
+
     return response.json();
   },
 
-  // Lấy danh sách bài tập kèm thống kê
   async getByClassWithStats(
     classId: string,
-    getAccessToken: () => Promise<string | null>
+    getAccessToken: (forceRefresh?: boolean) => Promise<string | null>
   ): Promise<AssignmentWithStats[]> {
-    const accessToken = await getAccessToken();
-
-    const response = await fetch(`${API_BASE_URL}/assignment/class/${classId}/stats`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
-      },
-    });
+    const response = await authFetch(
+      `${API_BASE_URL}/assignment/class/${classId}/stats`,
+      { method: 'GET', headers: jsonHeaders },
+      getAccessToken
+    );
 
     if (!response.ok) {
-      throw new Error('Không thể lấy danh sách bài tập với thống kê');
+      throw new Error('Khong the lay danh sach bai tap voi thong ke');
     }
 
     return response.json();
   },
 
-  // Lấy chi tiết bài tập
   async getById(
     id: string,
-    getAccessToken: () => Promise<string | null>
+    getAccessToken: (forceRefresh?: boolean) => Promise<string | null>
   ): Promise<Assignment> {
-    const accessToken = await getAccessToken();
-
-    const response = await fetch(`${API_BASE_URL}/assignment/${id}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
-      },
-    });
+    const response = await authFetch(
+      `${API_BASE_URL}/assignment/${id}`,
+      { method: 'GET', headers: jsonHeaders },
+      getAccessToken
+    );
 
     if (!response.ok) {
-      throw new Error('Không thể lấy thông tin bài tập');
+      throw new Error('Khong the lay thong tin bai tap');
     }
 
     return response.json();
   },
 
-  // Tạo bài tập mới
   async create(
     data: CreateAssignmentRequest,
-    getAccessToken: () => Promise<string | null>
+    getAccessToken: (forceRefresh?: boolean) => Promise<string | null>
   ): Promise<Assignment> {
-    const accessToken = await getAccessToken();
-
-    const response = await fetch(`${API_BASE_URL}/assignment`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
-      },
-      body: JSON.stringify(data),
-    });
+    const response = await authFetch(
+      `${API_BASE_URL}/assignment`,
+      { method: 'POST', headers: jsonHeaders, body: JSON.stringify(data) },
+      getAccessToken
+    );
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Không thể tạo bài tập');
+      const errorData = await response.json().catch(() => null);
+      throw new Error(errorData?.message || 'Khong the tao bai tap');
     }
 
     return response.json();
   },
 
-  // Cập nhật bài tập
   async update(
     id: string,
     data: UpdateAssignmentRequest,
-    getAccessToken: () => Promise<string | null>
+    getAccessToken: (forceRefresh?: boolean) => Promise<string | null>
   ): Promise<Assignment> {
-    const accessToken = await getAccessToken();
-
-    const response = await fetch(`${API_BASE_URL}/assignment/${id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
-      },
-      body: JSON.stringify(data),
-    });
+    const response = await authFetch(
+      `${API_BASE_URL}/assignment/${id}`,
+      { method: 'PUT', headers: jsonHeaders, body: JSON.stringify(data) },
+      getAccessToken
+    );
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Không thể cập nhật bài tập');
+      const errorData = await response.json().catch(() => null);
+      throw new Error(errorData?.message || 'Khong the cap nhat bai tap');
     }
 
     return response.json();
   },
 
-  // Xóa bài tập
   async delete(
     id: string,
-    getAccessToken: () => Promise<string | null>
+    getAccessToken: (forceRefresh?: boolean) => Promise<string | null>
   ): Promise<void> {
-    const accessToken = await getAccessToken();
-
-    const response = await fetch(`${API_BASE_URL}/assignment/${id}`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
-      },
-    });
+    const response = await authFetch(
+      `${API_BASE_URL}/assignment/${id}`,
+      { method: 'DELETE', headers: jsonHeaders },
+      getAccessToken
+    );
 
     if (!response.ok) {
-      throw new Error('Không thể xóa bài tập');
+      throw new Error('Khong the xoa bai tap');
     }
   },
 
-  // Lấy danh sách Grading Endpoints
   async getGradingEndpoints(
-    getAccessToken: () => Promise<string | null>
+    getAccessToken: (forceRefresh?: boolean) => Promise<string | null>
   ): Promise<GradingEndpointInfo[]> {
-    const accessToken = await getAccessToken();
-
-    const response = await fetch(`${API_BASE_URL}/assignment/grading-endpoints`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
-      },
-    });
+    const response = await authFetch(
+      `${API_BASE_URL}/assignment/grading-endpoints`,
+      { method: 'GET', headers: jsonHeaders },
+      getAccessToken
+    );
 
     if (!response.ok) {
-      throw new Error('Không thể lấy danh sách Grading Endpoints');
+      throw new Error('Khong the lay danh sach grading endpoints');
     }
 
     return response.json();

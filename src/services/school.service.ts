@@ -1,93 +1,86 @@
-// src/services/school.service.ts
-import type { CreateSchoolRequest } from '../types';
-import type { School } from '../types';
+﻿import type { CreateSchoolRequest, School } from '../types';
+import { authFetch } from './auth-fetch';
+
 const API_BASE_URL = 'https://localhost:7223/api';
 
 export const schoolService = {
-    // Lấy danh sách trường
-    async getSchools(getAccessToken: () => Promise<string | null>): Promise<School[]> {
-        const accessToken = await getAccessToken();
+  async getSchools(getAccessToken: (forceRefresh?: boolean) => Promise<string | null>): Promise<School[]> {
+    const response = await authFetch(
+      `${API_BASE_URL}/school`,
+      {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      },
+      getAccessToken
+    );
 
-        const response = await fetch(`${API_BASE_URL}/school`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
-            },
-        });
+    if (!response.ok) {
+      throw new Error('Khong the lay danh sach truong');
+    }
 
-        if (!response.ok) {
-            throw new Error('Không thể lấy danh sách trường');
-        }
+    return response.json();
+  },
 
-        return response.json();
-    },
+  async createSchool(
+    data: CreateSchoolRequest,
+    getAccessToken: (forceRefresh?: boolean) => Promise<string | null>
+  ): Promise<School> {
+    const response = await authFetch(
+      `${API_BASE_URL}/school`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      },
+      getAccessToken
+    );
 
-    // Tạo trường mới
-    async createSchool(
-        data: CreateSchoolRequest,
-        getAccessToken: () => Promise<string | null>
-    ): Promise<School> {
-        const accessToken = await getAccessToken();
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      throw new Error(errorData?.message || 'Khong the tao truong');
+    }
 
-        const response = await fetch(`${API_BASE_URL}/school`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
-            },
-            body: JSON.stringify(data),
-        });
+    return response.json();
+  },
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Không thể tạo trường');
-        }
+  async updateSchool(
+    id: string,
+    data: Partial<School>,
+    getAccessToken: (forceRefresh?: boolean) => Promise<string | null>
+  ): Promise<School> {
+    const response = await authFetch(
+      `${API_BASE_URL}/school/${id}`,
+      {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      },
+      getAccessToken
+    );
 
-        return response.json();
-    },
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      throw new Error(errorData?.message || 'Khong the cap nhat truong');
+    }
 
-    // ✅ Cập nhật trường
-    async updateSchool(
-        id: string,
-        data: Partial<School>, // ✅ Đặt tên 'data', kiểu Partial<School>
-        getAccessToken: () => Promise<string | null>
-    ): Promise<School> {
-        const accessToken = await getAccessToken();
+    return response.json();
+  },
 
-        const response = await fetch(`${API_BASE_URL}/school/${id}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
-            },
-            body: JSON.stringify(data),
-        });
+  async deleteSchool(
+    id: string,
+    getAccessToken: (forceRefresh?: boolean) => Promise<string | null>
+  ): Promise<void> {
+    const response = await authFetch(
+      `${API_BASE_URL}/school/${id}`,
+      {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+      },
+      getAccessToken
+    );
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Không thể cập nhật trường');
-        }
-        return response.json();
-    },
-
-    // ✅ Xóa trường
-    async deleteSchool(
-        id: string,
-        getAccessToken: () => Promise<string | null>
-    ): Promise<void> {
-        const accessToken = await getAccessToken();
-
-        const response = await fetch(`${API_BASE_URL}/school/${id}`, {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json',
-                ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
-            },
-        });
-
-        if (!response.ok) {
-            throw new Error('Không thể xóa trường');
-        }
-    },
+    if (!response.ok) {
+      throw new Error('Khong the xoa truong');
+    }
+  },
 };

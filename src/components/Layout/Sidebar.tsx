@@ -1,6 +1,7 @@
 import { clsx } from 'clsx';
-import type { LucideIcon } from 'lucide-react';
-import { NavLink } from 'react-router-dom';
+import { LogOut, type LucideIcon } from 'lucide-react';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 
 interface NavItemProps {
   label: string;
@@ -31,10 +32,21 @@ interface SidebarProps {
 }
 
 const Sidebar = ({ isOpen, navItems }: SidebarProps) => {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    const confirmed = window.confirm('bạn có chắc chắn muốn đăng xuất không?');
+    if (!confirmed) return;
+
+    logout();
+    navigate('/login', { replace: true });
+  };
+
   return (
     <aside
       className={clsx(
-        "bg-white w-64 shadow-md flex-shrink-0 transition-all duration-300",
+        "bg-white w-64 shadow-md flex-shrink-0 transition-all duration-300 flex flex-col",
         !isOpen && "-ml-64"
       )}
     >
@@ -45,7 +57,7 @@ const Sidebar = ({ isOpen, navItems }: SidebarProps) => {
         <h1 className="text-xl font-bold text-gray-800">MOS Grader</h1>
       </div>
 
-      <nav className="mt-6">
+      <nav className="mt-6 flex-1">
         {navItems.map((item) => (
           <NavItem
             key={item.id}
@@ -55,6 +67,16 @@ const Sidebar = ({ isOpen, navItems }: SidebarProps) => {
           />
         ))}
       </nav>
+
+      <div className="p-4 border-t border-gray-100">
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-3 w-full px-4 py-3 text-left text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+        >
+          <LogOut size={20} />
+          <span className="font-medium">Đăng xuất</span>
+        </button>
+      </div>
     </aside>
   );
 };

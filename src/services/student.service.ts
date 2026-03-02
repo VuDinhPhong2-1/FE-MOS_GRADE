@@ -1,136 +1,141 @@
-// src/services/student.service.ts
-
-import type {
-    Student,
-    BulkImportStudentRequest,
-    BulkImportResult,
-    StudentResponse,
+﻿import type {
+  BulkImportResult,
+  BulkImportStudentRequest,
+  Student,
+  StudentResponse,
 } from '../types/student.types';
+import { authFetch } from './auth-fetch';
 
 const API_BASE_URL = 'https://localhost:7223/api/student';
+const jsonHeaders = { 'Content-Type': 'application/json' };
+
+const parseErrorMessage = async (response: Response, fallback: string): Promise<string> => {
+  const errorData = await response.json().catch(() => null);
+  return errorData?.message || fallback;
+};
 
 class StudentService {
-    private getAuthHeaders(): HeadersInit {
-        const token = localStorage.getItem('accessToken');
-        return {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-        };
+  async getAllStudents(
+    getAccessToken: (forceRefresh?: boolean) => Promise<string | null>
+  ): Promise<StudentResponse[]> {
+    const response = await authFetch(
+      API_BASE_URL,
+      { method: 'GET', headers: jsonHeaders },
+      getAccessToken
+    );
+
+    if (!response.ok) {
+      throw new Error('Khong the lay danh sach hoc sinh');
     }
 
-    // Lấy tất cả học sinh
-    async getAllStudents(): Promise<StudentResponse[]> {
-        const response = await fetch(API_BASE_URL, {
-            method: 'GET',
-            headers: this.getAuthHeaders(),
-        });
+    return response.json();
+  }
 
-        if (!response.ok) {
-            throw new Error('Không thể lấy danh sách học sinh');
-        }
+  async getStudentById(
+    id: string,
+    getAccessToken: (forceRefresh?: boolean) => Promise<string | null>
+  ): Promise<StudentResponse> {
+    const response = await authFetch(
+      `${API_BASE_URL}/${id}`,
+      { method: 'GET', headers: jsonHeaders },
+      getAccessToken
+    );
 
-        return response.json();
+    if (!response.ok) {
+      throw new Error('Khong tim thay hoc sinh');
     }
 
-    // Lấy học sinh theo ID
-    async getStudentById(id: string): Promise<StudentResponse> {
-        const response = await fetch(`${API_BASE_URL}/${id}`, {
-            method: 'GET',
-            headers: this.getAuthHeaders(),
-        });
+    return response.json();
+  }
 
-        if (!response.ok) {
-            throw new Error('Không tìm thấy học sinh');
-        }
+  async createStudent(
+    student: Partial<Student>,
+    getAccessToken: (forceRefresh?: boolean) => Promise<string | null>
+  ): Promise<StudentResponse> {
+    const response = await authFetch(
+      API_BASE_URL,
+      { method: 'POST', headers: jsonHeaders, body: JSON.stringify(student) },
+      getAccessToken
+    );
 
-        return response.json();
+    if (!response.ok) {
+      throw new Error('Khong the tao hoc sinh');
     }
 
-    // Tạo học sinh mới
-    async createStudent(student: Partial<Student>): Promise<StudentResponse> {
-        const response = await fetch(API_BASE_URL, {
-            method: 'POST',
-            headers: this.getAuthHeaders(),
-            body: JSON.stringify(student),
-        });
+    return response.json();
+  }
 
-        if (!response.ok) {
-            throw new Error('Không thể tạo học sinh');
-        }
+  async bulkImportStudents(
+    request: BulkImportStudentRequest,
+    getAccessToken: (forceRefresh?: boolean) => Promise<string | null>
+  ): Promise<BulkImportResult> {
+    const response = await authFetch(
+      `${API_BASE_URL}/bulk-import`,
+      { method: 'POST', headers: jsonHeaders, body: JSON.stringify(request) },
+      getAccessToken
+    );
 
-        return response.json();
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      throw new Error(errorData?.message || 'Khong the import hoc sinh');
     }
 
-    // Bulk Import học sinh
-    async bulkImportStudents(
-        request: BulkImportStudentRequest
-    ): Promise<BulkImportResult> {
-        console.log('📤 Sending bulk import request:', request);
+    const result = await response.json();
+    return result.data;
+  }
 
-        const response = await fetch(`${API_BASE_URL}/bulk-import`, {
-            method: 'POST',
-            headers: this.getAuthHeaders(),
-            body: JSON.stringify(request),
-        });
+  async updateStudent(
+    id: string,
+    student: Partial<Student>,
+    getAccessToken: (forceRefresh?: boolean) => Promise<string | null>
+  ): Promise<StudentResponse> {
+    const response = await authFetch(
+      `${API_BASE_URL}/${id}`,
+      { method: 'PUT', headers: jsonHeaders, body: JSON.stringify(student) },
+      getAccessToken
+    );
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            console.error('❌ Bulk import error:', errorData);
-            throw new Error(errorData.message || 'Không thể import học sinh');
-        }
-
-        const result = await response.json();
-        console.log('✅ Bulk import result:', result);
-        return result.data; // Backend trả về { message, data }
+    if (!response.ok) {
+      const message = await parseErrorMessage(response, 'Khong the cap nhat hoc sinh');
+      throw new Error(message);
     }
 
-    // Cập nhật học sinh
-    async updateStudent(
-        id: string,
-        student: Partial<Student>
-    ): Promise<StudentResponse> {
-        const response = await fetch(`${API_BASE_URL}/${id}`, {
-            method: 'PUT',
-            headers: this.getAuthHeaders(),
-            body: JSON.stringify(student),
-        });
+    return response.json();
+  }
 
-        if (!response.ok) {
-            throw new Error('Không thể cập nhật học sinh');
-        }
+  async deleteStudent(
+    id: string,
+    getAccessToken: (forceRefresh?: boolean) => Promise<string | null>
+  ): Promise<void> {
+    const response = await authFetch(
+      `${API_BASE_URL}/${id}`,
+      { method: 'DELETE', headers: jsonHeaders },
+      getAccessToken
+    );
 
-        return response.json();
+    if (!response.ok) {
+      throw new Error('Khong the xoa hoc sinh');
+    }
+  }
+
+  async getStudentsByClassId(
+    classId: string,
+    getAccessToken: (forceRefresh?: boolean) => Promise<string | null>
+  ): Promise<StudentResponse[]> {
+    const response = await authFetch(
+      `${API_BASE_URL}/class/${classId}`,
+      { method: 'GET', headers: jsonHeaders },
+      getAccessToken
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      throw new Error(errorData?.message || 'Khong the lay danh sach hoc sinh');
     }
 
-    // Xóa học sinh
-    async deleteStudent(id: string): Promise<void> {
-        const response = await fetch(`${API_BASE_URL}/${id}`, {
-            method: 'DELETE',
-            headers: this.getAuthHeaders(),
-        });
-
-        if (!response.ok) {
-            throw new Error('Không thể xóa học sinh');
-        }
-    }
-    async getStudentsByClassId(classId: string): Promise<StudentResponse[]> {
-        console.log('📤 Fetching students for class:', classId);
-
-        const response = await fetch(`${API_BASE_URL}/class/${classId}`, {
-            method: 'GET',
-            headers: this.getAuthHeaders(),
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            console.error('❌ Error fetching students:', errorData);
-            throw new Error(errorData.message || 'Không thể lấy danh sách học sinh');
-        }
-
-        const result = await response.json();
-        console.log('✅ Students fetched:', result);
-        return result.data; // Backend trả về { message, data }
-    }
+    const result = await response.json();
+    return result.data;
+  }
 }
 
 export default new StudentService();

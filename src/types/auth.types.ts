@@ -14,7 +14,7 @@ export interface AuthContextType {
   login: (userData: User, accessToken: string, refreshToken: string) => void;
   logout: () => void;
   loading: boolean;
-  getAccessToken: () => Promise<string | null>; 
+  getAccessToken: (forceRefresh?: boolean) => Promise<string | null>;
   getRefreshToken: () => string | null;
 }
 
