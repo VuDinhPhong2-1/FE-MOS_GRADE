@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { jwtDecode } from 'jwt-decode';
 import type { AuthContextType, User } from '../types/auth.types';
+import { AUTH_API_BASE_URL } from '../config/api';
 
 interface JwtPayload {
   exp?: number;
@@ -12,7 +13,6 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-const API_BASE_URL = 'https://localhost:7223/api/auth';
 const REFRESH_EARLY_MS = 5 * 60 * 1000;
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -88,7 +88,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
 
       try {
-        const response = await fetch(`${API_BASE_URL}/refresh-token`, {
+        const response = await fetch(`${AUTH_API_BASE_URL}/refresh-token`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ refreshToken }),
@@ -151,7 +151,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     clearSession();
     setUser(null);
 
-    void fetch(`${API_BASE_URL}/logout`, {
+    void fetch(`${AUTH_API_BASE_URL}/logout`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -197,7 +197,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       scheduleProactiveRefresh(token);
 
       try {
-        const meResponse = await fetch(`${API_BASE_URL}/me`, {
+        const meResponse = await fetch(`${AUTH_API_BASE_URL}/me`, {
           method: 'GET',
           headers: {
             Authorization: `Bearer ${token}`,

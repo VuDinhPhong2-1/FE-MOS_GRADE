@@ -1,11 +1,11 @@
-﻿import type {
+import type {
   ClassAnalyticsOverviewResponse,
   ProjectPerformanceResponse,
   WeakTaskResponse,
 } from '../types/analytics.types';
 import { authFetch } from './auth-fetch';
+import { API_BASE_URL } from '../config/api';
 
-const API_BASE_URL = 'https://localhost:7223/api';
 const jsonHeaders = { 'Content-Type': 'application/json' };
 
 const parseError = async (response: Response, fallback: string): Promise<string> => {
@@ -79,3 +79,4 @@ export const analyticsService = {
     return response.json();
   },
 };
+

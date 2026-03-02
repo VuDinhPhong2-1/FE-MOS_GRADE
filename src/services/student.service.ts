@@ -1,12 +1,13 @@
-﻿import type {
+import type {
   BulkImportResult,
   BulkImportStudentRequest,
   Student,
   StudentResponse,
 } from '../types/student.types';
+import { API_BASE_URL } from '../config/api';
 import { authFetch } from './auth-fetch';
 
-const API_BASE_URL = 'https://localhost:7223/api/student';
+const STUDENT_API_BASE_URL = `${API_BASE_URL}/student`;
 const jsonHeaders = { 'Content-Type': 'application/json' };
 
 const parseErrorMessage = async (response: Response, fallback: string): Promise<string> => {
@@ -19,7 +20,7 @@ class StudentService {
     getAccessToken: (forceRefresh?: boolean) => Promise<string | null>
   ): Promise<StudentResponse[]> {
     const response = await authFetch(
-      API_BASE_URL,
+      STUDENT_API_BASE_URL,
       { method: 'GET', headers: jsonHeaders },
       getAccessToken
     );
@@ -36,7 +37,7 @@ class StudentService {
     getAccessToken: (forceRefresh?: boolean) => Promise<string | null>
   ): Promise<StudentResponse> {
     const response = await authFetch(
-      `${API_BASE_URL}/${id}`,
+      `${STUDENT_API_BASE_URL}/${id}`,
       { method: 'GET', headers: jsonHeaders },
       getAccessToken
     );
@@ -53,7 +54,7 @@ class StudentService {
     getAccessToken: (forceRefresh?: boolean) => Promise<string | null>
   ): Promise<StudentResponse> {
     const response = await authFetch(
-      API_BASE_URL,
+      STUDENT_API_BASE_URL,
       { method: 'POST', headers: jsonHeaders, body: JSON.stringify(student) },
       getAccessToken
     );
@@ -70,7 +71,7 @@ class StudentService {
     getAccessToken: (forceRefresh?: boolean) => Promise<string | null>
   ): Promise<BulkImportResult> {
     const response = await authFetch(
-      `${API_BASE_URL}/bulk-import`,
+      `${STUDENT_API_BASE_URL}/bulk-import`,
       { method: 'POST', headers: jsonHeaders, body: JSON.stringify(request) },
       getAccessToken
     );
@@ -90,7 +91,7 @@ class StudentService {
     getAccessToken: (forceRefresh?: boolean) => Promise<string | null>
   ): Promise<StudentResponse> {
     const response = await authFetch(
-      `${API_BASE_URL}/${id}`,
+      `${STUDENT_API_BASE_URL}/${id}`,
       { method: 'PUT', headers: jsonHeaders, body: JSON.stringify(student) },
       getAccessToken
     );
@@ -108,7 +109,7 @@ class StudentService {
     getAccessToken: (forceRefresh?: boolean) => Promise<string | null>
   ): Promise<void> {
     const response = await authFetch(
-      `${API_BASE_URL}/${id}`,
+      `${STUDENT_API_BASE_URL}/${id}`,
       { method: 'DELETE', headers: jsonHeaders },
       getAccessToken
     );
@@ -123,7 +124,7 @@ class StudentService {
     getAccessToken: (forceRefresh?: boolean) => Promise<string | null>
   ): Promise<StudentResponse[]> {
     const response = await authFetch(
-      `${API_BASE_URL}/class/${classId}`,
+      `${STUDENT_API_BASE_URL}/class/${classId}`,
       { method: 'GET', headers: jsonHeaders },
       getAccessToken
     );

@@ -1,7 +1,8 @@
-﻿import axios from 'axios';
+import axios from 'axios';
+import { API_BASE_URL } from '../config/api';
 import type { GradingResult } from '../types';
 
-const API_URL = 'https://localhost:7223/api/grading';
+const API_URL = `${API_BASE_URL}/grading`;
 
 export const gradeProject = async (
   projectCode: string,

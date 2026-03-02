@@ -1,7 +1,6 @@
+import { API_BASE_URL } from '../config/api';
 import type { Class, CreateClassRequest } from '../types/class.types';
 import { authFetch } from './auth-fetch';
-
-const API_BASE_URL = 'https://localhost:7223/api';
 
 export class ApiServiceError extends Error {
     status: number;

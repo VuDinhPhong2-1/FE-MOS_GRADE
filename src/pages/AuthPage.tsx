@@ -4,6 +4,7 @@ import { Eye, EyeOff, Lock, Mail, User } from 'lucide-react';
 import { GoogleLogin, type CredentialResponse } from '@react-oauth/google';
 import { useAuth } from '../context/AuthContext';
 import type { LoginFormData, LoginResponse, RegisterFormData } from '../types/auth.types';
+import { AUTH_API_BASE_URL } from '../config/api';
 
 export default function AuthPage() {
   const hasGoogleClientId = Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID);
@@ -66,8 +67,7 @@ export default function AuthPage() {
     e.preventDefault();
     setError('');
 
-    const baseUrl = 'https://localhost:7223/api/auth';
-    const endpoint = isLogin ? `${baseUrl}/login` : `${baseUrl}/register`;
+    const endpoint = isLogin ? `${AUTH_API_BASE_URL}/login` : `${AUTH_API_BASE_URL}/register`;
 
     try {
       const body: LoginFormData | RegisterFormData = isLogin
@@ -106,7 +106,7 @@ export default function AuthPage() {
         throw new Error('Khong lay duoc Google idToken');
       }
 
-      const response = await fetch('https://localhost:7223/api/auth/google-login', {
+      const response = await fetch(`${AUTH_API_BASE_URL}/google-login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ idToken }),

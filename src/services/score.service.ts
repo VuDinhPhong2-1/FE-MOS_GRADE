@@ -1,12 +1,12 @@
-﻿import type {
+import type {
   BulkScoreRequest,
   CreateScoreRequest,
   ScoreResponse,
   StudentScoreReportResponse,
 } from '../types/score.types';
 import { authFetch } from './auth-fetch';
+import { API_BASE_URL } from '../config/api';
 
-const API_BASE_URL = 'https://localhost:7223/api';
 const jsonHeaders = { 'Content-Type': 'application/json' };
 
 export const scoreService = {
@@ -116,3 +116,4 @@ export const scoreService = {
     return response.json();
   },
 };
+

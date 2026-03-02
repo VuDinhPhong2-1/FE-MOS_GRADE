@@ -5,9 +5,8 @@
   GradingEndpointInfo,
   UpdateAssignmentRequest,
 } from '../types/assignment.types';
+import { API_BASE_URL } from '../config/api';
 import { authFetch } from './auth-fetch';
-
-const API_BASE_URL = 'https://localhost:7223/api';
 
 const jsonHeaders = { 'Content-Type': 'application/json' };
 

@@ -1,7 +1,6 @@
-﻿import type { CreateSchoolRequest, School } from '../types';
+import { API_BASE_URL } from '../config/api';
+import type { CreateSchoolRequest, School } from '../types';
 import { authFetch } from './auth-fetch';
-
-const API_BASE_URL = 'https://localhost:7223/api';
 
 export const schoolService = {
   async getSchools(getAccessToken: (forceRefresh?: boolean) => Promise<string | null>): Promise<School[]> {

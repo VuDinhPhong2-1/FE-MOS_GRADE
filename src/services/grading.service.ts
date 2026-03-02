@@ -1,8 +1,7 @@
-﻿import type { GradingResult } from '../types/grading.types';
+import type { GradingResult } from '../types/grading.types';
 import { authFetch } from './auth-fetch';
+import { API_BASE_URL, API_ORIGIN } from '../config/api';
 
-const API_BASE_URL = 'https://localhost:7223/api';
-const API_ORIGIN = 'https://localhost:7223';
 
 interface GradingRequestMeta {
   classId: string;
@@ -101,3 +100,4 @@ export const gradingService = {
     return gradingService.gradeByEndpoint('/grading/project09', studentFile, getAccessToken, meta);
   },
 };
+
