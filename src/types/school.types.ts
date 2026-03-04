@@ -1,6 +1,7 @@
 export interface School {
     id: string;
     name: string;
+    code?: string;
     address?: string;
     phoneNumber?: string;
     email?: string;
@@ -14,6 +15,7 @@ export interface School {
 }
 export interface CreateSchoolRequest {
     name: string;
+    code: string;
     address?: string;
     phoneNumber?: string;
     email?: string;

@@ -5,7 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:be-local": "vite --mode be-local",
+    "dev:be-deploy": "vite --mode be-deploy",
     "build": "tsc -b && vite build",
+    "build:be-local": "tsc -b && vite build --mode be-local",
+    "build:be-deploy": "tsc -b && vite build --mode be-deploy",
     "lint": "eslint .",
     "preview": "vite preview"
   },

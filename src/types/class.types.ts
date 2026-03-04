@@ -32,7 +32,6 @@ export interface CreateClassRequest {
   currentStudents?: number;
   academicYear?: string;
   grade?: string;
-  teacherId?: string;
 }
 
 export interface UpdateClassRequest {
@@ -41,6 +40,5 @@ export interface UpdateClassRequest {
   maxStudents?: number;
   academicYear?: string;
   grade?: string;
-  teacherId?: string;
   isActive?: boolean;
 }

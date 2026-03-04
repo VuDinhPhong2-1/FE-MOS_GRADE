@@ -21,6 +21,7 @@ const SchoolList = () => {
   const [editingSchool, setEditingSchool] = useState<School | null>(null);
   const [formData, setFormData] = useState<CreateSchoolRequest>({
     name: '',
+    code: '',
     address: '',
     phoneNumber: '',
     email: '',
@@ -80,6 +81,7 @@ const SchoolList = () => {
     setEditingSchool(null);
     setFormData({
       name: '',
+      code: '',
       address: '',
       phoneNumber: '',
       email: '',
@@ -93,6 +95,7 @@ const SchoolList = () => {
     setEditingSchool(school);
     setFormData({
       name: school.name,
+      code: school.code || '',
       address: school.address || '',
       phoneNumber: school.phoneNumber || '',
       email: school.email || '',
@@ -116,6 +119,7 @@ const SchoolList = () => {
 
       setFormData({
         name: '',
+        code: '',
         address: '',
         phoneNumber: '',
         email: '',
@@ -192,6 +196,7 @@ const SchoolList = () => {
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">STT</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tên trường</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mã trường</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Địa chỉ</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">SĐT</th>
                   <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Chức năng</th>
@@ -200,7 +205,7 @@ const SchoolList = () => {
               <tbody className="divide-y divide-gray-200">
                 {schools.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                    <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
                       Chưa có trường nào. Hãy thêm trường mới!
                     </td>
                   </tr>
@@ -209,6 +214,7 @@ const SchoolList = () => {
                     <tr key={sch.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 text-sm text-gray-900">{index + 1}</td>
                       <td className="px-6 py-4 text-sm text-gray-900">{sch.name}</td>
+                      <td className="px-6 py-4 text-sm text-gray-500">{sch.code || '-'}</td>
                       <td className="px-6 py-4 text-sm text-gray-500">{sch.address || '-'}</td>
                       <td className="px-6 py-4 text-sm text-gray-500">{sch.phoneNumber || '-'}</td>
                       <td className="px-6 py-4 text-center">
@@ -276,6 +282,21 @@ const SchoolList = () => {
                       required
                       className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       placeholder="VD: Trường THPT ABC"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Mã trường <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="code"
+                      value={formData.code}
+                      onChange={handleChange}
+                      required
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="VD: THPT-ABC"
                     />
                   </div>
 

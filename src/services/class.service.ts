@@ -31,7 +31,7 @@ export const classService = {
         getAccessToken: (forceRefresh?: boolean) => Promise<string | null>,
         showInactive: boolean
     ): Promise<Class[]> {
-        const query = showInactive ? '?showInactive=true' : '';
+        const query = showInactive ? '?includeInactive=true' : '';
 
         const response = await authFetch(`${API_BASE_URL}/class/school/${schoolId}${query}`, {
             method: 'GET',

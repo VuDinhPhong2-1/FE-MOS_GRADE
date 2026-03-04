@@ -1,10 +1,12 @@
 ﻿import { useState } from 'react';
 import { Upload, FileSpreadsheet, RefreshCw } from 'lucide-react';
-import { gradeProject } from '../services/api';
+import { gradingService } from '../services/grading.service';
 import type { GradingResult } from '../types';
 import ResultCard from '../components/ResultCard';
+import { useAuth } from '../context/AuthContext';
 
 const GradingView = () => {
+  const { getAccessToken } = useAuth();
   const [projectCode, setProjectCode] = useState('project09');
   const [studentFile, setStudentFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
@@ -21,7 +23,7 @@ const GradingView = () => {
     setError(null);
 
     try {
-      const data = await gradeProject(projectCode, studentFile);
+      const data = await gradingService.gradeByEndpoint(projectCode, studentFile, getAccessToken);
       setResult(data);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Co loi xay ra khi cham diem.';
@@ -51,7 +53,6 @@ const GradingView = () => {
               className="w-full p-2 border border-gray-300 rounded-md bg-gray-50"
             >
               <option value="project09">Project 09 - Sales and Orders Report</option>
-              <option value="project10">Project 10</option>
               <option value="project01">Project 01</option>
             </select>
           </div>

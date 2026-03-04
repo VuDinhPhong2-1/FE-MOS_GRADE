@@ -50,7 +50,6 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
     maxStudents: undefined,
     academicYear: '2024-2025',
     grade: '',
-    teacherId: '',
   });
 
   const schoolIdForCreate = selectedSchool.id || formData.schoolId || '';
@@ -171,7 +170,6 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
       maxStudents: undefined,
       academicYear: '2024-2025',
       grade: '',
-      teacherId: '',
     });
     setFormError('');
     setShowModal(true);
@@ -187,7 +185,6 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
       maxStudents: cls.maxStudents,
       academicYear: cls.academicYear || '2024-2025',
       grade: cls.grade || '',
-      teacherId: '',
     });
     setFormError('');
     setShowModal(true);
