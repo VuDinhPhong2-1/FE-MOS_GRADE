@@ -9,6 +9,7 @@ interface DisplayStudentRow {
   id: string;
   name: string;
   calculatedScores: { [assignmentId: string]: number };
+  errorsByAssignment: { [assignmentId: string]: string[] };
   totalScore: number;
 }
 
@@ -24,7 +25,13 @@ interface ViewAllScoresModalProps {
   onClose: () => void;
   assignments: Assignment[];
   students: Student[];
-  scores: { studentId: string; assignmentId: string; scoreValue: number | null }[];
+  scores: {
+    studentId: string;
+    assignmentId: string;
+    assignmentName?: string;
+    scoreValue: number | null;
+    autoGradingErrors?: string[];
+  }[];
 }
 
 const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
@@ -38,6 +45,11 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
     () => assignments.reduce((sum, a) => sum + (a.maxScore || 0), 0),
     [assignments]
   );
+  const normalizeErrorText = (value: string): string => value.replace(/\s+/g, ' ').trim();
+  const toDedupKey = (value: string): string =>
+    normalizeErrorText(value)
+      .toLowerCase()
+      .replace(/[.:;!?]+$/g, '');
 
   const displayRows = useMemo<DisplayStudentRow[]>(() => {
     if (!isOpen) return [];
@@ -49,6 +61,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 
       let totalScore = 0;
       const calculatedScores: { [assignmentId: string]: number } = {};
+      const errorsByAssignment: { [assignmentId: string]: string[] } = {};
 
       assignments.forEach((assignment) => {
         const scoreObj = scores.find(
@@ -58,9 +71,27 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
           typeof scoreObj?.scoreValue === 'number' ? scoreObj.scoreValue : 0;
         calculatedScores[assignment.id] = score;
         totalScore += score;
+
+        const assignmentErrors: string[] = [];
+        const seenErrors = new Set<string>();
+        (scoreObj?.autoGradingErrors || []).forEach((rawError) => {
+          const errorText = normalizeErrorText(rawError || '');
+          if (!errorText) return;
+          const key = toDedupKey(errorText);
+          if (seenErrors.has(key)) return;
+          seenErrors.add(key);
+          assignmentErrors.push(errorText);
+        });
+        errorsByAssignment[assignment.id] = assignmentErrors;
       });
 
-      return { id: student.id, name, calculatedScores, totalScore };
+      return {
+        id: student.id,
+        name,
+        calculatedScores,
+        errorsByAssignment,
+        totalScore,
+      };
     });
   }, [isOpen, assignments, students, scores]);
 
@@ -117,7 +148,12 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
     () =>
       displayRows.map((row) => [
         row.name,
-        ...assignments.map((a) => row.calculatedScores[a.id]),
+        ...assignments.map((a) => {
+          const score = row.calculatedScores[a.id];
+          const errors = row.errorsByAssignment[a.id] || [];
+          if (errors.length === 0) return score;
+          return `${score} | Loi: ${errors.join(' ; ')}`;
+        }),
         `${row.totalScore}/${maxScoreTotal}`,
       ]),
     [displayRows, assignments, maxScoreTotal]
@@ -228,11 +264,27 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
                     <td className="sticky left-0 z-10 bg-inherit px-4 py-3 font-medium border-r border-slate-100">
                       {studentRow.name}
                     </td>
-                    {assignments.map((assignment) => (
-                      <td key={assignment.id} className="px-3 py-3 text-center">
-                        {studentRow.calculatedScores[assignment.id]}
-                      </td>
-                    ))}
+                    {assignments.map((assignment) => {
+                      const assignmentErrors = studentRow.errorsByAssignment[assignment.id] || [];
+
+                      return (
+                        <td key={assignment.id} className="px-3 py-3 text-center align-top">
+                          <div>{studentRow.calculatedScores[assignment.id]}</div>
+                          {assignmentErrors.length > 0 && (
+                            <details className="mt-1 text-left text-xs text-amber-800">
+                              <summary className="cursor-pointer font-medium">
+                                {assignmentErrors.length} loi
+                              </summary>
+                              <ul className="mt-1 max-h-24 overflow-auto rounded border border-amber-200 bg-amber-50 p-2 text-[11px] list-disc list-inside">
+                                {assignmentErrors.map((errorItem, errorIdx) => (
+                                  <li key={`${studentRow.id}-${assignment.id}-${errorIdx}`}>{errorItem}</li>
+                                ))}
+                              </ul>
+                            </details>
+                          )}
+                        </td>
+                      );
+                    })}
                     <td className="sticky right-0 z-10 bg-blue-50 px-4 py-3 text-right font-bold text-blue-800 border-l border-blue-100">
                       {studentRow.totalScore}/{maxScoreTotal}
                     </td>
@@ -305,4 +357,3 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 };
 
 export default ViewAllScoresModal;
-

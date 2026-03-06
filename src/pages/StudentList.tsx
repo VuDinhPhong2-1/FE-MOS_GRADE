@@ -429,7 +429,9 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
         scores={scores.map((s) => ({
           studentId: s.studentId,
           assignmentId: s.assignmentId,
+          assignmentName: s.assignmentName,
           scoreValue: typeof s.scoreValue === 'number' ? s.scoreValue : 0,
+          autoGradingErrors: s.autoGradingErrors || [],
         }))}
       />
 

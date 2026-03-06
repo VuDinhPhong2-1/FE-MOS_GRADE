@@ -9,9 +9,25 @@ const GradingView = () => {
   const { getAccessToken } = useAuth();
   const [projectCode, setProjectCode] = useState('project09');
   const [studentFile, setStudentFile] = useState<File | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<GradingResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const isValidExcelFile = (file: File): boolean => {
+    const fileName = file.name.toLowerCase();
+    return fileName.endsWith('.xls') || fileName.endsWith('.xlsx') || fileName.endsWith('.xlsm');
+  };
+
+  const setSelectedFile = (file: File | null) => {
+    if (!file) return;
+    if (!isValidExcelFile(file)) {
+      alert('File phai co dinh dang .xls, .xlsx hoac .xlsm');
+      return;
+    }
+    setStudentFile(file);
+    setError(null);
+  };
 
   const handleGrade = async () => {
     if (!studentFile) {
@@ -37,6 +53,7 @@ const GradingView = () => {
     setResult(null);
     setStudentFile(null);
     setError(null);
+    setIsDragOver(false);
   };
 
   return (
@@ -53,22 +70,45 @@ const GradingView = () => {
               className="w-full p-2 border border-gray-300 rounded-md bg-gray-50"
             >
               <option value="project09">Project 09 - Sales and Orders Report</option>
+              <option value="project04">Project 04 - Class schedule</option>
+              <option value="project03">Project 03 - Munson Recipes</option>
+              <option value="project02">Project 02 - Insurance Policy</option>
               <option value="project01">Project 01</option>
             </select>
           </div>
 
           <div className="mb-6">
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-100 transition">
+            <div
+              className={`border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center transition ${
+                isDragOver ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-gray-50 hover:bg-gray-100'
+              }`}
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'copy';
+                setIsDragOver(true);
+              }}
+              onDragLeave={() => setIsDragOver(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setIsDragOver(false);
+                const file = e.dataTransfer.files?.[0] || null;
+                setSelectedFile(file);
+              }}
+            >
               <input
                 type="file"
-                accept=".xlsx, .xlsm"
-                onChange={(e) => setStudentFile(e.target.files ? e.target.files[0] : null)}
+                accept=".xls,.xlsx,.xlsm"
+                onChange={(e) => {
+                  setSelectedFile(e.target.files?.[0] || null);
+                  e.target.value = '';
+                }}
                 className="hidden"
                 id="student-upload"
               />
               <label htmlFor="student-upload" className="cursor-pointer text-center">
                 <FileSpreadsheet className="w-12 h-12 text-green-600 mx-auto mb-2" />
                 <span className="text-sm font-medium text-gray-700">File bai lam hoc sinh</span>
+                <p className="text-xs text-gray-500 mt-1">Keo tha file vao day hoac bam de chon</p>
                 {studentFile && (
                   <p className="text-xs text-green-600 mt-1 font-semibold">{studentFile.name}</p>
                 )}

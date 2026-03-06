@@ -6,6 +6,7 @@ export interface Score {
   classId: string;
   scoreValue?: number;
   feedback?: string;
+  autoGradingErrors?: string[];
   gradedAt?: string;
   gradedBy?: string;
 }
@@ -20,6 +21,7 @@ export interface ScoreResponse {
   assignmentName: string;
   scoreValue?: number;
   feedback?: string;
+  autoGradingErrors?: string[];
   gradedAt?: string;
   gradedBy?: string;
   gradedByName?: string;
@@ -31,6 +33,7 @@ export interface CreateScoreRequest {
   classId: string;
   scoreValue?: number;
   feedback?: string;
+  autoGradingErrors?: string[];
 }
 
 export interface BulkScoreRequest {
@@ -43,6 +46,7 @@ export interface StudentScoreItem {
   studentId: string;
   scoreValue?: number;
   feedback?: string;
+  autoGradingErrors?: string[];
 }
 
 export interface StudentScoreReportResponse {
@@ -59,5 +63,6 @@ export interface ScoreDetailResponse {
   scoreValue?: number;
   maxScore: number;
   feedback?: string;
+  autoGradingErrors?: string[];
   gradedAt?: string;
 }

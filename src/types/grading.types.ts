@@ -45,6 +45,7 @@ export interface StudentGradingState {
     // ✅ ĐIỂM VÀ NHẬN XÉT THỦ CÔNG
     manualScore: number | null;
     manualComment: string;
+    autoGradingErrors: string[];
     
     // ✅ LỊCH SỬ CHẤM LẠI (optional - nếu cần)
     regradeHistory?: RegradeHistoryItem[];
