@@ -1,4 +1,4 @@
-import { API_BASE_URL } from '../config/api';
+﻿import { API_BASE_URL } from '../config/api';
 import type { Class, CreateClassRequest } from '../types/class.types';
 import { authFetch } from './auth-fetch';
 
@@ -41,7 +41,7 @@ export const classService = {
         }, getAccessToken);
 
         if (!response.ok) {
-            const message = await parseErrorMessage(response, 'Khong the lay danh sach lop');
+            const message = await parseErrorMessage(response, 'Không thể lấy danh sách lớp');
             throw new ApiServiceError(response.status, message);
         }
 
@@ -60,7 +60,7 @@ export const classService = {
         }, getAccessToken);
 
         if (!response.ok) {
-            const message = await parseErrorMessage(response, 'Khong the lay thong tin lop');
+            const message = await parseErrorMessage(response, 'Không thể lấy thông tin lớp');
             throw new ApiServiceError(response.status, message);
         }
 
@@ -80,7 +80,7 @@ export const classService = {
         }, getAccessToken);
 
         if (!response.ok) {
-            const message = await parseErrorMessage(response, 'Khong the tao lop');
+            const message = await parseErrorMessage(response, 'Không thể tạo lớp');
             throw new ApiServiceError(response.status, message);
         }
 
@@ -101,7 +101,7 @@ export const classService = {
         }, getAccessToken);
 
         if (!response.ok) {
-            const message = await parseErrorMessage(response, 'Khong the cap nhat lop');
+            const message = await parseErrorMessage(response, 'Không thể cập nhật lớp');
             throw new ApiServiceError(response.status, message);
         }
 
@@ -120,8 +120,9 @@ export const classService = {
         }, getAccessToken);
 
         if (!response.ok) {
-            const message = await parseErrorMessage(response, 'Khong the xoa lop');
+            const message = await parseErrorMessage(response, 'Không thể xóa lớp');
             throw new ApiServiceError(response.status, message);
         }
     },
 };
+

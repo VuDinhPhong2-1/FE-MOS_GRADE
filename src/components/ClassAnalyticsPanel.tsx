@@ -20,7 +20,6 @@ interface ClassAnalyticsPanelProps {
 }
 
 const pct = (v: number) => `${Number.isFinite(v) ? v.toFixed(2) : '0.00'}%`;
-
 const barWidth = (v: number) => `${Math.max(0, Math.min(100, v))}%`;
 
 const ClassAnalyticsPanel = ({ classId, assignments }: ClassAnalyticsPanelProps) => {
@@ -58,7 +57,7 @@ const ClassAnalyticsPanel = ({ classId, assignments }: ClassAnalyticsPanelProps)
         setWeakTasks(weakTaskData);
         setProjectPerformance(projectData);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Khong the tai analytics');
+        setError(err instanceof Error ? err.message : 'Không thể tải phân tích lớp học');
       } finally {
         setLoading(false);
       }
@@ -67,10 +66,7 @@ const ClassAnalyticsPanel = ({ classId, assignments }: ClassAnalyticsPanelProps)
     void load();
   }, [classId, getAccessToken, projectEndpoint, top]);
 
-  const gaugeData = useMemo(
-    () => (overview ? mapOverviewToGaugeData(overview) : []),
-    [overview]
-  );
+  const gaugeData = useMemo(() => (overview ? mapOverviewToGaugeData(overview) : []), [overview]);
   const weakTaskChartRows = useMemo(() => mapWeakTasksToBarChart(weakTasks), [weakTasks]);
   const projectComboRows = useMemo(
     () => mapProjectPerformanceToCombo(projectPerformance),
@@ -90,7 +86,7 @@ const ClassAnalyticsPanel = ({ classId, assignments }: ClassAnalyticsPanelProps)
             onChange={(e) => setProjectEndpoint(e.target.value)}
             className="px-3 py-2 border rounded-md text-sm"
           >
-            <option value="">Tất cả project</option>
+            <option value="">Tất cả dự án</option>
             {endpointOptions.map((ep) => (
               <option key={ep} value={ep}>
                 {ep}
@@ -102,9 +98,9 @@ const ClassAnalyticsPanel = ({ classId, assignments }: ClassAnalyticsPanelProps)
             onChange={(e) => setTop(Number(e.target.value))}
             className="px-3 py-2 border rounded-md text-sm"
           >
-            <option value={5}>Top 5 tasks sai nhiều</option>
-            <option value={10}>Top 10 tasks sai nhiều</option>
-            <option value={15}>Top 15 tasks sai nhiều</option>
+            <option value={5}>Top 5 câu sai nhiều</option>
+            <option value={10}>Top 10 câu sai nhiều</option>
+            <option value={15}>Top 15 câu sai nhiều</option>
           </select>
         </div>
       </div>
@@ -117,7 +113,7 @@ const ClassAnalyticsPanel = ({ classId, assignments }: ClassAnalyticsPanelProps)
       )}
 
       {loading ? (
-        <div className="text-sm text-gray-500 py-6">Dang tai du lieu analytics...</div>
+        <div className="text-sm text-gray-500 py-6">Đang tải dữ liệu phân tích...</div>
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-5">
@@ -126,7 +122,7 @@ const ClassAnalyticsPanel = ({ classId, assignments }: ClassAnalyticsPanelProps)
               <div className="text-xl font-bold text-blue-700">{pct(overview?.averagePercentage || 0)}</div>
             </div>
             <div className="rounded-md border p-3">
-              <div className="text-xs text-gray-500">Tỉ lệ hoàn thành</div>
+              <div className="text-xs text-gray-500">Tỷ lệ hoàn thành</div>
               <div className="text-xl font-bold text-green-700">{pct(overview?.passRate || 0)}</div>
             </div>
             <div className="rounded-md border p-3">
@@ -134,7 +130,7 @@ const ClassAnalyticsPanel = ({ classId, assignments }: ClassAnalyticsPanelProps)
               <div className="text-xl font-bold text-amber-700">{pct(overview?.warningRate || 0)}</div>
             </div>
             <div className="rounded-md border p-3">
-              <div className="text-xs text-gray-500">Total Attempts</div>
+              <div className="text-xs text-gray-500">Tổng lượt làm</div>
               <div className="text-xl font-bold text-gray-800">{overview?.totalAttempts || 0}</div>
             </div>
           </div>
@@ -143,11 +139,11 @@ const ClassAnalyticsPanel = ({ classId, assignments }: ClassAnalyticsPanelProps)
             <div className="border rounded-md p-3">
               <div className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
                 <TriangleAlert size={16} className="text-amber-600" />
-                Những task yếu nhất (weak tasks)
+                Các câu yếu nhất
               </div>
               <div className="space-y-2">
                 {weakTaskChartRows.length === 0 && (
-                  <div className="text-sm text-gray-500">Khong co du lieu weak tasks.</div>
+                  <div className="text-sm text-gray-500">Không có dữ liệu câu yếu.</div>
                 )}
                 {weakTaskChartRows.map((row) => (
                   <div key={row.x}>
@@ -158,10 +154,7 @@ const ClassAnalyticsPanel = ({ classId, assignments }: ClassAnalyticsPanelProps)
                       </span>
                     </div>
                     <div className="h-2 bg-gray-100 rounded">
-                      <div
-                        className="h-2 bg-rose-500 rounded"
-                        style={{ width: barWidth(row.y) }}
-                      />
+                      <div className="h-2 bg-rose-500 rounded" style={{ width: barWidth(row.y) }} />
                     </div>
                   </div>
                 ))}
@@ -171,30 +164,24 @@ const ClassAnalyticsPanel = ({ classId, assignments }: ClassAnalyticsPanelProps)
             <div className="border rounded-md p-3">
               <div className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
                 <TrendingUp size={16} className="text-blue-600" />
-                Hiệu suất theo project
+                Hiệu suất theo dự án
               </div>
               <div className="space-y-2">
                 {projectComboRows.length === 0 && (
-                  <div className="text-sm text-gray-500">Khong co du lieu project performance.</div>
+                  <div className="text-sm text-gray-500">Không có dữ liệu hiệu suất dự án.</div>
                 )}
                 {projectComboRows.map((row) => (
                   <div key={row.x} className="border rounded p-2">
                     <div className="text-sm font-medium">{row.x}</div>
-                    <div className="text-xs text-gray-500 mb-1">Attempts: {row.attempts}</div>
+                    <div className="text-xs text-gray-500 mb-1">Số lượt làm: {row.attempts}</div>
                     <div className="space-y-1">
-                      <div className="text-xs text-gray-600">Average: {pct(row.avgLine)}</div>
+                      <div className="text-xs text-gray-600">Trung bình: {pct(row.avgLine)}</div>
                       <div className="h-2 bg-gray-100 rounded">
-                        <div
-                          className="h-2 bg-blue-500 rounded"
-                          style={{ width: barWidth(row.avgLine) }}
-                        />
+                        <div className="h-2 bg-blue-500 rounded" style={{ width: barWidth(row.avgLine) }} />
                       </div>
-                      <div className="text-xs text-gray-600">Pass: {pct(row.passBar)}</div>
+                      <div className="text-xs text-gray-600">Tỷ lệ đạt: {pct(row.passBar)}</div>
                       <div className="h-2 bg-gray-100 rounded">
-                        <div
-                          className="h-2 bg-green-500 rounded"
-                          style={{ width: barWidth(row.passBar) }}
-                        />
+                        <div className="h-2 bg-green-500 rounded" style={{ width: barWidth(row.passBar) }} />
                       </div>
                     </div>
                   </div>
@@ -205,7 +192,7 @@ const ClassAnalyticsPanel = ({ classId, assignments }: ClassAnalyticsPanelProps)
 
           {gaugeData.length > 0 && (
             <div className="mt-4 text-xs text-gray-500">
-              Gauge mapping: {gaugeData.map((g) => `${g.label}: ${pct(g.value)}`).join(' | ')}
+              Quy đổi chỉ số: {gaugeData.map((g) => `${g.label}: ${pct(g.value)}`).join(' | ')}
             </div>
           )}
         </>

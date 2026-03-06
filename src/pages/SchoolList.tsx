@@ -325,7 +325,7 @@ const SchoolList = () => {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Thư điện tử</label>
                       <input
                         type="email"
                         name="email"

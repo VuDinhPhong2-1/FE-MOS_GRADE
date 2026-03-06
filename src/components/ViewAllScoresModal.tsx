@@ -137,9 +137,9 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 
   const excelHeaders = useMemo(
     () => [
-      'Ten Hoc Sinh',
+      'Tên học sinh',
       ...assignments.map((a) => `${a.name} (TD: ${a.maxScore})`),
-      'TONG DIEM',
+      'TỔNG ĐIỂM',
     ],
     [assignments]
   );
@@ -152,7 +152,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
           const score = row.calculatedScores[a.id];
           const errors = row.errorsByAssignment[a.id] || [];
           if (errors.length === 0) return score;
-          return `${score} | Loi: ${errors.join(' ; ')}`;
+          return `${score} | Lỗi: ${errors.join(' ; ')}`;
         }),
         `${row.totalScore}/${maxScoreTotal}`,
       ]),
@@ -163,17 +163,17 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
     () => [
       ...excelBody,
       [
-        'Diem thap nhat',
+        'Điểm thấp nhất',
         ...assignmentStats.map((s) => s.min),
         '',
       ],
       [
-        'Diem cao nhat',
+        'Điểm cao nhất',
         ...assignmentStats.map((s) => s.max),
         '',
       ],
       [
-        'Diem trung binh',
+        'Điểm trung bình',
         ...assignmentStats.map((s) => s.average),
         `${classAverageTotal}/${maxScoreTotal}`,
       ],
@@ -182,11 +182,11 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
   );
 
   const handleExportExcel = () => {
-    exportToExcel('BangDiemHocSinh.xlsx', 'Bang Diem', excelHeaders, excelBodyWithStats);
+    exportToExcel('BảngĐiểmHọcSinh.xlsx', 'Bảng Điểm', excelHeaders, excelBodyWithStats);
   };
 
   const handleExportPdf = () => {
-    exportToPdf('score-table', 'BangDiemHocSinh.pdf');
+    exportToPdf('score-table', 'BảngĐiểmHọcSinh.pdf');
   };
 
   if (!isOpen) return null;
@@ -200,9 +200,9 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
               SD
             </div>
             <div>
-              <h2 className="text-xl font-extrabold text-slate-800">Bang diem toan lop</h2>
+              <h2 className="text-xl font-extrabold text-slate-800">Bảng điểm toàn lớp</h2>
               <p className="text-sm text-slate-500">
-                {students.length} hoc sinh • {assignments.length} bai tap
+                {students.length} học sinh • {assignments.length} bài tập
               </p>
             </div>
           </div>
@@ -216,19 +216,19 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 
         <div className="px-6 pt-4 pb-2 grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3">
-            <div className="text-xs text-blue-600 uppercase font-semibold">Trung binh tong</div>
+            <div className="text-xs text-blue-600 uppercase font-semibold">Trung bình tổng</div>
             <div className="text-lg font-bold text-blue-800">
               {classAverageTotal}/{maxScoreTotal}
             </div>
           </div>
           <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3">
-            <div className="text-xs text-emerald-600 uppercase font-semibold">Cao nhat</div>
+            <div className="text-xs text-emerald-600 uppercase font-semibold">Cao nhất</div>
             <div className="text-lg font-bold text-emerald-800">
               {highestTotal}/{maxScoreTotal}
             </div>
           </div>
           <div className="rounded-xl border border-rose-100 bg-rose-50 px-4 py-3">
-            <div className="text-xs text-rose-600 uppercase font-semibold">Thap nhat</div>
+            <div className="text-xs text-rose-600 uppercase font-semibold">Thấp nhất</div>
             <div className="text-lg font-bold text-rose-800">
               {lowestTotal}/{maxScoreTotal}
             </div>
@@ -241,16 +241,16 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
               <thead className="sticky top-0 z-20">
                 <tr className="bg-slate-100 border-b border-slate-200">
                   <th className="sticky left-0 z-30 bg-slate-100 min-w-[220px] px-4 py-3 text-left font-semibold">
-                    TEN HOC SINH
+                    TÊN HỌC SINH
                   </th>
                   {assignments.map((a) => (
                     <th key={a.id} className="min-w-[130px] px-3 py-3 text-center font-semibold">
                       <div>{a.name}</div>
-                      <div className="text-[11px] text-slate-500 font-normal">(toi da {a.maxScore})</div>
+                      <div className="text-[11px] text-slate-500 font-normal">(tối đa {a.maxScore})</div>
                     </th>
                   ))}
                   <th className="sticky right-0 z-30 bg-blue-100 min-w-[140px] px-4 py-3 text-right font-bold text-blue-800">
-                    TONG DIEM
+                    TỔNG ĐIỂM
                   </th>
                 </tr>
               </thead>
@@ -273,7 +273,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
                           {assignmentErrors.length > 0 && (
                             <details className="mt-1 text-left text-xs text-amber-800">
                               <summary className="cursor-pointer font-medium">
-                                {assignmentErrors.length} loi
+                                {assignmentErrors.length} lỗi
                               </summary>
                               <ul className="mt-1 max-h-24 overflow-auto rounded border border-amber-200 bg-amber-50 p-2 text-[11px] list-disc list-inside">
                                 {assignmentErrors.map((errorItem, errorIdx) => (
@@ -293,7 +293,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 
                 <tr className="bg-rose-50 border-t border-rose-100 font-semibold">
                   <td className="sticky left-0 z-10 bg-rose-50 px-4 py-3 text-rose-700 border-r border-rose-100">
-                    Diem thap nhat
+                    Điểm thấp nhất
                   </td>
                   {assignmentStats.map((stat) => (
                     <td key={stat.assignmentId} className="px-3 py-3 text-center text-rose-600">
@@ -305,7 +305,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 
                 <tr className="bg-emerald-50 border-t border-emerald-100 font-semibold">
                   <td className="sticky left-0 z-10 bg-emerald-50 px-4 py-3 text-emerald-700 border-r border-emerald-100">
-                    Diem cao nhat
+                    Điểm cao nhất
                   </td>
                   {assignmentStats.map((stat) => (
                     <td key={stat.assignmentId} className="px-3 py-3 text-center text-emerald-600">
@@ -317,7 +317,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 
                 <tr className="bg-violet-50 border-t border-violet-100 font-semibold">
                   <td className="sticky left-0 z-10 bg-violet-50 px-4 py-3 text-violet-700 border-r border-violet-100">
-                    Diem trung binh
+                    Điểm trung bình
                   </td>
                   {assignmentStats.map((stat) => (
                     <td key={stat.assignmentId} className="px-3 py-3 text-center text-violet-700">
@@ -336,13 +336,13 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
             onClick={handleExportExcel}
             className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
           >
-            <FileDown size={18} /> Xuat Excel
+            <FileDown size={18} /> Xuất Excel
           </button>
           <button
             onClick={handleExportPdf}
             className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
           >
-            <FileDown size={18} /> Xuat PDF
+            <FileDown size={18} /> Xuất PDF
           </button>
           <button
             onClick={onClose}
@@ -357,3 +357,4 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 };
 
 export default ViewAllScoresModal;
+

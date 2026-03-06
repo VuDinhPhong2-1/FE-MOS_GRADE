@@ -38,7 +38,7 @@ const Layout = ({ children, navItems, userName }: LayoutProps) => {
       {sidebarOpen && (
         <button
           type="button"
-          aria-label="Close sidebar overlay"
+          aria-label="Đóng lớp phủ thanh bên"
           onClick={handleCloseSidebarOnMobile}
           className="fixed inset-0 z-30 bg-black/40 lg:hidden"
         />

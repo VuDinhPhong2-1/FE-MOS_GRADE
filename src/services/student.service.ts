@@ -1,4 +1,4 @@
-import type {
+﻿import type {
   BulkImportResult,
   BulkImportStudentRequest,
   Student,
@@ -26,7 +26,7 @@ class StudentService {
     );
 
     if (!response.ok) {
-      throw new Error('Khong the lay danh sach hoc sinh');
+      throw new Error('Không thể lấy danh sách học sinh');
     }
 
     return response.json();
@@ -43,7 +43,7 @@ class StudentService {
     );
 
     if (!response.ok) {
-      throw new Error('Khong tim thay hoc sinh');
+      throw new Error('Không tìm thấy học sinh');
     }
 
     return response.json();
@@ -60,7 +60,7 @@ class StudentService {
     );
 
     if (!response.ok) {
-      throw new Error('Khong the tao hoc sinh');
+      throw new Error('Không thể tạo học sinh');
     }
 
     return response.json();
@@ -78,7 +78,7 @@ class StudentService {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);
-      throw new Error(errorData?.message || 'Khong the import hoc sinh');
+      throw new Error(errorData?.message || 'Không thể nhập học sinh');
     }
 
     const result = await response.json();
@@ -97,7 +97,7 @@ class StudentService {
     );
 
     if (!response.ok) {
-      const message = await parseErrorMessage(response, 'Khong the cap nhat hoc sinh');
+      const message = await parseErrorMessage(response, 'Không thể cập nhật học sinh');
       throw new Error(message);
     }
 
@@ -115,7 +115,7 @@ class StudentService {
     );
 
     if (!response.ok) {
-      throw new Error('Khong the xoa hoc sinh');
+      throw new Error('Không thể xóa học sinh');
     }
   }
 
@@ -131,7 +131,7 @@ class StudentService {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);
-      throw new Error(errorData?.message || 'Khong the lay danh sach hoc sinh');
+      throw new Error(errorData?.message || 'Không thể lấy danh sách học sinh');
     }
 
     const result = await response.json();
@@ -140,3 +140,4 @@ class StudentService {
 }
 
 export default new StudentService();
+

@@ -1,4 +1,4 @@
-import type {
+﻿import type {
   BulkScoreRequest,
   CreateScoreRequest,
   ScoreResponse,
@@ -20,7 +20,7 @@ export const scoreService = {
       getAccessToken
     );
 
-    if (!response.ok) throw new Error('Khong the lay diem theo bai tap');
+    if (!response.ok) throw new Error('Không thể lấy điểm theo bài tập');
     return response.json();
   },
 
@@ -34,7 +34,7 @@ export const scoreService = {
       getAccessToken
     );
 
-    if (!response.ok) throw new Error('Khong the lay diem theo hoc sinh');
+    if (!response.ok) throw new Error('Không thể lấy điểm theo học sinh');
     return response.json();
   },
 
@@ -49,7 +49,7 @@ export const scoreService = {
       getAccessToken
     );
 
-    if (!response.ok) throw new Error('Khong the lay bao cao diem');
+    if (!response.ok) throw new Error('Không thể lấy báo cáo điểm');
     return response.json();
   },
 
@@ -65,7 +65,7 @@ export const scoreService = {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);
-      throw new Error(errorData?.message || 'Khong the cham diem');
+      throw new Error(errorData?.message || 'Không thể chấm điểm');
     }
 
     return response.json();
@@ -83,7 +83,7 @@ export const scoreService = {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);
-      throw new Error(errorData?.message || 'Khong the cham diem hang loat');
+      throw new Error(errorData?.message || 'Không thể chấm điểm hàng loạt');
     }
 
     return response.json();
@@ -99,7 +99,7 @@ export const scoreService = {
       getAccessToken
     );
 
-    if (!response.ok) throw new Error('Khong the xoa diem');
+    if (!response.ok) throw new Error('Không thể xóa điểm');
   },
 
   async getByClass(
@@ -112,8 +112,9 @@ export const scoreService = {
       getAccessToken
     );
 
-    if (!response.ok) throw new Error('Khong the lay danh sach diem theo lop');
+    if (!response.ok) throw new Error('Không thể lấy danh sách điểm theo lớp');
     return response.json();
   },
 };
+
 

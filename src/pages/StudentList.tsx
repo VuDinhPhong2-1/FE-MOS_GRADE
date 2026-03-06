@@ -175,7 +175,7 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
 
   const handleOpenEditStudent = (student: Student) => {
     if (student.id.startsWith('temp-')) {
-      alert('Hoc sinh chua duoc luu len he thong, khong the sua.');
+      alert('Học sinh chưa được lưu lên hệ thống, không thể sửa.');
       return;
     }
 
@@ -262,9 +262,9 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
       await loadStudents();
       setIsEditModalOpen(false);
       setEditingStudent(null);
-      setFlashMessage('Cap nhat hoc sinh thanh cong.');
+      setFlashMessage('Cập nhật học sinh thành công.');
     } catch (err) {
-      setEditError(err instanceof Error ? err.message : 'Cap nhat hoc sinh that bai.');
+      setEditError(err instanceof Error ? err.message : 'Cập nhật học sinh thất bại.');
     } finally {
       setIsEditSubmitting(false);
     }
@@ -327,7 +327,7 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
             ) : students.length === 0 ? (
               <tr>
                 <td colSpan={4} className="px-2 py-4 text-center text-gray-500">
-                  Chưa có học sinh nào. Vui lòng import file Excel.
+                  Chưa có học sinh nào. Vui lòng nhập file Excel.
                 </td>
               </tr>
             ) : (
@@ -398,7 +398,7 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
           htmlFor="import-excel"
           className="w-full sm:w-auto bg-green-600 text-white px-4 py-2 rounded-md cursor-pointer flex items-center justify-center gap-2 hover:bg-green-700"
         >
-          <Upload size={18} /> Import Excel
+          <Upload size={18} /> Nhập Excel
         </label>
 
         {studentNewList.length > 0 && (
@@ -492,8 +492,8 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
                   disabled={isEditSubmitting}
                   className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                 >
-                  <option value="Active">Active</option>
-                  <option value="Inactive">Inactive</option>
+                  <option value="Active">Hoạt động</option>
+                  <option value="Inactive">Ngừng hoạt động</option>
                 </select>
               </div>
 

@@ -16,10 +16,10 @@ const NavItem = ({ label, icon: Icon, path, onClick }: NavItemProps) => (
     onClick={onClick}
     className={({ isActive }) =>
       clsx(
-        "flex items-center gap-3 w-full px-4 py-3 text-left transition-colors",
+        'flex items-center gap-3 w-full px-4 py-3 text-left transition-colors',
         isActive
-          ? "bg-blue-50 text-blue-600 border-r-4 border-blue-600"
-          : "text-gray-600 hover:bg-gray-50"
+          ? 'bg-blue-50 text-blue-600 border-r-4 border-blue-600'
+          : 'text-gray-600 hover:bg-gray-50'
       )
     }
   >
@@ -39,7 +39,7 @@ const Sidebar = ({ isOpen, navItems, onNavigate }: SidebarProps) => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    const confirmed = window.confirm('bạn có chắc chắn muốn đăng xuất không?');
+    const confirmed = window.confirm('Bạn có chắc chắn muốn đăng xuất không?');
     if (!confirmed) return;
 
     logout();
@@ -49,8 +49,8 @@ const Sidebar = ({ isOpen, navItems, onNavigate }: SidebarProps) => {
   return (
     <aside
       className={clsx(
-        "bg-white w-64 shadow-md flex-shrink-0 transition-all duration-300 flex flex-col fixed lg:relative inset-y-0 left-0 z-40 transform lg:transform-none",
-        isOpen ? "translate-x-0" : "-translate-x-full lg:-ml-64"
+        'bg-white w-64 shadow-md flex-shrink-0 transition-all duration-300 flex flex-col fixed lg:relative inset-y-0 left-0 z-40 transform lg:transform-none',
+        isOpen ? 'translate-x-0' : '-translate-x-full lg:-ml-64'
       )}
     >
       <div className="p-6 border-b border-gray-100 flex items-center gap-2">

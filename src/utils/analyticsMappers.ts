@@ -6,9 +6,9 @@ import type {
 
 export function mapOverviewToGaugeData(d: ClassAnalyticsOverviewResponse) {
   return [
-    { label: 'Average', value: d.averagePercentage },
-    { label: 'Pass Rate', value: d.passRate },
-    { label: 'Warning Rate', value: d.warningRate },
+    { label: 'Trung bình', value: d.averagePercentage },
+    { label: 'Tỷ lệ đạt', value: d.passRate },
+    { label: 'Tỷ lệ cảnh báo', value: d.warningRate },
   ];
 }
 

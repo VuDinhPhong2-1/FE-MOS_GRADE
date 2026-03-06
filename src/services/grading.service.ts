@@ -12,7 +12,7 @@ interface GradingRequestMeta {
 const buildGradingUrl = (gradingEndpoint: string): string => {
   const raw = gradingEndpoint.trim();
   if (!raw) {
-    throw new Error('Grading endpoint is empty');
+    throw new Error('Đường dẫn chấm điểm đang trống');
   }
 
   if (/^https?:\/\//i.test(raw)) {
@@ -57,7 +57,7 @@ const parseErrorMessage = async (response: Response): Promise<string> => {
     return text.trim();
   }
 
-  return `HTTP ${response.status}: Khong the cham diem`;
+  return `HTTP ${response.status}: Không thể chấm điểm`;
 };
 
 export const gradingService = {

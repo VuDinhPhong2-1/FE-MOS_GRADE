@@ -1,4 +1,4 @@
-import { API_BASE_URL } from '../config/api';
+﻿import { API_BASE_URL } from '../config/api';
 import type { CreateSchoolRequest, School } from '../types';
 import { authFetch } from './auth-fetch';
 
@@ -14,7 +14,7 @@ export const schoolService = {
     );
 
     if (!response.ok) {
-      throw new Error('Khong the lay danh sach truong');
+      throw new Error('Không thể lấy danh sách trường');
     }
 
     return response.json();
@@ -36,7 +36,7 @@ export const schoolService = {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);
-      throw new Error(errorData?.message || 'Khong the tao truong');
+      throw new Error(errorData?.message || 'Không thể tạo trường');
     }
 
     return response.json();
@@ -59,7 +59,7 @@ export const schoolService = {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);
-      throw new Error(errorData?.message || 'Khong the cap nhat truong');
+      throw new Error(errorData?.message || 'Không thể cập nhật trường');
     }
 
     return response.json();
@@ -79,7 +79,8 @@ export const schoolService = {
     );
 
     if (!response.ok) {
-      throw new Error('Khong the xoa truong');
+      throw new Error('Không thể xóa trường');
     }
   },
 };
+

@@ -33,7 +33,7 @@ export const analyticsService = {
     );
 
     if (!response.ok) {
-      throw new Error(await parseError(response, 'Khong the tai tong quan lop'));
+      throw new Error(await parseError(response, 'Không thể tải tổng quan lớp'));
     }
 
     return response.json();
@@ -56,7 +56,7 @@ export const analyticsService = {
     );
 
     if (!response.ok) {
-      throw new Error(await parseError(response, 'Khong the tai danh sach weak tasks'));
+      throw new Error(await parseError(response, 'Không thể tải danh sách câu yếu'));
     }
 
     return response.json();
@@ -73,7 +73,7 @@ export const analyticsService = {
     );
 
     if (!response.ok) {
-      throw new Error(await parseError(response, 'Khong the tai hieu suat theo project'));
+      throw new Error(await parseError(response, 'Không thể tải hiệu suất theo dự án'));
     }
 
     return response.json();

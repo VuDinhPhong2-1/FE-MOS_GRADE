@@ -59,7 +59,7 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
     if (!name) return 'Tên lớp là bắt buộc.';
 
     if (!OBJECT_ID_REGEX.test(schoolIdForCreate)) {
-      return 'School không hợp lệ.';
+      return 'Trường không hợp lệ.';
     }
 
     if (typeof formData.maxStudents === 'number') {
@@ -393,7 +393,7 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center justify-between">
                     <span className="text-gray-500">Khối:</span>
-                    <span className="font-medium">{cls.grade || 'N/A'}</span>
+                    <span className="font-medium">{cls.grade || 'Không có'}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-gray-500">Sĩ số:</span>
@@ -403,7 +403,7 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-gray-500">Năm học:</span>
-                    <span className="font-medium">{cls.academicYear || 'N/A'}</span>
+                    <span className="font-medium">{cls.academicYear || 'Không có'}</span>
                   </div>
                 </div>
 

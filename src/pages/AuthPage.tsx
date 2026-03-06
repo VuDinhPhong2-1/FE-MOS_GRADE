@@ -38,12 +38,12 @@ export default function AuthPage() {
       // ignore
     }
 
-    return 'Co loi xay ra';
+    return 'Có lỗi xảy ra';
   };
 
   const handleAuthSuccess = (data: LoginResponse) => {
     if (!data.accessToken || !data.refreshToken) {
-      throw new Error('Server khong tra ve token');
+      throw new Error('Máy chủ không trả về token');
     }
 
     login(
@@ -103,7 +103,7 @@ export default function AuthPage() {
       setError('');
       const idToken = credentialResponse.credential;
       if (!idToken) {
-        throw new Error('Khong lay duoc Google idToken');
+        throw new Error('Không lấy được Google idToken');
       }
 
       const response = await fetch(`${AUTH_API_BASE_URL}/google-login`, {
@@ -119,7 +119,7 @@ export default function AuthPage() {
       const data: LoginResponse = await response.json();
       handleAuthSuccess(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Dang nhap Google that bai');
+      setError(err instanceof Error ? err.message : 'Đăng nhập Google thất bại');
     }
   };
 
@@ -143,7 +143,7 @@ export default function AuthPage() {
               <input
                 type="email"
                 name="email"
-                placeholder="Email"
+                placeholder="Thư điện tử"
                 required
                 className="w-full outline-none"
                 onChange={handleChange}
@@ -180,7 +180,7 @@ export default function AuthPage() {
               type="button"
               onClick={() => setShowPassword((prev) => !prev)}
               className="ml-2 text-gray-400 hover:text-gray-600"
-              aria-label={showPassword ? 'An mat khau' : 'Hien mat khau'}
+              aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
             >
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
@@ -207,7 +207,7 @@ export default function AuthPage() {
               <div className="flex justify-center">
                 <GoogleLogin
                   onSuccess={handleGoogleLoginSuccess}
-                  onError={() => setError('Dang nhap Google that bai')}
+                  onError={() => setError('Đăng nhập Google thất bại')}
                   useOneTap={false}
                 />
               </div>
@@ -216,7 +216,7 @@ export default function AuthPage() {
 
           {isLogin && !hasGoogleClientId && (
             <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">
-              Google Login chua duoc cau hinh. Dat bien VITE_GOOGLE_CLIENT_ID trong file .env.
+              Đăng nhập Google chưa được cấu hình. Đặt biến `VITE_GOOGLE_CLIENT_ID` trong file `.env`.
             </div>
           )}
         </form>

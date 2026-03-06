@@ -72,7 +72,7 @@ export const exportToExcel = (
 export const exportToPdf = async (elementId: string, fileName: string) => {
   const input = document.getElementById(elementId);
   if (!input) {
-    console.error(`Khong tim thay phan tu voi ID: ${elementId}`);
+    console.error(`Không tìm thấy phần tử với ID: ${elementId}`);
     return;
   }
 
@@ -144,8 +144,8 @@ export const exportToPdf = async (elementId: string, fileName: string) => {
 
     pdf.save(ensureExt(fileName, '.pdf'));
   } catch (error) {
-    console.error('Loi khi xuat PDF:', error);
-    alert('Khong the xuat file PDF. Vui long thu lai.');
+    console.error('Lỗi khi xuất PDF:', error);
+    alert('Không thể xuất file PDF. Vui lòng thử lại.');
   } finally {
     if (cloneWrapper.parentNode) {
       cloneWrapper.parentNode.removeChild(cloneWrapper);

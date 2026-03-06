@@ -260,8 +260,8 @@ const GradingModal: React.FC<GradingModalProps> = ({
             const data = await assignmentService.getByClass(classId, getAccessToken);
             setAssignments(data);
         } catch (error) {
-            console.error('Error loading assignments:', error);
-            alert('Khong the tai danh sach bai tap!');
+            console.error('Lỗi khi tải danh sách bài tập:', error);
+            alert('Không thể tải danh sách bài tập!');
         }
     };
 
@@ -270,7 +270,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
             const data = await assignmentService.getGradingEndpoints(getAccessToken);
             setGradingEndpoints(data);
         } catch (error) {
-            console.error('Error loading grading endpoints:', error);
+            console.error('Lỗi khi tải danh sách đầu chấm điểm:', error);
         }
     };
 
@@ -296,7 +296,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                 return newMap;
             });
         } catch (error) {
-            console.error('Error loading scores:', error);
+            console.error('Lỗi khi tải điểm:', error);
         }
     };
 
@@ -334,8 +334,8 @@ const GradingModal: React.FC<GradingModalProps> = ({
 
             setMultiScores(nextMap);
         } catch (error) {
-            console.error('Error loading multiple assignment scores:', error);
-            alert('Khong the tai diem cho nhieu bai tap!');
+            console.error('Lỗi khi tải điểm của nhiều bài tập:', error);
+            alert('Không thể tải điểm cho nhiều bài tập!');
         }
     };
 
@@ -419,7 +419,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
 
         if (files.length === 0) return;
         if (!selectedAssignment) {
-            alert('Vui long chon bai tap truoc khi chon nhieu file.');
+            alert('Vui lòng chọn bài tập trước khi chọn nhiều file.');
             return;
         }
         if (isBulkUploading) return;
@@ -493,7 +493,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
 
     const handleAutoGrade = async (studentId: string, studentFile: File) => {
         if (!selectedAssignment) {
-            alert('Vui long chon bai tap truoc khi cham diem.');
+            alert('Vui lòng chọn bài tập trước khi chấm điểm.');
             return;
         }
         const selectedAssignmentData = assignments.find((a) => a.id === selectedAssignment);
@@ -548,8 +548,8 @@ const GradingModal: React.FC<GradingModalProps> = ({
                 await saveScoreForStudent(studentId, result.totalScore, autoErrors);
             }
         } catch (error: unknown) {
-            const errorMessage = error instanceof Error ? error.message : 'Loi khong xac dinh';
-            console.error('Loi cham diem:', error);
+            const errorMessage = error instanceof Error ? error.message : 'Lỗi không xác định';
+            console.error('Lỗi cham diem:', error);
             setStudentGradingStates((prev) => {
                 const newMap = new Map(prev);
                 const currentState = newMap.get(studentId);
@@ -623,7 +623,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                     assignmentMap.set(studentId, {
                         ...current,
                         isGrading: false,
-                        error: 'Khong tim thay gradingApiEndpoint cho bai tap.',
+                        error: 'Không tìm thấy gradingApiEndpoint cho bài tập.',
                     });
                 }
                 next.set(assignmentId, assignmentMap);
@@ -663,7 +663,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
             const autoErrors = extractAutoGradingErrors(result);
             handleMultiScoreChange(assignmentId, studentId, result.totalScore, autoErrors);
         } catch (error: unknown) {
-            const errorMessage = error instanceof Error ? error.message : 'Loi khong xac dinh';
+            const errorMessage = error instanceof Error ? error.message : 'Lỗi không xác định';
             setMultiAutoStates((prev) => {
                 const next = new Map(prev);
                 const assignmentMap = new Map(next.get(assignmentId) || new Map());
@@ -868,13 +868,13 @@ const GradingModal: React.FC<GradingModalProps> = ({
                 getAccessToken
             );
         } catch (error) {
-            console.error('Loi luu diem:', error);
+            console.error('Lỗi luu diem:', error);
         }
     };
 
     const handleSaveAllScores = async () => {
         if (!selectedAssignment) {
-            alert('Vui long chon bai tap!');
+            alert('Vui lòng chọn bài tập!');
             return;
         }
 
@@ -902,8 +902,8 @@ const GradingModal: React.FC<GradingModalProps> = ({
             if (onSuccess) onSuccess();
             handleClose();
         } catch (error) {
-            console.error('Error saving scores:', error);
-            alert('Khong the luu diem!');
+            console.error('Lỗi khi lưu điểm:', error);
+            alert('Không thể lưu điểm!');
         } finally {
             setLoading(false);
         }
@@ -911,7 +911,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
 
     const handleSaveMultipleAssignments = async () => {
         if (multiAssignmentIds.length === 0) {
-            alert('Vui long chon it nhat 1 bai tap!');
+            alert('Vui lòng chọn ít nhất 1 bài tập!');
             return;
         }
 
@@ -946,8 +946,8 @@ const GradingModal: React.FC<GradingModalProps> = ({
             if (onSuccess) onSuccess();
             handleClose();
         } catch (error) {
-            console.error('Error saving multiple assignment scores:', error);
-            alert('Khong the luu diem cho nhieu bai tap!');
+            console.error('Lỗi khi lưu điểm nhiều bài tập:', error);
+            alert('Không thể lưu điểm cho nhiều bài tập!');
         } finally {
             setLoading(false);
         }
@@ -955,11 +955,11 @@ const GradingModal: React.FC<GradingModalProps> = ({
 
     const handleCreateAssignment = async () => {
         if (!newAssignment.name.trim()) {
-            alert('Vui long nhap ten bai tap!');
+            alert('Vui lòng nhập tên bài tập!');
             return;
         }
         if (!newAssignment.gradingApiEndpoint) {
-            alert('Vui long chon Project de cham diem tu dong!');
+            alert('Vui lòng chọn dự án để chấm điểm tự động!');
             return;
         }
 
@@ -974,10 +974,10 @@ const GradingModal: React.FC<GradingModalProps> = ({
                 maxScore: 10,
                 gradingType: 'auto',
             });
-            alert('Tao bai tap thanh cong!');
+            alert('Tạo bài tập thanh cong!');
         } catch (error) {
-            console.error('Error creating assignment:', error);
-            alert('Khong the tao bai tap!');
+            console.error('Lỗi khi tạo bài tập:', error);
+            alert('Không thể tạo bài tập!');
         } finally {
             setLoading(false);
         }
@@ -1041,7 +1041,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                             value={newAssignment.name}
                             onChange={(e) => setNewAssignment({ ...newAssignment, name: e.target.value })}
                             className="w-full border border-gray-300 rounded-md px-3 py-2"
-                            placeholder="Vi du: Bai tap Excel Project 09"
+                            placeholder="Ví dụ: Bài tập Excel dự án 09"
                         />
                     </div>
 
@@ -1065,7 +1065,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                             readOnly
                             style={{ backgroundColor: '#f1f5f9' }}
                         />
-                        <span className="text-xs text-blue-600">Diem toi da duoc lay tu dong tu project.</span>
+                        <span className="text-xs text-blue-600">Điểm tối đa được lấy tự động từ dự án.</span>
                     </div>
 
                 </div>
@@ -1073,7 +1073,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-3">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Chọn Project *
+                            Chọn dự án *
                         </label>
                         <select
                             value={newAssignment.gradingApiEndpoint || ''}
@@ -1088,7 +1088,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                             }}
                             className="w-full border border-gray-300 rounded-md px-3 py-2"
                         >
-                            <option value="">-- Chon Project --</option>
+                            <option value="">-- Chọn dự án --</option>
                             {gradingEndpoints.map(ep => (
                                 <option key={ep.endpoint} value={ep.endpoint}>
                                     {ep.displayName}
@@ -1105,7 +1105,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                         onChange={(e) => setNewAssignment({ ...newAssignment, description: e.target.value })}
                         className="w-full border border-gray-300 rounded-md px-3 py-2"
                         rows={2}
-                        placeholder="Mo ta bai tap..."
+                        placeholder="Mô tả bài tập..."
                     />
                 </div>
 
@@ -1122,7 +1122,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                     ) : (
                         <>
                             <Plus size={18} />
-                            Tao bai tap
+                            Tạo bài tập
                         </>
                     )}
                 </button>
@@ -1141,10 +1141,10 @@ const GradingModal: React.FC<GradingModalProps> = ({
                     <thead className="bg-gray-50">
                         <tr>
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">STT</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ho va ten</th>
-                            <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">File bai lam</th>
-                            <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Diem</th>
-                            <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Trang thai</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Họ và tên</th>
+                            <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">File bài làm</th>
+                            <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Điểm</th>
+                            <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Trạng thái</th>
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
@@ -1188,10 +1188,10 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                                         : 'bg-blue-50 text-blue-700 border-blue-200 cursor-pointer hover:bg-blue-100'
                                                 }`}
                                             >
-                                                {state?.studentFile ? 'Doi file bai lam' : 'Chon file bai lam'}
+                                                {state?.studentFile ? 'Đổi file bài làm' : 'Chọn file bài làm'}
                                             </label>
                                             <p className="mt-1 text-[11px] text-gray-500">
-                                                Keo tha file vao day
+                                                Kéo thả file vào đây
                                             </p>
                                             {state?.studentFile && (
                                                 <p className="text-xs text-gray-600 mt-1 truncate">
@@ -1218,25 +1218,25 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                         )}
                                         {state?.gradingResult && (
                                             <p className="text-xs text-green-600 mt-1">
-                                                Auto: {state.gradingResult.totalScore}/{state.gradingResult.maxScore}
+                                                Tự động: {state.gradingResult.totalScore}/{state.gradingResult.maxScore}
                                             </p>
                                         )}
                                     </td>
                                     <td className="px-4 py-3 text-center">
                                         {state?.isGrading ? (
-                                            <span className="text-blue-600 text-sm">Dang cham...</span>
+                                            <span className="text-blue-600 text-sm">Đang chấm...</span>
                                         ) : state?.error ? (
                                             <span className="text-red-600 text-sm flex items-center gap-1 justify-center">
                                                 <XCircle size={16} />
-                                                Loi
+                                                Lỗi
                                             </span>
                                         ) : state?.gradingResult ? (
                                             <span className="text-green-600 text-sm flex items-center gap-1 justify-center">
                                                 <CheckCircle size={16} />
-                                                Hoan thanh
+                                                Hoàn thành
                                             </span>
                                         ) : (
-                                            <span className="text-gray-400 text-sm">Cho file</span>
+                                            <span className="text-gray-400 text-sm">Chờ file</span>
                                         )}
                                     </td>
                                 </tr>
@@ -1262,17 +1262,17 @@ const GradingModal: React.FC<GradingModalProps> = ({
 
             <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Chon bai tap
+                    Chọn bài tập
                 </label>
                 <select
                     value={selectedAssignment}
                     onChange={(e) => setSelectedAssignment(e.target.value)}
                     className="w-full border border-gray-300 rounded-md px-3 py-2"
                 >
-                    <option value="">-- Chon bai tap --</option>
+                    <option value="">-- Chọn bài tập --</option>
                     {assignments.filter((a) => a.gradingType === 'auto').map((a) => (
                         <option key={a.id} value={a.id}>
-                            {a.name} (Auto)
+                            {a.name} (Tự động)
                         </option>
                     ))}
                 </select>
@@ -1300,17 +1300,17 @@ const GradingModal: React.FC<GradingModalProps> = ({
                         {isBulkUploading ? (
                             <>
                                 <Loader2 size={16} className="animate-spin" />
-                                Dang cham nhieu file...
+                                Đang chấm nhiều file...
                             </>
                         ) : (
                             <>
                                 <Upload size={16} />
-                                Chon nhieu file 1 lan
+                                Chọn nhiều file 1 lần
                             </>
                         )}
                     </label>
                     <p className="mt-2 text-xs text-blue-700">
-                        He thong map file theo thu tu danh sach hoc sinh tren bang: file 1 -&gt; hoc sinh 1, file 2 -&gt; hoc sinh 2...
+                        Hệ thống ghép file theo thứ tự danh sách học sinh trên bảng: file 1 -&gt; học sinh 1, file 2 -&gt; học sinh 2...
                     </p>
                 </div>
             )}
@@ -1329,7 +1329,9 @@ const GradingModal: React.FC<GradingModalProps> = ({
                 .toLowerCase();
             return haystack.includes(normalizedQuery);
         });
-        const selectedAssignments = assignments.filter((a) => multiAssignmentIds.includes(a.id));
+        const selectedAssignments = multiAssignmentIds
+            .map((id) => assignments.find((a) => a.id === id))
+            .filter((a): a is Assignment => Boolean(a));
 
         return (
             <div className="flex-1 overflow-y-auto p-6">
@@ -1352,7 +1354,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                 Chọn các bài tập cần chấm
                             </label>
                             <p className="text-xs text-gray-600 mt-1">
-                                Da chon {multiAssignmentIds.length}/{autoAssignments.length} bai auto
+                                Đã chọn {multiAssignmentIds.length}/{autoAssignments.length} bài tự động
                             </p>
                         </div>
                         <div className="flex gap-2">
@@ -1362,7 +1364,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                 disabled={isSelectingAssignments || autoAssignments.length === 0}
                                 className="px-3 py-1.5 text-xs rounded-md border border-blue-200 text-blue-700 bg-white hover:bg-blue-50 disabled:opacity-50"
                             >
-                                Chon tat ca
+                                Chọn tất cả
                             </button>
                             <button
                                 type="button"
@@ -1370,7 +1372,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                 disabled={isSelectingAssignments || multiAssignmentIds.length === 0}
                                 className="px-3 py-1.5 text-xs rounded-md border border-gray-300 text-gray-700 bg-white hover:bg-gray-100 disabled:opacity-50"
                             >
-                                Bo chon
+                                Bỏ chọn
                             </button>
                         </div>
                     </div>
@@ -1380,7 +1382,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                         <input
                             value={multiAssignmentQuery}
                             onChange={(e) => setMultiAssignmentQuery(e.target.value)}
-                            placeholder="Tim theo ten bai tap, mo ta, endpoint..."
+                            placeholder="Tìm theo tên bài tập, mô tả, đường dẫn API..."
                             className="w-full border border-gray-300 rounded-md pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
                         />
                     </div>
@@ -1388,7 +1390,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                     {isSelectingAssignments && (
                         <div className="mt-2 text-xs text-blue-600 flex items-center gap-1">
                             <Loader2 size={13} className="animate-spin" />
-                            Dang cap nhat danh sach bai tap...
+                            Đang cập nhật danh sách bài tập...
                         </div>
                     )}
 
@@ -1424,7 +1426,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                             {isSelected && (
                                                 <span className="inline-flex items-center gap-1 text-[11px] text-blue-700">
                                                     <Check size={12} />
-                                                    Da chon
+                                                    Đã chọn
                                                 </span>
                                             )}
                                         </div>
@@ -1436,7 +1438,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
 
                     {filteredAutoAssignments.length === 0 && (
                         <div className="mt-3 text-sm text-gray-500">
-                            Khong tim thay bai tap phu hop voi tu khoa "{multiAssignmentQuery}".
+                            Không tìm thấy bài tập phù hợp với từ khóa "{multiAssignmentQuery}".
                         </div>
                     )}
                 </div>
@@ -1447,7 +1449,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                             <thead className="bg-gray-50">
                                 <tr>
                                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">STT</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ho va ten</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Họ và tên</th>
                                     {selectedAssignments.map((assignment) => (
                                         <th
                                             key={assignment.id}
@@ -1502,10 +1504,10 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                                         }`}
                                                     >
                                                         <Upload size={12} />
-                                                        Nhieu file / 1 hoc sinh
+                                                        Nhiều file / 1 học sinh
                                                     </label>
                                                     <p className="mt-1 text-[11px] text-gray-500">
-                                                        Keo-tha nhieu file vao day de map theo thu tu bai da chon.
+                                                        Kéo-thả nhiều file vào đây để ghép theo thứ tự bài đã chọn.
                                                     </p>
                                                 </div>
                                             </td>
@@ -1573,24 +1575,24 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                                                             : 'bg-blue-50 text-blue-700 border-blue-200 cursor-pointer hover:bg-blue-100'
                                                                     }`}
                                                                 >
-                                                                    {autoState?.studentFile ? 'Doi file bai lam' : 'Chon file bai lam'}
+                                                                    {autoState?.studentFile ? 'Đổi file bài làm' : 'Chọn file bài làm'}
                                                                 </label>
-                                                                <p className="text-[11px] text-gray-500">Keo tha file vao day</p>
+                                                                <p className="text-[11px] text-gray-500">Kéo thả file vào đây</p>
                                                                 {autoState?.studentFile && (
                                                                     <p className="text-xs text-gray-600 truncate">
                                                                         {autoState.studentFile.name}
                                                                     </p>
                                                                 )}
                                                                 {autoState?.isGrading && (
-                                                                    <p className="text-xs text-blue-600">Dang cham...</p>
+                                                                    <p className="text-xs text-blue-600">Đang chấm...</p>
                                                                 )}
                                                                 {autoState?.gradingResult && (
                                                                     <p className="text-xs text-green-600">
-                                                                        Auto: {autoState.gradingResult.totalScore}/{autoState.gradingResult.maxScore}
+                                                                        Tự động: {autoState.gradingResult.totalScore}/{autoState.gradingResult.maxScore}
                                                                     </p>
                                                                 )}
                                                                 {autoState?.error && (
-                                                                    <p className="text-xs text-red-600">Loi: {autoState.error}</p>
+                                                                    <p className="text-xs text-red-600">Lỗi: {autoState.error}</p>
                                                                 )}
                                                                 {renderAutoErrorDropdown(cellErrors)}
                                                             </div>
@@ -1605,7 +1607,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                         </table>
                     </div>
                 ) : (
-                    <div className="text-sm text-gray-500">Chua chon bai tap nao.</div>
+                    <div className="text-sm text-gray-500">Chưa chọn bài tập nào.</div>
                 )}
             </div>
         );
@@ -1684,6 +1686,8 @@ const GradingModal: React.FC<GradingModalProps> = ({
 };
 
 export default GradingModal;
+
+
 
 
 

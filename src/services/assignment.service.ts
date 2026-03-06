@@ -13,32 +13,32 @@ const jsonHeaders = { 'Content-Type': 'application/json' };
 const fallbackGradingEndpoints: GradingEndpointInfo[] = [
   {
     endpoint: 'project01',
-    displayName: 'Project 01',
-    description: 'Cham diem Project 01',
+    displayName: 'Dự án 01',
+    description: 'Chấm điểm dự án 01',
     maxScore: 20,
   },
   {
     endpoint: 'project02',
-    displayName: 'Project 02',
-    description: 'Cham diem Project 02',
+    displayName: 'Dự án 02',
+    description: 'Chấm điểm dự án 02',
     maxScore: 28,
   },
   {
     endpoint: 'project03',
-    displayName: 'Project 03',
-    description: 'Cham diem Project 03 (Task 1-5 tu dong, Task 6 thu cong)',
+    displayName: 'Dự án 03',
+    description: 'Chấm điểm dự án 03 (câu 1-5 tự động, câu 6 thủ công)',
     maxScore: 20,
   },
   {
     endpoint: 'project04',
-    displayName: 'Project 04',
-    description: 'Cham diem Project 04',
+    displayName: 'Dự án 04',
+    description: 'Chấm điểm dự án 04',
     maxScore: 28,
   },
   {
     endpoint: 'project09',
-    displayName: 'Project 09',
-    description: 'Cham diem Project 09',
+    displayName: 'Dự án 09',
+    description: 'Chấm điểm dự án 09',
     maxScore: 32,
   },
 ];
@@ -59,7 +59,7 @@ const mergeEndpointFallback = (items: GradingEndpointInfo[]): GradingEndpointInf
   });
 
   return Array.from(map.values()).sort((a, b) =>
-    a.displayName.localeCompare(b.displayName, 'en', { numeric: true, sensitivity: 'base' })
+    a.displayName.localeCompare(b.displayName, 'vi', { numeric: true, sensitivity: 'base' })
   );
 };
 
@@ -75,7 +75,7 @@ export const assignmentService = {
     );
 
     if (!response.ok) {
-      throw new Error('Khong the lay danh sach bai tap');
+      throw new Error('Không thể lấy danh sách bài tập');
     }
 
     return response.json();
@@ -92,7 +92,7 @@ export const assignmentService = {
     );
 
     if (!response.ok) {
-      throw new Error('Khong the lay danh sach bai tap voi thong ke');
+      throw new Error('Không thể lấy danh sách bài tập kèm thống kê');
     }
 
     return response.json();
@@ -109,7 +109,7 @@ export const assignmentService = {
     );
 
     if (!response.ok) {
-      throw new Error('Khong the lay thong tin bai tap');
+      throw new Error('Không thể lấy thông tin bài tập');
     }
 
     return response.json();
@@ -127,7 +127,7 @@ export const assignmentService = {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);
-      throw new Error(errorData?.message || 'Khong the tao bai tap');
+      throw new Error(errorData?.message || 'Không thể tạo bài tập');
     }
 
     return response.json();
@@ -146,7 +146,7 @@ export const assignmentService = {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);
-      throw new Error(errorData?.message || 'Khong the cap nhat bai tap');
+      throw new Error(errorData?.message || 'Không thể cập nhật bài tập');
     }
 
     return response.json();
@@ -163,7 +163,7 @@ export const assignmentService = {
     );
 
     if (!response.ok) {
-      throw new Error('Khong the xoa bai tap');
+      throw new Error('Không thể xóa bài tập');
     }
   },
 
