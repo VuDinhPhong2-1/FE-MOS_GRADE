@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, useCallback, type ChangeEvent } from 'react';
+import { useState, useEffect, useMemo, useCallback, type ChangeEvent } from 'react';
 import * as XLSX from 'xlsx';
 import type { Class } from '../types/class.types';
 import type { Assignment } from '../types/assignment.types';
@@ -11,7 +11,7 @@ import { useAuth } from '../context/AuthContext';
 import GradingModal from '../components/GradingModal';
 import ViewAllScoresModal from '../components/ViewAllScoresModal';
 import ClassAnalyticsPanel from '../components/ClassAnalyticsPanel';
-import { Upload, FileCheck2, Eye, Save, RefreshCw, Pencil, X, Loader2, CheckCircle2, XCircle, Search, ArrowUp, ArrowDown, UserPlus, Trash2 } from 'lucide-react';
+import { Upload, FileCheck2, Eye, Save, RefreshCw, Pencil, X, Loader2, CheckCircle2, XCircle, Search, UserPlus, Trash2 } from 'lucide-react';
 
 type EditStudentForm = {
   middleName: string;
@@ -53,9 +53,8 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
     classId: '',
   });
   const [searchKeyword, setSearchKeyword] = useState('');
-  const [sortMode, setSortMode] = useState<'default' | 'name-asc' | 'name-desc' | 'status-active' | 'status-inactive'>('default');
-  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
-  const rowRefs = useRef(new Map<string, HTMLTableRowElement>());
+  const [nameSortDirection, setNameSortDirection] = useState<'none' | 'asc' | 'desc'>('none');
+  const [statusSortDirection, setStatusSortDirection] = useState<'none' | 'active-first' | 'inactive-first'>('none');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isAddSubmitting, setIsAddSubmitting] = useState(false);
   const [addError, setAddError] = useState('');
@@ -104,78 +103,41 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
       list = list.filter((st) => normalizeText(`${st.middleName} ${st.firstName}`).includes(keyword));
     }
 
-    if (sortMode === 'name-asc') {
+    if (nameSortDirection === 'asc') {
       list.sort((a, b) => `${a.middleName} ${a.firstName}`.localeCompare(`${b.middleName} ${b.firstName}`, 'vi'));
-    } else if (sortMode === 'name-desc') {
+    } else if (nameSortDirection === 'desc') {
       list.sort((a, b) => `${b.middleName} ${b.firstName}`.localeCompare(`${a.middleName} ${a.firstName}`, 'vi'));
-    } else if (sortMode === 'status-active') {
+    } else if (statusSortDirection === 'active-first') {
       list.sort((a, b) => Number(isStudentActive(b)) - Number(isStudentActive(a)));
-    } else if (sortMode === 'status-inactive') {
+    } else if (statusSortDirection === 'inactive-first') {
       list.sort((a, b) => Number(isStudentActive(a)) - Number(isStudentActive(b)));
     }
 
     return list;
-  }, [students, searchKeyword, sortMode, isStudentActive]);
+  }, [students, searchKeyword, nameSortDirection, statusSortDirection, isStudentActive]);
 
   const activeStudents = useMemo(
     () => students.filter((student) => isStudentActive(student)),
     [students, isStudentActive]
   );
 
-  const selectedIndex = useMemo(
-    () => displayedStudents.findIndex((st) => st.id === selectedStudentId),
-    [displayedStudents, selectedStudentId]
-  );
+  const toggleNameSort = () => {
+    setStatusSortDirection('none');
+    setNameSortDirection((prev) => {
+      if (prev === 'none') return 'asc';
+      if (prev === 'asc') return 'desc';
+      return 'none';
+    });
+  };
 
-  const scrollToStudentRow = useCallback((studentId: string) => {
-    const row = rowRefs.current.get(studentId);
-    if (row) {
-      row.scrollIntoView({ block: 'center', behavior: 'smooth' });
-    }
-  }, []);
-
-  const moveSelection = useCallback((direction: -1 | 1) => {
-    if (displayedStudents.length === 0) return;
-    let nextIndex = selectedIndex;
-
-    if (nextIndex < 0) {
-      nextIndex = direction > 0 ? 0 : displayedStudents.length - 1;
-    } else {
-      nextIndex = Math.max(0, Math.min(displayedStudents.length - 1, nextIndex + direction));
-    }
-
-    const nextStudent = displayedStudents[nextIndex];
-    if (!nextStudent) return;
-
-    setSelectedStudentId(nextStudent.id);
-    scrollToStudentRow(nextStudent.id);
-  }, [displayedStudents, selectedIndex, scrollToStudentRow]);
-
-  useEffect(() => {
-    if (displayedStudents.length === 0) {
-      setSelectedStudentId(null);
-      return;
-    }
-
-    if (!selectedStudentId || !displayedStudents.some((st) => st.id === selectedStudentId)) {
-      setSelectedStudentId(displayedStudents[0].id);
-    }
-  }, [displayedStudents, selectedStudentId]);
-
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
-      const target = event.target as HTMLElement | null;
-      const editable = target?.closest('input, textarea, select, [contenteditable="true"]');
-      if (editable) return;
-
-      event.preventDefault();
-      moveSelection(event.key === 'ArrowUp' ? -1 : 1);
-    };
-
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [moveSelection]);
+  const toggleStatusSort = () => {
+    setNameSortDirection('none');
+    setStatusSortDirection((prev) => {
+      if (prev === 'none') return 'active-first';
+      if (prev === 'active-first') return 'inactive-first';
+      return 'none';
+    });
+  };
 
   const loadStudents = async () => {
     setIsLoading(true);
@@ -504,41 +466,13 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
             className="w-full rounded-md border border-gray-300 bg-white pl-9 pr-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
           />
         </div>
-        <select
-          value={sortMode}
-          onChange={(event) => setSortMode(event.target.value as typeof sortMode)}
-          className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-        >
-          <option value="default">Sắp xếp mặc định</option>
-          <option value="name-asc">Tên A → Z</option>
-          <option value="name-desc">Tên Z → A</option>
-          <option value="status-active">Trạng thái: Hoạt động trước</option>
-          <option value="status-inactive">Trạng thái: Ngừng trước</option>
-        </select>
-        <div className="flex items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-2 text-sm">
+        <div className="lg:col-span-2 flex items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-2 text-sm">
           <span className="text-gray-600">
             Hiển thị {displayedStudents.length}/{students.length} học sinh
           </span>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => moveSelection(-1)}
-              disabled={displayedStudents.length === 0}
-              className="inline-flex items-center justify-center rounded border border-gray-300 bg-white p-1 text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
-              title="Di chuyển lên (mũi tên lên)"
-            >
-              <ArrowUp size={16} />
-            </button>
-            <button
-              type="button"
-              onClick={() => moveSelection(1)}
-              disabled={displayedStudents.length === 0}
-              className="inline-flex items-center justify-center rounded border border-gray-300 bg-white p-1 text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
-              title="Di chuyển xuống (mũi tên xuống)"
-            >
-              <ArrowDown size={16} />
-            </button>
-          </div>
+          <span className="text-xs text-gray-500">
+            Bấm vào tiêu đề cột <strong>Tên</strong> hoặc <strong>Trạng thái</strong> để sắp xếp
+          </span>
         </div>
       </div>
 
@@ -550,8 +484,32 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
             <tr>
               <th className="px-2 sm:px-6 py-3 text-left font-medium text-gray-500 uppercase">STT</th>
               <th className="px-2 sm:px-6 py-3 text-left font-medium text-gray-500 uppercase">Họ và tên đệm</th>
-              <th className="px-2 sm:px-6 py-3 text-left font-medium text-gray-500 uppercase">Tên</th>
-              <th className="px-2 sm:px-6 py-3 text-center font-medium text-gray-500 uppercase">Trạng thái</th>
+              <th className="px-2 sm:px-6 py-3 text-left font-medium text-gray-500 uppercase">
+                <button
+                  type="button"
+                  onClick={toggleNameSort}
+                  className="inline-flex items-center gap-1 hover:text-gray-700"
+                  title="Sắp xếp theo tên"
+                >
+                  Tên
+                  <span className="text-[10px] text-gray-400">
+                    {nameSortDirection === 'asc' ? '▲' : nameSortDirection === 'desc' ? '▼' : '⇅'}
+                  </span>
+                </button>
+              </th>
+              <th className="px-2 sm:px-6 py-3 text-center font-medium text-gray-500 uppercase">
+                <button
+                  type="button"
+                  onClick={toggleStatusSort}
+                  className="inline-flex items-center gap-1 hover:text-gray-700"
+                  title="Sắp xếp theo trạng thái"
+                >
+                  Trạng thái
+                  <span className="text-[10px] text-gray-400">
+                    {statusSortDirection === 'active-first' ? '▲' : statusSortDirection === 'inactive-first' ? '▼' : '⇅'}
+                  </span>
+                </button>
+              </th>
               <th className="px-2 sm:px-6 py-3 text-center font-medium text-gray-500 uppercase">Hành động</th>
             </tr>
           </thead>
@@ -574,16 +532,10 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
             ) : (
               displayedStudents.map((st, index) => {
                 const isActive = isStudentActive(st);
-                const isSelected = st.id === selectedStudentId;
                 return (
                 <tr
                   key={st.id}
-                  ref={(node) => {
-                    if (node) rowRefs.current.set(st.id, node);
-                    else rowRefs.current.delete(st.id);
-                  }}
-                  className={`${isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
-                  onClick={() => setSelectedStudentId(st.id)}
+                  className="hover:bg-gray-50"
                 >
                   <td className="px-2 sm:px-6 py-4 text-gray-500">{index + 1}</td>
                   <td className="px-2 sm:px-6 py-4 font-medium text-gray-900">{st.middleName}</td>
