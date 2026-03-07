@@ -66,6 +66,9 @@ const GradingModal: React.FC<GradingModalProps> = ({
     const [isSelectingAssignments, setIsSelectingAssignments] = useState(false);
     const [studentSearchQuery, setStudentSearchQuery] = useState('');
     const [studentSearchHint, setStudentSearchHint] = useState('');
+    const [studentSearchMatchedIds, setStudentSearchMatchedIds] = useState<string[]>([]);
+    const [studentSearchMatchIndex, setStudentSearchMatchIndex] = useState(-1);
+    const [lastStudentSearchKeyword, setLastStudentSearchKeyword] = useState('');
     const rowRefs = useRef(new Map<string, HTMLTableRowElement>());
 
     // TAO BAI TAP MOI
@@ -163,6 +166,9 @@ const GradingModal: React.FC<GradingModalProps> = ({
         setIsSelectingAssignments(false);
         setStudentSearchQuery('');
         setStudentSearchHint('');
+        setStudentSearchMatchedIds([]);
+        setStudentSearchMatchIndex(-1);
+        setLastStudentSearchKeyword('');
         rowRefs.current.clear();
         setEditingAssignment(null);
         setAssignmentSubmitLoading(false);
@@ -1115,30 +1121,76 @@ const GradingModal: React.FC<GradingModalProps> = ({
         }
     };
 
-    const scrollToStudentByKeyword = () => {
-        const keyword = normalizeText(studentSearchQuery);
-        if (!keyword) {
-            setStudentSearchHint('Vui lòng nhập tên học sinh cần tìm.');
-            return;
-        }
-
-        const matched = gradingStudents.find((student) => {
-            const fullName = normalizeText(`${student.middleName} ${student.firstName}`);
-            return fullName.includes(keyword);
-        });
-
-        if (!matched) {
-            setStudentSearchHint(`Không tìm thấy học sinh phù hợp với từ khóa "${studentSearchQuery}".`);
-            return;
-        }
-
-        setStudentSearchHint(`Đã cuộn tới: ${matched.middleName} ${matched.firstName}`);
-        const row = rowRefs.current.get(matched.id);
+    const focusMatchedStudent = (matchedIds: string[], index: number) => {
+        if (matchedIds.length === 0 || index < 0 || index >= matchedIds.length) return;
+        const studentId = matchedIds[index];
+        const student = gradingStudents.find((item) => item.id === studentId);
+        const row = rowRefs.current.get(studentId);
         if (row) {
             row.scrollIntoView({ behavior: 'smooth', block: 'center' });
             row.classList.add('ring-2', 'ring-blue-300');
             window.setTimeout(() => row.classList.remove('ring-2', 'ring-blue-300'), 1200);
         }
+
+        if (student) {
+            setStudentSearchHint(
+                `Đã cuộn tới kết quả ${index + 1}/${matchedIds.length}: ${student.middleName} ${student.firstName}`
+            );
+        }
+    };
+
+    const buildMatchedStudentIds = (keyword: string): string[] =>
+        gradingStudents
+            .filter((student) => {
+                const fullName = normalizeText(`${student.middleName} ${student.firstName}`);
+                return fullName.includes(keyword);
+            })
+            .map((student) => student.id);
+
+    const scrollToStudentByKeyword = () => {
+        const keyword = normalizeText(studentSearchQuery);
+        if (!keyword) {
+            setStudentSearchHint('Vui lòng nhập tên học sinh cần tìm.');
+            setStudentSearchMatchedIds([]);
+            setStudentSearchMatchIndex(-1);
+            setLastStudentSearchKeyword('');
+            return;
+        }
+
+        const isSameKeyword = keyword === lastStudentSearchKeyword && studentSearchMatchedIds.length > 0;
+        if (isSameKeyword) {
+            const nextIndex = (studentSearchMatchIndex + 1) % studentSearchMatchedIds.length;
+            setStudentSearchMatchIndex(nextIndex);
+            focusMatchedStudent(studentSearchMatchedIds, nextIndex);
+            return;
+        }
+
+        const matchedIds = buildMatchedStudentIds(keyword);
+        if (matchedIds.length === 0) {
+            setStudentSearchHint(`Không tìm thấy học sinh phù hợp với từ khóa "${studentSearchQuery}".`);
+            setStudentSearchMatchedIds([]);
+            setStudentSearchMatchIndex(-1);
+            setLastStudentSearchKeyword(keyword);
+            return;
+        }
+
+        setStudentSearchMatchedIds(matchedIds);
+        setStudentSearchMatchIndex(0);
+        setLastStudentSearchKeyword(keyword);
+        focusMatchedStudent(matchedIds, 0);
+    };
+
+    const moveToMatchedStudent = (direction: -1 | 1) => {
+        if (studentSearchMatchedIds.length === 0) {
+            scrollToStudentByKeyword();
+            return;
+        }
+
+        const length = studentSearchMatchedIds.length;
+        const current = studentSearchMatchIndex >= 0 ? studentSearchMatchIndex : 0;
+        const nextIndex = (current + direction + length) % length;
+        setStudentSearchMatchIndex(nextIndex);
+        focusMatchedStudent(studentSearchMatchedIds, nextIndex);
     };
 
     const handleClose = () => {
@@ -1476,6 +1528,9 @@ const GradingModal: React.FC<GradingModalProps> = ({
                             onChange={(e) => {
                                 setStudentSearchQuery(e.target.value);
                                 if (studentSearchHint) setStudentSearchHint('');
+                                setStudentSearchMatchedIds([]);
+                                setStudentSearchMatchIndex(-1);
+                                setLastStudentSearchKeyword('');
                             }}
                             onKeyDown={(event) => {
                                 if (event.key === 'Enter') {
@@ -1487,14 +1542,30 @@ const GradingModal: React.FC<GradingModalProps> = ({
                             className="w-full rounded-md border border-gray-300 pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
                         />
                     </div>
-                    <button
-                        type="button"
-                        onClick={scrollToStudentByKeyword}
-                        className="inline-flex items-center justify-center gap-1 rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
-                    >
-                        <Search size={14} />
-                        Tìm & cuộn
-                    </button>
+                    <div className="flex gap-2">
+                        <button
+                            type="button"
+                            onClick={() => moveToMatchedStudent(-1)}
+                            className="inline-flex items-center justify-center gap-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
+                        >
+                            Trước
+                        </button>
+                        <button
+                            type="button"
+                            onClick={scrollToStudentByKeyword}
+                            className="inline-flex items-center justify-center gap-1 rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                        >
+                            <Search size={14} />
+                            Tìm / Kế tiếp
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => moveToMatchedStudent(1)}
+                            className="inline-flex items-center justify-center gap-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
+                        >
+                            Sau
+                        </button>
+                    </div>
                 </div>
                 {studentSearchHint && (
                     <p className="mt-2 text-xs text-blue-700">{studentSearchHint}</p>
@@ -1678,6 +1749,9 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                 onChange={(e) => {
                                     setStudentSearchQuery(e.target.value);
                                     if (studentSearchHint) setStudentSearchHint('');
+                                    setStudentSearchMatchedIds([]);
+                                    setStudentSearchMatchIndex(-1);
+                                    setLastStudentSearchKeyword('');
                                 }}
                                 onKeyDown={(event) => {
                                     if (event.key === 'Enter') {
@@ -1689,14 +1763,30 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                 className="w-full rounded-md border border-gray-300 pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
                             />
                         </div>
-                        <button
-                            type="button"
-                            onClick={scrollToStudentByKeyword}
-                            className="inline-flex items-center justify-center gap-1 rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
-                        >
-                            <Search size={14} />
-                            Tìm & cuộn
-                        </button>
+                        <div className="flex gap-2">
+                            <button
+                                type="button"
+                                onClick={() => moveToMatchedStudent(-1)}
+                                className="inline-flex items-center justify-center gap-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
+                            >
+                                Trước
+                            </button>
+                            <button
+                                type="button"
+                                onClick={scrollToStudentByKeyword}
+                                className="inline-flex items-center justify-center gap-1 rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                            >
+                                <Search size={14} />
+                                Tìm / Kế tiếp
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => moveToMatchedStudent(1)}
+                                className="inline-flex items-center justify-center gap-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
+                            >
+                                Sau
+                            </button>
+                        </div>
                     </div>
                     {studentSearchHint && (
                         <p className="mt-2 text-xs text-blue-700">{studentSearchHint}</p>
