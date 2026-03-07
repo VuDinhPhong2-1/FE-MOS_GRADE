@@ -1,8 +1,8 @@
 ﻿// src/components/GradingModal.optimized.tsx
-import React, { useState, useEffect } from 'react';
-import { X, Plus, Save, Loader2, ArrowLeft, XCircle, CheckCircle, Upload, Search, Check } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { X, Plus, Save, Loader2, ArrowLeft, XCircle, CheckCircle, Upload, Search, Check, Pencil, Trash2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import type { Assignment, CreateAssignmentRequest, GradingEndpointInfo } from '../types/assignment.types';
+import type { Assignment, CreateAssignmentRequest, GradingEndpointInfo, UpdateAssignmentRequest } from '../types/assignment.types';
 import type { Student } from '../types/student.types';
 import type { GradingResult, StudentGradingState } from '../types/grading.types';
 import { assignmentService } from '../services/assignment.service';
@@ -44,7 +44,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
     const [assignments, setAssignments] = useState<Assignment[]>([]);
     const [selectedAssignment, setSelectedAssignment] = useState<string>('');
     const [gradingEndpoints, setGradingEndpoints] = useState<GradingEndpointInfo[]>([]);
-    const [chooseMode, setChooseMode] = useState<null | 'new' | 'existing' | 'existing-multi'>(null);
+    const [chooseMode, setChooseMode] = useState<null | 'new' | 'existing' | 'existing-multi' | 'manage'>(null);
     const [loading, setLoading] = useState(false);
 
     // STATE CHAM DIEM CHO TUNG HOC SINH (DUY NHAT)
@@ -64,6 +64,9 @@ const GradingModal: React.FC<GradingModalProps> = ({
     const [isBulkUploading, setIsBulkUploading] = useState(false);
     const [multiAssignmentQuery, setMultiAssignmentQuery] = useState('');
     const [isSelectingAssignments, setIsSelectingAssignments] = useState(false);
+    const [studentSearchQuery, setStudentSearchQuery] = useState('');
+    const [studentSearchHint, setStudentSearchHint] = useState('');
+    const rowRefs = useRef(new Map<string, HTMLTableRowElement>());
 
     // TAO BAI TAP MOI
     const [newAssignment, setNewAssignment] = useState<CreateAssignmentRequest>({
@@ -71,6 +74,16 @@ const GradingModal: React.FC<GradingModalProps> = ({
         classId: classId,
         maxScore: 10,
         gradingType: 'auto',
+    });
+    const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null);
+    const [assignmentSubmitLoading, setAssignmentSubmitLoading] = useState(false);
+    const [assignmentEditForm, setAssignmentEditForm] = useState<UpdateAssignmentRequest>({
+        name: '',
+        description: '',
+        maxScore: 10,
+        gradingType: 'auto',
+        gradingApiEndpoint: '',
+        isActive: true,
     });
 
     // ============ EFFECTS ============
@@ -83,12 +96,18 @@ const GradingModal: React.FC<GradingModalProps> = ({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen, classId]);
 
+    const gradingStudents = useMemo(
+        () => students.filter((student) => isStudentActive(student)),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [students]
+    );
+
     useEffect(() => {
-        if (isOpen && students.length > 0) {
+        if (isOpen && gradingStudents.length > 0) {
             initializeStudentStates();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isOpen, students]);
+    }, [isOpen, gradingStudents]);
 
     useEffect(() => {
         if (selectedAssignment) {
@@ -126,11 +145,24 @@ const GradingModal: React.FC<GradingModalProps> = ({
         setIsBulkUploading(false);
         setMultiAssignmentQuery('');
         setIsSelectingAssignments(false);
+        setStudentSearchQuery('');
+        setStudentSearchHint('');
+        rowRefs.current.clear();
+        setEditingAssignment(null);
+        setAssignmentSubmitLoading(false);
+        setAssignmentEditForm({
+            name: '',
+            description: '',
+            maxScore: 10,
+            gradingType: 'auto',
+            gradingApiEndpoint: '',
+            isActive: true,
+        });
     };
 
     const initializeStudentStates = () => {
         const initialStates = new Map<string, StudentGradingState>();
-        students.forEach((student) => {
+        gradingStudents.forEach((student) => {
             initialStates.set(student.id, {
                 studentId: student.id,
                 studentFile: null,
@@ -168,6 +200,21 @@ const GradingModal: React.FC<GradingModalProps> = ({
     };
 
     const normalizeErrorText = (value: string): string => value.replace(/\s+/g, ' ').trim();
+    const normalizeText = (value?: string): string =>
+        (value || '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .trim();
+
+    const isStudentActive = (student: Student): boolean => {
+        const normalizedStatus = normalizeText(student.status);
+        if (normalizedStatus) {
+            return normalizedStatus === 'active';
+        }
+
+        return Boolean(student.isActive);
+    };
     const toDedupKey = (value: string): string =>
         normalizeErrorText(value)
             .toLowerCase()
@@ -240,7 +287,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
         const autoMap = new Map<string, Map<string, MultiAutoCellState>>();
         autoAssignments.forEach((assignment) => {
             const perStudentMap = new Map<string, MultiAutoCellState>();
-            students.forEach((student) => {
+            gradingStudents.forEach((student) => {
                 perStudentMap.set(student.id, {
                     studentFile: null,
                     isGrading: false,
@@ -280,7 +327,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
 
             setStudentGradingStates((prev) => {
                 const newMap = new Map(prev);
-                students.forEach((student) => {
+                gradingStudents.forEach((student) => {
                     const existingScore = data.find((s) => s.studentId === student.id);
                     const currentState = newMap.get(student.id);
                     if (currentState) {
@@ -314,7 +361,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
 
             assignmentIds.forEach((assignmentId) => {
                 const rowMap = new Map<string, MultiScoreCellValue>();
-                students.forEach((student) => {
+                gradingStudents.forEach((student) => {
                     rowMap.set(student.id, { scoreValue: null, feedback: '', autoGradingErrors: [] });
                 });
                 nextMap.set(assignmentId, rowMap);
@@ -426,7 +473,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
 
         setIsBulkUploading(true);
         try {
-            const maxCount = Math.min(files.length, students.length);
+            const maxCount = Math.min(files.length, gradingStudents.length);
             const invalidFiles: string[] = [];
 
             for (let i = 0; i < maxCount; i++) {
@@ -437,7 +484,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                 }
 
                 // Map theo thu tu danh sach hoc sinh tren bang.
-                const student = students[i];
+                const student = gradingStudents[i];
                 await uploadStudentFile(student.id, file, { skipValidation: true });
             }
 
@@ -492,6 +539,12 @@ const GradingModal: React.FC<GradingModalProps> = ({
     };
 
     const handleAutoGrade = async (studentId: string, studentFile: File) => {
+        const student = students.find((item) => item.id === studentId);
+        if (student && !isStudentActive(student)) {
+            alert('Học sinh đang ở trạng thái ngừng, không thể chấm điểm.');
+            return;
+        }
+
         if (!selectedAssignment) {
             alert('Vui lòng chọn bài tập trước khi chấm điểm.');
             return;
@@ -572,6 +625,12 @@ const GradingModal: React.FC<GradingModalProps> = ({
         file: File,
         options?: { skipValidation?: boolean }
     ) => {
+        const student = students.find((item) => item.id === studentId);
+        if (student && !isStudentActive(student)) {
+            alert('Học sinh đang ở trạng thái ngừng, không thể chấm điểm.');
+            return;
+        }
+
         const skipValidation = options?.skipValidation ?? false;
         if (!skipValidation && !validateExcelFile(file)) {
             return;
@@ -880,8 +939,9 @@ const GradingModal: React.FC<GradingModalProps> = ({
 
         setLoading(true);
         try {
+            const activeStudentIds = new Set(gradingStudents.map((student) => student.id));
             const scores = Array.from(studentGradingStates.values())
-                .filter(s => s.manualScore !== null)
+                .filter(s => s.manualScore !== null && activeStudentIds.has(s.studentId))
                 .map(s => ({
                     studentId: s.studentId,
                     scoreValue: s.manualScore!,
@@ -917,12 +977,13 @@ const GradingModal: React.FC<GradingModalProps> = ({
 
         setLoading(true);
         try {
+            const activeStudentIds = new Set(gradingStudents.map((student) => student.id));
             for (const assignmentId of multiAssignmentIds) {
                 const rowMap = multiScores.get(assignmentId);
                 if (!rowMap) continue;
 
                 const scores = Array.from(rowMap.entries())
-                    .filter(([, item]) => item.scoreValue !== null)
+                    .filter(([studentId, item]) => item.scoreValue !== null && activeStudentIds.has(studentId))
                     .map(([studentId, item]) => ({
                         studentId,
                         scoreValue: item.scoreValue!,
@@ -983,6 +1044,102 @@ const GradingModal: React.FC<GradingModalProps> = ({
         }
     };
 
+    const handleOpenEditAssignment = (assignment: Assignment) => {
+        setEditingAssignment(assignment);
+        setAssignmentEditForm({
+            name: assignment.name,
+            description: assignment.description || '',
+            maxScore: assignment.maxScore,
+            gradingType: assignment.gradingType,
+            gradingApiEndpoint: assignment.gradingApiEndpoint || '',
+            isActive: assignment.isActive,
+        });
+    };
+
+    const handleSaveAssignmentEdit = async () => {
+        if (!editingAssignment) return;
+        if (!assignmentEditForm.name?.trim()) {
+            alert('Vui lòng nhập tên bài tập.');
+            return;
+        }
+        if (assignmentEditForm.gradingType === 'auto' && !assignmentEditForm.gradingApiEndpoint) {
+            alert('Bài tập auto phải có đầu chấm điểm.');
+            return;
+        }
+
+        setAssignmentSubmitLoading(true);
+        try {
+            const payload: UpdateAssignmentRequest = {
+                name: assignmentEditForm.name?.trim(),
+                description: assignmentEditForm.description || '',
+                maxScore: assignmentEditForm.maxScore,
+                gradingType: assignmentEditForm.gradingType,
+                gradingApiEndpoint:
+                    assignmentEditForm.gradingType === 'auto'
+                        ? assignmentEditForm.gradingApiEndpoint || undefined
+                        : undefined,
+                isActive: assignmentEditForm.isActive,
+            };
+
+            const updated = await assignmentService.update(editingAssignment.id, payload, getAccessToken);
+            setAssignments((prev) =>
+                prev.map((item) => (item.id === updated.id ? updated : item))
+            );
+            setEditingAssignment(null);
+            alert('Cập nhật bài tập thành công.');
+        } catch (error) {
+            console.error('Lỗi khi cập nhật bài tập:', error);
+            alert(error instanceof Error ? error.message : 'Không thể cập nhật bài tập.');
+        } finally {
+            setAssignmentSubmitLoading(false);
+        }
+    };
+
+    const handleDeleteAssignment = async (assignment: Assignment) => {
+        if (!confirm(`Bạn có chắc muốn xóa bài tập "${assignment.name}"?`)) return;
+        setAssignmentSubmitLoading(true);
+        try {
+            await assignmentService.delete(assignment.id, getAccessToken);
+            setAssignments((prev) => prev.filter((item) => item.id !== assignment.id));
+            setMultiAssignmentIds((prev) => prev.filter((id) => id !== assignment.id));
+            if (selectedAssignment === assignment.id) {
+                setSelectedAssignment('');
+            }
+            alert('Đã xóa bài tập.');
+        } catch (error) {
+            console.error('Lỗi khi xóa bài tập:', error);
+            alert(error instanceof Error ? error.message : 'Không thể xóa bài tập.');
+        } finally {
+            setAssignmentSubmitLoading(false);
+        }
+    };
+
+    const scrollToStudentByKeyword = () => {
+        const keyword = normalizeText(studentSearchQuery);
+        if (!keyword) {
+            setStudentSearchHint('Vui lòng nhập tên học sinh cần tìm.');
+            return;
+        }
+
+        const matched = gradingStudents.find((student) => {
+            const fullName = normalizeText(`${student.middleName} ${student.firstName}`);
+            return fullName.includes(keyword);
+        });
+
+        if (!matched) {
+            setStudentSearchHint(`Không tìm thấy học sinh phù hợp với từ khóa "${studentSearchQuery}".`);
+            return;
+        }
+
+        setStudentSearchHint(`Đã cuộn tới: ${matched.middleName} ${matched.firstName}`);
+        const row = rowRefs.current.get(matched.id);
+        if (row) {
+            row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            row.classList.add('ring-2', 'ring-blue-300');
+            window.setTimeout(() => row.classList.remove('ring-2', 'ring-blue-300'), 1200);
+        }
+    };
+
     const handleClose = () => {
         resetModalState();
         onClose();
@@ -1002,6 +1159,15 @@ const GradingModal: React.FC<GradingModalProps> = ({
                 </button>
                 {assignments.length > 0 && (
                     <button
+                        onClick={() => setChooseMode('existing')}
+                        className="bg-indigo-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-indigo-700 flex items-center gap-3 shadow-md transition"
+                    >
+                        <Check size={24} />
+                        Chấm một bài
+                    </button>
+                )}
+                {assignments.length > 0 && (
+                    <button
                         onClick={async () => {
                             const ids = assignments
                                 .filter((a) => a.gradingType === 'auto')
@@ -1013,6 +1179,15 @@ const GradingModal: React.FC<GradingModalProps> = ({
                     >
                         <Save size={24} />
                         Chấm nhiều bài tự động
+                    </button>
+                )}
+                {assignments.length > 0 && (
+                    <button
+                        onClick={() => setChooseMode('manage')}
+                        className="bg-amber-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-amber-700 flex items-center gap-3 shadow-md transition"
+                    >
+                        <Pencil size={24} />
+                        Quản lý bài tập
                     </button>
                 )}
             </div>
@@ -1138,21 +1313,31 @@ const GradingModal: React.FC<GradingModalProps> = ({
         return (
             <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
+                    <caption className="caption-top pb-2 text-left text-sm font-semibold text-gray-700">
+                        Bảng chấm điểm học sinh
+                    </caption>
                     <thead className="bg-gray-50">
                         <tr>
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">STT</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Họ và tên</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Học sinh</th>
                             <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">File bài làm</th>
                             <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Điểm</th>
                             <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Trạng thái</th>
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {students.map((student, index) => {
+                        {gradingStudents.map((student, index) => {
                             const state = studentGradingStates.get(student.id);
                             const autoErrors = state?.autoGradingErrors || extractAutoGradingErrors(state?.gradingResult || null);
                             return (
-                                <tr key={student.id} className="hover:bg-gray-50">
+                                <tr
+                                    key={student.id}
+                                    ref={(node) => {
+                                        if (node) rowRefs.current.set(student.id, node);
+                                        else rowRefs.current.delete(student.id);
+                                    }}
+                                    className="hover:bg-gray-50"
+                                >
                                     <td className="px-4 py-3 text-sm text-gray-500">{index + 1}</td>
                                     <td className="px-4 py-3 text-sm font-medium text-gray-900">
                                         {student.middleName} {student.firstName}
@@ -1276,6 +1461,43 @@ const GradingModal: React.FC<GradingModalProps> = ({
                         </option>
                     ))}
                 </select>
+            </div>
+
+            <div className="mb-4 rounded-md border border-gray-200 bg-gray-50 p-3">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Tìm học sinh và cuộn tới vị trí trong bảng
+                </label>
+                <div className="flex flex-col sm:flex-row gap-2">
+                    <div className="relative flex-1">
+                        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                        <input
+                            value={studentSearchQuery}
+                            onChange={(e) => {
+                                setStudentSearchQuery(e.target.value);
+                                if (studentSearchHint) setStudentSearchHint('');
+                            }}
+                            onKeyDown={(event) => {
+                                if (event.key === 'Enter') {
+                                    event.preventDefault();
+                                    scrollToStudentByKeyword();
+                                }
+                            }}
+                            placeholder="Nhập tên học sinh..."
+                            className="w-full rounded-md border border-gray-300 pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
+                        />
+                    </div>
+                    <button
+                        type="button"
+                        onClick={scrollToStudentByKeyword}
+                        className="inline-flex items-center justify-center gap-1 rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                    >
+                        <Search size={14} />
+                        Tìm & cuộn
+                    </button>
+                </div>
+                {studentSearchHint && (
+                    <p className="mt-2 text-xs text-blue-700">{studentSearchHint}</p>
+                )}
             </div>
 
             {selectedAssignment && (
@@ -1443,13 +1665,53 @@ const GradingModal: React.FC<GradingModalProps> = ({
                     )}
                 </div>
 
+                <div className="mb-4 rounded-md border border-gray-200 bg-gray-50 p-3">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Tìm học sinh và cuộn tới vị trí trong bảng
+                    </label>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                        <div className="relative flex-1">
+                            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                            <input
+                                value={studentSearchQuery}
+                                onChange={(e) => {
+                                    setStudentSearchQuery(e.target.value);
+                                    if (studentSearchHint) setStudentSearchHint('');
+                                }}
+                                onKeyDown={(event) => {
+                                    if (event.key === 'Enter') {
+                                        event.preventDefault();
+                                        scrollToStudentByKeyword();
+                                    }
+                                }}
+                                placeholder="Nhập tên học sinh..."
+                                className="w-full rounded-md border border-gray-300 pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
+                            />
+                        </div>
+                        <button
+                            type="button"
+                            onClick={scrollToStudentByKeyword}
+                            className="inline-flex items-center justify-center gap-1 rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                        >
+                            <Search size={14} />
+                            Tìm & cuộn
+                        </button>
+                    </div>
+                    {studentSearchHint && (
+                        <p className="mt-2 text-xs text-blue-700">{studentSearchHint}</p>
+                    )}
+                </div>
+
                 {selectedAssignments.length > 0 ? (
                     <div className="overflow-x-auto">
                         <table className="min-w-full divide-y divide-gray-200">
+                            <caption className="caption-top pb-2 text-left text-sm font-semibold text-gray-700">
+                                Bảng chấm điểm nhiều bài tập
+                            </caption>
                             <thead className="bg-gray-50">
                                 <tr>
                                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">STT</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Họ và tên</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Học sinh</th>
                                     {selectedAssignments.map((assignment) => (
                                         <th
                                             key={assignment.id}
@@ -1461,14 +1723,21 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                {students.map((student, index) => {
+                                {gradingStudents.map((student, index) => {
                                     const isStudentAutoGrading = selectedAssignments.some((assignment) =>
                                         Boolean(multiAutoStates.get(assignment.id)?.get(student.id)?.isGrading)
                                     );
                                     const isRowUploadDisabled = isStudentAutoGrading || isBulkUploading;
 
                                     return (
-                                        <tr key={student.id} className="hover:bg-gray-50">
+                                        <tr
+                                            key={student.id}
+                                            ref={(node) => {
+                                                if (node) rowRefs.current.set(student.id, node);
+                                                else rowRefs.current.delete(student.id);
+                                            }}
+                                            className="hover:bg-gray-50"
+                                        >
                                             <td className="px-4 py-3 text-sm text-gray-500">{index + 1}</td>
                                             <td className="px-4 py-3 text-sm font-medium text-gray-900 align-top">
                                                 <div>{student.middleName} {student.firstName}</div>
@@ -1612,6 +1881,173 @@ const GradingModal: React.FC<GradingModalProps> = ({
             </div>
         );
     };
+
+    const renderAssignmentManager = () => (
+        <div className="flex-1 overflow-y-auto p-6">
+            <button
+                onClick={() => {
+                    setChooseMode(null);
+                    setEditingAssignment(null);
+                }}
+                className="text-sm text-gray-600 hover:text-gray-800 flex items-center gap-1 mb-4"
+            >
+                <ArrowLeft size={16} /> Quay lại
+            </button>
+
+            <div className="rounded-lg border border-gray-200 overflow-hidden">
+                <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                        <tr>
+                            <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Tên bài tập</th>
+                            <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Loại</th>
+                            <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Endpoint</th>
+                            <th className="px-3 py-2 text-center text-xs font-semibold text-gray-600 uppercase">Điểm tối đa</th>
+                            <th className="px-3 py-2 text-center text-xs font-semibold text-gray-600 uppercase">Trạng thái</th>
+                            <th className="px-3 py-2 text-center text-xs font-semibold text-gray-600 uppercase">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 bg-white">
+                        {assignments.map((assignment) => (
+                            <tr key={assignment.id}>
+                                <td className="px-3 py-2 text-sm text-gray-800">
+                                    <div className="font-medium">{assignment.name}</div>
+                                    {assignment.description && (
+                                        <div className="text-xs text-gray-500">{assignment.description}</div>
+                                    )}
+                                </td>
+                                <td className="px-3 py-2 text-sm text-gray-700">{assignment.gradingType === 'auto' ? 'Tự động' : 'Thủ công'}</td>
+                                <td className="px-3 py-2 text-xs text-gray-600">{assignment.gradingApiEndpoint || '-'}</td>
+                                <td className="px-3 py-2 text-sm text-center text-gray-700">{assignment.maxScore}</td>
+                                <td className="px-3 py-2 text-center">
+                                    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${assignment.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                        {assignment.isActive ? 'Đang dùng' : 'Đã ẩn'}
+                                    </span>
+                                </td>
+                                <td className="px-3 py-2 text-center">
+                                    <div className="inline-flex gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleOpenEditAssignment(assignment)}
+                                            className="inline-flex items-center gap-1 rounded-md bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-700 hover:bg-blue-200"
+                                        >
+                                            <Pencil size={12} />
+                                            Sửa
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleDeleteAssignment(assignment)}
+                                            disabled={assignmentSubmitLoading}
+                                            className="inline-flex items-center gap-1 rounded-md bg-red-100 px-2.5 py-1 text-xs font-medium text-red-700 hover:bg-red-200 disabled:opacity-60"
+                                        >
+                                            <Trash2 size={12} />
+                                            Xóa
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
+                        {assignments.length === 0 && (
+                            <tr>
+                                <td colSpan={6} className="px-3 py-5 text-center text-sm text-gray-500">
+                                    Chưa có bài tập nào trong lớp này.
+                                </td>
+                            </tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
+
+            {editingAssignment && (
+                <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 p-4 space-y-3">
+                    <h4 className="text-sm font-semibold text-blue-800">Chỉnh sửa bài tập</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <input
+                            value={assignmentEditForm.name || ''}
+                            onChange={(e) => setAssignmentEditForm((prev) => ({ ...prev, name: e.target.value }))}
+                            className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+                            placeholder="Tên bài tập"
+                        />
+                        <input
+                            type="number"
+                            value={assignmentEditForm.maxScore ?? 10}
+                            onChange={(e) => setAssignmentEditForm((prev) => ({ ...prev, maxScore: Number(e.target.value) }))}
+                            min={0}
+                            max={100}
+                            className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+                            placeholder="Điểm tối đa"
+                        />
+                        <select
+                            value={assignmentEditForm.gradingType || 'auto'}
+                            onChange={(e) =>
+                                setAssignmentEditForm((prev) => ({
+                                    ...prev,
+                                    gradingType: e.target.value as 'auto' | 'manual',
+                                    gradingApiEndpoint:
+                                        e.target.value === 'manual'
+                                            ? ''
+                                            : prev.gradingApiEndpoint,
+                                }))
+                            }
+                            className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+                        >
+                            <option value="auto">Tự động</option>
+                            <option value="manual">Thủ công</option>
+                        </select>
+                        <select
+                            value={assignmentEditForm.gradingApiEndpoint || ''}
+                            onChange={(e) =>
+                                setAssignmentEditForm((prev) => ({ ...prev, gradingApiEndpoint: e.target.value }))
+                            }
+                            disabled={assignmentEditForm.gradingType === 'manual'}
+                            className="rounded-md border border-gray-300 px-3 py-2 text-sm disabled:bg-gray-100"
+                        >
+                            <option value="">-- Chọn đầu chấm điểm --</option>
+                            {gradingEndpoints.map((ep) => (
+                                <option key={ep.endpoint} value={ep.endpoint}>
+                                    {ep.displayName}
+                                </option>
+                            ))}
+                        </select>
+                        <textarea
+                            value={assignmentEditForm.description || ''}
+                            onChange={(e) => setAssignmentEditForm((prev) => ({ ...prev, description: e.target.value }))}
+                            rows={2}
+                            className="rounded-md border border-gray-300 px-3 py-2 text-sm md:col-span-2"
+                            placeholder="Mô tả bài tập"
+                        />
+                        <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+                            <input
+                                type="checkbox"
+                                checked={Boolean(assignmentEditForm.isActive)}
+                                onChange={(e) =>
+                                    setAssignmentEditForm((prev) => ({ ...prev, isActive: e.target.checked }))
+                                }
+                            />
+                            Bài tập đang hoạt động
+                        </label>
+                    </div>
+                    <div className="flex justify-end gap-2">
+                        <button
+                            type="button"
+                            onClick={() => setEditingAssignment(null)}
+                            className="rounded-md bg-gray-100 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-200"
+                        >
+                            Hủy
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleSaveAssignmentEdit}
+                            disabled={assignmentSubmitLoading}
+                            className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700 disabled:opacity-60"
+                        >
+                            {assignmentSubmitLoading ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                            Lưu cập nhật
+                        </button>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
     if (!isOpen) return null;
 
     return (
@@ -1631,6 +2067,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                     {chooseMode === 'new' && renderNewAssignmentForm()}
                     {chooseMode === 'existing' && renderExistingMode()}
                     {chooseMode === 'existing-multi' && renderExistingMultiMode()}
+                    {chooseMode === 'manage' && renderAssignmentManager()}
                 </div>
 
                 {/* FOOTER */}
@@ -1686,9 +2123,3 @@ const GradingModal: React.FC<GradingModalProps> = ({
 };
 
 export default GradingModal;
-
-
-
-
-
-

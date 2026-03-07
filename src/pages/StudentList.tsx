@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, type ChangeEvent } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback, type ChangeEvent } from 'react';
 import * as XLSX from 'xlsx';
 import type { Class } from '../types/class.types';
 import type { Assignment } from '../types/assignment.types';
@@ -11,13 +11,19 @@ import { useAuth } from '../context/AuthContext';
 import GradingModal from '../components/GradingModal';
 import ViewAllScoresModal from '../components/ViewAllScoresModal';
 import ClassAnalyticsPanel from '../components/ClassAnalyticsPanel';
-import { Upload, FileCheck2, Eye, Save, RefreshCw, Pencil, X, Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import { Upload, FileCheck2, Eye, Save, RefreshCw, Pencil, X, Loader2, CheckCircle2, XCircle, Search, ArrowUp, ArrowDown, UserPlus, Trash2 } from 'lucide-react';
 
 type EditStudentForm = {
   middleName: string;
   firstName: string;
   status: string;
   classId: string;
+};
+
+type AddStudentForm = {
+  middleName: string;
+  firstName: string;
+  status: string;
 };
 
 const VALID_STATUSES = ['Active', 'Inactive'];
@@ -46,7 +52,34 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
     status: 'Active',
     classId: '',
   });
+  const [searchKeyword, setSearchKeyword] = useState('');
+  const [sortMode, setSortMode] = useState<'default' | 'name-asc' | 'name-desc' | 'status-active' | 'status-inactive'>('default');
+  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
+  const rowRefs = useRef(new Map<string, HTMLTableRowElement>());
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isAddSubmitting, setIsAddSubmitting] = useState(false);
+  const [addError, setAddError] = useState('');
+  const [addForm, setAddForm] = useState<AddStudentForm>({
+    middleName: '',
+    firstName: '',
+    status: 'Active',
+  });
   const { getAccessToken } = useAuth();
+
+  const normalizeText = (value?: string) =>
+    (value || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim();
+
+  const isStudentActive = useCallback((student: Student): boolean => {
+    const normalizedStatus = normalizeText(student.status);
+    if (normalizedStatus) {
+      return normalizedStatus === 'active';
+    }
+    return Boolean(student.isActive);
+  }, []);
 
   useEffect(() => {
     if (selectedClass?.id) {
@@ -63,13 +96,93 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
   };
 
   const studentNewList = students.filter((st) => st.id.startsWith('temp-'));
+  const displayedStudents = useMemo(() => {
+    const keyword = normalizeText(searchKeyword);
+    let list = [...students];
 
-    const loadStudents = async () => {
-      setIsLoading(true);
-      try {
+    if (keyword) {
+      list = list.filter((st) => normalizeText(`${st.middleName} ${st.firstName}`).includes(keyword));
+    }
+
+    if (sortMode === 'name-asc') {
+      list.sort((a, b) => `${a.middleName} ${a.firstName}`.localeCompare(`${b.middleName} ${b.firstName}`, 'vi'));
+    } else if (sortMode === 'name-desc') {
+      list.sort((a, b) => `${b.middleName} ${b.firstName}`.localeCompare(`${a.middleName} ${a.firstName}`, 'vi'));
+    } else if (sortMode === 'status-active') {
+      list.sort((a, b) => Number(isStudentActive(b)) - Number(isStudentActive(a)));
+    } else if (sortMode === 'status-inactive') {
+      list.sort((a, b) => Number(isStudentActive(a)) - Number(isStudentActive(b)));
+    }
+
+    return list;
+  }, [students, searchKeyword, sortMode, isStudentActive]);
+
+  const activeStudents = useMemo(
+    () => students.filter((student) => isStudentActive(student)),
+    [students, isStudentActive]
+  );
+
+  const selectedIndex = useMemo(
+    () => displayedStudents.findIndex((st) => st.id === selectedStudentId),
+    [displayedStudents, selectedStudentId]
+  );
+
+  const scrollToStudentRow = useCallback((studentId: string) => {
+    const row = rowRefs.current.get(studentId);
+    if (row) {
+      row.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }
+  }, []);
+
+  const moveSelection = useCallback((direction: -1 | 1) => {
+    if (displayedStudents.length === 0) return;
+    let nextIndex = selectedIndex;
+
+    if (nextIndex < 0) {
+      nextIndex = direction > 0 ? 0 : displayedStudents.length - 1;
+    } else {
+      nextIndex = Math.max(0, Math.min(displayedStudents.length - 1, nextIndex + direction));
+    }
+
+    const nextStudent = displayedStudents[nextIndex];
+    if (!nextStudent) return;
+
+    setSelectedStudentId(nextStudent.id);
+    scrollToStudentRow(nextStudent.id);
+  }, [displayedStudents, selectedIndex, scrollToStudentRow]);
+
+  useEffect(() => {
+    if (displayedStudents.length === 0) {
+      setSelectedStudentId(null);
+      return;
+    }
+
+    if (!selectedStudentId || !displayedStudents.some((st) => st.id === selectedStudentId)) {
+      setSelectedStudentId(displayedStudents[0].id);
+    }
+  }, [displayedStudents, selectedStudentId]);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
+      const target = event.target as HTMLElement | null;
+      const editable = target?.closest('input, textarea, select, [contenteditable="true"]');
+      if (editable) return;
+
+      event.preventDefault();
+      moveSelection(event.key === 'ArrowUp' ? -1 : 1);
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [moveSelection]);
+
+  const loadStudents = async () => {
+    setIsLoading(true);
+    try {
       const data = await studentService.getStudentsByClassId(selectedClass.id, getAccessToken);
       setStudents(data);
-      } finally {
+    } finally {
       setIsLoading(false);
     }
   };
@@ -111,6 +224,8 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
             id: `temp-${index + 1}`,
             middleName: row[0],
             firstName: row[1],
+            status: 'Active',
+            isActive: true,
             gradingApiEndpoint: row[2] || '',
           });
         }
@@ -149,9 +264,79 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
     }
   };
 
+  const handleOpenAddStudentModal = () => {
+    setAddForm({
+      middleName: '',
+      firstName: '',
+      status: 'Active',
+    });
+    setAddError('');
+    setIsAddModalOpen(true);
+  };
+
+  const handleAddStudent = async (event: React.FormEvent) => {
+    event.preventDefault();
+
+    const middleName = addForm.middleName.trim();
+    const firstName = addForm.firstName.trim();
+    if (!middleName || !firstName) {
+      setAddError('Vui lòng nhập đầy đủ họ và tên.');
+      return;
+    }
+    if (!VALID_STATUSES.includes(addForm.status)) {
+      setAddError('Trạng thái không hợp lệ.');
+      return;
+    }
+
+    setIsAddSubmitting(true);
+    setAddError('');
+    try {
+      await studentService.createStudent(
+        {
+          middleName,
+          firstName,
+          status: addForm.status,
+          classId: selectedClass.id,
+        },
+        getAccessToken
+      );
+      await loadStudents();
+      setIsAddModalOpen(false);
+      setFlashMessage('Thêm học sinh thành công.');
+    } catch (err) {
+      setAddError(err instanceof Error ? err.message : 'Không thể thêm học sinh.');
+    } finally {
+      setIsAddSubmitting(false);
+    }
+  };
+
+  const handleDeleteStudent = async (student: Student) => {
+    const fullName = `${student.middleName} ${student.firstName}`.trim();
+    if (!confirm(`Bạn có chắc muốn xóa học sinh "${fullName}"?`)) {
+      return;
+    }
+
+    if (student.id.startsWith('temp-')) {
+      setStudents((prev) => prev.filter((st) => st.id !== student.id));
+      setFlashMessage('Đã xóa học sinh tạm khỏi danh sách.');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await studentService.deleteStudent(student.id, getAccessToken);
+      await loadStudents();
+      setFlashMessage('Xóa học sinh thành công.');
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Không thể xóa học sinh.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleGrade = () => {
-    if (students.length === 0) {
-      alert('Chưa có học sinh nào để chấm điểm!');
+    if (activeStudents.length === 0) {
+      alert('Không có học sinh đang hoạt động để chấm điểm!');
       return;
     }
 
@@ -279,27 +464,81 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
       )}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
         <h1 className="text-xl sm:text-2xl font-bold text-gray-800">
-          Danh sách học sinh - {selectedClass.name}
+          Bảng danh sách học sinh - {selectedClass.name}
         </h1>
 
-        <div className="flex flex-row gap-2 w-full sm:w-auto">
+        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+          <button
+            onClick={handleOpenAddStudentModal}
+            className="w-full sm:w-auto bg-emerald-600 text-white px-4 py-2 rounded-md flex items-center justify-center gap-2 hover:bg-emerald-700"
+          >
+            <UserPlus size={18} />
+            Thêm học sinh
+          </button>
           <button
             onClick={handleGrade}
-            disabled={students.length === 0}
-            className="w-1/2 sm:w-auto bg-purple-600 text-white px-4 py-2 rounded-md flex items-center justify-center gap-2 hover:bg-purple-700 disabled:bg-gray-400 text-base sm:text-lg font-semibold disabled:cursor-not-allowed"
-            title="Chấm điểm cho cả lớp"
+            disabled={activeStudents.length === 0}
+            className="w-full sm:w-auto bg-purple-600 text-white px-4 py-2 rounded-md flex items-center justify-center gap-2 hover:bg-purple-700 disabled:bg-gray-400 text-base sm:text-lg font-semibold disabled:cursor-not-allowed"
+            title="Chấm điểm cho học sinh đang hoạt động"
           >
             <FileCheck2 size={20} />
-            Chấm điểm cho cả lớp
+            Chấm điểm cho lớp
           </button>
-
           <button
             onClick={handleOpenViewScoresModal}
-            className="w-1/2 sm:w-auto bg-gray-600 text-white px-4 py-2 rounded-md flex items-center justify-center gap-2 hover:bg-gray-700 text-base sm:text-lg ml-0"
+            className="w-full sm:w-auto bg-gray-600 text-white px-4 py-2 rounded-md flex items-center justify-center gap-2 hover:bg-gray-700 text-base sm:text-lg ml-0"
           >
             <Eye size={18} />
             Xem bảng điểm lớp
           </button>
+        </div>
+      </div>
+
+      <div className="mb-4 grid grid-cols-1 lg:grid-cols-3 gap-3">
+        <div className="relative lg:col-span-1">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            value={searchKeyword}
+            onChange={(event) => setSearchKeyword(event.target.value)}
+            placeholder="Tìm kiếm theo tên học sinh..."
+            className="w-full rounded-md border border-gray-300 bg-white pl-9 pr-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+          />
+        </div>
+        <select
+          value={sortMode}
+          onChange={(event) => setSortMode(event.target.value as typeof sortMode)}
+          className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+        >
+          <option value="default">Sắp xếp mặc định</option>
+          <option value="name-asc">Tên A → Z</option>
+          <option value="name-desc">Tên Z → A</option>
+          <option value="status-active">Trạng thái: Hoạt động trước</option>
+          <option value="status-inactive">Trạng thái: Ngừng trước</option>
+        </select>
+        <div className="flex items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-2 text-sm">
+          <span className="text-gray-600">
+            Hiển thị {displayedStudents.length}/{students.length} học sinh
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => moveSelection(-1)}
+              disabled={displayedStudents.length === 0}
+              className="inline-flex items-center justify-center rounded border border-gray-300 bg-white p-1 text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+              title="Di chuyển lên (mũi tên lên)"
+            >
+              <ArrowUp size={16} />
+            </button>
+            <button
+              type="button"
+              onClick={() => moveSelection(1)}
+              disabled={displayedStudents.length === 0}
+              className="inline-flex items-center justify-center rounded border border-gray-300 bg-white p-1 text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+              title="Di chuyển xuống (mũi tên xuống)"
+            >
+              <ArrowDown size={16} />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -320,56 +559,68 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
           <tbody className="bg-white divide-y divide-gray-200">
             {isLoading ? (
               <tr>
-                <td colSpan={4} className="px-2 py-4 text-center text-gray-500">
+                <td colSpan={5} className="px-2 py-4 text-center text-gray-500">
                   Đang tải dữ liệu...
                 </td>
               </tr>
-            ) : students.length === 0 ? (
+            ) : displayedStudents.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-2 py-4 text-center text-gray-500">
-                  Chưa có học sinh nào. Vui lòng nhập file Excel.
+                <td colSpan={5} className="px-2 py-4 text-center text-gray-500">
+                  {students.length === 0
+                    ? 'Chưa có học sinh nào. Vui lòng nhập file Excel.'
+                    : 'Không có học sinh nào khớp từ khóa tìm kiếm.'}
                 </td>
               </tr>
             ) : (
-              students.map((st, index) => (
-                <tr key={st.id} className="hover:bg-gray-50">
-                  {(() => {
-                    const normalizedStatus = (st.status || '').trim().toLowerCase();
-                    const isStudentActive =
-                      normalizedStatus === 'active' ||
-                      (normalizedStatus === '' && Boolean(st.isActive));
-
-                    return (
-                      <>
+              displayedStudents.map((st, index) => {
+                const isActive = isStudentActive(st);
+                const isSelected = st.id === selectedStudentId;
+                return (
+                <tr
+                  key={st.id}
+                  ref={(node) => {
+                    if (node) rowRefs.current.set(st.id, node);
+                    else rowRefs.current.delete(st.id);
+                  }}
+                  className={`${isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
+                  onClick={() => setSelectedStudentId(st.id)}
+                >
                   <td className="px-2 sm:px-6 py-4 text-gray-500">{index + 1}</td>
                   <td className="px-2 sm:px-6 py-4 font-medium text-gray-900">{st.middleName}</td>
                   <td className="px-2 sm:px-6 py-4 font-medium text-gray-900">{st.firstName}</td>
                   <td className="px-2 sm:px-6 py-4 text-center">
                     <span
                       className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
-                        isStudentActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                        isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
                       }`}
                     >
-                      {isStudentActive ? <CheckCircle2 size={13} /> : <XCircle size={13} />}
-                      {isStudentActive ? 'Hoạt động' : 'Ngừng'}
+                      {isActive ? <CheckCircle2 size={13} /> : <XCircle size={13} />}
+                      {isActive ? 'Hoạt động' : 'Ngừng'}
                     </span>
                   </td>
                   <td className="px-2 sm:px-6 py-4 text-center">
-                    <button
-                      type="button"
-                      onClick={() => handleOpenEditStudent(st)}
-                      disabled={st.id.startsWith('temp-')}
-                      className="inline-flex items-center gap-1 rounded-md bg-blue-100 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-200 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
-                    >
-                      <Pencil size={14} />
-                      Sửa
-                    </button>
+                    <div className="inline-flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEditStudent(st)}
+                        disabled={st.id.startsWith('temp-')}
+                        className="inline-flex items-center gap-1 rounded-md bg-blue-100 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-200 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
+                      >
+                        <Pencil size={14} />
+                        Sửa
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteStudent(st)}
+                        className="inline-flex items-center gap-1 rounded-md bg-red-100 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-200"
+                      >
+                        <Trash2 size={14} />
+                        Xóa
+                      </button>
+                    </div>
                   </td>
-                      </>
-                    );
-                  })()}
                 </tr>
-              ))
+              )})
             )}
           </tbody>
         </table>
@@ -417,7 +668,7 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
         isOpen={isGradingModalOpen}
         onClose={() => setIsGradingModalOpen(false)}
         classId={selectedClass.id}
-        students={students}
+        students={activeStudents}
         onSuccess={handleGradingSuccess}
       />
 
@@ -434,6 +685,94 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
           autoGradingErrors: s.autoGradingErrors || [],
         }))}
       />
+
+      {isAddModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-md rounded-lg bg-white shadow-xl">
+            <div className="flex items-center justify-between border-b px-5 py-4">
+              <h2 className="text-lg font-semibold text-gray-900">Thêm học sinh</h2>
+              <button
+                type="button"
+                onClick={() => setIsAddModalOpen(false)}
+                className="rounded p-1 text-gray-500 hover:bg-gray-100"
+                disabled={isAddSubmitting}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddStudent} className="space-y-4 px-5 py-4">
+              {addError && (
+                <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                  {addError}
+                </div>
+              )}
+
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">Họ và tên đệm</label>
+                <input
+                  value={addForm.middleName}
+                  onChange={(event) => setAddForm((prev) => ({ ...prev, middleName: event.target.value }))}
+                  disabled={isAddSubmitting}
+                  className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  placeholder="Nguyễn Văn"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">Tên</label>
+                <input
+                  value={addForm.firstName}
+                  onChange={(event) => setAddForm((prev) => ({ ...prev, firstName: event.target.value }))}
+                  disabled={isAddSubmitting}
+                  className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  placeholder="An"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">Trạng thái</label>
+                <select
+                  value={addForm.status}
+                  onChange={(event) => setAddForm((prev) => ({ ...prev, status: event.target.value }))}
+                  disabled={isAddSubmitting}
+                  className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                >
+                  <option value="Active">Hoạt động</option>
+                  <option value="Inactive">Ngừng hoạt động</option>
+                </select>
+              </div>
+
+              <div className="flex justify-end gap-2 border-t pt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsAddModalOpen(false)}
+                  disabled={isAddSubmitting}
+                  className="rounded-md bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 disabled:opacity-60"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  disabled={isAddSubmitting}
+                  className="inline-flex items-center gap-2 rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
+                >
+                  {isAddSubmitting ? (
+                    <>
+                      <Loader2 size={15} className="animate-spin" />
+                      Đang thêm...
+                    </>
+                  ) : (
+                    'Thêm học sinh'
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {isEditModalOpen && editingStudent && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
