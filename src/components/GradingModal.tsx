@@ -86,6 +86,22 @@ const GradingModal: React.FC<GradingModalProps> = ({
         isActive: true,
     });
 
+    const normalizeText = (value?: string): string =>
+        (value || '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .trim();
+
+    const isStudentActive = (student: Student): boolean => {
+        const normalizedStatus = normalizeText(student.status);
+        if (normalizedStatus) {
+            return normalizedStatus === 'active';
+        }
+
+        return Boolean(student.isActive);
+    };
+
     // ============ EFFECTS ============
     useEffect(() => {
         if (isOpen && classId) {
@@ -200,21 +216,6 @@ const GradingModal: React.FC<GradingModalProps> = ({
     };
 
     const normalizeErrorText = (value: string): string => value.replace(/\s+/g, ' ').trim();
-    const normalizeText = (value?: string): string =>
-        (value || '')
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '')
-            .toLowerCase()
-            .trim();
-
-    const isStudentActive = (student: Student): boolean => {
-        const normalizedStatus = normalizeText(student.status);
-        if (normalizedStatus) {
-            return normalizedStatus === 'active';
-        }
-
-        return Boolean(student.isActive);
-    };
     const toDedupKey = (value: string): string =>
         normalizeErrorText(value)
             .toLowerCase()
