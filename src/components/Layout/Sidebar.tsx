@@ -1,4 +1,4 @@
-import { clsx } from 'clsx';
+﻿import { clsx } from 'clsx';
 import { LogOut, type LucideIcon } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -16,15 +16,15 @@ const NavItem = ({ label, icon: Icon, path, onClick }: NavItemProps) => (
     onClick={onClick}
     className={({ isActive }) =>
       clsx(
-        'flex items-center gap-3 w-full px-4 py-3 text-left transition-colors',
+        'mx-2 flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all',
         isActive
-          ? 'bg-blue-50 text-blue-600 border-r-4 border-blue-600'
-          : 'text-gray-600 hover:bg-gray-50'
+          ? 'bg-white/24 !text-white shadow-[0_6px_16px_rgba(15,23,42,0.24)]'
+          : '!text-slate-100 hover:bg-white/14 hover:!text-white'
       )
     }
   >
-    <Icon size={20} />
-    <span className="font-medium">{label}</span>
+    <Icon size={18} />
+    <span>{label}</span>
   </NavLink>
 );
 
@@ -49,18 +49,21 @@ const Sidebar = ({ isOpen, navItems, onNavigate }: SidebarProps) => {
   return (
     <aside
       className={clsx(
-        'bg-white w-64 shadow-md flex-shrink-0 transition-all duration-300 flex flex-col fixed lg:relative inset-y-0 left-0 z-40 transform lg:transform-none',
+        'fixed inset-y-0 left-0 z-40 flex w-64 flex-shrink-0 transform flex-col border-r border-blue-900/30 bg-gradient-to-b from-slate-900 via-blue-900 to-blue-950 shadow-2xl transition-all duration-300 lg:relative lg:translate-x-0',
         isOpen ? 'translate-x-0' : '-translate-x-full lg:-ml-64'
       )}
     >
-      <div className="p-6 border-b border-gray-100 flex items-center gap-2">
-        <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">
+      <div className="flex items-center gap-3 border-b border-white/10 px-5 py-5">
+        <div className="grid h-10 w-10 place-items-center rounded-xl bg-white/15 text-lg font-extrabold text-white">
           M
         </div>
-        <h1 className="text-xl font-bold text-gray-800">MOS Grader</h1>
+      <div className="min-w-0">
+        <h1 className="truncate text-lg font-extrabold text-white">MOS Grader</h1>
+        <p className="text-xs text-slate-200/95">Hệ thống chấm điểm MOS</p>
+      </div>
       </div>
 
-      <nav className="mt-6 flex-1">
+      <nav className="mt-4 flex-1 space-y-1">
         {navItems.map((item) => (
           <NavItem
             key={item.id}
@@ -72,12 +75,12 @@ const Sidebar = ({ isOpen, navItems, onNavigate }: SidebarProps) => {
         ))}
       </nav>
 
-      <div className="p-4 border-t border-gray-100">
+      <div className="border-t border-white/10 p-4">
         <button
           onClick={handleLogout}
-          className="flex items-center gap-3 w-full px-4 py-3 text-left text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+          className="flex w-full items-center gap-3 rounded-xl border border-red-300/35 bg-red-500/20 px-4 py-3 text-left text-red-50 transition hover:bg-red-500/28"
         >
-          <LogOut size={20} />
+          <LogOut size={18} />
           <span className="font-medium">Đăng xuất</span>
         </button>
       </div>

@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
+﻿import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { GraduationCap, LayoutDashboard } from 'lucide-react';
 import Layout from './components/Layout/Layout';
 import GradingView from './pages/GradingView';
@@ -11,7 +11,7 @@ const ProtectedRoute: React.FC = () => {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return <div className="min-h-screen bg-gray-100" />;
+    return <div className="min-h-screen bg-slate-100" />;
   }
 
   return user ? <Outlet /> : <Navigate to="/login" replace />;

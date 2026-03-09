@@ -1,10 +1,13 @@
-import { LayoutDashboard } from 'lucide-react';
+﻿import { LayoutDashboard } from 'lucide-react';
 
 const Dashboard = () => {
   return (
-    <div className="p-8 text-center text-gray-500">
-      <LayoutDashboard size={48} className="mx-auto mb-4 opacity-50" />
-      <h3 className="text-lg font-medium">Trang tổng quan đang được phát triển</h3>
+    <div className="app-card mx-auto max-w-4xl p-10 text-center">
+      <LayoutDashboard size={52} className="mx-auto mb-4 text-blue-600/80" />
+      <h3 className="text-2xl font-extrabold text-slate-900">Trang tổng quan</h3>
+      <p className="mt-2 text-slate-600">
+        Màn hình Dashboard đang được hoàn thiện. Bạn có thể bắt đầu từ mục Quản lý trường để thao tác dữ liệu.
+      </p>
     </div>
   );
 };

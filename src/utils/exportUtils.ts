@@ -1,6 +1,6 @@
 ﻿import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import * as XLSX from 'xlsx';
+import * as XLSX from 'xlsx-js-style';
 
 const ensureExt = (fileName: string, ext: '.xlsx' | '.pdf') =>
   fileName.toLowerCase().endsWith(ext) ? fileName : `${fileName}${ext}`;
@@ -55,18 +55,228 @@ const applySafeComputedStylesForPdf = (sourceRoot: HTMLElement, targetRoot: HTML
   }
 };
 
+type ExcelCellValue = string | number;
+
+interface ExcelSheetData {
+  sheetName: string;
+  header: string[];
+  body: ExcelCellValue[][];
+  title?: string;
+  colWidths?: number[];
+}
+
+interface ExportExcelOptions {
+  title?: string;
+  colWidths?: number[];
+  extraSheets?: ExcelSheetData[];
+}
+
+const buildStyledSheet = ({
+  header,
+  body,
+  title,
+  colWidths,
+}: Omit<ExcelSheetData, 'sheetName'>): XLSX.WorkSheet => {
+  const sheetTitle = title?.trim() || '';
+  const rows: ExcelCellValue[][] = [];
+  if (sheetTitle) {
+    rows.push([sheetTitle]);
+    rows.push([]);
+  }
+  rows.push(header);
+  rows.push(...body);
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  const headerRowIndex = sheetTitle ? 3 : 1; // 1-based
+  const headerRowZeroBased = headerRowIndex - 1;
+  const bodyStartRowIndex = headerRowIndex; // 0-based
+
+  const computedWidths = header.map((h, columnIndex) => {
+    if (colWidths?.[columnIndex]) {
+      return { wch: colWidths[columnIndex] };
+    }
+
+    const bodyMax = body.reduce((max, row) => {
+      const value = row[columnIndex];
+      const cellText = value == null ? '' : String(value);
+      return Math.max(max, cellText.length);
+    }, 0);
+
+    return { wch: Math.max(12, Math.min(72, Math.max(h.length, bodyMax) + 2)) };
+  });
+  ws['!cols'] = computedWidths;
+
+  ws['!rows'] = rows.map((row, idx) => {
+    if (sheetTitle && idx === 0) return { hpt: 28 };
+    if (idx === headerRowZeroBased) return { hpt: 24 };
+
+    const maxLineCount = (row || []).reduce<number>((max, value) => {
+      const text = value == null ? '' : String(value);
+      const lineCount = Math.max(1, text.split(/\r?\n/).length);
+      return Math.max(max, lineCount);
+    }, 1);
+
+    const dynamicHeight = 19 + (maxLineCount - 1) * 14;
+    return { hpt: Math.min(dynamicHeight, 120) };
+  });
+
+  if (sheetTitle && header.length > 0) {
+    ws['!merges'] = [
+      {
+        s: { r: 0, c: 0 },
+        e: { r: 0, c: header.length - 1 },
+      },
+    ];
+  }
+
+  if (header.length > 0) {
+    const startCol = XLSX.utils.encode_col(0);
+    const endCol = XLSX.utils.encode_col(header.length - 1);
+    ws['!autofilter'] = {
+      ref: `${startCol}${headerRowIndex}:${endCol}${headerRowIndex}`,
+    };
+  }
+
+  (ws as XLSX.WorkSheet & { ['!freeze']?: unknown })['!freeze'] = {
+    xSplit: 0,
+    ySplit: headerRowIndex,
+    topLeftCell: `A${headerRowIndex + 1}`,
+    activePane: 'bottomLeft',
+    state: 'frozen',
+  };
+
+  const applyCellStyle = (r: number, c: number, style: unknown) => {
+    const address = XLSX.utils.encode_cell({ r, c });
+    if (!ws[address]) return;
+    (ws[address] as XLSX.CellObject & { s?: unknown }).s = style;
+  };
+
+  const borderStyle = {
+    top: { style: 'thin', color: { rgb: 'D1D5DB' } },
+    bottom: { style: 'thin', color: { rgb: 'D1D5DB' } },
+    left: { style: 'thin', color: { rgb: 'D1D5DB' } },
+    right: { style: 'thin', color: { rgb: 'D1D5DB' } },
+  };
+
+  const titleStyle = {
+    font: { bold: true, sz: 16, color: { rgb: '1E3A8A' } },
+    fill: { fgColor: { rgb: 'DBEAFE' } },
+    alignment: { horizontal: 'left', vertical: 'center' },
+    border: borderStyle,
+  };
+
+  const headerStyle = {
+    font: { bold: true, color: { rgb: 'FFFFFF' } },
+    fill: { fgColor: { rgb: '1E40AF' } },
+    alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+    border: borderStyle,
+  };
+
+  const bodyBaseStyle = {
+    alignment: { vertical: 'top', wrapText: true, horizontal: 'left' },
+    border: borderStyle,
+  };
+
+  const totalColumnIndexes = header
+    .map((value, idx) => (value.toLowerCase().includes('tổng điểm') ? idx : -1))
+    .filter((idx) => idx >= 0);
+  const noteColumnIndexes = header
+    .map((value, idx) => (value.toLowerCase().includes('ghi chú') ? idx : -1))
+    .filter((idx) => idx >= 0);
+  const classificationColumnIndexes = header
+    .map((value, idx) => (value.toLowerCase().includes('xếp loại') ? idx : -1))
+    .filter((idx) => idx >= 0);
+  const sttColumnIndexes = header
+    .map((value, idx) => (value.toLowerCase() === 'stt' ? idx : -1))
+    .filter((idx) => idx >= 0);
+
+  if (sheetTitle) {
+    applyCellStyle(0, 0, titleStyle);
+  }
+
+  for (let col = 0; col < header.length; col += 1) {
+    applyCellStyle(headerRowZeroBased, col, headerStyle);
+  }
+
+  for (let rowOffset = 0; rowOffset < body.length; rowOffset += 1) {
+    const rowIndex = bodyStartRowIndex + rowOffset;
+    const isOddRow = rowOffset % 2 === 1;
+    for (let col = 0; col < header.length; col += 1) {
+      const cell = body[rowOffset]?.[col];
+      const raw = cell == null ? '' : String(cell);
+
+      const style: Record<string, unknown> = {
+        ...bodyBaseStyle,
+        fill: isOddRow ? { fgColor: { rgb: 'F8FAFC' } } : { fgColor: { rgb: 'FFFFFF' } },
+      };
+
+      if (sttColumnIndexes.includes(col)) {
+        style.alignment = { horizontal: 'center', vertical: 'top' };
+        style.font = { color: { rgb: '334155' }, bold: true };
+      }
+
+      if (classificationColumnIndexes.includes(col)) {
+        style.alignment = { horizontal: 'center', vertical: 'center' };
+        const level = raw.trim().toUpperCase();
+        if (level === 'A') style.fill = { fgColor: { rgb: 'DCFCE7' } };
+        if (level === 'B') style.fill = { fgColor: { rgb: 'DBEAFE' } };
+        if (level === 'C') style.fill = { fgColor: { rgb: 'FEF3C7' } };
+        if (level === 'D') style.fill = { fgColor: { rgb: 'FEE2E2' } };
+      }
+
+      if (totalColumnIndexes.includes(col)) {
+        style.font = { bold: true, color: { rgb: '1D4ED8' } };
+        style.fill = { fgColor: { rgb: 'EFF6FF' } };
+        style.alignment = { horizontal: 'right', vertical: 'center' };
+      }
+
+      if (noteColumnIndexes.includes(col)) {
+        style.alignment = { horizontal: 'left', vertical: 'top', wrapText: true };
+      }
+
+      const isRatioOrNumber = /^-?\d+([.,]\d+)?(\/-?\d+([.,]\d+)?)?$/.test(raw);
+      if (!noteColumnIndexes.includes(col) && isRatioOrNumber) {
+        style.alignment = { horizontal: 'center', vertical: 'center' };
+      }
+
+      applyCellStyle(rowIndex, col, style);
+    }
+  }
+
+  return ws;
+};
+
 export const exportToExcel = (
   fileName: string,
   sheetName: string,
   header: string[],
-  body: (string | number)[][]
+  body: ExcelCellValue[][],
+  options?: ExportExcelOptions
 ) => {
-  const ws = XLSX.utils.aoa_to_sheet([header, ...body]);
-  ws['!cols'] = header.map((h) => ({ wch: Math.max(12, h.length + 2) }));
-
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, sheetName);
-  XLSX.writeFile(wb, ensureExt(fileName, '.xlsx'), { bookType: 'xlsx' });
+  const mainSheet = buildStyledSheet({
+    header,
+    body,
+    title: options?.title,
+    colWidths: options?.colWidths,
+  });
+  XLSX.utils.book_append_sheet(wb, mainSheet, sheetName);
+
+  (options?.extraSheets || []).forEach((sheet) => {
+    const ws = buildStyledSheet({
+      header: sheet.header,
+      body: sheet.body,
+      title: sheet.title,
+      colWidths: sheet.colWidths,
+    });
+    XLSX.utils.book_append_sheet(wb, ws, sheet.sheetName);
+  });
+
+  XLSX.writeFile(wb, ensureExt(fileName, '.xlsx'), {
+    bookType: 'xlsx',
+    cellStyles: true,
+    compression: true,
+  });
 };
 
 export const exportToPdf = async (elementId: string, fileName: string) => {

@@ -16,7 +16,7 @@ export const scoreService = {
   ): Promise<ScoreResponse[]> {
     const response = await authFetch(
       `${API_BASE_URL}/score/assignment/${assignmentId}`,
-      { method: 'GET', headers: jsonHeaders },
+      { method: 'GET', headers: jsonHeaders, cache: 'no-store' },
       getAccessToken
     );
 
@@ -30,7 +30,7 @@ export const scoreService = {
   ): Promise<ScoreResponse[]> {
     const response = await authFetch(
       `${API_BASE_URL}/score/student/${studentId}`,
-      { method: 'GET', headers: jsonHeaders },
+      { method: 'GET', headers: jsonHeaders, cache: 'no-store' },
       getAccessToken
     );
 
@@ -45,7 +45,7 @@ export const scoreService = {
   ): Promise<StudentScoreReportResponse> {
     const response = await authFetch(
       `${API_BASE_URL}/score/student/${studentId}/class/${classId}/report`,
-      { method: 'GET', headers: jsonHeaders },
+      { method: 'GET', headers: jsonHeaders, cache: 'no-store' },
       getAccessToken
     );
 
@@ -108,7 +108,7 @@ export const scoreService = {
   ): Promise<ScoreResponse[]> {
     const response = await authFetch(
       `${API_BASE_URL}/score/class/${classId}`,
-      { method: 'GET', headers: jsonHeaders },
+      { method: 'GET', headers: jsonHeaders, cache: 'no-store' },
       getAccessToken
     );
 

@@ -70,6 +70,10 @@ const GradingView = () => {
               className="w-full p-2 border border-gray-300 rounded-md bg-gray-50"
             >
               <option value="project09">Dự án 09 - Báo cáo bán hàng và đơn hàng</option>
+              <option value="project08">Dự án 08 - Book Sales</option>
+              <option value="project07">Dự án 07 - Tea Sales Report</option>
+              <option value="project06">Dự án 06 - Sale Summary</option>
+              <option value="project05">Dự án 05 - Book Purchases</option>
               <option value="project04">Dự án 04 - Lịch học lớp</option>
               <option value="project03">Dự án 03 - Công thức Munson</option>
               <option value="project02">Dự án 02 - Hợp đồng bảo hiểm</option>

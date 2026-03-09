@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, type ChangeEvent } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef, type ChangeEvent } from 'react';
 import * as XLSX from 'xlsx';
 import type { Class } from '../types/class.types';
 import type { Assignment } from '../types/assignment.types';
@@ -17,6 +17,8 @@ type EditStudentForm = {
   middleName: string;
   firstName: string;
   status: string;
+  competencyLevel: '' | 'A' | 'B' | 'C' | 'D';
+  notes: string;
   classId: string;
 };
 
@@ -24,9 +26,16 @@ type AddStudentForm = {
   middleName: string;
   firstName: string;
   status: string;
+  competencyLevel: '' | 'A' | 'B' | 'C' | 'D';
+  notes: string;
 };
 
 const VALID_STATUSES = ['Active', 'Inactive'];
+const VALID_COMPETENCY_LEVELS = ['A', 'B', 'C', 'D'] as const;
+const vietnameseCollator = new Intl.Collator('vi', {
+  sensitivity: 'variant',
+  numeric: true,
+});
 
 const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
   const [students, setStudents] = useState<Student[]>([]);
@@ -44,12 +53,16 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
     middleName: '',
     firstName: '',
     status: 'Active',
+    competencyLevel: '',
+    notes: '',
     classId: '',
   });
   const [initialEditForm, setInitialEditForm] = useState<EditStudentForm>({
     middleName: '',
     firstName: '',
     status: 'Active',
+    competencyLevel: '',
+    notes: '',
     classId: '',
   });
   const [searchKeyword, setSearchKeyword] = useState('');
@@ -58,11 +71,15 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isAddSubmitting, setIsAddSubmitting] = useState(false);
   const [addError, setAddError] = useState('');
+  const [inlineSavingStudentId, setInlineSavingStudentId] = useState<string | null>(null);
   const [addForm, setAddForm] = useState<AddStudentForm>({
     middleName: '',
     firstName: '',
     status: 'Active',
+    competencyLevel: '',
+    notes: '',
   });
+  const latestScoresRequestRef = useRef(0);
   const { getAccessToken } = useAuth();
 
   const normalizeText = (value?: string) =>
@@ -80,18 +97,42 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
     return Boolean(student.isActive);
   }, []);
 
+  const competencyBadgeClass = (level?: string) => {
+    if (level === 'A') return 'bg-emerald-100 text-emerald-700';
+    if (level === 'B') return 'bg-blue-100 text-blue-700';
+    if (level === 'C') return 'bg-amber-100 text-amber-700';
+    if (level === 'D') return 'bg-rose-100 text-rose-700';
+    return 'bg-gray-100 text-gray-600';
+  };
+
+  const loadScores = useCallback(async () => {
+    const requestId = ++latestScoresRequestRef.current;
+    try {
+      const data = await scoreService.getByClass(selectedClass.id, getAccessToken);
+      if (requestId === latestScoresRequestRef.current) {
+        setScores(data);
+      }
+      return data;
+    } catch {
+      if (requestId === latestScoresRequestRef.current) {
+        setScores([]);
+      }
+      return [];
+    }
+  }, [selectedClass.id, getAccessToken]);
+
   useEffect(() => {
     if (selectedClass?.id) {
       loadStudents();
       loadAssignments();
-      loadScores();
+      void loadScores();
     }
     // eslint-disable-next-line
-  }, [selectedClass?.id]);
+  }, [selectedClass?.id, loadScores]);
 
-  const handleOpenViewScoresModal = async () => {
-    await loadScores();
+  const handleOpenViewScoresModal = () => {
     setIsViewScoresModal(true);
+    void loadScores();
   };
 
   const studentNewList = students.filter((st) => st.id.startsWith('temp-'));
@@ -104,9 +145,17 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
     }
 
     if (nameSortDirection === 'asc') {
-      list.sort((a, b) => `${a.middleName} ${a.firstName}`.localeCompare(`${b.middleName} ${b.firstName}`, 'vi'));
+      list.sort((a, b) => {
+        const byFirstName = vietnameseCollator.compare(a.firstName || '', b.firstName || '');
+        if (byFirstName !== 0) return byFirstName;
+        return vietnameseCollator.compare(a.middleName || '', b.middleName || '');
+      });
     } else if (nameSortDirection === 'desc') {
-      list.sort((a, b) => `${b.middleName} ${b.firstName}`.localeCompare(`${a.middleName} ${a.firstName}`, 'vi'));
+      list.sort((a, b) => {
+        const byFirstName = vietnameseCollator.compare(b.firstName || '', a.firstName || '');
+        if (byFirstName !== 0) return byFirstName;
+        return vietnameseCollator.compare(b.middleName || '', a.middleName || '');
+      });
     } else if (statusSortDirection === 'active-first') {
       list.sort((a, b) => Number(isStudentActive(b)) - Number(isStudentActive(a)));
     } else if (statusSortDirection === 'inactive-first') {
@@ -155,15 +204,6 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
       setAssignments(data);
     } catch {
       setAssignments([]);
-    }
-  };
-
-  const loadScores = async () => {
-    try {
-      const data = await scoreService.getByClass(selectedClass.id, getAccessToken);
-      setScores(data);
-    } catch {
-      setScores([]);
     }
   };
 
@@ -231,6 +271,8 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
       middleName: '',
       firstName: '',
       status: 'Active',
+      competencyLevel: '',
+      notes: '',
     });
     setAddError('');
     setIsAddModalOpen(true);
@@ -250,14 +292,22 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
       return;
     }
 
+    if (addForm.competencyLevel && !VALID_COMPETENCY_LEVELS.includes(addForm.competencyLevel)) {
+      setAddError('Mức năng lực không hợp lệ.');
+      return;
+    }
+
     setIsAddSubmitting(true);
     setAddError('');
     try {
+      const notes = addForm.notes.trim();
       await studentService.createStudent(
         {
           middleName,
           firstName,
           status: addForm.status,
+          competencyLevel: addForm.competencyLevel,
+          notes,
           classId: selectedClass.id,
         },
         getAccessToken
@@ -302,16 +352,58 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
       return;
     }
 
-    const sel = window.getSelection && window.getSelection();
-    if (sel && sel.rangeCount > 0) {
-      sel.removeAllRanges();
-    }
-
     setIsGradingModalOpen(true);
   };
 
-  const handleGradingSuccess = () => {
-    loadScores();
+  const handleInlineCompetencyChange = async (student: Student, level: '' | 'A' | 'B' | 'C' | 'D') => {
+    if (student.id.startsWith('temp-')) {
+      setStudents((prev) =>
+        prev.map((item) => (item.id === student.id ? { ...item, competencyLevel: level } : item))
+      );
+      return;
+    }
+
+    const status = VALID_STATUSES.includes(student.status || '')
+      ? (student.status as string)
+      : (isStudentActive(student) ? 'Active' : 'Inactive');
+
+    setInlineSavingStudentId(student.id);
+    try {
+      const updatedStudent = await studentService.updateStudent(
+        student.id,
+        {
+          middleName: student.middleName?.trim() || '',
+          firstName: student.firstName?.trim() || '',
+          status,
+          competencyLevel: level,
+          notes: student.notes?.trim() || '',
+          classId: student.classId || selectedClass.id,
+        },
+        getAccessToken
+      );
+
+      setStudents((prev) =>
+        prev.map((item) =>
+          item.id === student.id
+            ? {
+                ...item,
+                competencyLevel: (updatedStudent.competencyLevel ?? level) as '' | 'A' | 'B' | 'C' | 'D',
+                notes: updatedStudent.notes ?? item.notes,
+                status: updatedStudent.status ?? item.status,
+              }
+            : item
+        )
+      );
+      setFlashMessage('Cập nhật năng lực thành công.');
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Không thể cập nhật năng lực học sinh.');
+    } finally {
+      setInlineSavingStudentId(null);
+    }
+  };
+
+  const handleGradingSuccess = async () => {
+    await loadScores();
   };
 
   useEffect(() => {
@@ -319,6 +411,18 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
     const timer = window.setTimeout(() => setFlashMessage(''), 2500);
     return () => window.clearTimeout(timer);
   }, [flashMessage]);
+
+  useEffect(() => {
+    if (!inlineSavingStudentId) return;
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [inlineSavingStudentId]);
 
   const handleOpenEditStudent = (student: Student) => {
     if (student.id.startsWith('temp-')) {
@@ -332,6 +436,8 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
       status: VALID_STATUSES.includes(student.status || '')
         ? (student.status as string)
         : (student.isActive ? 'Active' : 'Inactive'),
+      competencyLevel: (student.competencyLevel || '') as '' | 'A' | 'B' | 'C' | 'D',
+      notes: student.notes || '',
       classId: student.classId || selectedClass.id,
     };
     setEditingStudent(student);
@@ -345,6 +451,8 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
     editForm.middleName !== initialEditForm.middleName ||
     editForm.firstName !== initialEditForm.firstName ||
     editForm.status !== initialEditForm.status ||
+    editForm.competencyLevel !== initialEditForm.competencyLevel ||
+    editForm.notes !== initialEditForm.notes ||
     editForm.classId !== initialEditForm.classId;
 
   const handleCloseEditModal = () => {
@@ -369,7 +477,7 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isEditModalOpen, hasUnsavedEditChanges]);
 
-  const handleEditFieldChange = (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleEditFieldChange = (event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = event.target;
     setEditError('');
     setEditForm((prev) => ({ ...prev, [name]: value }));
@@ -393,15 +501,23 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
       return;
     }
 
+    if (editForm.competencyLevel && !VALID_COMPETENCY_LEVELS.includes(editForm.competencyLevel)) {
+      setEditError('Mức năng lực không hợp lệ.');
+      return;
+    }
+
     setIsEditSubmitting(true);
     setEditError('');
     try {
+      const notes = editForm.notes.trim();
       await studentService.updateStudent(
         editingStudent.id,
         {
           middleName,
           firstName,
           status,
+          competencyLevel: editForm.competencyLevel,
+          notes,
           classId: editForm.classId || selectedClass.id,
         },
         getAccessToken
@@ -479,7 +595,7 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
       <ClassAnalyticsPanel classId={selectedClass.id} assignments={assignments} />
 
       <div className="bg-white shadow rounded-lg overflow-x-auto w-full">
-        <table className="min-w-[650px] w-full divide-y divide-gray-200 text-xs sm:text-sm">
+        <table className="min-w-[980px] w-full divide-y divide-gray-200 text-xs sm:text-sm">
           <thead className="bg-gray-50 sticky top-0 z-10">
             <tr>
               <th className="px-2 sm:px-6 py-3 text-left font-medium text-gray-500 uppercase">STT</th>
@@ -497,6 +613,8 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
                   </span>
                 </button>
               </th>
+              <th className="px-2 sm:px-6 py-3 text-center font-medium text-gray-500 uppercase">Năng lực</th>
+              <th className="px-2 sm:px-6 py-3 text-left font-medium text-gray-500 uppercase">Ghi chú</th>
               <th className="px-2 sm:px-6 py-3 text-center font-medium text-gray-500 uppercase">
                 <button
                   type="button"
@@ -517,13 +635,13 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
           <tbody className="bg-white divide-y divide-gray-200">
             {isLoading ? (
               <tr>
-                <td colSpan={5} className="px-2 py-4 text-center text-gray-500">
+                <td colSpan={7} className="px-2 py-4 text-center text-gray-500">
                   Đang tải dữ liệu...
                 </td>
               </tr>
             ) : displayedStudents.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-2 py-4 text-center text-gray-500">
+                <td colSpan={7} className="px-2 py-4 text-center text-gray-500">
                   {students.length === 0
                     ? 'Chưa có học sinh nào. Vui lòng nhập file Excel.'
                     : 'Không có học sinh nào khớp từ khóa tìm kiếm.'}
@@ -535,11 +653,46 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
                 return (
                 <tr
                   key={st.id}
-                  className="hover:bg-gray-50"
+                  className={`transition-colors ${
+                    isActive ? 'hover:bg-gray-50' : 'bg-rose-50 hover:bg-rose-100/80'
+                  }`}
                 >
                   <td className="px-2 sm:px-6 py-4 text-gray-500">{index + 1}</td>
                   <td className="px-2 sm:px-6 py-4 font-medium text-gray-900">{st.middleName}</td>
                   <td className="px-2 sm:px-6 py-4 font-medium text-gray-900">{st.firstName}</td>
+                  <td className="px-2 sm:px-6 py-4 text-center">
+                    <div className="flex flex-col items-center gap-1">
+                      <select
+                        value={st.competencyLevel || ''}
+                        disabled={inlineSavingStudentId === st.id}
+                        onChange={(event) =>
+                          handleInlineCompetencyChange(
+                            st,
+                            event.target.value as '' | 'A' | 'B' | 'C' | 'D'
+                          )
+                        }
+                        className={`w-[72px] rounded-full border px-2 py-1 text-xs font-semibold text-center outline-none transition ${competencyBadgeClass(st.competencyLevel)} ${
+                          inlineSavingStudentId === st.id ? 'cursor-not-allowed opacity-70' : 'hover:brightness-95'
+                        }`}
+                        title={st.id.startsWith('temp-') ? 'Học sinh tạm, sẽ lưu cùng danh sách học sinh.' : 'Cập nhật nhanh năng lực'}
+                      >
+                        <option value="">--</option>
+                        {VALID_COMPETENCY_LEVELS.map((level) => (
+                          <option key={level} value={level}>
+                            {level}
+                          </option>
+                        ))}
+                      </select>
+                      {inlineSavingStudentId === st.id && (
+                        <span className="text-[10px] text-gray-500">Đang lưu...</span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-2 sm:px-6 py-4 text-gray-700">
+                    <div className="max-w-[260px] truncate" title={st.notes || ''}>
+                      {st.notes?.trim() || '--'}
+                    </div>
+                  </td>
                   <td className="px-2 sm:px-6 py-4 text-center">
                     <span
                       className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
@@ -629,6 +782,19 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
         onClose={() => setIsViewScoresModal(false)}
         assignments={assignments}
         students={students}
+        classDisplayName={selectedClass.name}
+        onStudentClassificationUpdated={(studentId, classification) => {
+          setStudents((prev) =>
+            prev.map((student) =>
+              student.id === studentId ? { ...student, competencyLevel: classification } : student
+            )
+          );
+        }}
+        onStudentNotesUpdated={(studentId, notes) => {
+          setStudents((prev) =>
+            prev.map((student) => (student.id === studentId ? { ...student, notes } : student))
+          );
+        }}
         scores={scores.map((s) => ({
           studentId: s.studentId,
           assignmentId: s.assignmentId,
@@ -697,6 +863,37 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
                 </select>
               </div>
 
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">Đánh giá năng lực</label>
+                <select
+                  value={addForm.competencyLevel}
+                  onChange={(event) =>
+                    setAddForm((prev) => ({ ...prev, competencyLevel: event.target.value as '' | 'A' | 'B' | 'C' | 'D' }))
+                  }
+                  disabled={isAddSubmitting}
+                  className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                >
+                  <option value="">Chưa đánh giá</option>
+                  <option value="A">A</option>
+                  <option value="B">B</option>
+                  <option value="C">C</option>
+                  <option value="D">D</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">Ghi chú</label>
+                <textarea
+                  value={addForm.notes}
+                  onChange={(event) => setAddForm((prev) => ({ ...prev, notes: event.target.value }))}
+                  disabled={isAddSubmitting}
+                  rows={3}
+                  maxLength={500}
+                  className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  placeholder="Nhận xét thêm về học sinh..."
+                />
+              </div>
+
               <div className="flex justify-end gap-2 border-t pt-4">
                 <button
                   type="button"
@@ -756,7 +953,7 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
                   onChange={handleEditFieldChange}
                   disabled={isEditSubmitting}
                   className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                  placeholder="Nguyen Van"
+                  placeholder="Nguyễn Văn"
                   required
                 />
               </div>
@@ -786,6 +983,37 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
                   <option value="Active">Hoạt động</option>
                   <option value="Inactive">Ngừng hoạt động</option>
                 </select>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">Đánh giá năng lực</label>
+                <select
+                  name="competencyLevel"
+                  value={editForm.competencyLevel}
+                  onChange={handleEditFieldChange}
+                  disabled={isEditSubmitting}
+                  className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                >
+                  <option value="">Chưa đánh giá</option>
+                  <option value="A">A</option>
+                  <option value="B">B</option>
+                  <option value="C">C</option>
+                  <option value="D">D</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">Ghi chú</label>
+                <textarea
+                  name="notes"
+                  value={editForm.notes}
+                  onChange={handleEditFieldChange}
+                  disabled={isEditSubmitting}
+                  rows={3}
+                  maxLength={500}
+                  className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  placeholder="Nhận xét thêm về học sinh..."
+                />
               </div>
 
               <div className="flex justify-end gap-2 border-t pt-4">
@@ -821,3 +1049,5 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
 };
 
 export default StudentList;
+
+

@@ -15,7 +15,7 @@ interface GradingModalProps {
     onClose: () => void;
     classId: string;
     students: Student[];
-    onSuccess?: () => void;
+    onSuccess?: () => void | Promise<void>;
 }
 
 interface MultiAutoCellState {
@@ -120,6 +120,14 @@ const GradingModal: React.FC<GradingModalProps> = ({
         // eslint-disable-next-line react-hooks/exhaustive-deps
         [students]
     );
+    const activeAssignments = useMemo(
+        () => assignments.filter((assignment) => assignment.isActive),
+        [assignments]
+    );
+    const activeAutoAssignments = useMemo(
+        () => activeAssignments.filter((assignment) => assignment.gradingType === 'auto'),
+        [activeAssignments]
+    );
 
     useEffect(() => {
         if (isOpen && gradingStudents.length > 0) {
@@ -134,6 +142,16 @@ const GradingModal: React.FC<GradingModalProps> = ({
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedAssignment]);
+
+    useEffect(() => {
+        setMultiAssignmentIds((prev) =>
+            prev.filter((id) => activeAutoAssignments.some((assignment) => assignment.id === id))
+        );
+
+        if (selectedAssignment && !activeAutoAssignments.some((assignment) => assignment.id === selectedAssignment)) {
+            setSelectedAssignment('');
+        }
+    }, [activeAutoAssignments, selectedAssignment]);
     useEffect(() => {
         // Neu dang o che do AUTO va gradingApiEndpoint da duoc chon
         if (newAssignment.gradingApiEndpoint) {
@@ -287,8 +305,8 @@ const GradingModal: React.FC<GradingModalProps> = ({
     };
 
     const initializeMultiAutoStates = (assignmentIds: string[]) => {
-        const autoAssignments = assignments.filter(
-            (assignment) => assignmentIds.includes(assignment.id) && assignment.gradingType === 'auto'
+        const autoAssignments = activeAutoAssignments.filter(
+            (assignment) => assignmentIds.includes(assignment.id)
         );
 
         const autoMap = new Map<string, Map<string, MultiAutoCellState>>();
@@ -311,7 +329,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
     // ============ API CALLS ============
     const loadAssignments = async () => {
         try {
-            const data = await assignmentService.getByClass(classId, getAccessToken);
+            const data = await assignmentService.getByClass(classId, getAccessToken, { includeInactive: true });
             setAssignments(data);
         } catch (error) {
             console.error('Lỗi khi tải danh sách bài tập:', error);
@@ -415,9 +433,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
 
     const handleSelectAllAutoAssignments = async () => {
         if (isSelectingAssignments) return;
-        const allAutoIds = assignments
-            .filter((a) => a.gradingType === 'auto')
-            .map((a) => a.id);
+        const allAutoIds = activeAutoAssignments.map((a) => a.id);
 
         await applyMultiAssignmentSelection(allAutoIds);
     };
@@ -966,7 +982,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
             );
 
             alert('Luu diem thanh cong!');
-            if (onSuccess) onSuccess();
+            if (onSuccess) await onSuccess();
             handleClose();
         } catch (error) {
             console.error('Lỗi khi lưu điểm:', error);
@@ -1011,7 +1027,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
             }
 
             alert('Luu diem cho nhieu bai tap thanh cong!');
-            if (onSuccess) onSuccess();
+            if (onSuccess) await onSuccess();
             handleClose();
         } catch (error) {
             console.error('Lỗi khi lưu điểm nhiều bài tập:', error);
@@ -1143,7 +1159,9 @@ const GradingModal: React.FC<GradingModalProps> = ({
         gradingStudents
             .filter((student) => {
                 const fullName = normalizeText(`${student.middleName} ${student.firstName}`);
-                return fullName.includes(keyword);
+                const escapedKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const keywordPattern = new RegExp(`(^|\\s)${escapedKeyword}(\\s|$)`, 'i');
+                return keywordPattern.test(fullName);
             })
             .map((student) => student.id);
 
@@ -1212,22 +1230,12 @@ const GradingModal: React.FC<GradingModalProps> = ({
                 </button>
                 {assignments.length > 0 && (
                     <button
-                        onClick={() => setChooseMode('existing')}
-                        className="bg-indigo-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-indigo-700 flex items-center gap-3 shadow-md transition"
-                    >
-                        <Check size={24} />
-                        Chấm một bài
-                    </button>
-                )}
-                {assignments.length > 0 && (
-                    <button
                         onClick={async () => {
-                            const ids = assignments
-                                .filter((a) => a.gradingType === 'auto')
-                                .map((a) => a.id);
+                            const ids = activeAutoAssignments.map((a) => a.id);
                             setChooseMode('existing-multi');
                             await applyMultiAssignmentSelection(ids);
                         }}
+                        disabled={activeAutoAssignments.length === 0}
                         className="bg-emerald-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-emerald-700 flex items-center gap-3 shadow-md transition"
                     >
                         <Save size={24} />
@@ -1364,12 +1372,12 @@ const GradingModal: React.FC<GradingModalProps> = ({
         const selectedAssignmentData = assignments.find((a) => a.id === selectedAssignment);
 
         return (
-            <div className="overflow-x-auto">
+            <div className="max-h-[55vh] overflow-auto rounded-md border border-gray-200">
                 <table className="min-w-full divide-y divide-gray-200">
                     <caption className="caption-top pb-2 text-left text-sm font-semibold text-gray-700">
                         Bảng chấm điểm học sinh
                     </caption>
-                    <thead className="bg-gray-50">
+                    <thead className="sticky top-0 z-10 bg-gray-50">
                         <tr>
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">STT</th>
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Học sinh</th>
@@ -1508,7 +1516,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                     className="w-full border border-gray-300 rounded-md px-3 py-2"
                 >
                     <option value="">-- Chọn bài tập --</option>
-                    {assignments.filter((a) => a.gradingType === 'auto').map((a) => (
+                    {activeAutoAssignments.map((a) => (
                         <option key={a.id} value={a.id}>
                             {a.name} (Tự động)
                         </option>
@@ -1516,7 +1524,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                 </select>
             </div>
 
-            <div className="mb-4 rounded-md border border-gray-200 bg-gray-50 p-3">
+            <div className="sticky top-0 z-30 mb-4 rounded-md border border-gray-200 bg-gray-50 p-3 shadow-sm">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                     Tìm học sinh và cuộn tới vị trí trong bảng
                 </label>
@@ -1614,7 +1622,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
     );
 
     const renderExistingMultiMode = () => {
-        const autoAssignments = assignments.filter((a) => a.gradingType === 'auto');
+        const autoAssignments = activeAutoAssignments;
         const normalizedQuery = multiAssignmentQuery.trim().toLowerCase();
         const filteredAutoAssignments = autoAssignments.filter((assignment) => {
             if (!normalizedQuery) return true;
@@ -1624,7 +1632,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
             return haystack.includes(normalizedQuery);
         });
         const selectedAssignments = multiAssignmentIds
-            .map((id) => assignments.find((a) => a.id === id))
+            .map((id) => autoAssignments.find((a) => a.id === id))
             .filter((a): a is Assignment => Boolean(a));
 
         return (
@@ -1737,7 +1745,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                     )}
                 </div>
 
-                <div className="mb-4 rounded-md border border-gray-200 bg-gray-50 p-3">
+                <div className="sticky top-0 z-30 mb-4 rounded-md border border-gray-200 bg-gray-50 p-3 shadow-sm">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                         Tìm học sinh và cuộn tới vị trí trong bảng
                     </label>
@@ -1794,12 +1802,12 @@ const GradingModal: React.FC<GradingModalProps> = ({
                 </div>
 
                 {selectedAssignments.length > 0 ? (
-                    <div className="overflow-x-auto">
+                    <div className="max-h-[55vh] overflow-auto rounded-md border border-gray-200">
                         <table className="min-w-full divide-y divide-gray-200">
                             <caption className="caption-top pb-2 text-left text-sm font-semibold text-gray-700">
                                 Bảng chấm điểm nhiều bài tập
                             </caption>
-                            <thead className="bg-gray-50">
+                            <thead className="sticky top-0 z-10 bg-gray-50">
                                 <tr>
                                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">STT</th>
                                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Học sinh</th>

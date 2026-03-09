@@ -6,6 +6,8 @@ export interface Student {
     firstName: string;
     fullName?: string;
     status?: string;
+    competencyLevel?: 'A' | 'B' | 'C' | 'D' | '';
+    notes?: string;
     teacherId?: string;
     classId?: string;
     createdAt?: string;
@@ -38,6 +40,8 @@ export interface StudentResponse {
     firstName: string;
     fullName?: string;
     status: string;
+    competencyLevel?: 'A' | 'B' | 'C' | 'D' | '';
+    notes?: string;
     teacherId?: string;
     classId?: string;
     createdAt: string;

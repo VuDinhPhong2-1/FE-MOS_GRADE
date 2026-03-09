@@ -146,6 +146,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     scheduleProactiveRefresh(accessToken);
   };
 
+  const updateUser = (userData: Partial<User>): void => {
+    setUser((prevUser) => {
+      if (!prevUser) return prevUser;
+      const nextUser = { ...prevUser, ...userData };
+      localStorage.setItem('user', JSON.stringify(nextUser));
+      return nextUser;
+    });
+  };
+
   const logout = () => {
     const accessToken = localStorage.getItem('accessToken');
     clearSession();
@@ -229,7 +238,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading, getAccessToken, getRefreshToken }}>
+    <AuthContext.Provider
+      value={{ user, login, updateUser, logout, loading, getAccessToken, getRefreshToken }}
+    >
       {!loading && children}
     </AuthContext.Provider>
   );

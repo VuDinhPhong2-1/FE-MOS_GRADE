@@ -259,10 +259,7 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
   if (selectedClass) {
     return (
       <>
-        <button
-          className="mb-4 flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
-          onClick={handleBackToClassList}
-        >
+        <button className="app-btn-secondary mb-4 flex items-center gap-2 px-4 py-2" onClick={handleBackToClassList}>
           ← Quay lại danh sách lớp
         </button>
         <StudentList selectedClass={selectedClass} />
@@ -282,7 +279,7 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
   return (
     <div>
       <div className="mb-6">
-        <h2 className="text-2xl font-bold flex items-center gap-2 mb-2">
+        <h2 className="app-section-title mb-2 flex items-center gap-2 text-2xl">
           <BookOpen className="text-blue-600" />
           Danh sách lớp học
         </h2>
@@ -299,7 +296,7 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white p-4 rounded-lg shadow">
+        <div className="app-card p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-500 text-sm">Tổng số lớp</p>
@@ -309,7 +306,7 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-lg shadow">
+        <div className="app-card p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-500 text-sm">Đang hoạt động</p>
@@ -319,7 +316,7 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-lg shadow">
+        <div className="app-card p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-500 text-sm">Tổng học sinh</p>
@@ -329,7 +326,7 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-lg shadow">
+        <div className="app-card p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-500 text-sm">Năm học</p>
@@ -354,10 +351,7 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
           </label>
         </div>
 
-        <button
-          onClick={handleOpenAddModal}
-          className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-        >
+        <button onClick={handleOpenAddModal} className="app-btn-primary flex w-full items-center justify-center gap-2 px-4 py-2 sm:w-auto">
           <Plus size={18} />
           Thêm lớp mới
         </button>
@@ -368,7 +362,7 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
           {classes.map((cls) => (
             <div
               key={cls.id}
-              className={`bg-white shadow-md rounded-lg overflow-hidden hover:shadow-lg transition-shadow ${
+              className={`app-card overflow-hidden transition-shadow hover:shadow-xl ${
                 !cls.isActive ? 'opacity-60' : ''
               }`}
             >
@@ -436,13 +430,10 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
           ))}
         </div>
       ) : (
-        <div className="text-center py-12 bg-white rounded-lg shadow">
+        <div className="app-card py-12 text-center">
           <BookOpen className="w-16 h-16 mx-auto mb-4 text-gray-300" />
           <p className="text-gray-500 text-lg">Chưa có lớp học nào trong trường này</p>
-          <button
-            onClick={handleOpenAddModal}
-            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-          >
+          <button onClick={handleOpenAddModal} className="app-btn-primary mt-4 px-4 py-2">
             <Plus className="inline mr-2" size={18} />
             Tạo lớp đầu tiên
           </button>
@@ -450,8 +441,8 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
       )}
 
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 backdrop-blur-[1px]">
+          <div className="app-card w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b">
               <h2 className="text-lg sm:text-xl font-semibold">{editingClass ? 'Chỉnh sửa lớp học' : 'Thêm lớp học mới'}</h2>
               <button onClick={() => setShowModal(false)} className="p-1 hover:bg-gray-100 rounded">

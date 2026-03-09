@@ -54,11 +54,13 @@ const ResultCard: React.FC<Props> = ({ result }) => {
       </div>
 
       <div className="divide-y divide-gray-100">
-        {result.taskResults.map((task) => (
-          <div key={task.taskId} className="bg-white">
+        {result.taskResults.map((task, index) => {
+          const taskKey = `${task.taskId}-${index}`;
+          return (
+          <div key={taskKey} className="bg-white">
             <div
               className="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition"
-              onClick={() => toggleTask(task.taskId)}
+              onClick={() => toggleTask(taskKey)}
             >
               <div className="flex items-center gap-3">
                 {task.isPassed ? (
@@ -76,11 +78,11 @@ const ResultCard: React.FC<Props> = ({ result }) => {
                 <span className={clsx('font-bold', task.score === task.maxScore ? 'text-green-600' : 'text-red-600')}>
                   {task.score}/{task.maxScore}
                 </span>
-                {expandedTasks.includes(task.taskId) ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                {expandedTasks.includes(taskKey) ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
               </div>
             </div>
 
-            {expandedTasks.includes(task.taskId) && (
+            {expandedTasks.includes(taskKey) && (
               <div className="px-12 pb-4 pt-0 text-sm">
                 {task.errors.length > 0 && (
                   <div className="mb-2">
@@ -105,7 +107,7 @@ const ResultCard: React.FC<Props> = ({ result }) => {
               </div>
             )}
           </div>
-        ))}
+        )})}
       </div>
     </div>
   );

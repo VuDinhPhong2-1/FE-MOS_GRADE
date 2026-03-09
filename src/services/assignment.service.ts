@@ -36,6 +36,30 @@ const fallbackGradingEndpoints: GradingEndpointInfo[] = [
     maxScore: 28,
   },
   {
+    endpoint: 'project05',
+    displayName: 'Dự án 05',
+    description: 'Chấm điểm dự án 05',
+    maxScore: 24,
+  },
+  {
+    endpoint: 'project06',
+    displayName: 'Dự án 06',
+    description: 'Chấm điểm dự án 06',
+    maxScore: 24,
+  },
+  {
+    endpoint: 'project07',
+    displayName: 'Dự án 07',
+    description: 'Chấm điểm dự án 07',
+    maxScore: 24,
+  },
+  {
+    endpoint: 'project08',
+    displayName: 'Dự án 08',
+    description: 'Chấm điểm dự án 08',
+    maxScore: 24,
+  },
+  {
     endpoint: 'project09',
     displayName: 'Dự án 09',
     description: 'Chấm điểm dự án 09',
@@ -66,10 +90,12 @@ const mergeEndpointFallback = (items: GradingEndpointInfo[]): GradingEndpointInf
 export const assignmentService = {
   async getByClass(
     classId: string,
-    getAccessToken: (forceRefresh?: boolean) => Promise<string | null>
+    getAccessToken: (forceRefresh?: boolean) => Promise<string | null>,
+    options?: { includeInactive?: boolean }
   ): Promise<Assignment[]> {
+    const includeInactive = options?.includeInactive ? 'true' : 'false';
     const response = await authFetch(
-      `${API_BASE_URL}/assignment/class/${classId}`,
+      `${API_BASE_URL}/assignment/class/${classId}?includeInactive=${includeInactive}`,
       { method: 'GET', headers: jsonHeaders },
       getAccessToken
     );

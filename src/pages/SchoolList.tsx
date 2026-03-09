@@ -158,25 +158,25 @@ const SchoolList = () => {
   }
 
   return (
-    <div className="p-3 sm:p-4">
+    <div>
       {!selectedSchool ? (
         <>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
-            <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+          <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <h1 className="app-section-title flex items-center gap-2 text-xl sm:text-2xl">
               <Building2 className="text-blue-600" />
               Quản lý trường học
             </h1>
             <div className="flex flex-col sm:flex-row gap-2">
               <button
                 onClick={fetchSchools}
-                className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition"
+                className="app-btn-secondary flex items-center justify-center gap-2 px-4 py-2"
               >
                 <RefreshCw size={18} />
                 Làm mới
               </button>
               <button
                 onClick={handleOpenAddModal}
-                className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                className="app-btn-primary flex items-center justify-center gap-2 px-4 py-2"
               >
                 <Plus size={18} />
                 Thêm trường
@@ -190,7 +190,7 @@ const SchoolList = () => {
             </div>
           )}
 
-          <div className="bg-white shadow rounded-lg overflow-x-auto">
+          <div className="app-card overflow-x-auto">
             <table className="min-w-[860px] w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
@@ -249,8 +249,8 @@ const SchoolList = () => {
           </div>
 
           {showModal && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 backdrop-blur-[1px]">
+              <div className="app-card w-full max-w-lg max-h-[90vh] overflow-y-auto">
                 <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b">
                   <h2 className="text-lg sm:text-xl font-semibold">
                     {editingSchool ? 'Chỉnh sửa trường' : 'Thêm trường mới'}
@@ -399,10 +399,7 @@ const SchoolList = () => {
         </>
       ) : (
         <>
-          <button
-            className="mb-4 flex items-center gap-2 px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition"
-            onClick={handleBackToSchools}
-          >
+            <button className="app-btn-secondary mb-4 flex items-center gap-2 px-4 py-2" onClick={handleBackToSchools}>
             ← Quay lại danh sách trường
           </button>
           <ClassList selectedSchool={selectedSchool} />

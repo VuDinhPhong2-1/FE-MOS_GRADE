@@ -1,23 +1,24 @@
-﻿import { useMemo } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import type { FC } from 'react';
-import { X, FileDown } from 'lucide-react';
+import { X, FileDown, Eye, EyeOff } from 'lucide-react';
 import type { Assignment } from '../types/assignment.types';
 import type { Student } from '../types/student.types';
 import { exportToExcel, exportToPdf } from '../utils/exportUtils';
+import { useAuth } from '../context/AuthContext';
+import studentService from '../services/student.service';
+
+type CompetencyLevel = '' | 'A' | 'B' | 'C' | 'D';
+type AssignmentColumnDisplayMode = 'full' | 'compact' | 'hidden';
 
 interface DisplayStudentRow {
   id: string;
-  name: string;
-  calculatedScores: { [assignmentId: string]: number };
-  errorsByAssignment: { [assignmentId: string]: string[] };
+  middleName: string;
+  firstName: string;
+  notes: string;
+  calculatedScores: Record<string, number>;
+  errorsByAssignment: Record<string, string[]>;
   totalScore: number;
-}
-
-interface AssignmentStatistics {
-  assignmentId: string;
-  min: number;
-  max: number;
-  average: number;
+  classification: CompetencyLevel;
 }
 
 interface ViewAllScoresModalProps {
@@ -25,6 +26,9 @@ interface ViewAllScoresModalProps {
   onClose: () => void;
   assignments: Assignment[];
   students: Student[];
+  classDisplayName?: string;
+  onStudentClassificationUpdated?: (studentId: string, classification: CompetencyLevel) => void;
+  onStudentNotesUpdated?: (studentId: string, notes: string) => void;
   scores: {
     studentId: string;
     assignmentId: string;
@@ -34,41 +38,163 @@ interface ViewAllScoresModalProps {
   }[];
 }
 
+const formatScore = (value: number): string => {
+  if (!Number.isFinite(value)) return '0';
+  return Number.isInteger(value) ? String(value) : value.toFixed(2).replace(/\.00$/, '');
+};
+
+const normalizeErrorText = (value: string): string => value.replace(/\s+/g, ' ').trim();
+const toDedupKey = (value: string): string =>
+  normalizeErrorText(value)
+    .toLowerCase()
+    .replace(/[.:;!?]+$/g, '');
+
+const normalizeClassification = (value?: string): CompetencyLevel => {
+  const normalized = (value || '').trim().toUpperCase();
+  return normalized === 'A' || normalized === 'B' || normalized === 'C' || normalized === 'D'
+    ? normalized
+    : '';
+};
+
+const classificationClassMap: Record<'A' | 'B' | 'C' | 'D', string> = {
+  A: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+  B: 'bg-blue-100 text-blue-700 border-blue-200',
+  C: 'bg-amber-100 text-amber-700 border-amber-200',
+  D: 'bg-rose-100 text-rose-700 border-rose-200',
+};
+
+const sanitizeFileNamePart = (value: string): string =>
+  value.replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g, ' ').trim();
+
 const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
   isOpen,
   onClose,
   assignments,
   students,
+  classDisplayName,
+  onStudentClassificationUpdated,
+  onStudentNotesUpdated,
   scores,
 }) => {
+  const { getAccessToken } = useAuth();
+
+  const [classificationByStudentId, setClassificationByStudentId] = useState<
+    Record<string, CompetencyLevel>
+  >({});
+  const [notesByStudentId, setNotesByStudentId] = useState<Record<string, string>>({});
+  const [savingClassificationStudentId, setSavingClassificationStudentId] = useState<string | null>(
+    null
+  );
+  const [savingNotesStudentId, setSavingNotesStudentId] = useState<string | null>(null);
+  const [columnDisplayByAssignmentId, setColumnDisplayByAssignmentId] = useState<
+    Record<string, AssignmentColumnDisplayMode>
+  >({});
+  const [isClassificationColumnVisible, setIsClassificationColumnVisible] = useState(true);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const nextClassificationMap: Record<string, CompetencyLevel> = {};
+    const nextNotesMap: Record<string, string> = {};
+    students.forEach((student) => {
+      nextClassificationMap[student.id] = normalizeClassification(student.competencyLevel);
+      nextNotesMap[student.id] = (student.notes || '').trim();
+    });
+    setClassificationByStudentId(nextClassificationMap);
+    setNotesByStudentId(nextNotesMap);
+  }, [isOpen, students]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setColumnDisplayByAssignmentId((prev) => {
+      const next: Record<string, AssignmentColumnDisplayMode> = {};
+      assignments.forEach((assignment) => {
+        next[assignment.id] = prev[assignment.id] ?? 'full';
+      });
+      return next;
+    });
+  }, [isOpen, assignments]);
+
   const maxScoreTotal = useMemo(
-    () => assignments.reduce((sum, a) => sum + (a.maxScore || 0), 0),
+    () => assignments.reduce((sum, assignment) => sum + (assignment.maxScore || 0), 0),
     [assignments]
   );
-  const normalizeErrorText = (value: string): string => value.replace(/\s+/g, ' ').trim();
-  const toDedupKey = (value: string): string =>
-    normalizeErrorText(value)
-      .toLowerCase()
-      .replace(/[.:;!?]+$/g, '');
+
+  const studentsById = useMemo(() => {
+    const map = new Map<string, Student>();
+    students.forEach((student) => map.set(student.id, student));
+    return map;
+  }, [students]);
+
+  const scoreLookup = useMemo(() => {
+    const map = new Map<string, { scoreValue: number | null; autoGradingErrors?: string[] }>();
+    scores.forEach((score) => {
+      map.set(`${score.studentId}::${score.assignmentId}`, {
+        scoreValue: score.scoreValue,
+        autoGradingErrors: score.autoGradingErrors || [],
+      });
+    });
+    return map;
+  }, [scores]);
+
+  const displayedAssignments = useMemo(
+    () =>
+      assignments.filter(
+        (assignment) => (columnDisplayByAssignmentId[assignment.id] ?? 'full') !== 'hidden'
+      ),
+    [assignments, columnDisplayByAssignmentId]
+  );
+
+  const compactAssignmentsCount = useMemo(
+    () =>
+      displayedAssignments.filter(
+        (assignment) => (columnDisplayByAssignmentId[assignment.id] ?? 'full') === 'compact'
+      ).length,
+    [displayedAssignments, columnDisplayByAssignmentId]
+  );
+
+  const staticColumnCount = isClassificationColumnVisible ? 6 : 5;
+
+  const areAllAssignmentsVisible = useMemo(
+    () =>
+      assignments.length > 0 &&
+      assignments.every((assignment) => (columnDisplayByAssignmentId[assignment.id] ?? 'full') === 'full'),
+    [assignments, columnDisplayByAssignmentId]
+  );
+
+  const areAllAssignmentsCompact = useMemo(
+    () =>
+      assignments.length > 0 &&
+      assignments.every(
+        (assignment) => (columnDisplayByAssignmentId[assignment.id] ?? 'full') === 'compact'
+      ),
+    [assignments, columnDisplayByAssignmentId]
+  );
+
+  const areAllAssignmentsHidden = useMemo(
+    () =>
+      assignments.length > 0 &&
+      assignments.every((assignment) => (columnDisplayByAssignmentId[assignment.id] ?? 'full') === 'hidden'),
+    [assignments, columnDisplayByAssignmentId]
+  );
 
   const displayRows = useMemo<DisplayStudentRow[]>(() => {
     if (!isOpen) return [];
 
     return students.map((student) => {
-      const name =
-        student.fullName ||
-        `${student.middleName || ''} ${student.firstName || ''}`.trim();
+      const middleName = (student.middleName || '').trim();
+      const firstName = (student.firstName || '').trim();
+      const notesMapValue = notesByStudentId[student.id];
+      const notes = notesMapValue !== undefined ? notesMapValue : (student.notes || '').trim();
 
       let totalScore = 0;
-      const calculatedScores: { [assignmentId: string]: number } = {};
-      const errorsByAssignment: { [assignmentId: string]: string[] } = {};
+      const calculatedScores: Record<string, number> = {};
+      const errorsByAssignment: Record<string, string[]> = {};
 
       assignments.forEach((assignment) => {
-        const scoreObj = scores.find(
-          (s) => s.studentId === student.id && s.assignmentId === assignment.id
-        );
-        const score =
-          typeof scoreObj?.scoreValue === 'number' ? scoreObj.scoreValue : 0;
+        const key = `${student.id}::${assignment.id}`;
+        const scoreObj = scoreLookup.get(key);
+        const score = typeof scoreObj?.scoreValue === 'number' ? scoreObj.scoreValue : 0;
         calculatedScores[assignment.id] = score;
         totalScore += score;
 
@@ -77,276 +203,540 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
         (scoreObj?.autoGradingErrors || []).forEach((rawError) => {
           const errorText = normalizeErrorText(rawError || '');
           if (!errorText) return;
-          const key = toDedupKey(errorText);
-          if (seenErrors.has(key)) return;
-          seenErrors.add(key);
+          const dedupKey = toDedupKey(errorText);
+          if (seenErrors.has(dedupKey)) return;
+          seenErrors.add(dedupKey);
           assignmentErrors.push(errorText);
         });
         errorsByAssignment[assignment.id] = assignmentErrors;
       });
 
+      const mapValue = classificationByStudentId[student.id];
+      const classification =
+        mapValue !== undefined ? mapValue : normalizeClassification(student.competencyLevel);
+
       return {
         id: student.id,
-        name,
+        middleName,
+        firstName,
+        notes,
         calculatedScores,
         errorsByAssignment,
         totalScore,
+        classification,
       };
     });
-  }, [isOpen, assignments, students, scores]);
-
-  const assignmentStats = useMemo<AssignmentStatistics[]>(() => {
-    if (!isOpen) return [];
-
-    return assignments.map((assignment) => {
-      const allScores: number[] = students.map((student) => {
-        const scoreObj = scores.find(
-          (s) => s.studentId === student.id && s.assignmentId === assignment.id
-        );
-        return typeof scoreObj?.scoreValue === 'number' ? scoreObj.scoreValue : 0;
-      });
-
-      const min = allScores.length > 0 ? Math.min(...allScores) : 0;
-      const max = allScores.length > 0 ? Math.max(...allScores) : 0;
-      const avg =
-        allScores.length > 0
-          ? parseFloat(
-              (allScores.reduce((acc, s) => acc + s, 0) / allScores.length).toFixed(2)
-            )
-          : 0;
-
-      return { assignmentId: assignment.id, min, max, average: avg };
-    });
-  }, [isOpen, assignments, students, scores]);
-
-  const classAverageTotal = useMemo(() => {
-    if (displayRows.length === 0) return 0;
-    const sum = displayRows.reduce((acc, row) => acc + row.totalScore, 0);
-    return parseFloat((sum / displayRows.length).toFixed(2));
-  }, [displayRows]);
-
-  const highestTotal = useMemo(() => {
-    if (displayRows.length === 0) return 0;
-    return Math.max(...displayRows.map((r) => r.totalScore));
-  }, [displayRows]);
-
-  const lowestTotal = useMemo(() => {
-    if (displayRows.length === 0) return 0;
-    return Math.min(...displayRows.map((r) => r.totalScore));
-  }, [displayRows]);
+  }, [isOpen, students, assignments, scoreLookup, classificationByStudentId, notesByStudentId]);
 
   const excelHeaders = useMemo(
     () => [
-      'Tên học sinh',
-      ...assignments.map((a) => `${a.name} (TD: ${a.maxScore})`),
-      'TỔNG ĐIỂM',
+      'STT',
+      'Họ và tên đệm',
+      'Tên',
+      ...assignments.map((assignment) => `${assignment.name} (tối đa ${assignment.maxScore})`),
+      'Xếp loại',
+      'Tổng điểm',
+      'Ghi chú',
     ],
     [assignments]
   );
 
   const excelBody = useMemo(
     () =>
-      displayRows.map((row) => [
-        row.name,
-        ...assignments.map((a) => {
-          const score = row.calculatedScores[a.id];
-          const errors = row.errorsByAssignment[a.id] || [];
-          if (errors.length === 0) return score;
-          return `${score} | Lỗi: ${errors.join(' ; ')}`;
+      displayRows.map((row, index) => [
+        index + 1,
+        row.middleName,
+        row.firstName,
+        ...assignments.map((assignment) => {
+          const score = row.calculatedScores[assignment.id] ?? 0;
+          const errors = row.errorsByAssignment[assignment.id] || [];
+          if (errors.length === 0) return formatScore(score);
+          return `${formatScore(score)} (${errors.length} lỗi)`;
         }),
-        `${row.totalScore}/${maxScoreTotal}`,
+        row.classification,
+        `${formatScore(row.totalScore)}/${formatScore(maxScoreTotal)}`,
+        row.notes,
       ]),
     [displayRows, assignments, maxScoreTotal]
   );
 
-  const excelBodyWithStats = useMemo(
-    () => [
-      ...excelBody,
-      [
-        'Điểm thấp nhất',
-        ...assignmentStats.map((s) => s.min),
-        '',
-      ],
-      [
-        'Điểm cao nhất',
-        ...assignmentStats.map((s) => s.max),
-        '',
-      ],
-      [
-        'Điểm trung bình',
-        ...assignmentStats.map((s) => s.average),
-        `${classAverageTotal}/${maxScoreTotal}`,
-      ],
-    ],
-    [assignmentStats, classAverageTotal, excelBody, maxScoreTotal]
+  const excelErrorHeaders = useMemo(
+    () => ['STT', 'Họ và tên đệm', 'Tên', 'Bài tập', 'Điểm', 'Số lỗi', 'Chi tiết lỗi'],
+    []
   );
 
+  const excelErrorBody = useMemo(() => {
+    const rows: (string | number)[][] = [];
+    let index = 1;
+    displayRows.forEach((row) => {
+      assignments.forEach((assignment) => {
+        const errors = row.errorsByAssignment[assignment.id] || [];
+        if (errors.length === 0) return;
+        rows.push([
+          index,
+          row.middleName || '--',
+          row.firstName || '--',
+          assignment.name,
+          formatScore(row.calculatedScores[assignment.id] ?? 0),
+          errors.length,
+          errors.map((e, i) => `${i + 1}. ${e}`).join('\n'),
+        ]);
+        index += 1;
+      });
+    });
+    return rows;
+  }, [displayRows, assignments]);
+
+  const titleClassName = (classDisplayName || '').trim() || 'Chưa đặt tên lớp';
+  const safeClassName = sanitizeFileNamePart(titleClassName);
+  const exportExcelFileName = `Bảng điểm ${safeClassName}`;
+  const exportPdfFileName = `Bảng điểm ${safeClassName}.pdf`;
+
   const handleExportExcel = () => {
-    exportToExcel('BảngĐiểmHọcSinh.xlsx', 'Bảng Điểm', excelHeaders, excelBodyWithStats);
+    const assignmentColumnWidths = assignments.map(() => 18);
+    const colWidths = [6, 24, 14, ...assignmentColumnWidths, 12, 16, 34];
+    const extraSheets =
+      excelErrorBody.length > 0
+        ? [
+            {
+              sheetName: 'ChiTietLoi',
+              header: excelErrorHeaders,
+              body: excelErrorBody,
+              title: `Chi tiết lỗi - ${titleClassName}`,
+              colWidths: [6, 24, 14, 24, 10, 8, 80],
+            },
+          ]
+        : [];
+
+    exportToExcel(exportExcelFileName, 'BangDiem', excelHeaders, excelBody, {
+      title: `Bảng điểm lớp ${titleClassName}`,
+      colWidths,
+      extraSheets,
+    });
   };
 
   const handleExportPdf = () => {
-    exportToPdf('score-table', 'BảngĐiểmHọcSinh.pdf');
+    exportToPdf('score-table', exportPdfFileName);
+  };
+
+  const handleAssignmentColumnDisplayChange = (
+    assignmentId: string,
+    mode: AssignmentColumnDisplayMode
+  ) => {
+    setColumnDisplayByAssignmentId((prev) => ({
+      ...prev,
+      [assignmentId]: mode,
+    }));
+  };
+
+  const handleApplyColumnDisplayForAll = (mode: AssignmentColumnDisplayMode) => {
+    const next: Record<string, AssignmentColumnDisplayMode> = {};
+    assignments.forEach((assignment) => {
+      next[assignment.id] = mode;
+    });
+    setColumnDisplayByAssignmentId(next);
+  };
+
+  const handleClassificationChange = async (studentId: string, nextLevel: CompetencyLevel) => {
+    const previousLevel = classificationByStudentId[studentId] ?? '';
+    setClassificationByStudentId((prev) => ({ ...prev, [studentId]: nextLevel }));
+
+    const student = studentsById.get(studentId);
+    if (!student) return;
+
+    if (student.id.startsWith('temp-')) {
+      onStudentClassificationUpdated?.(studentId, nextLevel);
+      return;
+    }
+
+    setSavingClassificationStudentId(studentId);
+    try {
+      const fallbackStatus = student.isActive ? 'Active' : 'Inactive';
+      const status = (student.status || '').trim() || fallbackStatus;
+      const notes = (notesByStudentId[studentId] ?? (student.notes || '')).trim();
+
+      await studentService.updateStudent(
+        studentId,
+        {
+          middleName: (student.middleName || '').trim(),
+          firstName: (student.firstName || '').trim(),
+          status,
+          competencyLevel: nextLevel,
+          notes,
+          classId: student.classId,
+        },
+        getAccessToken
+      );
+      onStudentClassificationUpdated?.(studentId, nextLevel);
+    } catch (error) {
+      setClassificationByStudentId((prev) => ({ ...prev, [studentId]: previousLevel }));
+      alert(error instanceof Error ? error.message : 'Không thể cập nhật xếp loại học sinh.');
+    } finally {
+      setSavingClassificationStudentId(null);
+    }
+  };
+
+  const handleNotesChange = (studentId: string, value: string) => {
+    setNotesByStudentId((prev) => ({ ...prev, [studentId]: value }));
+  };
+
+  const handleNotesBlur = async (studentId: string) => {
+    const student = studentsById.get(studentId);
+    if (!student) return;
+
+    const rawDraftNotes = notesByStudentId[studentId] ?? '';
+    const draftNotes = rawDraftNotes.trim();
+    const persistedNotes = (student.notes || '').trim();
+
+    if (draftNotes !== rawDraftNotes) {
+      setNotesByStudentId((prev) => ({ ...prev, [studentId]: draftNotes }));
+    }
+
+    if (draftNotes === persistedNotes) return;
+
+    if (student.id.startsWith('temp-')) {
+      onStudentNotesUpdated?.(studentId, draftNotes);
+      return;
+    }
+
+    const fallbackStatus = student.isActive ? 'Active' : 'Inactive';
+    const status = (student.status || '').trim() || fallbackStatus;
+    const competencyLevel =
+      classificationByStudentId[studentId] ?? normalizeClassification(student.competencyLevel);
+
+    setSavingNotesStudentId(studentId);
+    try {
+      await studentService.updateStudent(
+        studentId,
+        {
+          middleName: (student.middleName || '').trim(),
+          firstName: (student.firstName || '').trim(),
+          status,
+          competencyLevel,
+          notes: draftNotes,
+          classId: student.classId,
+        },
+        getAccessToken
+      );
+      onStudentNotesUpdated?.(studentId, draftNotes);
+    } catch (error) {
+      setNotesByStudentId((prev) => ({ ...prev, [studentId]: persistedNotes }));
+      alert(error instanceof Error ? error.message : 'Không thể cập nhật ghi chú học sinh.');
+    } finally {
+      setSavingNotesStudentId(null);
+    }
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-[1px] flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-7xl w-full max-h-[92vh] flex flex-col overflow-hidden">
-        <div className="flex justify-between items-center px-6 py-5 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-blue-50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-[1px]">
+      <div className="flex max-h-[92vh] w-full max-w-7xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+        <div className="flex items-center justify-between border-b border-slate-200 bg-gradient-to-r from-slate-50 to-blue-50 px-6 py-5">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-600 text-white grid place-items-center font-bold">
-              SD
+            <div className="grid h-10 w-10 place-items-center rounded-xl bg-blue-600 font-bold text-white">
+              BD
             </div>
             <div>
-              <h2 className="text-xl font-extrabold text-slate-800">Bảng điểm toàn lớp</h2>
+              <h2 className="text-xl font-extrabold text-slate-800">Bảng điểm lớp {titleClassName}</h2>
               <p className="text-sm text-slate-500">
-                {students.length} học sinh • {assignments.length} bài tập
+                {students.length} học sinh, {assignments.length} bài tập, hiện {displayedAssignments.length}/
+                {assignments.length} cột điểm
               </p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
-          >
+          <button onClick={onClose} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
             <X size={24} />
           </button>
         </div>
 
-        <div className="px-6 pt-4 pb-2 grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3">
-            <div className="text-xs text-blue-600 uppercase font-semibold">Trung bình tổng</div>
-            <div className="text-lg font-bold text-blue-800">
-              {classAverageTotal}/{maxScoreTotal}
-            </div>
-          </div>
-          <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3">
-            <div className="text-xs text-emerald-600 uppercase font-semibold">Cao nhất</div>
-            <div className="text-lg font-bold text-emerald-800">
-              {highestTotal}/{maxScoreTotal}
-            </div>
-          </div>
-          <div className="rounded-xl border border-rose-100 bg-rose-50 px-4 py-3">
-            <div className="text-xs text-rose-600 uppercase font-semibold">Thấp nhất</div>
-            <div className="text-lg font-bold text-rose-800">
-              {lowestTotal}/{maxScoreTotal}
-            </div>
-          </div>
-        </div>
-
-        <div className="flex-1 overflow-auto px-6 pb-4">
-          <div id="score-table" className="relative overflow-x-auto border border-slate-200 rounded-xl">
-            <table className="min-w-[980px] w-full text-sm text-slate-700">
-              <thead className="sticky top-0 z-20">
-                <tr className="bg-slate-100 border-b border-slate-200">
-                  <th className="sticky left-0 z-30 bg-slate-100 min-w-[220px] px-4 py-3 text-left font-semibold">
-                    TÊN HỌC SINH
-                  </th>
-                  {assignments.map((a) => (
-                    <th key={a.id} className="min-w-[130px] px-3 py-3 text-center font-semibold">
-                      <div>{a.name}</div>
-                      <div className="text-[11px] text-slate-500 font-normal">(tối đa {a.maxScore})</div>
-                    </th>
-                  ))}
-                  <th className="sticky right-0 z-30 bg-blue-100 min-w-[140px] px-4 py-3 text-right font-bold text-blue-800">
-                    TỔNG ĐIỂM
-                  </th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {displayRows.map((studentRow, index) => (
-                  <tr
-                    key={studentRow.id}
-                    className={index % 2 === 0 ? 'bg-white hover:bg-slate-50' : 'bg-slate-50/60 hover:bg-slate-100/70'}
+        <div className="flex-1 overflow-auto px-6 pb-4 pt-4">
+          <div className="mb-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <div className="text-sm font-semibold text-slate-700">Tùy chỉnh cột điểm</div>
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="inline-flex overflow-hidden rounded-xl border border-slate-300 bg-white shadow-sm">
+                  <button
+                    type="button"
+                    onClick={() => handleApplyColumnDisplayForAll('full')}
+                    className={`px-3 py-1.5 text-xs font-semibold transition ${
+                      areAllAssignmentsVisible
+                        ? 'bg-indigo-600 text-white'
+                        : 'text-slate-700 hover:bg-slate-100'
+                    }`}
                   >
-                    <td className="sticky left-0 z-10 bg-inherit px-4 py-3 font-medium border-r border-slate-100">
-                      {studentRow.name}
-                    </td>
-                    {assignments.map((assignment) => {
-                      const assignmentErrors = studentRow.errorsByAssignment[assignment.id] || [];
+                    Hiện tất cả
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleApplyColumnDisplayForAll('compact')}
+                    className={`border-l border-slate-200 px-3 py-1.5 text-xs font-semibold transition ${
+                      areAllAssignmentsCompact
+                        ? 'bg-amber-500 text-white'
+                        : 'text-slate-700 hover:bg-slate-100'
+                    }`}
+                  >
+                    Thu gọn tất cả
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleApplyColumnDisplayForAll('hidden')}
+                    className={`border-l border-slate-200 px-3 py-1.5 text-xs font-semibold transition ${
+                      areAllAssignmentsHidden
+                        ? 'bg-rose-600 text-white'
+                        : 'text-slate-700 hover:bg-slate-100'
+                    }`}
+                  >
+                    Ẩn tất cả
+                  </button>
+                </div>
 
-                      return (
-                        <td key={assignment.id} className="px-3 py-3 text-center align-top">
-                          <div>{studentRow.calculatedScores[assignment.id]}</div>
-                          {assignmentErrors.length > 0 && (
-                            <details className="mt-1 text-left text-xs text-amber-800">
-                              <summary className="cursor-pointer font-medium">
+                <button
+                  type="button"
+                  onClick={() => setIsClassificationColumnVisible((prev) => !prev)}
+                  className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition ${
+                    isClassificationColumnVisible
+                      ? 'bg-gradient-to-r from-fuchsia-600 to-violet-600 hover:from-fuchsia-700 hover:to-violet-700'
+                      : 'bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700'
+                  }`}
+                >
+                  {isClassificationColumnVisible ? <EyeOff size={14} /> : <Eye size={14} />}
+                  {isClassificationColumnVisible ? 'Ẩn cột xếp loại' : 'Hiện cột xếp loại'}
+                </button>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {assignments.map((assignment) => {
+                const mode = columnDisplayByAssignmentId[assignment.id] ?? 'full';
+                return (
+                  <label
+                    key={`column-config-${assignment.id}`}
+                    className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700"
+                    title={assignment.name}
+                  >
+                    <span className="max-w-[160px] truncate">{assignment.name}</span>
+                    <select
+                      value={mode}
+                      onChange={(event) =>
+                        handleAssignmentColumnDisplayChange(
+                          assignment.id,
+                          event.target.value as AssignmentColumnDisplayMode
+                        )
+                      }
+                      className="rounded border border-slate-300 bg-white px-1 py-0.5 text-xs"
+                    >
+                      <option value="full">Hiện</option>
+                      <option value="compact">Thu gọn</option>
+                      <option value="hidden">Ẩn</option>
+                    </select>
+                  </label>
+                );
+              })}
+            </div>
+            {compactAssignmentsCount > 0 && (
+              <div className="mt-2 text-[11px] text-slate-500">
+                Cột thu gọn chỉ hiển thị điểm và số lỗi.
+              </div>
+            )}
+          </div>
+
+          <div id="score-table" className="relative overflow-hidden rounded-xl border border-slate-200 shadow-sm">
+            <div className="border-b border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700">
+              Bảng điểm lớp {titleClassName}
+            </div>
+            <div className="max-h-[58vh] overflow-auto">
+              <table className="w-full min-w-[1120px] border-separate border-spacing-0 text-sm text-slate-700">
+                <thead className="sticky top-0 z-20">
+                <tr className="border-b border-slate-200 bg-slate-100">
+                  <th className="sticky left-0 top-0 z-30 w-[70px] min-w-[70px] border-r border-slate-200 bg-slate-100 px-3 py-3 text-center font-semibold text-slate-700">
+                    STT
+                  </th>
+                  <th className="sticky left-[70px] top-0 z-30 w-[220px] min-w-[220px] border-r border-slate-200 bg-slate-100 px-4 py-3 text-left font-semibold text-slate-700">
+                    Họ và tên đệm
+                  </th>
+                  <th className="sticky left-[290px] top-0 z-30 w-[120px] min-w-[120px] border-r border-slate-200 bg-slate-100 px-4 py-3 text-left font-semibold text-slate-700">
+                    Tên
+                  </th>
+                  {displayedAssignments.map((assignment) => {
+                    const mode = columnDisplayByAssignmentId[assignment.id] ?? 'full';
+                    const isCompact = mode === 'compact';
+                    return (
+                      <th
+                        key={assignment.id}
+                        className={`${isCompact ? 'w-[92px] min-w-[92px]' : 'min-w-[140px]'} px-3 py-3 text-center font-semibold text-slate-700`}
+                      >
+                        <div className={isCompact ? 'truncate' : ''} title={assignment.name}>
+                          {assignment.name}
+                        </div>
+                        {!isCompact && (
+                          <div className="text-[11px] font-normal text-slate-500">(tối đa {assignment.maxScore})</div>
+                        )}
+                      </th>
+                    );
+                  })}
+                  {isClassificationColumnVisible && (
+                    <th className="min-w-[130px] px-3 py-3 text-center font-semibold text-slate-700">
+                      Xếp loại
+                    </th>
+                  )}
+                  <th className="min-w-[140px] bg-blue-50 px-4 py-3 text-right font-semibold text-blue-800">
+                    Tổng điểm
+                  </th>
+                  <th className="min-w-[220px] px-4 py-3 text-left font-semibold text-slate-700">Ghi chú</th>
+                </tr>
+                </thead>
+
+                <tbody>
+                {displayRows.map((row, index) => {
+                  const stickyBgClass = index % 2 === 0 ? 'bg-white' : 'bg-slate-50';
+                  return (
+                    <tr
+                      key={row.id}
+                      className={
+                        index % 2 === 0 ? 'bg-white hover:bg-slate-50' : 'bg-slate-50 hover:bg-slate-100'
+                      }
+                    >
+                      <td className={`sticky left-0 z-20 w-[70px] min-w-[70px] border-r border-slate-200 px-3 py-3 text-center font-medium text-slate-500 ${stickyBgClass}`}>
+                        {index + 1}
+                      </td>
+                      <td className={`sticky left-[70px] z-20 w-[220px] min-w-[220px] border-r border-slate-200 px-4 py-3 font-medium text-slate-900 ${stickyBgClass}`}>
+                        {row.middleName || '--'}
+                      </td>
+                      <td className={`sticky left-[290px] z-20 w-[120px] min-w-[120px] border-r border-slate-200 px-4 py-3 font-semibold text-slate-900 ${stickyBgClass}`}>
+                        {row.firstName || '--'}
+                      </td>
+
+                      {displayedAssignments.map((assignment) => {
+                        const assignmentErrors = row.errorsByAssignment[assignment.id] || [];
+                        const score = row.calculatedScores[assignment.id] || 0;
+                        const mode = columnDisplayByAssignmentId[assignment.id] ?? 'full';
+                        const isCompact = mode === 'compact';
+
+                        return (
+                          <td
+                            key={`${row.id}-${assignment.id}`}
+                            className={`${isCompact ? 'w-[92px] min-w-[92px]' : ''} px-3 py-3 text-center align-top`}
+                          >
+                            <div className="font-semibold text-slate-700">{formatScore(score)}</div>
+                            {assignmentErrors.length > 0 && !isCompact && (
+                              <details className="mt-1 text-left text-xs text-amber-800">
+                                <summary className="cursor-pointer font-medium">
+                                  {assignmentErrors.length} lỗi
+                                </summary>
+                                <ul className="mt-1 max-h-24 list-inside list-disc overflow-auto rounded border border-amber-200 bg-amber-50 p-2 text-[11px]">
+                                  {assignmentErrors.map((errorItem, errorIdx) => (
+                                    <li key={`${row.id}-${assignment.id}-${errorIdx}`}>{errorItem}</li>
+                                  ))}
+                                </ul>
+                              </details>
+                            )}
+                            {assignmentErrors.length > 0 && isCompact && (
+                              <div className="mt-1 text-[11px] text-amber-700" title={assignmentErrors.join(' | ')}>
                                 {assignmentErrors.length} lỗi
-                              </summary>
-                              <ul className="mt-1 max-h-24 overflow-auto rounded border border-amber-200 bg-amber-50 p-2 text-[11px] list-disc list-inside">
-                                {assignmentErrors.map((errorItem, errorIdx) => (
-                                  <li key={`${studentRow.id}-${assignment.id}-${errorIdx}`}>{errorItem}</li>
-                                ))}
-                              </ul>
-                            </details>
-                          )}
+                              </div>
+                            )}
+                          </td>
+                        );
+                      })}
+
+                      {isClassificationColumnVisible && (
+                        <td className="px-3 py-3 text-center">
+                          <div className="inline-flex flex-col items-center gap-1">
+                            <select
+                              value={row.classification}
+                              disabled={savingClassificationStudentId === row.id}
+                              onChange={(event) =>
+                                void handleClassificationChange(
+                                  row.id,
+                                  event.target.value as CompetencyLevel
+                                )
+                              }
+                              className={`h-8 min-w-[86px] rounded-full border px-3 text-center text-xs font-bold outline-none ${
+                                row.classification
+                                  ? classificationClassMap[row.classification]
+                                  : 'border-slate-300 bg-white text-slate-600'
+                              } ${
+                                savingClassificationStudentId === row.id
+                                  ? 'cursor-not-allowed opacity-70'
+                                  : 'hover:brightness-95'
+                              }`}
+                              title="Chỉnh sửa xếp loại học sinh"
+                            >
+                              <option value="">--</option>
+                              <option value="A">A</option>
+                              <option value="B">B</option>
+                              <option value="C">C</option>
+                              <option value="D">D</option>
+                            </select>
+                            {savingClassificationStudentId === row.id && (
+                              <span className="text-[11px] text-slate-500">Đang lưu...</span>
+                            )}
+                          </div>
                         </td>
-                      );
-                    })}
-                    <td className="sticky right-0 z-10 bg-blue-50 px-4 py-3 text-right font-bold text-blue-800 border-l border-blue-100">
-                      {studentRow.totalScore}/{maxScoreTotal}
+                      )}
+
+                      <td className="bg-blue-50 px-4 py-3 text-right font-bold text-blue-800">
+                        {formatScore(row.totalScore)}/{formatScore(maxScoreTotal)}
+                      </td>
+
+                      <td className="px-4 py-3 text-left text-slate-600">
+                        <div className="max-w-[260px] space-y-1">
+                          <textarea
+                            value={row.notes}
+                            onChange={(event) => handleNotesChange(row.id, event.target.value)}
+                            onBlur={() => void handleNotesBlur(row.id)}
+                            rows={2}
+                            maxLength={500}
+                            placeholder="Nhập ghi chú..."
+                            disabled={savingNotesStudentId === row.id}
+                            className={`w-full resize-y rounded-md border px-2 py-1 text-xs text-slate-700 outline-none transition ${
+                              savingNotesStudentId === row.id
+                                ? 'cursor-not-allowed border-slate-200 bg-slate-100'
+                                : 'border-slate-300 focus:border-blue-400 focus:ring-1 focus:ring-blue-200'
+                            }`}
+                          />
+                          {savingNotesStudentId === row.id && (
+                            <span className="text-[11px] text-slate-500">Đang lưu...</span>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+
+                {displayRows.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={displayedAssignments.length + staticColumnCount}
+                      className="px-4 py-8 text-center text-slate-500"
+                    >
+                      Chưa có dữ liệu điểm để hiển thị.
                     </td>
                   </tr>
-                ))}
-
-                <tr className="bg-rose-50 border-t border-rose-100 font-semibold">
-                  <td className="sticky left-0 z-10 bg-rose-50 px-4 py-3 text-rose-700 border-r border-rose-100">
-                    Điểm thấp nhất
-                  </td>
-                  {assignmentStats.map((stat) => (
-                    <td key={stat.assignmentId} className="px-3 py-3 text-center text-rose-600">
-                      {stat.min}
-                    </td>
-                  ))}
-                  <td className="sticky right-0 z-10 bg-rose-50 px-4 py-3 border-l border-rose-100" />
-                </tr>
-
-                <tr className="bg-emerald-50 border-t border-emerald-100 font-semibold">
-                  <td className="sticky left-0 z-10 bg-emerald-50 px-4 py-3 text-emerald-700 border-r border-emerald-100">
-                    Điểm cao nhất
-                  </td>
-                  {assignmentStats.map((stat) => (
-                    <td key={stat.assignmentId} className="px-3 py-3 text-center text-emerald-600">
-                      {stat.max}
-                    </td>
-                  ))}
-                  <td className="sticky right-0 z-10 bg-emerald-50 px-4 py-3 border-l border-emerald-100" />
-                </tr>
-
-                <tr className="bg-violet-50 border-t border-violet-100 font-semibold">
-                  <td className="sticky left-0 z-10 bg-violet-50 px-4 py-3 text-violet-700 border-r border-violet-100">
-                    Điểm trung bình
-                  </td>
-                  {assignmentStats.map((stat) => (
-                    <td key={stat.assignmentId} className="px-3 py-3 text-center text-violet-700">
-                      {stat.average}
-                    </td>
-                  ))}
-                  <td className="sticky right-0 z-10 bg-violet-50 px-4 py-3 border-l border-violet-100" />
-                </tr>
-              </tbody>
-            </table>
+                )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row justify-end items-center gap-2 p-5 border-t border-slate-200 bg-slate-50">
+        <div className="flex flex-col items-center justify-end gap-2 border-t border-slate-200 bg-slate-50 p-5 sm:flex-row">
           <button
             onClick={handleExportExcel}
-            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-white hover:bg-green-700 sm:w-auto"
           >
             <FileDown size={18} /> Xuất Excel
           </button>
           <button
             onClick={handleExportPdf}
-            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-white hover:bg-red-700 sm:w-auto"
           >
             <FileDown size={18} /> Xuất PDF
           </button>
           <button
             onClick={onClose}
-            className="w-full sm:w-auto px-4 py-2 bg-slate-200 text-slate-800 rounded-lg hover:bg-slate-300"
+            className="w-full rounded-lg bg-slate-200 px-4 py-2 text-slate-800 hover:bg-slate-300 sm:w-auto"
           >
             Đóng
           </button>
@@ -357,4 +747,5 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 };
 
 export default ViewAllScoresModal;
+
 

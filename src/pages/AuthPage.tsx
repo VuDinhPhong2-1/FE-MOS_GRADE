@@ -1,10 +1,11 @@
 ﻿import { useState, type ChangeEvent, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Lock, Mail, User } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail, User, ShieldCheck } from 'lucide-react';
 import { GoogleLogin, type CredentialResponse } from '@react-oauth/google';
 import { useAuth } from '../context/AuthContext';
 import type { LoginFormData, LoginResponse, RegisterFormData } from '../types/auth.types';
 import { AUTH_API_BASE_URL } from '../config/api';
+import { notify } from '../utils/notify';
 
 export default function AuthPage() {
   const hasGoogleClientId = Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID);
@@ -53,6 +54,7 @@ export default function AuthPage() {
         email: data.email,
         role: data.role,
         fullName: data.fullName,
+        phoneNumber: data.phoneNumber,
         avatar: data.avatar,
         permissions: data.permissions,
       },
@@ -89,7 +91,7 @@ export default function AuthPage() {
         handleAuthSuccess(data);
       } else {
         await response.json().catch(() => null);
-        alert('Đăng ký thành công! Vui lòng đăng nhập.');
+        notify.success('Đăng ký thành công! Vui lòng đăng nhập.');
         setIsLogin(true);
         setFormData({ username: '', password: '', email: '' });
       }
@@ -124,116 +126,135 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
-      <div className="w-full max-w-md p-5 sm:p-8 bg-white rounded-lg shadow-md">
-        <h2 className="text-2xl font-bold text-center mb-6">
-          {isLogin ? 'Đăng nhập' : 'Đăng ký tài khoản'}
-        </h2>
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden p-4">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_rgba(37,99,235,0.16),_transparent_50%),radial-gradient(ellipse_at_bottom_right,_rgba(16,185,129,0.12),_transparent_45%)]" />
 
-        {error && (
-          <div className="mb-4 p-3 text-red-700 bg-red-100 rounded text-sm text-center">
-            {error}
+      <div className="relative z-10 grid w-full max-w-5xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_25px_60px_rgba(15,23,42,0.22)] lg:grid-cols-[1.1fr_1fr]">
+        <div className="hidden bg-gradient-to-br from-blue-700 via-indigo-700 to-slate-900 p-10 text-white lg:block">
+          <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide">
+            <ShieldCheck size={15} />
+            MOS Grader Pro
           </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {!isLogin && (
-            <div className="flex items-center border rounded px-3 py-2 focus-within:border-blue-500">
-              <Mail size={20} className="text-gray-400 mr-2" />
-              <input
-                type="email"
-                name="email"
-                placeholder="Thư điện tử"
-                required
-                className="w-full outline-none"
-                onChange={handleChange}
-                value={formData.email}
-              />
-            </div>
-          )}
-
-          <div className="flex items-center border rounded px-3 py-2 focus-within:border-blue-500">
-            <User size={20} className="text-gray-400 mr-2" />
-            <input
-              type="text"
-              name="username"
-              placeholder="Tên đăng nhập"
-              required
-              className="w-full outline-none"
-              onChange={handleChange}
-              value={formData.username}
-            />
+          <h1 className="text-3xl font-extrabold leading-tight">Hệ thống quản lý và chấm điểm MOS</h1>
+          <p className="mt-4 text-sm text-blue-100/90">
+            Theo dõi lớp học, chấm điểm bài tập tự động và tổng hợp kết quả trực quan trong một giao diện
+            thống nhất.
+          </p>
+          <div className="mt-10 space-y-3 text-sm text-blue-100/90">
+            <div className="rounded-xl border border-white/15 bg-white/10 px-4 py-3">Chấm điểm theo từng dự án và từng học sinh.</div>
+            <div className="rounded-xl border border-white/15 bg-white/10 px-4 py-3">Xuất bảng điểm đẹp, rõ ràng, phục vụ báo cáo.</div>
+            <div className="rounded-xl border border-white/15 bg-white/10 px-4 py-3">Quản lý trường, lớp, học sinh tập trung.</div>
           </div>
+        </div>
 
-          <div className="flex items-center border rounded px-3 py-2 focus-within:border-blue-500">
-            <Lock size={20} className="text-gray-400 mr-2" />
-            <input
-              type={showPassword ? 'text' : 'password'}
-              name="password"
-              placeholder="Mật khẩu"
-              required
-              className="w-full outline-none"
-              onChange={handleChange}
-              value={formData.password}
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword((prev) => !prev)}
-              className="ml-2 text-gray-400 hover:text-gray-600"
-              aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
-            >
-              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-            </button>
-          </div>
+        <div className="p-6 sm:p-8 lg:p-10">
+          <h2 className="text-2xl font-extrabold text-slate-900">{isLogin ? 'Đăng nhập' : 'Đăng ký tài khoản'}</h2>
+          <p className="mt-1 text-sm text-slate-500">{isLogin ? 'Chào mừng bạn quay lại MOS Grader.' : 'Tạo tài khoản mới để bắt đầu sử dụng.'}</p>
 
-          <button
-            type="submit"
-            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition font-medium"
-          >
-            {isLogin ? 'Đăng nhập' : 'Đăng ký'}
-          </button>
+          {error && <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>}
 
-          {isLogin && hasGoogleClientId && (
-            <>
-              <div className="relative my-2">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t border-gray-200" />
+          <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+            {!isLogin && (
+              <label className="block">
+                <span className="mb-1 block text-sm font-medium text-slate-700">Thư điện tử</span>
+                <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2">
+                  <Mail size={18} className="text-slate-400" />
+                  <input
+                    type="email"
+                    name="email"
+                    placeholder="you@example.com"
+                    required
+                    className="w-full border-none p-0 shadow-none"
+                    onChange={handleChange}
+                    value={formData.email}
+                  />
                 </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-white px-2 text-gray-500">Hoặc</span>
-                </div>
-              </div>
+              </label>
+            )}
 
-              <div className="flex justify-center">
-                <GoogleLogin
-                  onSuccess={handleGoogleLoginSuccess}
-                  onError={() => setError('Đăng nhập Google thất bại')}
-                  useOneTap={false}
+            <label className="block">
+              <span className="mb-1 block text-sm font-medium text-slate-700">Tên đăng nhập</span>
+              <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2">
+                <User size={18} className="text-slate-400" />
+                <input
+                  type="text"
+                  name="username"
+                  placeholder="Nhập tên đăng nhập"
+                  required
+                  className="w-full border-none p-0 shadow-none"
+                  onChange={handleChange}
+                  value={formData.username}
                 />
               </div>
-            </>
-          )}
+            </label>
 
-          {isLogin && !hasGoogleClientId && (
-            <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">
-              Đăng nhập Google chưa được cấu hình. Đặt biến `VITE_GOOGLE_CLIENT_ID` trong file `.env`.
-            </div>
-          )}
-        </form>
+            <label className="block">
+              <span className="mb-1 block text-sm font-medium text-slate-700">Mật khẩu</span>
+              <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2">
+                <Lock size={18} className="text-slate-400" />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  name="password"
+                  placeholder="Nhập mật khẩu"
+                  required
+                  className="w-full border-none p-0 shadow-none"
+                  onChange={handleChange}
+                  value={formData.password}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                  aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </label>
 
-        <p className="mt-4 text-center text-sm text-gray-600">
-          {isLogin ? 'Chưa có tài khoản?' : 'Đã có tài khoản?'}
-          <span
-            className="text-blue-600 cursor-pointer ml-1 font-semibold hover:underline"
-            onClick={() => {
-              setIsLogin(!isLogin);
-              setError('');
-              setShowPassword(false);
-            }}
-          >
-            {isLogin ? 'Đăng ký ngay' : 'Đăng nhập'}
-          </span>
-        </p>
+            <button type="submit" className="app-btn-primary w-full px-4 py-2.5">
+              {isLogin ? 'Đăng nhập' : 'Đăng ký'}
+            </button>
+
+            {isLogin && hasGoogleClientId && (
+              <>
+                <div className="relative my-1">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t border-slate-200" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-white px-2 text-slate-400">Hoặc</span>
+                  </div>
+                </div>
+
+                <div className="flex justify-center rounded-xl border border-slate-200 bg-slate-50 py-2">
+                  <GoogleLogin onSuccess={handleGoogleLoginSuccess} onError={() => setError('Đăng nhập Google thất bại')} useOneTap={false} />
+                </div>
+              </>
+            )}
+
+            {isLogin && !hasGoogleClientId && (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-2 text-xs text-amber-700">
+                Đăng nhập Google chưa được cấu hình. Đặt biến <code>VITE_GOOGLE_CLIENT_ID</code> trong file <code>.env</code>.
+              </div>
+            )}
+          </form>
+
+          <p className="mt-5 text-center text-sm text-slate-600">
+            {isLogin ? 'Chưa có tài khoản?' : 'Đã có tài khoản?'}
+            <button
+              type="button"
+              className="ml-1 font-semibold text-blue-600 hover:underline"
+              onClick={() => {
+                setIsLogin(!isLogin);
+                setError('');
+                setShowPassword(false);
+              }}
+            >
+              {isLogin ? 'Đăng ký ngay' : 'Đăng nhập'}
+            </button>
+          </p>
+        </div>
       </div>
     </div>
   );
