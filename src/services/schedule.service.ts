@@ -1,6 +1,7 @@
 import { API_BASE_URL } from '../config/api';
 import type {
   CreateScheduleRequest,
+  ScheduleReportsPayload,
   SaveScheduleAttendanceItem,
   ScheduleAttendanceResponse,
   ScheduleItem,
@@ -135,6 +136,7 @@ class ScheduleService {
   async saveAttendance(
     scheduleId: string,
     items: SaveScheduleAttendanceItem[],
+    reports: ScheduleReportsPayload | undefined,
     getAccessToken: (forceRefresh?: boolean) => Promise<string | null>
   ): Promise<ScheduleAttendanceResponse> {
     const response = await authFetch(
@@ -142,7 +144,7 @@ class ScheduleService {
       {
         method: 'PUT',
         headers: jsonHeaders,
-        body: JSON.stringify({ items }),
+        body: JSON.stringify({ items, reports }),
       },
       getAccessToken
     );

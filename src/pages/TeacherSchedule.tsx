@@ -1,5 +1,5 @@
 ﻿import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { CalendarClock, CheckCheck, ClipboardCheck, ChevronLeft, ChevronRight, Copy, Pencil, Plus, Trash2 } from 'lucide-react';
+import { BookOpen, CalendarClock, CheckCheck, ClipboardCheck, ClipboardList, ChevronLeft, ChevronRight, Copy, FileText, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { classService } from '../services/class.service';
 import { schoolService } from '../services/school.service';
@@ -9,7 +9,11 @@ import type { School } from '../types/school.types';
 import type {
   AttendanceStatus,
   SaveScheduleAttendanceItem,
+  ScheduleReportsPayload,
   ScheduleAttendanceResponse,
+  ScheduleEndLessonReport,
+  ScheduleProfessionalReport,
+  ScheduleStartLessonReport,
   ScheduleItem,
   UpdateScheduleRequest,
 } from '../types/schedule.types';
@@ -34,6 +38,8 @@ interface AttendanceDraftState {
   note: string;
 }
 
+type AttendancePanelTab = 'attendance' | 'startLesson' | 'professional' | 'endLesson';
+
 const weekdayLabels: Record<number, string> = {
   0: 'CN',
   1: 'Thứ 2',
@@ -43,6 +49,11 @@ const weekdayLabels: Record<number, string> = {
   5: 'Thứ 6',
   6: 'Thứ 7',
 };
+
+const vietnameseCollator = new Intl.Collator('vi', {
+  sensitivity: 'variant',
+  numeric: true,
+});
 
 const toYmd = (date: Date): string => {
   const year = date.getFullYear();
@@ -115,6 +126,20 @@ const normalizeTimeValue = (rawValue: string): string => {
   return value;
 };
 
+const parseTimeToMinutes = (timeValue: string): number | null => {
+  const value = normalizeTimeValue(timeValue);
+  const match = value.match(/^(\d{1,2}):(\d{2})$/);
+  if (!match) return null;
+  const hour = Number(match[1]);
+  const minute = Number(match[2]);
+  if (Number.isNaN(hour) || Number.isNaN(minute) || hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+    return null;
+  }
+  return hour * 60 + minute;
+};
+
+type TodayLessonTimeline = 'done' | 'ongoing' | 'upcoming';
+
 const createDefaultForm = (weekStart: string): ScheduleFormState => ({
   schoolId: '',
   classId: '',
@@ -138,6 +163,83 @@ const buildAttendanceDraft = (data: ScheduleAttendanceResponse): Record<string, 
     };
   });
   return next;
+};
+
+const emptyStartLessonReport = (): ScheduleStartLessonReport => ({
+  teacherName: '',
+  assistantName: '',
+  roomName: '',
+  totalMachines: '',
+  brokenMachinesSummary: '',
+  missingMachinesForStudents: '',
+  netSupportStatus: '',
+  audioStatus: '',
+  coolingStatus: '',
+  hygieneStatus: '',
+});
+
+const emptyProfessionalReport = (): ScheduleProfessionalReport => ({
+  teacherName: '',
+  className: '',
+  subjectName: '',
+  teachingMaterials: '',
+  teachingContent: '',
+  plannedLessons: '',
+  taughtLessons: '',
+  ongoingPracticeCompletions: '',
+  gmetrixResultRate: '',
+});
+
+const emptyEndLessonReport = (): ScheduleEndLessonReport => ({
+  teacherName: '',
+  assistantName: '',
+  roomName: '',
+  totalMachines: '',
+  classStudentCountSummary: '',
+  studentMaterialCoverageRate: '',
+  brokenMachinesSummary: '',
+  netSupportStatus: '',
+  audioStatus: '',
+  coolingStatus: '',
+  devicesPoweredOffStatus: '',
+  seatingOrderStatus: '',
+  roomHygieneStatus: '',
+  studentRuleComplianceStatus: '',
+  violationListSummary: '',
+});
+
+const emptyReportsPayload = (): ScheduleReportsPayload => ({
+  startLesson: emptyStartLessonReport(),
+  professional: emptyProfessionalReport(),
+  endLesson: emptyEndLessonReport(),
+});
+
+const buildReportsDraft = (data: ScheduleAttendanceResponse, teacherName: string): ScheduleReportsPayload => {
+  const source = data.reports || emptyReportsPayload();
+
+  return {
+    startLesson: {
+      ...emptyStartLessonReport(),
+      ...(source.startLesson || {}),
+      teacherName: source.startLesson?.teacherName || teacherName || '',
+      roomName: source.startLesson?.roomName || data.roomName || '',
+    },
+    professional: {
+      ...emptyProfessionalReport(),
+      ...(source.professional || {}),
+      teacherName: source.professional?.teacherName || teacherName || '',
+      className: source.professional?.className || data.className || '',
+      subjectName: source.professional?.subjectName || data.subject || '',
+    },
+    endLesson: {
+      ...emptyEndLessonReport(),
+      ...(source.endLesson || {}),
+      teacherName: source.endLesson?.teacherName || teacherName || '',
+      roomName: source.endLesson?.roomName || data.roomName || '',
+      classStudentCountSummary:
+        source.endLesson?.classStudentCountSummary || data.roomSessionContext?.sharedClassStudentSummary || '',
+    },
+  };
 };
 
 const isDateInWeek = (dateYmd: string, weekStart: string): boolean => {
@@ -169,7 +271,7 @@ const buildScheduleKey = (
 };
 
 const TeacherSchedule = () => {
-  const { getAccessToken } = useAuth();
+  const { getAccessToken, user } = useAuth();
   const todayYmd = toYmd(new Date());
   const [weekStart, setWeekStart] = useState<string>(toYmd(getWeekStart(new Date())));
   const [schedules, setSchedules] = useState<ScheduleItem[]>([]);
@@ -185,13 +287,28 @@ const TeacherSchedule = () => {
   const [attendanceSaving, setAttendanceSaving] = useState(false);
   const [attendanceData, setAttendanceData] = useState<ScheduleAttendanceResponse | null>(null);
   const [attendanceDraft, setAttendanceDraft] = useState<Record<string, AttendanceDraftState>>({});
+  const [reportsDraft, setReportsDraft] = useState<ScheduleReportsPayload>(emptyReportsPayload());
+  const [attendanceTab, setAttendanceTab] = useState<AttendancePanelTab>('attendance');
   const [attendanceKeyword, setAttendanceKeyword] = useState('');
+  const [attendanceNameSortDirection, setAttendanceNameSortDirection] = useState<'none' | 'asc' | 'desc'>('none');
+  const [nowTick, setNowTick] = useState<number>(Date.now());
+  const teacherDisplayName = user?.fullName || user?.username || '';
 
   const weekEnd = useMemo(() => {
     const start = new Date(`${weekStart}T00:00:00`);
     start.setDate(start.getDate() + 6);
     return toYmd(start);
   }, [weekStart]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNowTick(Date.now()), 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const nowMinutesInDay = useMemo(() => {
+    const now = new Date(nowTick);
+    return now.getHours() * 60 + now.getMinutes();
+  }, [nowTick]);
 
   const classesBySelectedSchool = useMemo(() => {
     if (!form.schoolId) return [];
@@ -248,13 +365,39 @@ const TeacherSchedule = () => {
     if (!attendanceData) return [];
 
     const keyword = attendanceKeyword.trim().toLowerCase();
-    if (!keyword) return attendanceData.students;
+    let list = [...attendanceData.students];
 
-    return attendanceData.students.filter((student) => {
-      const fullName = `${student.middleName} ${student.firstName}`.toLowerCase();
-      return fullName.split(/\s+/).includes(keyword) || fullName.startsWith(keyword);
+    if (keyword) {
+      list = list.filter((student) => {
+        const fullName = `${student.middleName} ${student.firstName}`.toLowerCase();
+        return fullName.split(/\s+/).includes(keyword) || fullName.startsWith(keyword);
+      });
+    }
+
+    if (attendanceNameSortDirection === 'asc') {
+      list.sort((a, b) => {
+        const byFirstName = vietnameseCollator.compare(a.firstName || '', b.firstName || '');
+        if (byFirstName !== 0) return byFirstName;
+        return vietnameseCollator.compare(a.middleName || '', b.middleName || '');
+      });
+    } else if (attendanceNameSortDirection === 'desc') {
+      list.sort((a, b) => {
+        const byFirstName = vietnameseCollator.compare(b.firstName || '', a.firstName || '');
+        if (byFirstName !== 0) return byFirstName;
+        return vietnameseCollator.compare(b.middleName || '', a.middleName || '');
+      });
+    }
+
+    return list;
+  }, [attendanceData, attendanceKeyword, attendanceNameSortDirection]);
+
+  const toggleAttendanceNameSort = () => {
+    setAttendanceNameSortDirection((prev) => {
+      if (prev === 'none') return 'asc';
+      if (prev === 'asc') return 'desc';
+      return 'none';
     });
-  }, [attendanceData, attendanceKeyword]);
+  };
 
   const attendanceStats = useMemo(() => {
     if (!attendanceData) {
@@ -545,10 +688,12 @@ const TeacherSchedule = () => {
       setAttendanceLoading(true);
       setAttendanceData(null);
       setAttendanceKeyword('');
+      setAttendanceTab('attendance');
 
       const response = await scheduleService.getAttendance(item.id, getAccessToken);
       setAttendanceData(response);
       setAttendanceDraft(buildAttendanceDraft(response));
+      setReportsDraft(buildReportsDraft(response, teacherDisplayName));
     } catch (error) {
       setAttendanceOpen(false);
       notify.error(error instanceof Error ? error.message : 'Không thể mở điểm danh');
@@ -562,6 +707,8 @@ const TeacherSchedule = () => {
     setAttendanceOpen(false);
     setAttendanceData(null);
     setAttendanceDraft({});
+    setReportsDraft(emptyReportsPayload());
+    setAttendanceTab('attendance');
     setAttendanceKeyword('');
   };
 
@@ -604,6 +751,36 @@ const TeacherSchedule = () => {
     });
   };
 
+  const updateStartLessonReportField = (field: keyof ScheduleStartLessonReport, value: string) => {
+    setReportsDraft((prev) => ({
+      ...prev,
+      startLesson: {
+        ...prev.startLesson,
+        [field]: value,
+      },
+    }));
+  };
+
+  const updateProfessionalReportField = (field: keyof ScheduleProfessionalReport, value: string) => {
+    setReportsDraft((prev) => ({
+      ...prev,
+      professional: {
+        ...prev.professional,
+        [field]: value,
+      },
+    }));
+  };
+
+  const updateEndLessonReportField = (field: keyof ScheduleEndLessonReport, value: string) => {
+    setReportsDraft((prev) => ({
+      ...prev,
+      endLesson: {
+        ...prev.endLesson,
+        [field]: value,
+      },
+    }));
+  };
+
   const handleSaveAttendance = async () => {
     if (!attendanceData) return;
 
@@ -615,12 +792,18 @@ const TeacherSchedule = () => {
         note: attendanceDraft[student.studentId]?.note?.trim() || undefined,
       }));
 
-      const response = await scheduleService.saveAttendance(attendanceData.scheduleId, payload, getAccessToken);
+      const response = await scheduleService.saveAttendance(
+        attendanceData.scheduleId,
+        payload,
+        reportsDraft,
+        getAccessToken
+      );
       setAttendanceData(response);
       setAttendanceDraft(buildAttendanceDraft(response));
-      notify.success('Lưu điểm danh thành công');
+      setReportsDraft(buildReportsDraft(response, teacherDisplayName));
+      notify.success('Đã lưu điểm danh và báo cáo');
     } catch (error) {
-      notify.error(error instanceof Error ? error.message : 'Không thể lưu điểm danh');
+      notify.error(error instanceof Error ? error.message : 'Không thể lưu điểm danh và báo cáo');
     } finally {
       setAttendanceSaving(false);
     }
@@ -729,6 +912,16 @@ const TeacherSchedule = () => {
                 schedules.map((item) => {
                   const localYmd = parseApiDateToLocalYmd(item.date);
                   const isToday = localYmd === todayYmd;
+                  const startMinutes = parseTimeToMinutes(item.startTime);
+                  const endMinutes = parseTimeToMinutes(item.endTime);
+                  const todayLessonTimeline: TodayLessonTimeline | null =
+                    isToday && startMinutes !== null && endMinutes !== null
+                      ? nowMinutesInDay > endMinutes
+                        ? 'done'
+                        : nowMinutesInDay >= startMinutes
+                          ? 'ongoing'
+                          : 'upcoming'
+                      : null;
                   return (
                     <tr
                       key={item.id}
@@ -745,6 +938,21 @@ const TeacherSchedule = () => {
                           {isToday ? (
                             <span className="rounded-full bg-amber-200 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
                               Hôm nay
+                            </span>
+                          ) : null}
+                          {todayLessonTimeline === 'ongoing' ? (
+                            <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-semibold text-blue-700">
+                              Đang dạy
+                            </span>
+                          ) : null}
+                          {todayLessonTimeline === 'done' ? (
+                            <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[11px] font-semibold text-slate-700">
+                              Đã dạy
+                            </span>
+                          ) : null}
+                          {todayLessonTimeline === 'upcoming' ? (
+                            <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[11px] font-semibold text-violet-700">
+                              Sắp tới
                             </span>
                           ) : null}
                         </div>
@@ -854,6 +1062,59 @@ const TeacherSchedule = () => {
 
               {!attendanceLoading && attendanceData && (
                 <>
+                  <div className="grid gap-2 sm:grid-cols-4">
+                    <button
+                      type="button"
+                      onClick={() => setAttendanceTab('attendance')}
+                      className={`inline-flex items-center justify-center gap-1 rounded-lg border px-3 py-2 text-sm font-medium ${
+                        attendanceTab === 'attendance'
+                          ? 'border-blue-300 bg-blue-50 text-blue-700'
+                          : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                      }`}
+                    >
+                      <ClipboardCheck size={14} />
+                      Điểm danh
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAttendanceTab('startLesson')}
+                      className={`inline-flex items-center justify-center gap-1 rounded-lg border px-3 py-2 text-sm font-medium ${
+                        attendanceTab === 'startLesson'
+                          ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                          : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                      }`}
+                    >
+                      <FileText size={14} />
+                      Báo cáo đầu buổi
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAttendanceTab('professional')}
+                      className={`inline-flex items-center justify-center gap-1 rounded-lg border px-3 py-2 text-sm font-medium ${
+                        attendanceTab === 'professional'
+                          ? 'border-violet-300 bg-violet-50 text-violet-700'
+                          : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                      }`}
+                    >
+                      <BookOpen size={14} />
+                      Báo cáo chuyên môn
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAttendanceTab('endLesson')}
+                      className={`inline-flex items-center justify-center gap-1 rounded-lg border px-3 py-2 text-sm font-medium ${
+                        attendanceTab === 'endLesson'
+                          ? 'border-amber-300 bg-amber-50 text-amber-700'
+                          : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                      }`}
+                    >
+                      <ClipboardList size={14} />
+                      Báo cáo cuối buổi
+                    </button>
+                  </div>
+
+                  {attendanceTab === 'attendance' && (
+                  <>
                   <div className="grid gap-2 sm:grid-cols-2">
                     <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
                       Có mặt: <strong>{attendanceStats.present}</strong>
@@ -870,6 +1131,14 @@ const TeacherSchedule = () => {
                       placeholder="Tìm theo tên học sinh..."
                       className="w-full px-3 py-2 text-sm sm:max-w-xs"
                     />
+                    <button
+                      type="button"
+                      onClick={toggleAttendanceNameSort}
+                      className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 sm:w-auto"
+                      title="Sắp xếp theo tên"
+                    >
+                      Tên {attendanceNameSortDirection === 'asc' ? '▲' : attendanceNameSortDirection === 'desc' ? '▼' : '⇅'}
+                    </button>
 
                     <button
                       type="button"
@@ -948,7 +1217,23 @@ const TeacherSchedule = () => {
                       <thead className="bg-slate-50 text-slate-700">
                         <tr>
                           <th className="px-3 py-2 text-left font-semibold">STT</th>
-                          <th className="px-3 py-2 text-left font-semibold">Họ và tên</th>
+                          <th className="px-3 py-2 text-left font-semibold">
+                            <button
+                              type="button"
+                              onClick={toggleAttendanceNameSort}
+                              className="inline-flex items-center gap-1 hover:text-slate-900"
+                              title="Sắp xếp theo tên"
+                            >
+                              Họ và tên
+                              <span className="text-[10px] text-slate-400">
+                                {attendanceNameSortDirection === 'asc'
+                                  ? '▲'
+                                  : attendanceNameSortDirection === 'desc'
+                                    ? '▼'
+                                    : '⇅'}
+                              </span>
+                            </button>
+                          </th>
                           <th className="px-3 py-2 text-left font-semibold">Trạng thái</th>
                           <th className="px-3 py-2 text-left font-semibold">Ghi chú điểm danh</th>
                         </tr>
@@ -1003,6 +1288,173 @@ const TeacherSchedule = () => {
                       </tbody>
                     </table>
                   </div>
+                  </>
+                  )}
+
+                  {attendanceTab === 'startLesson' && (
+                    <div className="space-y-3 rounded-xl border border-emerald-200 bg-emerald-50/40 p-4">
+                      <h4 className="font-semibold text-emerald-800">BÁO CÁO ĐẦU BUỔI DẠY</h4>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <label className="grid gap-1 text-sm">
+                          <span>Tên giáo viên</span>
+                          <input value={reportsDraft.startLesson.teacherName} onChange={(e) => updateStartLessonReportField('teacherName', e.target.value)} className="px-3 py-2" />
+                        </label>
+                        <label className="grid gap-1 text-sm">
+                          <span>Tên trợ giảng</span>
+                          <input value={reportsDraft.startLesson.assistantName} onChange={(e) => updateStartLessonReportField('assistantName', e.target.value)} className="px-3 py-2" />
+                        </label>
+                        <label className="grid gap-1 text-sm">
+                          <span>Phòng máy</span>
+                          <input value={reportsDraft.startLesson.roomName} onChange={(e) => updateStartLessonReportField('roomName', e.target.value)} className="px-3 py-2" />
+                        </label>
+                        <label className="grid gap-1 text-sm">
+                          <span>Tổng số máy</span>
+                          <input value={reportsDraft.startLesson.totalMachines} onChange={(e) => updateStartLessonReportField('totalMachines', e.target.value)} className="px-3 py-2" />
+                        </label>
+                        <label className="grid gap-1 text-sm sm:col-span-2">
+                          <span>Tổng số máy lỗi (mô tả)</span>
+                          <input value={reportsDraft.startLesson.brokenMachinesSummary} onChange={(e) => updateStartLessonReportField('brokenMachinesSummary', e.target.value)} className="px-3 py-2" />
+                        </label>
+                        <label className="grid gap-1 text-sm">
+                          <span>Số máy thiếu cho học sinh</span>
+                          <input value={reportsDraft.startLesson.missingMachinesForStudents} onChange={(e) => updateStartLessonReportField('missingMachinesForStudents', e.target.value)} className="px-3 py-2" />
+                        </label>
+                        <label className="grid gap-1 text-sm">
+                          <span>Tình trạng NetSupport</span>
+                          <input value={reportsDraft.startLesson.netSupportStatus} onChange={(e) => updateStartLessonReportField('netSupportStatus', e.target.value)} className="px-3 py-2" />
+                        </label>
+                        <label className="grid gap-1 text-sm">
+                          <span>Tình trạng loa, âm ly</span>
+                          <input value={reportsDraft.startLesson.audioStatus} onChange={(e) => updateStartLessonReportField('audioStatus', e.target.value)} className="px-3 py-2" />
+                        </label>
+                        <label className="grid gap-1 text-sm">
+                          <span>Tình trạng máy lạnh, quạt</span>
+                          <input value={reportsDraft.startLesson.coolingStatus} onChange={(e) => updateStartLessonReportField('coolingStatus', e.target.value)} className="px-3 py-2" />
+                        </label>
+                        <label className="grid gap-1 text-sm sm:col-span-2">
+                          <span>Tình trạng vệ sinh phòng máy</span>
+                          <input value={reportsDraft.startLesson.hygieneStatus} onChange={(e) => updateStartLessonReportField('hygieneStatus', e.target.value)} className="px-3 py-2" />
+                        </label>
+                      </div>
+                    </div>
+                  )}
+
+                  {attendanceTab === 'professional' && (
+                    <div className="space-y-3 rounded-xl border border-violet-200 bg-violet-50/40 p-4">
+                      <h4 className="font-semibold text-violet-800">BÁO CÁO CHUYÊN MÔN</h4>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <label className="grid gap-1 text-sm">
+                          <span>Tên giáo viên</span>
+                          <input value={reportsDraft.professional.teacherName} onChange={(e) => updateProfessionalReportField('teacherName', e.target.value)} className="px-3 py-2" />
+                        </label>
+                        <label className="grid gap-1 text-sm">
+                          <span>Lớp</span>
+                          <input value={reportsDraft.professional.className} onChange={(e) => updateProfessionalReportField('className', e.target.value)} className="px-3 py-2" />
+                        </label>
+                        <label className="grid gap-1 text-sm">
+                          <span>Môn</span>
+                          <input value={reportsDraft.professional.subjectName} onChange={(e) => updateProfessionalReportField('subjectName', e.target.value)} className="px-3 py-2" />
+                        </label>
+                        <label className="grid gap-1 text-sm">
+                          <span>Tài liệu dạy</span>
+                          <input value={reportsDraft.professional.teachingMaterials} onChange={(e) => updateProfessionalReportField('teachingMaterials', e.target.value)} className="px-3 py-2" />
+                        </label>
+                        <label className="grid gap-1 text-sm sm:col-span-2">
+                          <span>Nội dung dạy</span>
+                          <textarea value={reportsDraft.professional.teachingContent} onChange={(e) => updateProfessionalReportField('teachingContent', e.target.value)} className="min-h-[78px] px-3 py-2" />
+                        </label>
+                        <label className="grid gap-1 text-sm">
+                          <span>Số tiết dự kiến</span>
+                          <input value={reportsDraft.professional.plannedLessons} onChange={(e) => updateProfessionalReportField('plannedLessons', e.target.value)} className="px-3 py-2" />
+                        </label>
+                        <label className="grid gap-1 text-sm">
+                          <span>Số tiết đã dạy</span>
+                          <input value={reportsDraft.professional.taughtLessons} onChange={(e) => updateProfessionalReportField('taughtLessons', e.target.value)} className="px-3 py-2" />
+                        </label>
+                        <label className="grid gap-1 text-sm">
+                          <span>Số lần hoàn thành OTTH</span>
+                          <input value={reportsDraft.professional.ongoingPracticeCompletions} onChange={(e) => updateProfessionalReportField('ongoingPracticeCompletions', e.target.value)} className="px-3 py-2" />
+                        </label>
+                        <label className="grid gap-1 text-sm">
+                          <span>Tỷ lệ kết quả Gmetrix</span>
+                          <input value={reportsDraft.professional.gmetrixResultRate} onChange={(e) => updateProfessionalReportField('gmetrixResultRate', e.target.value)} className="px-3 py-2" />
+                        </label>
+                      </div>
+                    </div>
+                  )}
+
+                  {attendanceTab === 'endLesson' && (
+                    <div className="space-y-3 rounded-xl border border-amber-200 bg-amber-50/50 p-4">
+                      <h4 className="font-semibold text-amber-800">BÁO CÁO CUỐI BUỔI DẠY</h4>
+                      <div className="rounded-lg border border-amber-200 bg-amber-100/60 px-3 py-2 text-xs text-amber-800">
+                        {attendanceData.roomSessionContext?.isSharedRoomSession
+                          ? `Đang là báo cáo cuối buổi dùng chung cho ${attendanceData.roomSessionContext.sharedClasses.length} lớp cùng phòng (${attendanceData.roomSessionContext.sessionLabel.toLowerCase()}).`
+                          : 'Chỉ có 1 lớp trong cùng phòng/buổi nên báo cáo cuối buổi áp dụng cho lịch hiện tại.'}
+                      </div>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <label className="grid gap-1 text-sm">
+                          <span>Tên giáo viên</span>
+                          <input value={reportsDraft.endLesson.teacherName} onChange={(e) => updateEndLessonReportField('teacherName', e.target.value)} className="px-3 py-2" />
+                        </label>
+                        <label className="grid gap-1 text-sm">
+                          <span>Tên trợ giảng</span>
+                          <input value={reportsDraft.endLesson.assistantName} onChange={(e) => updateEndLessonReportField('assistantName', e.target.value)} className="px-3 py-2" />
+                        </label>
+                        <label className="grid gap-1 text-sm">
+                          <span>Phòng máy</span>
+                          <input value={reportsDraft.endLesson.roomName} onChange={(e) => updateEndLessonReportField('roomName', e.target.value)} className="px-3 py-2" />
+                        </label>
+                        <label className="grid gap-1 text-sm">
+                          <span>Tổng số máy</span>
+                          <input value={reportsDraft.endLesson.totalMachines} onChange={(e) => updateEndLessonReportField('totalMachines', e.target.value)} className="px-3 py-2" />
+                        </label>
+                        <label className="grid gap-1 text-sm sm:col-span-2">
+                          <span>Số lượng học sinh các lớp cùng phòng</span>
+                          <input value={reportsDraft.endLesson.classStudentCountSummary} onChange={(e) => updateEndLessonReportField('classStudentCountSummary', e.target.value)} className="px-3 py-2" />
+                        </label>
+                        <label className="grid gap-1 text-sm">
+                          <span>Tỷ lệ học sinh có tài liệu</span>
+                          <input value={reportsDraft.endLesson.studentMaterialCoverageRate} onChange={(e) => updateEndLessonReportField('studentMaterialCoverageRate', e.target.value)} className="px-3 py-2" />
+                        </label>
+                        <label className="grid gap-1 text-sm">
+                          <span>Tổng số máy lỗi (mô tả)</span>
+                          <input value={reportsDraft.endLesson.brokenMachinesSummary} onChange={(e) => updateEndLessonReportField('brokenMachinesSummary', e.target.value)} className="px-3 py-2" />
+                        </label>
+                        <label className="grid gap-1 text-sm">
+                          <span>Tình trạng NetSupport</span>
+                          <input value={reportsDraft.endLesson.netSupportStatus} onChange={(e) => updateEndLessonReportField('netSupportStatus', e.target.value)} className="px-3 py-2" />
+                        </label>
+                        <label className="grid gap-1 text-sm">
+                          <span>Tình trạng loa, âm ly</span>
+                          <input value={reportsDraft.endLesson.audioStatus} onChange={(e) => updateEndLessonReportField('audioStatus', e.target.value)} className="px-3 py-2" />
+                        </label>
+                        <label className="grid gap-1 text-sm">
+                          <span>Tình trạng máy lạnh, quạt</span>
+                          <input value={reportsDraft.endLesson.coolingStatus} onChange={(e) => updateEndLessonReportField('coolingStatus', e.target.value)} className="px-3 py-2" />
+                        </label>
+                        <label className="grid gap-1 text-sm">
+                          <span>Đã tắt các thiết bị điện</span>
+                          <input value={reportsDraft.endLesson.devicesPoweredOffStatus} onChange={(e) => updateEndLessonReportField('devicesPoweredOffStatus', e.target.value)} className="px-3 py-2" />
+                        </label>
+                        <label className="grid gap-1 text-sm">
+                          <span>HS sắp xếp ghế ngồi</span>
+                          <input value={reportsDraft.endLesson.seatingOrderStatus} onChange={(e) => updateEndLessonReportField('seatingOrderStatus', e.target.value)} className="px-3 py-2" />
+                        </label>
+                        <label className="grid gap-1 text-sm">
+                          <span>HS vệ sinh phòng máy</span>
+                          <input value={reportsDraft.endLesson.roomHygieneStatus} onChange={(e) => updateEndLessonReportField('roomHygieneStatus', e.target.value)} className="px-3 py-2" />
+                        </label>
+                        <label className="grid gap-1 text-sm">
+                          <span>Tuân thủ nội quy của HS</span>
+                          <input value={reportsDraft.endLesson.studentRuleComplianceStatus} onChange={(e) => updateEndLessonReportField('studentRuleComplianceStatus', e.target.value)} className="px-3 py-2" />
+                        </label>
+                        <label className="grid gap-1 text-sm sm:col-span-2">
+                          <span>Danh sách vi phạm</span>
+                          <textarea value={reportsDraft.endLesson.violationListSummary} onChange={(e) => updateEndLessonReportField('violationListSummary', e.target.value)} className="min-h-[78px] px-3 py-2" />
+                        </label>
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
             </div>
@@ -1023,7 +1475,7 @@ const TeacherSchedule = () => {
                   className="app-btn-primary w-full px-4 py-2 text-sm sm:w-auto"
                   disabled={attendanceSaving || attendanceLoading || !attendanceData}
                 >
-                  {attendanceSaving ? 'Đang lưu...' : 'Lưu điểm danh'}
+                  {attendanceSaving ? 'Đang lưu...' : 'Lưu điểm danh & báo cáo'}
                 </button>
               </div>
             </div>

@@ -55,6 +55,7 @@ export interface ScheduleAttendanceStudent {
 
 export interface ScheduleAttendanceResponse {
   scheduleId: string;
+  schoolId?: string;
   classId?: string;
   className: string;
   subject: string;
@@ -65,10 +66,81 @@ export interface ScheduleAttendanceResponse {
   students: ScheduleAttendanceStudent[];
   presentCount: number;
   absentCount: number;
+  reports: ScheduleReportsResponse;
+  roomSessionContext: ScheduleRoomSessionContext;
 }
 
 export interface SaveScheduleAttendanceItem {
   studentId: string;
   status: AttendanceStatus;
   note?: string;
+}
+
+export interface ScheduleStartLessonReport {
+  teacherName: string;
+  assistantName: string;
+  roomName: string;
+  totalMachines: string;
+  brokenMachinesSummary: string;
+  missingMachinesForStudents: string;
+  netSupportStatus: string;
+  audioStatus: string;
+  coolingStatus: string;
+  hygieneStatus: string;
+}
+
+export interface ScheduleProfessionalReport {
+  teacherName: string;
+  className: string;
+  subjectName: string;
+  teachingMaterials: string;
+  teachingContent: string;
+  plannedLessons: string;
+  taughtLessons: string;
+  ongoingPracticeCompletions: string;
+  gmetrixResultRate: string;
+}
+
+export interface ScheduleEndLessonReport {
+  teacherName: string;
+  assistantName: string;
+  roomName: string;
+  totalMachines: string;
+  classStudentCountSummary: string;
+  studentMaterialCoverageRate: string;
+  brokenMachinesSummary: string;
+  netSupportStatus: string;
+  audioStatus: string;
+  coolingStatus: string;
+  devicesPoweredOffStatus: string;
+  seatingOrderStatus: string;
+  roomHygieneStatus: string;
+  studentRuleComplianceStatus: string;
+  violationListSummary: string;
+}
+
+export interface ScheduleReportsResponse {
+  startLesson: ScheduleStartLessonReport;
+  professional: ScheduleProfessionalReport;
+  endLesson: ScheduleEndLessonReport;
+}
+
+export interface ScheduleReportsPayload {
+  startLesson: ScheduleStartLessonReport;
+  professional: ScheduleProfessionalReport;
+  endLesson: ScheduleEndLessonReport;
+}
+
+export interface ScheduleRoomClassSummary {
+  classId?: string;
+  className: string;
+  currentStudents: number;
+  maxStudents?: number;
+}
+
+export interface ScheduleRoomSessionContext {
+  sessionLabel: string;
+  isSharedRoomSession: boolean;
+  sharedClassStudentSummary: string;
+  sharedClasses: ScheduleRoomClassSummary[];
 }
