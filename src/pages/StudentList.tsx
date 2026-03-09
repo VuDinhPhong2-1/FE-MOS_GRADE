@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, useRef, type ChangeEvent } from 'react';
+﻿import { useState, useEffect, useMemo, useCallback, useRef, type ChangeEvent } from 'react';
 import * as XLSX from 'xlsx';
 import type { Class } from '../types/class.types';
 import type { Assignment } from '../types/assignment.types';
@@ -11,7 +11,7 @@ import { useAuth } from '../context/AuthContext';
 import GradingModal from '../components/GradingModal';
 import ViewAllScoresModal from '../components/ViewAllScoresModal';
 import ClassAnalyticsPanel from '../components/ClassAnalyticsPanel';
-import { Upload, FileCheck2, Eye, Save, RefreshCw, Pencil, X, Loader2, CheckCircle2, XCircle, Search, UserPlus, Trash2 } from 'lucide-react';
+import { Upload, FileCheck2, Eye, Save, RefreshCw, Pencil, X, Loader2, CheckCircle2, XCircle, Search, UserPlus, Trash2, ClipboardPaste } from 'lucide-react';
 
 type EditStudentForm = {
   middleName: string;
@@ -71,6 +71,9 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isAddSubmitting, setIsAddSubmitting] = useState(false);
   const [addError, setAddError] = useState('');
+  const [isPasteModalOpen, setIsPasteModalOpen] = useState(false);
+  const [pasteInput, setPasteInput] = useState('');
+  const [pasteError, setPasteError] = useState('');
   const [inlineSavingStudentId, setInlineSavingStudentId] = useState<string | null>(null);
   const [addForm, setAddForm] = useState<AddStudentForm>({
     middleName: '',
@@ -207,6 +210,45 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
     }
   };
 
+  const appendImportedStudents = (imported: Student[]) => {
+    setStudents((prev) => {
+      const persisted = prev.filter((student) => !student.id.startsWith('temp-'));
+      return [...persisted, ...imported];
+    });
+  };
+
+  const detectHeader = (rows: Array<Array<string | number | undefined>>): boolean => {
+    if (rows.length === 0) return false;
+    const normalize = (value: string | number | undefined): string =>
+      String(value ?? '').trim().toLowerCase();
+    const firstCol = normalize(rows[0]?.[0]);
+    const secondCol = normalize(rows[0]?.[1]);
+    return (
+      (firstCol.includes('ho') || firstCol.includes('họ') || firstCol.includes('middle')) &&
+      (secondCol.includes('ten') || secondCol.includes('tên') || secondCol.includes('first'))
+    );
+  };
+
+  const mapRowsToTempStudents = (rows: Array<Array<string | number | undefined>>): Student[] => {
+    const startRowIndex = detectHeader(rows) ? 1 : 0;
+    return rows
+      .slice(startRowIndex)
+      .map((row, index) => {
+        const middleName = String(row[0] ?? '').trim();
+        const firstName = String(row[1] ?? '').trim();
+        if (!firstName) return null;
+        return {
+          id: `temp-${Date.now()}-${index + 1}`,
+          middleName,
+          firstName,
+          status: 'Active',
+          isActive: true,
+          gradingApiEndpoint: String(row[2] ?? '').trim(),
+        } as Student;
+      })
+      .filter((student): student is Student => student !== null);
+  };
+
   const handleFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -217,26 +259,57 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
       const wb = XLSX.read(bstr, { type: 'binary' });
       const wsname = wb.SheetNames[0];
       const ws = wb.Sheets[wsname];
-      const data = XLSX.utils.sheet_to_json(ws, { header: 1 }) as (string | undefined)[][];
+      const data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' }) as Array<Array<string | number>>;
+      const list = mapRowsToTempStudents(data);
 
-      const list: Student[] = [];
-      data.slice(1).forEach((row, index) => {
-        if (row[0] && row[1]) {
-          list.push({
-            id: `temp-${index + 1}`,
-            middleName: row[0],
-            firstName: row[1],
-            status: 'Active',
-            isActive: true,
-            gradingApiEndpoint: row[2] || '',
-          });
-        }
-      });
+      if (list.length === 0) {
+        setFlashMessage('Không tìm thấy dữ liệu hợp lệ trong file Excel.');
+        return;
+      }
 
-      setStudents(list);
+      appendImportedStudents(list);
+      setFlashMessage(`Đã nhận ${list.length} học sinh từ file Excel. Bấm "Lưu danh sách" để lưu.`);
     };
 
     reader.readAsBinaryString(file);
+  };
+
+  const parsePastedRows = (rawText: string): string[][] =>
+    rawText
+      .split(/\r?\n/)
+      .filter((line) => line.trim().length > 0)
+      .map((line) => {
+        if (line.includes('\t')) {
+          return line.split('\t').map((cell) => cell.trim());
+        }
+        return line.trim().split(/\s{2,}/).map((cell) => cell.trim());
+      });
+
+  const handleOpenPasteModal = () => {
+    setPasteInput('');
+    setPasteError('');
+    setIsPasteModalOpen(true);
+  };
+
+  const handleImportFromPaste = () => {
+    if (!pasteInput.trim()) {
+      setPasteError('Bạn chưa dán dữ liệu.');
+      return;
+    }
+
+    const rows = parsePastedRows(pasteInput);
+    const list = mapRowsToTempStudents(rows);
+
+    if (list.length === 0) {
+      setPasteError('Dữ liệu cần có tối thiểu 2 cột: Họ và tên đệm, Tên.');
+      return;
+    }
+
+    appendImportedStudents(list);
+    setIsPasteModalOpen(false);
+    setPasteInput('');
+    setPasteError('');
+    setFlashMessage(`Đã nhận ${list.length} học sinh từ dữ liệu dán. Bấm "Lưu danh sách" để lưu.`);
   };
 
   const handleSaveStudents = async () => {
@@ -283,8 +356,8 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
 
     const middleName = addForm.middleName.trim();
     const firstName = addForm.firstName.trim();
-    if (!middleName || !firstName) {
-      setAddError('Vui lòng nhập đầy đủ họ và tên.');
+    if (!firstName) {
+      setAddError('Vui lòng nhập tên.');
       return;
     }
     if (!VALID_STATUSES.includes(addForm.status)) {
@@ -491,8 +564,8 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
     const firstName = editForm.firstName.trim();
     const status = editForm.status.trim();
 
-    if (!middleName || !firstName) {
-      setEditError('Vui lòng nhập đầy đủ họ tên đệm và tên.');
+    if (!firstName) {
+      setEditError('Vui lòng nhập tên.');
       return;
     }
 
@@ -590,6 +663,52 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
             Bấm vào tiêu đề cột <strong>Tên</strong> hoặc <strong>Trạng thái</strong> để sắp xếp
           </span>
         </div>
+      </div>
+
+      <div className="mb-4 flex flex-col sm:flex-row gap-2 sm:gap-4">
+        <button
+          onClick={loadStudents}
+          disabled={isLoading}
+          className="w-full sm:w-auto bg-gray-600 text-white px-4 py-2 rounded-md flex items-center gap-2 hover:bg-gray-700 disabled:bg-gray-400"
+          title="Tải lại danh sách"
+        >
+          <RefreshCw size={18} className={isLoading ? 'animate-spin' : ''} />
+          Tải lại
+        </button>
+
+        <input
+          type="file"
+          onChange={handleFileUpload}
+          accept=".xlsx, .xls"
+          className="hidden"
+          id="import-excel"
+        />
+
+        <label
+          htmlFor="import-excel"
+          className="w-full sm:w-auto bg-green-600 text-white px-4 py-2 rounded-md cursor-pointer flex items-center justify-center gap-2 hover:bg-green-700"
+        >
+          <Upload size={18} /> Nhập Excel
+        </label>
+
+        <button
+          type="button"
+          onClick={handleOpenPasteModal}
+          className="w-full sm:w-auto bg-indigo-600 text-white px-4 py-2 rounded-md flex items-center justify-center gap-2 hover:bg-indigo-700"
+        >
+          <ClipboardPaste size={18} /> Dán từ Excel
+        </button>
+
+        {studentNewList.length > 0 && (
+          <button
+            onClick={handleSaveStudents}
+            disabled={isLoading}
+            className="w-full sm:w-auto bg-blue-600 text-white px-4 py-2 rounded-md flex items-center gap-2 hover:bg-blue-700 disabled:bg-gray-400"
+          >
+            <Save size={18} />
+            {isLoading ? 'Đang lưu...' : 'Lưu danh sách'}
+          </button>
+        )}
       </div>
 
       <ClassAnalyticsPanel classId={selectedClass.id} assignments={assignments} />
@@ -731,44 +850,6 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
         </table>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 mt-4">
-        <button
-          onClick={loadStudents}
-          disabled={isLoading}
-          className="w-full sm:w-auto bg-gray-600 text-white px-4 py-2 rounded-md flex items-center gap-2 hover:bg-gray-700 disabled:bg-gray-400"
-          title="Tải lại danh sách"
-        >
-          <RefreshCw size={18} className={isLoading ? 'animate-spin' : ''} />
-          Tải lại
-        </button>
-
-        <input
-          type="file"
-          onChange={handleFileUpload}
-          accept=".xlsx, .xls"
-          className="hidden"
-          id="import-excel"
-        />
-
-        <label
-          htmlFor="import-excel"
-          className="w-full sm:w-auto bg-green-600 text-white px-4 py-2 rounded-md cursor-pointer flex items-center justify-center gap-2 hover:bg-green-700"
-        >
-          <Upload size={18} /> Nhập Excel
-        </label>
-
-        {studentNewList.length > 0 && (
-          <button
-            onClick={handleSaveStudents}
-            disabled={isLoading}
-            className="w-full sm:w-auto bg-blue-600 text-white px-4 py-2 rounded-md flex items-center gap-2 hover:bg-blue-700 disabled:bg-gray-400"
-          >
-            <Save size={18} />
-            {isLoading ? 'Đang lưu...' : 'Lưu danh sách'}
-          </button>
-        )}
-      </div>
-
       <GradingModal
         isOpen={isGradingModalOpen}
         onClose={() => setIsGradingModalOpen(false)}
@@ -834,7 +915,6 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
                   disabled={isAddSubmitting}
                   className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   placeholder="Nguyễn Văn"
-                  required
                 />
               </div>
 
@@ -923,6 +1003,57 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
         </div>
       )}
 
+      {isPasteModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-2xl rounded-lg bg-white shadow-xl">
+            <div className="flex items-center justify-between border-b px-5 py-4">
+              <h2 className="text-lg font-semibold text-gray-900">Dán danh sách học sinh</h2>
+              <button
+                type="button"
+                onClick={() => setIsPasteModalOpen(false)}
+                className="rounded p-1 text-gray-500 hover:bg-gray-100"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="space-y-3 px-5 py-4">
+              <p className="text-sm text-gray-600">
+                Copy trực tiếp 2 cột từ Excel theo thứ tự: <strong>Họ và tên đệm</strong>, <strong>Tên</strong>, rồi dán vào ô bên dưới.
+              </p>
+              <textarea
+                value={pasteInput}
+                onChange={(event) => setPasteInput(event.target.value)}
+                placeholder={'Ví dụ:\nNinh Hoàng\tAnh\nNguyễn Phan\tAnh'}
+                className="h-64 w-full resize-y rounded-md border border-gray-300 p-3 text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+              />
+              {pasteError && (
+                <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                  {pasteError}
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-end gap-2 border-t px-5 py-4">
+              <button
+                type="button"
+                onClick={() => setIsPasteModalOpen(false)}
+                className="rounded-md border px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={handleImportFromPaste}
+                className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+              >
+                Dán và thêm vào danh sách
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {isEditModalOpen && editingStudent && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
           <div className="w-full max-w-md rounded-lg bg-white shadow-xl">
@@ -954,7 +1085,6 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
                   disabled={isEditSubmitting}
                   className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   placeholder="Nguyễn Văn"
-                  required
                 />
               </div>
 
@@ -1049,5 +1179,6 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
 };
 
 export default StudentList;
+
 
 

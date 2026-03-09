@@ -26,6 +26,26 @@ const parseErrorMessage = async (response: Response, fallback: string): Promise<
 };
 
 export const classService = {
+    async getAllClasses(
+        getAccessToken: (forceRefresh?: boolean) => Promise<string | null>,
+        includeInactive = false
+    ): Promise<Class[]> {
+        const query = includeInactive ? '?includeInactive=true' : '';
+        const response = await authFetch(`${API_BASE_URL}/class${query}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        }, getAccessToken);
+
+        if (!response.ok) {
+            const message = await parseErrorMessage(response, 'Không thể lấy danh sách lớp');
+            throw new ApiServiceError(response.status, message);
+        }
+
+        return response.json();
+    },
+
     async getClassesBySchool(
         schoolId: string,
         getAccessToken: (forceRefresh?: boolean) => Promise<string | null>,

@@ -1,10 +1,11 @@
 ﻿import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
-import { GraduationCap, LayoutDashboard } from 'lucide-react';
+import { CalendarClock, GraduationCap, LayoutDashboard } from 'lucide-react';
 import Layout from './components/Layout/Layout';
 import GradingView from './pages/GradingView';
 import Dashboard from './pages/Dashboard';
 import SchoolList from './pages/SchoolList';
 import AuthPage from './pages/AuthPage';
+import TeacherSchedule from './pages/TeacherSchedule';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
 const ProtectedRoute: React.FC = () => {
@@ -23,6 +24,7 @@ const AppLayout: React.FC = () => {
   const navItems = [
     { id: 'dashboard', label: 'Trang chủ', icon: LayoutDashboard, path: '/dashboard' },
     { id: 'schools', label: 'Quản lý trường', icon: GraduationCap, path: '/schools' },
+    { id: 'schedule', label: 'Lịch dạy', icon: CalendarClock, path: '/schedule' },
   ];
 
   return (
@@ -43,6 +45,7 @@ function App() {
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/schools" element={<SchoolList />} />
+            <Route path="/schedule" element={<TeacherSchedule />} />
             <Route path="/grading" element={<GradingView />} />
           </Route>
         </Route>
