@@ -6,6 +6,7 @@ export interface ScheduleItem {
   className: string;
   subject: string;
   roomName?: string;
+  roomId?: string;
   periodLabel?: string;
   date: string;
   dayOfWeek: number;
@@ -29,6 +30,7 @@ export interface CreateScheduleRequest {
   className?: string;
   subject: string;
   roomName?: string;
+  roomId?: string;
   periodLabel?: string;
   date: string;
   startTime: string;
@@ -63,11 +65,31 @@ export interface ScheduleAttendanceResponse {
   startTime: string;
   endTime: string;
   roomName?: string;
+  roomId?: string;
+  computerRoom?: ScheduleComputerRoomSnapshot;
   students: ScheduleAttendanceStudent[];
   presentCount: number;
   absentCount: number;
   reports: ScheduleReportsResponse;
   roomSessionContext: ScheduleRoomSessionContext;
+}
+
+export interface ScheduleComputerRoomSnapshot {
+  id: string;
+  name: string;
+  studentMachineCount: number;
+  teacherMachineCount: number;
+  brokenMachineCount: number;
+  availableStudentMachines: number;
+  currentClassStudents: number;
+  missingMachinesForStudents: number;
+  totalMachinesText: string;
+  netSupportStatus: string;
+  audioStatus: string;
+  coolingStatus: string;
+  devicesPoweredOffStatus: string;
+  seatingOrderStatus: string;
+  roomHygieneStatus: string;
 }
 
 export interface SaveScheduleAttendanceItem {

@@ -15,7 +15,13 @@ const Header = ({ onToggleSidebar, fullName = 'Giáo viên' }: HeaderProps) => {
 
   return (
     <>
-      <header className="sticky top-0 z-20 flex h-16 items-center border-b border-slate-200/80 bg-white/85 px-3 shadow-sm backdrop-blur sm:px-5">
+      <header
+        className="sticky top-0 z-20 flex items-center border-b border-slate-200/80 bg-white/85 px-3 shadow-sm backdrop-blur sm:px-5"
+        style={{
+          minHeight: 'calc(4rem + env(safe-area-inset-top))',
+          paddingTop: 'env(safe-area-inset-top)',
+        }}
+      >
         <button
           onClick={onToggleSidebar}
           className="rounded-xl border border-slate-200 bg-white p-2 text-slate-600 shadow-sm hover:bg-slate-50 hover:text-slate-800"

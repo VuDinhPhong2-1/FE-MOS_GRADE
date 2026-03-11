@@ -1,10 +1,37 @@
 ﻿import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { BookOpen, CalendarClock, CheckCheck, ClipboardCheck, ClipboardList, ChevronLeft, ChevronRight, Copy, FileText, Pencil, Plus, Trash2 } from 'lucide-react';
+import {
+  BookOpen,
+  Building2,
+  CalendarClock,
+  CheckCheck,
+  ClipboardCheck,
+  ClipboardList,
+  ChevronLeft,
+  ChevronRight,
+  Copy,
+  FileText,
+  Monitor,
+  Pencil,
+  Plus,
+  Power,
+  Sparkles,
+  Trash2,
+  Volume2,
+  Wind,
+  Wrench,
+  X,
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { classService } from '../services/class.service';
+import { computerRoomService } from '../services/computer-room.service';
 import { schoolService } from '../services/school.service';
 import { scheduleService } from '../services/schedule.service';
 import type { Class } from '../types/class.types';
+import type {
+  ComputerRoom,
+  CreateComputerRoomRequest,
+  UpdateComputerRoomRequest,
+} from '../types/computer-room.types';
 import type { School } from '../types/school.types';
 import type {
   AttendanceStatus,
@@ -25,11 +52,27 @@ interface ScheduleFormState {
   className: string;
   subject: string;
   roomName: string;
+  roomId: string;
   periodLabel: string;
   date: string;
   startTime: string;
   endTime: string;
   notes: string;
+  isActive: boolean;
+}
+
+interface ComputerRoomFormState {
+  schoolId: string;
+  name: string;
+  studentMachineCount: string;
+  teacherMachineCount: string;
+  brokenMachineCount: string;
+  netSupportStatus: string;
+  audioStatus: string;
+  coolingStatus: string;
+  devicesPoweredOffStatus: string;
+  seatingOrderStatus: string;
+  roomHygieneStatus: string;
   isActive: boolean;
 }
 
@@ -146,6 +189,7 @@ const createDefaultForm = (weekStart: string): ScheduleFormState => ({
   className: '',
   subject: '',
   roomName: '',
+  roomId: '',
   periodLabel: '',
   date: weekStart,
   startTime: '07:00',
@@ -153,6 +197,96 @@ const createDefaultForm = (weekStart: string): ScheduleFormState => ({
   notes: '',
   isActive: true,
 });
+
+const createDefaultRoomForm = (schoolId = ''): ComputerRoomFormState => ({
+  schoolId,
+  name: '',
+  studentMachineCount: '45',
+  teacherMachineCount: '1',
+  brokenMachineCount: '0',
+  netSupportStatus: 'Tốt',
+  audioStatus: 'Tốt',
+  coolingStatus: 'Tốt',
+  devicesPoweredOffStatus: 'Rồi',
+  seatingOrderStatus: 'Tốt',
+  roomHygieneStatus: 'Tốt',
+  isActive: true,
+});
+
+const getRoomConditionTone = (value: string): string => {
+  const normalized = value.trim().toLowerCase();
+
+  if (!normalized) {
+    return 'border-slate-200 bg-slate-100 text-slate-600';
+  }
+
+  const positiveSignals = ['tốt', 'tot', 'rồi', 'roi', 'ổn', 'on', 'ok', 'sạch', 'sach', 'gọn', 'gon'];
+  const warningSignals = ['trung bình', 'tam', 'tạm', 'ít', 'it', 'thiếu', 'thieu', 'chậm', 'cham'];
+  const negativeSignals = ['lỗi', 'loi', 'hỏng', 'hong', 'không', 'khong', 'chưa', 'chua', 'kém', 'kem'];
+
+  if (negativeSignals.some((signal) => normalized.includes(signal))) {
+    return 'border-rose-200 bg-rose-50 text-rose-700';
+  }
+
+  if (warningSignals.some((signal) => normalized.includes(signal))) {
+    return 'border-amber-200 bg-amber-50 text-amber-700';
+  }
+
+  if (positiveSignals.some((signal) => normalized.includes(signal))) {
+    return 'border-emerald-200 bg-emerald-50 text-emerald-700';
+  }
+
+  return 'border-sky-200 bg-sky-50 text-sky-700';
+};
+
+const resolveSnapshotValue = (
+  snapshotValue: string | number | undefined | null,
+  fallbackValue?: string
+): string => {
+  if (snapshotValue === undefined || snapshotValue === null) return fallbackValue || '';
+  const normalized = `${snapshotValue}`.trim();
+  return normalized || fallbackValue || '';
+};
+
+const calculateMissingMachinesByFormula = (data: ScheduleAttendanceResponse): number | null => {
+  const roomSnapshot = data.computerRoom;
+  if (!roomSnapshot) return null;
+
+  // "Thiếu cho học sinh" chỉ tính trên máy học sinh, không tính máy giáo viên.
+  const studentMachines = Math.max(0, roomSnapshot.studentMachineCount);
+  const brokenMachines = Math.max(0, roomSnapshot.brokenMachineCount);
+  const availableStudentMachines = Math.max(0, studentMachines - brokenMachines);
+  const classSizeFromSnapshot =
+    Number.isFinite(roomSnapshot.currentClassStudents) && roomSnapshot.currentClassStudents > 0
+      ? roomSnapshot.currentClassStudents
+      : null;
+  const classSize = Math.max(0, classSizeFromSnapshot ?? data.students.length);
+
+  return Math.max(classSize - availableStudentMachines, 0);
+};
+
+const startLessonRoomAutoFields: (keyof ScheduleStartLessonReport)[] = [
+  'roomName',
+  'totalMachines',
+  'brokenMachinesSummary',
+  'missingMachinesForStudents',
+  'netSupportStatus',
+  'audioStatus',
+  'coolingStatus',
+  'hygieneStatus',
+];
+
+const endLessonRoomAutoFields: (keyof ScheduleEndLessonReport)[] = [
+  'roomName',
+  'totalMachines',
+  'brokenMachinesSummary',
+  'netSupportStatus',
+  'audioStatus',
+  'coolingStatus',
+  'devicesPoweredOffStatus',
+  'seatingOrderStatus',
+  'roomHygieneStatus',
+];
 
 const buildAttendanceDraft = (data: ScheduleAttendanceResponse): Record<string, AttendanceDraftState> => {
   const next: Record<string, AttendanceDraftState> = {};
@@ -216,13 +350,47 @@ const emptyReportsPayload = (): ScheduleReportsPayload => ({
 
 const buildReportsDraft = (data: ScheduleAttendanceResponse, teacherName: string): ScheduleReportsPayload => {
   const source = data.reports || emptyReportsPayload();
+  const roomSnapshot = data.computerRoom;
+  const roomNameDefault = roomSnapshot?.name || data.roomName || '';
+  const totalMachinesDefault = roomSnapshot?.totalMachinesText || '';
+  const brokenMachinesDefault =
+    roomSnapshot && Number.isFinite(roomSnapshot.brokenMachineCount)
+      ? `${roomSnapshot.brokenMachineCount}`
+      : '';
+  const missingMachinesByFormula = calculateMissingMachinesByFormula(data);
+  const missingMachinesDefault =
+    missingMachinesByFormula !== null
+      ? `${missingMachinesByFormula}`
+      : roomSnapshot && Number.isFinite(roomSnapshot.missingMachinesForStudents)
+        ? `${roomSnapshot.missingMachinesForStudents}`
+      : '';
 
   return {
     startLesson: {
       ...emptyStartLessonReport(),
       ...(source.startLesson || {}),
       teacherName: source.startLesson?.teacherName || teacherName || '',
-      roomName: source.startLesson?.roomName || data.roomName || '',
+      roomName: resolveSnapshotValue(roomNameDefault, source.startLesson?.roomName),
+      totalMachines: resolveSnapshotValue(totalMachinesDefault, source.startLesson?.totalMachines),
+      brokenMachinesSummary: resolveSnapshotValue(
+        brokenMachinesDefault,
+        source.startLesson?.brokenMachinesSummary
+      ),
+      missingMachinesForStudents:
+        resolveSnapshotValue(missingMachinesDefault, source.startLesson?.missingMachinesForStudents),
+      netSupportStatus: resolveSnapshotValue(
+        roomSnapshot?.netSupportStatus,
+        source.startLesson?.netSupportStatus
+      ),
+      audioStatus: resolveSnapshotValue(roomSnapshot?.audioStatus, source.startLesson?.audioStatus),
+      coolingStatus: resolveSnapshotValue(
+        roomSnapshot?.coolingStatus,
+        source.startLesson?.coolingStatus
+      ),
+      hygieneStatus: resolveSnapshotValue(
+        roomSnapshot?.roomHygieneStatus,
+        source.startLesson?.hygieneStatus
+      ),
     },
     professional: {
       ...emptyProfessionalReport(),
@@ -235,9 +403,28 @@ const buildReportsDraft = (data: ScheduleAttendanceResponse, teacherName: string
       ...emptyEndLessonReport(),
       ...(source.endLesson || {}),
       teacherName: source.endLesson?.teacherName || teacherName || '',
-      roomName: source.endLesson?.roomName || data.roomName || '',
+      roomName: resolveSnapshotValue(roomNameDefault, source.endLesson?.roomName),
+      totalMachines: resolveSnapshotValue(totalMachinesDefault, source.endLesson?.totalMachines),
+      brokenMachinesSummary: resolveSnapshotValue(
+        brokenMachinesDefault,
+        source.endLesson?.brokenMachinesSummary
+      ),
+      netSupportStatus: resolveSnapshotValue(
+        roomSnapshot?.netSupportStatus,
+        source.endLesson?.netSupportStatus
+      ),
+      audioStatus: resolveSnapshotValue(roomSnapshot?.audioStatus, source.endLesson?.audioStatus),
+      coolingStatus: resolveSnapshotValue(roomSnapshot?.coolingStatus, source.endLesson?.coolingStatus),
+      devicesPoweredOffStatus:
+        resolveSnapshotValue(roomSnapshot?.devicesPoweredOffStatus, source.endLesson?.devicesPoweredOffStatus),
+      seatingOrderStatus:
+        resolveSnapshotValue(roomSnapshot?.seatingOrderStatus, source.endLesson?.seatingOrderStatus),
+      roomHygieneStatus: resolveSnapshotValue(
+        roomSnapshot?.roomHygieneStatus,
+        source.endLesson?.roomHygieneStatus
+      ),
       classStudentCountSummary:
-        source.endLesson?.classStudentCountSummary || data.roomSessionContext?.sharedClassStudentSummary || '',
+        data.roomSessionContext?.sharedClassStudentSummary || source.endLesson?.classStudentCountSummary || '',
     },
   };
 };
@@ -257,7 +444,8 @@ const buildScheduleKey = (
   periodLabel?: string,
   startTime?: string,
   endTime?: string,
-  roomName?: string
+  roomName?: string,
+  roomId?: string
 ): string => {
   return [
     dateYmd,
@@ -267,6 +455,7 @@ const buildScheduleKey = (
     (startTime || '').trim(),
     (endTime || '').trim(),
     (roomName || '').trim().toLowerCase(),
+    (roomId || '').trim().toLowerCase(),
   ].join('|');
 };
 
@@ -277,6 +466,15 @@ const TeacherSchedule = () => {
   const [schedules, setSchedules] = useState<ScheduleItem[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
   const [schools, setSchools] = useState<School[]>([]);
+  const [computerRooms, setComputerRooms] = useState<ComputerRoom[]>([]);
+  const [computerRoomsLoading, setComputerRoomsLoading] = useState(false);
+  const [roomManagerOpen, setRoomManagerOpen] = useState(false);
+  const [roomManagerSchoolId, setRoomManagerSchoolId] = useState('');
+  const [roomManagerRows, setRoomManagerRows] = useState<ComputerRoom[]>([]);
+  const [roomManagerLoading, setRoomManagerLoading] = useState(false);
+  const [editingRoomId, setEditingRoomId] = useState('');
+  const [roomSubmitting, setRoomSubmitting] = useState(false);
+  const [roomForm, setRoomForm] = useState<ComputerRoomFormState>(createDefaultRoomForm());
   const [loading, setLoading] = useState(false);
   const [copying, setCopying] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
@@ -293,6 +491,11 @@ const TeacherSchedule = () => {
   const [attendanceNameSortDirection, setAttendanceNameSortDirection] = useState<'none' | 'asc' | 'desc'>('none');
   const [nowTick, setNowTick] = useState<number>(Date.now());
   const teacherDisplayName = user?.fullName || user?.username || '';
+  const hasRoomSnapshot = Boolean(attendanceData?.computerRoom);
+  const attendanceMissingMachinesByFormula = useMemo(() => {
+    if (!attendanceData) return null;
+    return calculateMissingMachinesByFormula(attendanceData);
+  }, [attendanceData]);
 
   const weekEnd = useMemo(() => {
     const start = new Date(`${weekStart}T00:00:00`);
@@ -319,9 +522,45 @@ const TeacherSchedule = () => {
     return new Map(schools.map((item) => [item.id, item.name]));
   }, [schools]);
 
+  const selectedRoomManagerSchool = useMemo(
+    () => schools.find((item) => item.id === roomManagerSchoolId) || null,
+    [roomManagerSchoolId, schools]
+  );
+
   const classById = useMemo(() => {
     return new Map(classes.map((item) => [item.id, item]));
   }, [classes]);
+
+  const roomManagerSummary = useMemo(
+    () =>
+      roomManagerRows.reduce(
+        (acc, room) => {
+          acc.totalRooms += 1;
+          acc.activeRooms += room.isActive ? 1 : 0;
+          acc.totalMachines += room.totalMachineCount;
+          acc.availableMachines += room.availableStudentMachines;
+          return acc;
+        },
+        {
+          totalRooms: 0,
+          activeRooms: 0,
+          totalMachines: 0,
+          availableMachines: 0,
+        }
+      ),
+    [roomManagerRows]
+  );
+
+  const roomFormMachinePreview = useMemo(() => {
+    const studentMachines = Math.max(0, Number.parseInt(roomForm.studentMachineCount, 10) || 0);
+    const teacherMachines = Math.max(0, Number.parseInt(roomForm.teacherMachineCount, 10) || 0);
+    const brokenMachines = Math.max(0, Number.parseInt(roomForm.brokenMachineCount, 10) || 0);
+
+    return {
+      totalMachines: studentMachines + teacherMachines,
+      availableMachines: Math.max(0, studentMachines - brokenMachines),
+    };
+  }, [roomForm.brokenMachineCount, roomForm.studentMachineCount, roomForm.teacherMachineCount]);
 
   const resolveSchoolNameForSchedule = (item: ScheduleItem): string => {
     if (item.schoolId && schoolNameById.has(item.schoolId)) {
@@ -348,6 +587,7 @@ const TeacherSchedule = () => {
       className: attendanceData.className,
       subject: attendanceData.subject,
       roomName: attendanceData.roomName,
+      roomId: attendanceData.roomId,
       periodLabel: undefined,
       date: attendanceData.date,
       dayOfWeek: 0,
@@ -445,6 +685,56 @@ const TeacherSchedule = () => {
     }
   };
 
+  const loadComputerRoomsForForm = async (schoolId: string) => {
+    if (!schoolId) {
+      setComputerRooms([]);
+      return;
+    }
+    try {
+      setComputerRoomsLoading(true);
+      const rows = await computerRoomService.getBySchool(schoolId, getAccessToken, false);
+      setComputerRooms(rows);
+    } catch (error) {
+      setComputerRooms([]);
+      notify.error(error instanceof Error ? error.message : 'Không thể tải danh sách phòng máy');
+    } finally {
+      setComputerRoomsLoading(false);
+    }
+  };
+
+  const loadRoomManagerRows = async (schoolId: string) => {
+    if (!schoolId) {
+      setRoomManagerRows([]);
+      return;
+    }
+    try {
+      setRoomManagerLoading(true);
+      const rows = await computerRoomService.getBySchool(schoolId, getAccessToken, true);
+      setRoomManagerRows(rows);
+    } catch (error) {
+      setRoomManagerRows([]);
+      notify.error(error instanceof Error ? error.message : 'Không thể tải dữ liệu quản lý phòng máy');
+    } finally {
+      setRoomManagerLoading(false);
+    }
+  };
+
+  const resetRoomForm = (schoolId: string) => {
+    setEditingRoomId('');
+    setRoomForm(createDefaultRoomForm(schoolId));
+  };
+
+  const openRoomManager = () => {
+    const fallbackSchoolId = form.schoolId || roomManagerSchoolId || schools[0]?.id || '';
+    if (!fallbackSchoolId) {
+      notify.warning('Chưa có trường học để quản lý phòng máy');
+      return;
+    }
+    setRoomManagerSchoolId(fallbackSchoolId);
+    resetRoomForm(fallbackSchoolId);
+    setRoomManagerOpen(true);
+  };
+
   useEffect(() => {
     void loadClasses();
     void loadSchools();
@@ -461,6 +751,34 @@ const TeacherSchedule = () => {
     setForm((prev) => ({ ...prev, schoolId: schools[0].id }));
   }, [editing, form.schoolId, formOpen, schools]);
 
+  useEffect(() => {
+    void loadComputerRoomsForForm(form.schoolId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.schoolId]);
+
+  useEffect(() => {
+    if (!roomManagerSchoolId && schools.length > 0) {
+      setRoomManagerSchoolId(schools[0].id);
+    }
+  }, [roomManagerSchoolId, schools]);
+
+  useEffect(() => {
+    if (!roomManagerOpen) return;
+    void loadRoomManagerRows(roomManagerSchoolId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roomManagerOpen, roomManagerSchoolId]);
+
+  useEffect(() => {
+    if (!form.roomId) return;
+    const matchedRoom = computerRooms.find((room) => room.id === form.roomId);
+    if (!matchedRoom) {
+      setForm((prev) => ({ ...prev, roomId: '' }));
+      return;
+    }
+    if (form.roomName === matchedRoom.name) return;
+    setForm((prev) => ({ ...prev, roomName: matchedRoom.name }));
+  }, [computerRooms, form.roomId, form.roomName]);
+
   const openCreate = () => {
     setEditing(null);
     setForm(createDefaultForm(weekStart));
@@ -476,6 +794,7 @@ const TeacherSchedule = () => {
       className: item.className || '',
       subject: item.subject,
       roomName: item.roomName || '',
+      roomId: item.roomId || '',
       periodLabel: item.periodLabel || '',
       date: parseApiDateToLocalYmd(item.date),
       startTime: item.startTime,
@@ -484,6 +803,103 @@ const TeacherSchedule = () => {
       isActive: item.isActive,
     });
     setFormOpen(true);
+  };
+
+  const parseNonNegativeInt = (value: string, fallback: number): number => {
+    const parsed = Number.parseInt(value, 10);
+    if (Number.isNaN(parsed)) return fallback;
+    return Math.max(0, parsed);
+  };
+
+  const handleEditRoom = (room: ComputerRoom) => {
+    setEditingRoomId(room.id);
+    setRoomForm({
+      schoolId: room.schoolId,
+      name: room.name,
+      studentMachineCount: `${room.studentMachineCount}`,
+      teacherMachineCount: `${room.teacherMachineCount}`,
+      brokenMachineCount: `${room.brokenMachineCount}`,
+      netSupportStatus: room.netSupportStatus || 'Tốt',
+      audioStatus: room.audioStatus || 'Tốt',
+      coolingStatus: room.coolingStatus || 'Tốt',
+      devicesPoweredOffStatus: room.devicesPoweredOffStatus || 'Rồi',
+      seatingOrderStatus: room.seatingOrderStatus || 'Tốt',
+      roomHygieneStatus: room.roomHygieneStatus || 'Tốt',
+      isActive: room.isActive,
+    });
+  };
+
+  const handleDeleteRoom = async (room: ComputerRoom) => {
+    const confirmed = window.confirm(`Xóa phòng máy "${room.name}"?`);
+    if (!confirmed) return;
+    try {
+      await computerRoomService.delete(room.id, getAccessToken);
+      notify.success('Đã xóa phòng máy');
+      await loadRoomManagerRows(roomManagerSchoolId);
+      if (form.schoolId === room.schoolId) {
+        await loadComputerRoomsForForm(form.schoolId);
+      }
+      if (form.roomId === room.id) {
+        setForm((prev) => ({ ...prev, roomId: '', roomName: '' }));
+      }
+    } catch (error) {
+      notify.error(error instanceof Error ? error.message : 'Không thể xóa phòng máy');
+    }
+  };
+
+  const handleSaveRoom = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const schoolId = roomForm.schoolId || roomManagerSchoolId;
+    if (!schoolId) {
+      notify.warning('Vui lòng chọn trường');
+      return;
+    }
+    if (!roomForm.name.trim()) {
+      notify.warning('Vui lòng nhập tên phòng máy');
+      return;
+    }
+
+    const sharedPayload = {
+      name: roomForm.name.trim(),
+      studentMachineCount: parseNonNegativeInt(roomForm.studentMachineCount, 0),
+      teacherMachineCount: parseNonNegativeInt(roomForm.teacherMachineCount, 1),
+      brokenMachineCount: parseNonNegativeInt(roomForm.brokenMachineCount, 0),
+      netSupportStatus: roomForm.netSupportStatus.trim() || 'Tốt',
+      audioStatus: roomForm.audioStatus.trim() || 'Tốt',
+      coolingStatus: roomForm.coolingStatus.trim() || 'Tốt',
+      devicesPoweredOffStatus: roomForm.devicesPoweredOffStatus.trim() || 'Rồi',
+      seatingOrderStatus: roomForm.seatingOrderStatus.trim() || 'Tốt',
+      roomHygieneStatus: roomForm.roomHygieneStatus.trim() || 'Tốt',
+    };
+
+    try {
+      setRoomSubmitting(true);
+      if (editingRoomId) {
+        const updatePayload: UpdateComputerRoomRequest = {
+          ...sharedPayload,
+          isActive: roomForm.isActive,
+        };
+        await computerRoomService.update(editingRoomId, updatePayload, getAccessToken);
+        notify.success('Cập nhật phòng máy thành công');
+      } else {
+        const createPayload: CreateComputerRoomRequest = {
+          schoolId,
+          ...sharedPayload,
+        };
+        await computerRoomService.create(createPayload, getAccessToken);
+        notify.success('Tạo phòng máy thành công');
+      }
+
+      resetRoomForm(schoolId);
+      await loadRoomManagerRows(schoolId);
+      if (form.schoolId === schoolId) {
+        await loadComputerRoomsForForm(schoolId);
+      }
+    } catch (error) {
+      notify.error(error instanceof Error ? error.message : 'Không thể lưu phòng máy');
+    } finally {
+      setRoomSubmitting(false);
+    }
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -511,13 +927,16 @@ const TeacherSchedule = () => {
 
     const normalizedStart = normalizeTimeValue(form.startTime);
     const normalizedEnd = normalizeTimeValue(form.endTime);
+    const selectedRoom = computerRooms.find((room) => room.id === form.roomId);
+    const resolvedRoomName = selectedRoom?.name || form.roomName.trim();
 
     const payload: UpdateScheduleRequest = {
       schoolId: form.schoolId,
       classId: form.classId || undefined,
       className: form.className.trim(),
       subject: form.subject.trim(),
-      roomName: form.roomName.trim() || undefined,
+      roomName: resolvedRoomName || undefined,
+      roomId: selectedRoom?.id || undefined,
       periodLabel: form.periodLabel.trim() || undefined,
       date: form.date,
       startTime: normalizedStart,
@@ -606,7 +1025,8 @@ const TeacherSchedule = () => {
             item.periodLabel,
             item.startTime,
             item.endTime,
-            item.roomName
+            item.roomName,
+            item.roomId
           )
         )
       );
@@ -627,7 +1047,8 @@ const TeacherSchedule = () => {
           item.periodLabel,
           item.startTime,
           item.endTime,
-          item.roomName
+          item.roomName,
+          item.roomId
         );
 
         if (existingKeys.has(targetKey)) {
@@ -643,6 +1064,7 @@ const TeacherSchedule = () => {
               className: item.className,
               subject: item.subject,
               roomName: item.roomName || undefined,
+              roomId: item.roomId || undefined,
               periodLabel: item.periodLabel || undefined,
               date: targetYmd,
               startTime: item.startTime,
@@ -752,6 +1174,7 @@ const TeacherSchedule = () => {
   };
 
   const updateStartLessonReportField = (field: keyof ScheduleStartLessonReport, value: string) => {
+    if (hasRoomSnapshot && startLessonRoomAutoFields.includes(field)) return;
     setReportsDraft((prev) => ({
       ...prev,
       startLesson: {
@@ -772,6 +1195,7 @@ const TeacherSchedule = () => {
   };
 
   const updateEndLessonReportField = (field: keyof ScheduleEndLessonReport, value: string) => {
+    if (hasRoomSnapshot && endLessonRoomAutoFields.includes(field)) return;
     setReportsDraft((prev) => ({
       ...prev,
       endLesson: {
@@ -854,6 +1278,15 @@ const TeacherSchedule = () => {
             <button type="button" onClick={openCreate} className="app-btn-primary inline-flex items-center gap-2 px-4 py-2 text-sm">
               <Plus size={16} />
               Thêm lịch
+            </button>
+
+            <button
+              type="button"
+              onClick={openRoomManager}
+              className="app-btn-secondary inline-flex items-center gap-2 px-4 py-2 text-sm"
+            >
+              <Monitor size={15} />
+              Quản lý phòng máy
             </button>
 
             <button
@@ -1027,7 +1460,10 @@ const TeacherSchedule = () => {
       {attendanceOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/45 backdrop-blur-[1px] sm:grid sm:place-items-center sm:p-3">
           <div className="app-card flex h-[100dvh] w-full flex-col overflow-hidden rounded-none sm:h-auto sm:max-h-[92vh] sm:max-w-5xl sm:rounded-2xl">
-            <div className="shrink-0 border-b border-slate-200 bg-white px-4 py-3">
+            <div
+              className="shrink-0 border-b border-slate-200 bg-white px-4 py-3"
+              style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }}
+            >
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <h3 className="text-lg font-bold text-slate-900">Điểm danh học sinh</h3>
@@ -1040,6 +1476,20 @@ const TeacherSchedule = () => {
                   ) : null}
                   {attendanceSchoolName ? (
                     <p className="text-xs font-medium text-blue-700">Trường: {attendanceSchoolName}</p>
+                  ) : null}
+                  {attendanceData?.computerRoom ? (
+                    <p className="text-xs text-slate-600">
+                      Phòng máy: <span className="font-semibold text-slate-800">{attendanceData.computerRoom.name}</span>
+                      {' · '}
+                      Tổng máy: <span className="font-semibold text-slate-800">{attendanceData.computerRoom.totalMachinesText}</span>
+                      {' · '}
+                      Máy lỗi: <span className="font-semibold text-slate-800">{attendanceData.computerRoom.brokenMachineCount}</span>
+                      {' · '}
+                      Thiếu cho HS:{' '}
+                      <span className="font-semibold text-slate-800">
+                        {attendanceMissingMachinesByFormula ?? attendanceData.computerRoom.missingMachinesForStudents}
+                      </span>
+                    </p>
                   ) : null}
                 </div>
                 <button
@@ -1294,6 +1744,11 @@ const TeacherSchedule = () => {
                   {attendanceTab === 'startLesson' && (
                     <div className="space-y-3 rounded-xl border border-emerald-200 bg-emerald-50/40 p-4">
                       <h4 className="font-semibold text-emerald-800">BÁO CÁO ĐẦU BUỔI DẠY</h4>
+                      {hasRoomSnapshot && (
+                        <p className="text-xs text-emerald-700">
+                          Các trường liên quan phòng máy được tự động lấy từ cấu hình phòng máy trong database.
+                        </p>
+                      )}
                       <div className="grid gap-3 sm:grid-cols-2">
                         <label className="grid gap-1 text-sm">
                           <span>Tên giáo viên</span>
@@ -1305,35 +1760,35 @@ const TeacherSchedule = () => {
                         </label>
                         <label className="grid gap-1 text-sm">
                           <span>Phòng máy</span>
-                          <input value={reportsDraft.startLesson.roomName} onChange={(e) => updateStartLessonReportField('roomName', e.target.value)} className="px-3 py-2" />
+                          <input value={reportsDraft.startLesson.roomName} onChange={(e) => updateStartLessonReportField('roomName', e.target.value)} className="px-3 py-2" disabled={hasRoomSnapshot} />
                         </label>
                         <label className="grid gap-1 text-sm">
                           <span>Tổng số máy</span>
-                          <input value={reportsDraft.startLesson.totalMachines} onChange={(e) => updateStartLessonReportField('totalMachines', e.target.value)} className="px-3 py-2" />
+                          <input value={reportsDraft.startLesson.totalMachines} onChange={(e) => updateStartLessonReportField('totalMachines', e.target.value)} className="px-3 py-2" disabled={hasRoomSnapshot} />
                         </label>
                         <label className="grid gap-1 text-sm sm:col-span-2">
                           <span>Tổng số máy lỗi (mô tả)</span>
-                          <input value={reportsDraft.startLesson.brokenMachinesSummary} onChange={(e) => updateStartLessonReportField('brokenMachinesSummary', e.target.value)} className="px-3 py-2" />
+                          <input value={reportsDraft.startLesson.brokenMachinesSummary} onChange={(e) => updateStartLessonReportField('brokenMachinesSummary', e.target.value)} className="px-3 py-2" disabled={hasRoomSnapshot} />
                         </label>
                         <label className="grid gap-1 text-sm">
                           <span>Số máy thiếu cho học sinh</span>
-                          <input value={reportsDraft.startLesson.missingMachinesForStudents} onChange={(e) => updateStartLessonReportField('missingMachinesForStudents', e.target.value)} className="px-3 py-2" />
+                          <input value={reportsDraft.startLesson.missingMachinesForStudents} onChange={(e) => updateStartLessonReportField('missingMachinesForStudents', e.target.value)} className="px-3 py-2" disabled={hasRoomSnapshot} />
                         </label>
                         <label className="grid gap-1 text-sm">
                           <span>Tình trạng NetSupport</span>
-                          <input value={reportsDraft.startLesson.netSupportStatus} onChange={(e) => updateStartLessonReportField('netSupportStatus', e.target.value)} className="px-3 py-2" />
+                          <input value={reportsDraft.startLesson.netSupportStatus} onChange={(e) => updateStartLessonReportField('netSupportStatus', e.target.value)} className="px-3 py-2" disabled={hasRoomSnapshot} />
                         </label>
                         <label className="grid gap-1 text-sm">
                           <span>Tình trạng loa, âm ly</span>
-                          <input value={reportsDraft.startLesson.audioStatus} onChange={(e) => updateStartLessonReportField('audioStatus', e.target.value)} className="px-3 py-2" />
+                          <input value={reportsDraft.startLesson.audioStatus} onChange={(e) => updateStartLessonReportField('audioStatus', e.target.value)} className="px-3 py-2" disabled={hasRoomSnapshot} />
                         </label>
                         <label className="grid gap-1 text-sm">
                           <span>Tình trạng máy lạnh, quạt</span>
-                          <input value={reportsDraft.startLesson.coolingStatus} onChange={(e) => updateStartLessonReportField('coolingStatus', e.target.value)} className="px-3 py-2" />
+                          <input value={reportsDraft.startLesson.coolingStatus} onChange={(e) => updateStartLessonReportField('coolingStatus', e.target.value)} className="px-3 py-2" disabled={hasRoomSnapshot} />
                         </label>
                         <label className="grid gap-1 text-sm sm:col-span-2">
                           <span>Tình trạng vệ sinh phòng máy</span>
-                          <input value={reportsDraft.startLesson.hygieneStatus} onChange={(e) => updateStartLessonReportField('hygieneStatus', e.target.value)} className="px-3 py-2" />
+                          <input value={reportsDraft.startLesson.hygieneStatus} onChange={(e) => updateStartLessonReportField('hygieneStatus', e.target.value)} className="px-3 py-2" disabled={hasRoomSnapshot} />
                         </label>
                       </div>
                     </div>
@@ -1386,6 +1841,11 @@ const TeacherSchedule = () => {
                   {attendanceTab === 'endLesson' && (
                     <div className="space-y-3 rounded-xl border border-amber-200 bg-amber-50/50 p-4">
                       <h4 className="font-semibold text-amber-800">BÁO CÁO CUỐI BUỔI DẠY</h4>
+                      {hasRoomSnapshot && (
+                        <p className="text-xs text-amber-700">
+                          Các trường liên quan phòng máy được tự động lấy từ cấu hình phòng máy trong database.
+                        </p>
+                      )}
                       <div className="rounded-lg border border-amber-200 bg-amber-100/60 px-3 py-2 text-xs text-amber-800">
                         {attendanceData.roomSessionContext?.isSharedRoomSession
                           ? `Đang là báo cáo cuối buổi dùng chung cho ${attendanceData.roomSessionContext.sharedClasses.length} lớp cùng phòng (${attendanceData.roomSessionContext.sessionLabel.toLowerCase()}).`
@@ -1402,11 +1862,11 @@ const TeacherSchedule = () => {
                         </label>
                         <label className="grid gap-1 text-sm">
                           <span>Phòng máy</span>
-                          <input value={reportsDraft.endLesson.roomName} onChange={(e) => updateEndLessonReportField('roomName', e.target.value)} className="px-3 py-2" />
+                          <input value={reportsDraft.endLesson.roomName} onChange={(e) => updateEndLessonReportField('roomName', e.target.value)} className="px-3 py-2" disabled={hasRoomSnapshot} />
                         </label>
                         <label className="grid gap-1 text-sm">
                           <span>Tổng số máy</span>
-                          <input value={reportsDraft.endLesson.totalMachines} onChange={(e) => updateEndLessonReportField('totalMachines', e.target.value)} className="px-3 py-2" />
+                          <input value={reportsDraft.endLesson.totalMachines} onChange={(e) => updateEndLessonReportField('totalMachines', e.target.value)} className="px-3 py-2" disabled={hasRoomSnapshot} />
                         </label>
                         <label className="grid gap-1 text-sm sm:col-span-2">
                           <span>Số lượng học sinh các lớp cùng phòng</span>
@@ -1418,31 +1878,31 @@ const TeacherSchedule = () => {
                         </label>
                         <label className="grid gap-1 text-sm">
                           <span>Tổng số máy lỗi (mô tả)</span>
-                          <input value={reportsDraft.endLesson.brokenMachinesSummary} onChange={(e) => updateEndLessonReportField('brokenMachinesSummary', e.target.value)} className="px-3 py-2" />
+                          <input value={reportsDraft.endLesson.brokenMachinesSummary} onChange={(e) => updateEndLessonReportField('brokenMachinesSummary', e.target.value)} className="px-3 py-2" disabled={hasRoomSnapshot} />
                         </label>
                         <label className="grid gap-1 text-sm">
                           <span>Tình trạng NetSupport</span>
-                          <input value={reportsDraft.endLesson.netSupportStatus} onChange={(e) => updateEndLessonReportField('netSupportStatus', e.target.value)} className="px-3 py-2" />
+                          <input value={reportsDraft.endLesson.netSupportStatus} onChange={(e) => updateEndLessonReportField('netSupportStatus', e.target.value)} className="px-3 py-2" disabled={hasRoomSnapshot} />
                         </label>
                         <label className="grid gap-1 text-sm">
                           <span>Tình trạng loa, âm ly</span>
-                          <input value={reportsDraft.endLesson.audioStatus} onChange={(e) => updateEndLessonReportField('audioStatus', e.target.value)} className="px-3 py-2" />
+                          <input value={reportsDraft.endLesson.audioStatus} onChange={(e) => updateEndLessonReportField('audioStatus', e.target.value)} className="px-3 py-2" disabled={hasRoomSnapshot} />
                         </label>
                         <label className="grid gap-1 text-sm">
                           <span>Tình trạng máy lạnh, quạt</span>
-                          <input value={reportsDraft.endLesson.coolingStatus} onChange={(e) => updateEndLessonReportField('coolingStatus', e.target.value)} className="px-3 py-2" />
+                          <input value={reportsDraft.endLesson.coolingStatus} onChange={(e) => updateEndLessonReportField('coolingStatus', e.target.value)} className="px-3 py-2" disabled={hasRoomSnapshot} />
                         </label>
                         <label className="grid gap-1 text-sm">
                           <span>Đã tắt các thiết bị điện</span>
-                          <input value={reportsDraft.endLesson.devicesPoweredOffStatus} onChange={(e) => updateEndLessonReportField('devicesPoweredOffStatus', e.target.value)} className="px-3 py-2" />
+                          <input value={reportsDraft.endLesson.devicesPoweredOffStatus} onChange={(e) => updateEndLessonReportField('devicesPoweredOffStatus', e.target.value)} className="px-3 py-2" disabled={hasRoomSnapshot} />
                         </label>
                         <label className="grid gap-1 text-sm">
                           <span>HS sắp xếp ghế ngồi</span>
-                          <input value={reportsDraft.endLesson.seatingOrderStatus} onChange={(e) => updateEndLessonReportField('seatingOrderStatus', e.target.value)} className="px-3 py-2" />
+                          <input value={reportsDraft.endLesson.seatingOrderStatus} onChange={(e) => updateEndLessonReportField('seatingOrderStatus', e.target.value)} className="px-3 py-2" disabled={hasRoomSnapshot} />
                         </label>
                         <label className="grid gap-1 text-sm">
                           <span>HS vệ sinh phòng máy</span>
-                          <input value={reportsDraft.endLesson.roomHygieneStatus} onChange={(e) => updateEndLessonReportField('roomHygieneStatus', e.target.value)} className="px-3 py-2" />
+                          <input value={reportsDraft.endLesson.roomHygieneStatus} onChange={(e) => updateEndLessonReportField('roomHygieneStatus', e.target.value)} className="px-3 py-2" disabled={hasRoomSnapshot} />
                         </label>
                         <label className="grid gap-1 text-sm">
                           <span>Tuân thủ nội quy của HS</span>
@@ -1459,7 +1919,10 @@ const TeacherSchedule = () => {
               )}
             </div>
 
-            <div className="shrink-0 border-t border-slate-200 bg-white px-4 py-3">
+            <div
+              className="shrink-0 border-t border-slate-200 bg-white px-4 py-3"
+              style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}
+            >
               <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                 <button
                   type="button"
@@ -1483,176 +1946,760 @@ const TeacherSchedule = () => {
         </div>
       )}
 
+      {roomManagerOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-sm sm:grid sm:place-items-center sm:p-4">
+          <div className="app-card flex h-[100dvh] w-full flex-col overflow-hidden rounded-none sm:h-auto sm:max-h-[94vh] sm:max-w-7xl sm:rounded-[28px]">
+            <div
+              className="border-b border-slate-200 bg-[radial-gradient(circle_at_top_left,_rgba(147,197,253,0.28),_transparent_35%),linear-gradient(135deg,_#f8fbff,_#eef4ff_55%,_#f8fafc)] px-4 py-4 sm:px-5"
+              style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top))' }}
+            >
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <div className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-500/25">
+                    <Monitor size={22} />
+                  </div>
+                  <div className="space-y-2">
+                    <div>
+                      <h3 className="text-xl font-extrabold text-slate-900">Quản lý phòng máy</h3>
+                      <p className="text-sm text-slate-600">
+                        Cấu hình phòng máy theo từng trường để dùng cho lịch dạy, điểm danh và báo cáo.
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2 text-xs font-medium">
+                      <span className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-blue-700">
+                        <Building2 size={13} />
+                        {selectedRoomManagerSchool?.name || 'Chưa chọn trường'}
+                      </span>
+                      <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-slate-600">
+                        {roomManagerSummary.totalRooms} phòng
+                      </span>
+                      <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-emerald-700">
+                        {roomManagerSummary.activeRooms} đang hoạt động
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setRoomManagerOpen(false)}
+                  className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white/90 px-3.5 py-2 text-sm font-semibold text-slate-600 shadow-sm hover:border-slate-300 hover:bg-white hover:text-slate-900"
+                >
+                  <X size={16} />
+                  Đóng
+                </button>
+              </div>
+            </div>
+
+            <div className="min-h-0 flex-1 overflow-y-auto bg-[linear-gradient(180deg,_rgba(248,250,252,0.92),_rgba(255,255,255,1))] p-4 sm:p-5">
+              <div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_420px]">
+                <div className="space-y-2">
+                  <div className="app-card-soft p-4">
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                      <div className="flex-1">
+                        <label className="grid gap-1.5 text-sm">
+                          <span className="font-semibold text-slate-700">Trường áp dụng</span>
+                          <select
+                            value={roomManagerSchoolId}
+                            onChange={(event) => {
+                              const nextSchoolId = event.target.value;
+                              setRoomManagerSchoolId(nextSchoolId);
+                              resetRoomForm(nextSchoolId);
+                            }}
+                            className="min-w-[260px] bg-white px-3 py-2.5"
+                          >
+                            <option value="">-- Chọn trường --</option>
+                            {schools.map((item) => (
+                              <option key={item.id} value={item.id}>
+                                {item.name}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => resetRoomForm(roomManagerSchoolId)}
+                        className="app-btn-secondary inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm"
+                      >
+                        <Plus size={15} />
+                        Tạo phòng mới
+                      </button>
+                    </div>
+
+                    <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                      <div className="rounded-2xl border border-white/70 bg-white/90 p-3 shadow-sm">
+                        <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                          Tổng phòng
+                        </div>
+                        <div className="mt-2 text-2xl font-extrabold text-slate-900">
+                          {roomManagerSummary.totalRooms}
+                        </div>
+                      </div>
+                      <div className="rounded-2xl border border-emerald-100 bg-emerald-50/80 p-3 shadow-sm">
+                        <div className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-600">
+                          Máy sẵn sàng
+                        </div>
+                        <div className="mt-2 text-2xl font-extrabold text-emerald-700">
+                          {roomManagerSummary.availableMachines}
+                        </div>
+                      </div>
+                      <div className="rounded-2xl border border-blue-100 bg-blue-50/80 p-3 shadow-sm">
+                        <div className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-600">
+                          Tổng thiết bị
+                        </div>
+                        <div className="mt-2 text-2xl font-extrabold text-blue-700">
+                          {roomManagerSummary.totalMachines}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="app-card overflow-hidden">
+                    <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+                      <div>
+                        <h4 className="text-base font-bold text-slate-900">Danh sách phòng máy</h4>
+                        <p className="text-sm text-slate-500">
+                          Chọn một phòng để chỉnh sửa nhanh cấu hình và trạng thái vận hành.
+                        </p>
+                      </div>
+                      <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
+                        {roomManagerRows.length} mục
+                      </span>
+                    </div>
+                    <div className="max-h-[58vh] overflow-y-auto bg-white p-3 sm:p-4">
+                    {roomManagerLoading && (
+                      <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-10 text-center text-sm text-slate-500">
+                        Đang tải phòng máy...
+                      </div>
+                    )}
+
+                    {!roomManagerLoading && roomManagerRows.length === 0 && (
+                      <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-10 text-center text-sm text-slate-500">
+                        Chưa có phòng máy nào trong trường này.
+                      </div>
+                    )}
+
+                    {!roomManagerLoading && roomManagerRows.length > 0 && (
+                      <div className="space-y-3">
+                        {roomManagerRows.map((room) => (
+                          <article
+                            key={room.id}
+                            className={`rounded-2xl border p-4 shadow-sm transition ${
+                              editingRoomId === room.id
+                                ? 'border-blue-300 bg-blue-50/70 shadow-blue-100'
+                                : 'border-slate-200 bg-white hover:border-blue-200 hover:shadow-md'
+                            }`}
+                          >
+                            <div className="flex flex-wrap items-start justify-between gap-3">
+                              <div>
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <h5 className="text-lg font-bold text-slate-900">{room.name}</h5>
+                                  <span
+                                    className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                                      room.isActive
+                                        ? 'bg-emerald-100 text-emerald-700'
+                                        : 'bg-slate-200 text-slate-600'
+                                    }`}
+                                  >
+                                    {room.isActive ? 'Đang dùng' : 'Tạm ẩn'}
+                                  </span>
+                                </div>
+                                <p className="mt-1 text-sm text-slate-500">
+                                  Tổng {room.totalMachinesText} · Máy lỗi {room.brokenMachineCount} · Dùng được{' '}
+                                  {room.availableStudentMachines}
+                                </p>
+                              </div>
+
+                              <div className="flex flex-wrap gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => handleEditRoom(room)}
+                                  className="inline-flex items-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100"
+                                >
+                                  <Pencil size={13} />
+                                  Sửa
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => void handleDeleteRoom(room)}
+                                  className="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-100"
+                                >
+                                  <Trash2 size={13} />
+                                  Xóa
+                                </button>
+                              </div>
+                            </div>
+
+                            <div className="mt-4 grid gap-2 sm:grid-cols-4">
+                              <div className="rounded-xl bg-slate-50 px-3 py-2">
+                                <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                                  Máy HS
+                                </div>
+                                <div className="mt-1 text-base font-bold text-slate-800">
+                                  {room.studentMachineCount}
+                                </div>
+                              </div>
+                              <div className="rounded-xl bg-slate-50 px-3 py-2">
+                                <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                                  Máy GV
+                                </div>
+                                <div className="mt-1 text-base font-bold text-slate-800">
+                                  {room.teacherMachineCount}
+                                </div>
+                              </div>
+                              <div className="rounded-xl bg-slate-50 px-3 py-2">
+                                <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                                  Khả dụng
+                                </div>
+                                <div className="mt-1 text-base font-bold text-emerald-700">
+                                  {room.availableStudentMachines}
+                                </div>
+                              </div>
+                              <div className="rounded-xl bg-slate-50 px-3 py-2">
+                                <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                                  Máy lỗi
+                                </div>
+                                <div className="mt-1 text-base font-bold text-rose-600">
+                                  {room.brokenMachineCount}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="mt-4 flex flex-wrap gap-2">
+                              {[
+                                { label: 'NetSupport', value: room.netSupportStatus },
+                                { label: 'Âm thanh', value: room.audioStatus },
+                                { label: 'Làm mát', value: room.coolingStatus },
+                                { label: 'Vệ sinh', value: room.roomHygieneStatus },
+                              ].map((item) => (
+                                <span
+                                  key={`${room.id}-${item.label}`}
+                                  className={`rounded-full border px-2.5 py-1 text-[11px] font-medium ${getRoomConditionTone(item.value)}`}
+                                >
+                                  {item.label}: {item.value || 'Chưa cập nhật'}
+                                </span>
+                              ))}
+                            </div>
+
+                            <p className="mt-3 text-xs text-slate-500">
+                              Tắt điện: {room.devicesPoweredOffStatus || 'Chưa cập nhật'} · Xếp ghế:{' '}
+                              {room.seatingOrderStatus || 'Chưa cập nhật'}
+                            </p>
+                          </article>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                </div>
+
+                <form onSubmit={handleSaveRoom} className="app-card flex min-h-[640px] flex-col overflow-hidden">
+                  <div className="border-b border-slate-200 bg-slate-50/90 px-4 py-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <h4 className="text-base font-bold text-slate-900">
+                          {editingRoomId ? 'Chỉnh sửa phòng máy' : 'Tạo phòng máy mới'}
+                        </h4>
+                        <p className="mt-1 text-sm text-slate-500">
+                          {editingRoomId
+                            ? 'Cập nhật nhanh cấu hình và tình trạng vận hành của phòng đang chọn.'
+                            : 'Khai báo một phòng máy chuẩn để dùng xuyên suốt cho lịch dạy và báo cáo.'}
+                        </p>
+                      </div>
+                      {editingRoomId && (
+                        <span className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+                          Đang sửa
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                      <div className="rounded-2xl border border-blue-100 bg-blue-50/80 p-3">
+                        <div className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-600">
+                          Tổng máy dự kiến
+                        </div>
+                        <div className="mt-2 text-2xl font-extrabold text-blue-700">
+                          {roomFormMachinePreview.totalMachines}
+                        </div>
+                      </div>
+                      <div className="rounded-2xl border border-emerald-100 bg-emerald-50/80 p-3">
+                        <div className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-600">
+                          Máy dùng được
+                        </div>
+                        <div className="mt-2 text-2xl font-extrabold text-emerald-700">
+                          {roomFormMachinePreview.availableMachines}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="min-h-0 flex-1 space-y-4 overflow-y-auto bg-white p-4">
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+                      <label className="grid gap-1.5 text-sm">
+                        <span className="font-semibold text-slate-700">Tên phòng máy *</span>
+                        <input
+                          value={roomForm.name}
+                          onChange={(event) =>
+                            setRoomForm((prev) => ({ ...prev, name: event.target.value }))
+                          }
+                          placeholder="Ví dụ: PM 01 hoặc Phòng máy A"
+                          className="bg-white px-3 py-2.5"
+                          required
+                        />
+                      </label>
+                    </div>
+
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+                      <div className="mb-3 flex items-center gap-2">
+                        <Wrench size={16} className="text-slate-500" />
+                        <h5 className="text-sm font-bold text-slate-800">Cấu hình thiết bị</h5>
+                      </div>
+                      <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(108px,1fr))]">
+                        <label className="grid min-w-0 gap-1.5 text-sm">
+                          <span className="font-medium leading-snug text-slate-700">Số máy HS</span>
+                          <input
+                            type="number"
+                            min={0}
+                            value={roomForm.studentMachineCount}
+                            onChange={(event) =>
+                              setRoomForm((prev) => ({
+                                ...prev,
+                                studentMachineCount: event.target.value,
+                              }))
+                            }
+                            className="w-full bg-white px-3 py-2.5"
+                            required
+                          />
+                        </label>
+                        <label className="grid min-w-0 gap-1.5 text-sm">
+                          <span className="font-medium leading-snug text-slate-700">Số máy GV</span>
+                          <input
+                            type="number"
+                            min={0}
+                            value={roomForm.teacherMachineCount}
+                            onChange={(event) =>
+                              setRoomForm((prev) => ({
+                                ...prev,
+                                teacherMachineCount: event.target.value,
+                              }))
+                            }
+                            className="w-full bg-white px-3 py-2.5"
+                            required
+                          />
+                        </label>
+                        <label className="grid min-w-0 gap-1.5 text-sm">
+                          <span className="font-medium leading-snug text-slate-700">Máy lỗi</span>
+                          <input
+                            type="number"
+                            min={0}
+                            value={roomForm.brokenMachineCount}
+                            onChange={(event) =>
+                              setRoomForm((prev) => ({
+                                ...prev,
+                                brokenMachineCount: event.target.value,
+                              }))
+                            }
+                            className="w-full bg-white px-3 py-2.5"
+                            required
+                          />
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+                      <div className="mb-3 flex items-center gap-2">
+                        <Sparkles size={16} className="text-slate-500" />
+                        <h5 className="text-sm font-bold text-slate-800">Tình trạng trước giờ học</h5>
+                      </div>
+                      <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(170px,1fr))]">
+                        <label className="grid min-w-0 gap-1.5 text-sm">
+                          <span className="flex items-start gap-1.5 font-medium leading-snug text-slate-700">
+                            <Monitor size={14} className="mt-0.5 shrink-0 text-slate-400" />
+                            <span className="min-w-0">Tình trạng NetSupport</span>
+                          </span>
+                          <input
+                            value={roomForm.netSupportStatus}
+                            onChange={(event) =>
+                              setRoomForm((prev) => ({
+                                ...prev,
+                                netSupportStatus: event.target.value,
+                              }))
+                            }
+                            className="w-full bg-white px-3 py-2.5"
+                          />
+                        </label>
+                        <label className="grid min-w-0 gap-1.5 text-sm">
+                          <span className="flex items-start gap-1.5 font-medium leading-snug text-slate-700">
+                            <Volume2 size={14} className="mt-0.5 shrink-0 text-slate-400" />
+                            <span className="min-w-0">Tình trạng loa, âm ly</span>
+                          </span>
+                          <input
+                            value={roomForm.audioStatus}
+                            onChange={(event) =>
+                              setRoomForm((prev) => ({ ...prev, audioStatus: event.target.value }))
+                            }
+                            className="w-full bg-white px-3 py-2.5"
+                          />
+                        </label>
+                        <label className="grid min-w-0 gap-1.5 text-sm">
+                          <span className="flex items-start gap-1.5 font-medium leading-snug text-slate-700">
+                            <Wind size={14} className="mt-0.5 shrink-0 text-slate-400" />
+                            <span className="min-w-0">Tình trạng máy lạnh, quạt</span>
+                          </span>
+                          <input
+                            value={roomForm.coolingStatus}
+                            onChange={(event) =>
+                              setRoomForm((prev) => ({
+                                ...prev,
+                                coolingStatus: event.target.value,
+                              }))
+                            }
+                            className="w-full bg-white px-3 py-2.5"
+                          />
+                        </label>
+                        <label className="grid min-w-0 gap-1.5 text-sm">
+                          <span className="font-medium leading-snug text-slate-700">HS vệ sinh phòng máy</span>
+                          <input
+                            value={roomForm.roomHygieneStatus}
+                            onChange={(event) =>
+                              setRoomForm((prev) => ({
+                                ...prev,
+                                roomHygieneStatus: event.target.value,
+                              }))
+                            }
+                            className="w-full bg-white px-3 py-2.5"
+                          />
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+                      <div className="mb-3 flex items-center gap-2">
+                        <Power size={16} className="text-slate-500" />
+                        <h5 className="text-sm font-bold text-slate-800">Tình trạng sau giờ học</h5>
+                      </div>
+                      <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(170px,1fr))]">
+                        <label className="grid min-w-0 gap-1.5 text-sm">
+                          <span className="font-medium leading-snug text-slate-700">Đã tắt thiết bị điện</span>
+                          <input
+                            value={roomForm.devicesPoweredOffStatus}
+                            onChange={(event) =>
+                              setRoomForm((prev) => ({
+                                ...prev,
+                                devicesPoweredOffStatus: event.target.value,
+                              }))
+                            }
+                            className="w-full bg-white px-3 py-2.5"
+                          />
+                        </label>
+                        <label className="grid min-w-0 gap-1.5 text-sm">
+                          <span className="font-medium leading-snug text-slate-700">HS xếp ghế gọn gàng</span>
+                          <input
+                            value={roomForm.seatingOrderStatus}
+                            onChange={(event) =>
+                              setRoomForm((prev) => ({
+                                ...prev,
+                                seatingOrderStatus: event.target.value,
+                              }))
+                            }
+                            className="w-full bg-white px-3 py-2.5"
+                          />
+                        </label>
+                      </div>
+                    </div>
+
+                    {editingRoomId && (
+                      <label className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700">
+                        <input
+                          type="checkbox"
+                          checked={roomForm.isActive}
+                          onChange={(event) =>
+                            setRoomForm((prev) => ({ ...prev, isActive: event.target.checked }))
+                          }
+                        />
+                        Phòng đang hoạt động
+                      </label>
+                    )}
+                  </div>
+
+                  <div className="shrink-0 border-t border-slate-200 bg-white px-4 py-4">
+                    <div className="flex flex-wrap justify-end gap-2">
+                      {editingRoomId && (
+                        <button
+                          type="button"
+                          onClick={() => resetRoomForm(roomManagerSchoolId)}
+                          className="app-btn-secondary px-4 py-2 text-sm"
+                        >
+                          Hủy sửa
+                        </button>
+                      )}
+                      <button
+                        type="submit"
+                        disabled={roomSubmitting}
+                        className="app-btn-primary inline-flex items-center justify-center gap-2 px-4 py-2 text-sm"
+                      >
+                        {roomSubmitting ? (
+                          'Đang lưu...'
+                        ) : editingRoomId ? (
+                          <>
+                            <Pencil size={15} />
+                            Lưu phòng máy
+                          </>
+                        ) : (
+                          <>
+                            <Plus size={15} />
+                            Tạo phòng máy
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            <div
+              className="shrink-0 border-t border-slate-200 bg-white px-4 py-3"
+              style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}
+            >
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setRoomManagerOpen(false)}
+                  className="app-btn-secondary px-4 py-2 text-sm"
+                >
+                  Đóng
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {formOpen && (
-        <div className="fixed inset-0 z-40 grid place-items-center bg-slate-900/45 p-3 backdrop-blur-[1px]">
-          <div className="app-card w-full max-w-3xl overflow-hidden">
-            <div className="border-b border-slate-200 px-4 py-3">
+        <div className="fixed inset-0 z-40 bg-slate-900/45 backdrop-blur-[1px] sm:grid sm:place-items-center sm:p-3">
+          <div className="app-card flex h-[100dvh] w-full flex-col overflow-hidden rounded-none sm:h-auto sm:max-h-[92vh] sm:max-w-3xl sm:rounded-2xl">
+            <div
+              className="border-b border-slate-200 px-4 py-3"
+              style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }}
+            >
               <h3 className="text-lg font-bold text-slate-900">
                 {editing ? 'Chỉnh sửa lịch dạy' : 'Tạo lịch dạy mới'}
               </h3>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-3 p-4">
-              <div className="grid gap-3 md:grid-cols-3">
+            <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+              <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
+                <div className="grid gap-3 md:grid-cols-4">
+                  <label className="grid gap-1 text-sm">
+                    <span className="font-semibold text-slate-700">Trường *</span>
+                    <select
+                      value={form.schoolId}
+                      onChange={(event) => {
+                        const nextSchoolId = event.target.value;
+                        setForm((prev) => ({
+                          ...prev,
+                          schoolId: nextSchoolId,
+                          classId: '',
+                          className: '',
+                          roomId: '',
+                          roomName: '',
+                        }));
+                      }}
+                      className="px-3 py-2"
+                      required
+                    >
+                      <option value="">-- Chọn trường --</option>
+                      {schools.map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {item.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="grid gap-1 text-sm">
+                    <span className="font-semibold text-slate-700">Lớp có sẵn</span>
+                    <select
+                      value={form.classId}
+                      disabled={!form.schoolId}
+                      onChange={(event) => {
+                        const nextClassId = event.target.value;
+                        const selectedClass = classesBySelectedSchool.find(
+                          (item) => item.id === nextClassId
+                        );
+                        setForm((prev) => ({
+                          ...prev,
+                          schoolId: selectedClass?.schoolId || prev.schoolId,
+                          classId: nextClassId,
+                          className: selectedClass?.name || prev.className,
+                        }));
+                      }}
+                      className="px-3 py-2"
+                    >
+                      <option value="">-- Chọn lớp --</option>
+                      {classesBySelectedSchool.map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {item.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="grid gap-1 text-sm">
+                    <span className="font-semibold text-slate-700">Tên lớp hiển thị *</span>
+                    <input
+                      value={form.className}
+                      onChange={(event) =>
+                        setForm((prev) => ({ ...prev, className: event.target.value }))
+                      }
+                      placeholder="Ví dụ: 11A11"
+                      className="px-3 py-2"
+                      required
+                    />
+                  </label>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-3">
+                  <label className="grid gap-1 text-sm">
+                    <span className="font-semibold text-slate-700">Môn học *</span>
+                    <input
+                      value={form.subject}
+                      onChange={(event) =>
+                        setForm((prev) => ({ ...prev, subject: event.target.value }))
+                      }
+                      placeholder="Ví dụ: Tin học"
+                      className="px-3 py-2"
+                      required
+                    />
+                  </label>
+                  <label className="grid gap-1 text-sm">
+                    <span className="font-semibold text-slate-700">Phòng máy đã cấu hình</span>
+                    <select
+                      value={form.roomId}
+                      disabled={!form.schoolId || computerRoomsLoading}
+                      onChange={(event) => {
+                        const nextRoomId = event.target.value;
+                        const selectedRoom = computerRooms.find((room) => room.id === nextRoomId);
+                        setForm((prev) => ({
+                          ...prev,
+                          roomId: nextRoomId,
+                          roomName: selectedRoom?.name || prev.roomName,
+                        }));
+                      }}
+                      className="px-3 py-2"
+                    >
+                      <option value="">-- Chọn phòng --</option>
+                      {computerRooms.map((room) => (
+                        <option key={room.id} value={room.id}>
+                          {room.name} ({room.totalMachinesText}, lỗi: {room.brokenMachineCount})
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="grid gap-1 text-sm">
+                    <span className="font-semibold text-slate-700">Phòng học / phòng máy</span>
+                    <input
+                      value={form.roomName}
+                      onChange={(event) =>
+                        setForm((prev) => ({ ...prev, roomName: event.target.value, roomId: '' }))
+                      }
+                      placeholder={form.roomId ? 'Đã lấy theo phòng đã chọn' : 'Ví dụ: P.Máy 03'}
+                      className="px-3 py-2"
+                      disabled={Boolean(form.roomId)}
+                    />
+                  </label>
+                  <label className="grid gap-1 text-sm">
+                    <span className="font-semibold text-slate-700">Tiết mấy</span>
+                    <input
+                      value={form.periodLabel}
+                      onChange={(event) =>
+                        setForm((prev) => ({ ...prev, periodLabel: event.target.value }))
+                      }
+                      placeholder="Ví dụ: Tiết 1-2"
+                      className="px-3 py-2"
+                    />
+                  </label>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-3">
+                  <label className="grid gap-1 text-sm">
+                    <span className="font-semibold text-slate-700">Ngày dạy *</span>
+                    <input
+                      type="date"
+                      value={form.date}
+                      onChange={(event) => setForm((prev) => ({ ...prev, date: event.target.value }))}
+                      className="px-3 py-2"
+                      required
+                    />
+                  </label>
+                  <label className="grid gap-1 text-sm">
+                    <span className="font-semibold text-slate-700">Giờ bắt đầu *</span>
+                    <input
+                      type="time"
+                      value={form.startTime}
+                      onChange={(event) =>
+                        setForm((prev) => ({ ...prev, startTime: event.target.value }))
+                      }
+                      className="px-3 py-2"
+                      required
+                    />
+                  </label>
+                  <label className="grid gap-1 text-sm">
+                    <span className="font-semibold text-slate-700">Giờ kết thúc *</span>
+                    <input
+                      type="time"
+                      value={form.endTime}
+                      onChange={(event) =>
+                        setForm((prev) => ({ ...prev, endTime: event.target.value }))
+                      }
+                      className="px-3 py-2"
+                      required
+                    />
+                  </label>
+                </div>
+
                 <label className="grid gap-1 text-sm">
-                  <span className="font-semibold text-slate-700">Trường *</span>
-                  <select
-                    value={form.schoolId}
-                    onChange={(event) => {
-                      const nextSchoolId = event.target.value;
-                      setForm((prev) => ({
-                        ...prev,
-                        schoolId: nextSchoolId,
-                        classId: '',
-                        className: '',
-                      }));
-                    }}
-                    className="px-3 py-2"
-                    required
+                  <span className="font-semibold text-slate-700">Ghi chú</span>
+                  <textarea
+                    value={form.notes}
+                    onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))}
+                    className="min-h-[80px] px-3 py-2"
+                    placeholder="Ghi chú thêm..."
+                  />
+                </label>
+
+                {editing && (
+                  <label className="inline-flex items-center gap-2 text-sm text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={form.isActive}
+                      onChange={(event) =>
+                        setForm((prev) => ({ ...prev, isActive: event.target.checked }))
+                      }
+                    />
+                    Lịch đang hoạt động
+                  </label>
+                )}
+              </div>
+
+              <div
+                className="shrink-0 border-t border-slate-200 bg-white px-4 py-3"
+                style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}
+              >
+                <div className="flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setFormOpen(false)}
+                    className="app-btn-secondary px-4 py-2 text-sm"
                   >
-                    <option value="">-- Chọn trường --</option>
-                    {schools.map((item) => (
-                      <option key={item.id} value={item.id}>
-                        {item.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <label className="grid gap-1 text-sm">
-                  <span className="font-semibold text-slate-700">Lớp có sẵn</span>
-                  <select
-                    value={form.classId}
-                    disabled={!form.schoolId}
-                    onChange={(event) => {
-                      const nextClassId = event.target.value;
-                      const selectedClass = classesBySelectedSchool.find((item) => item.id === nextClassId);
-                      setForm((prev) => ({
-                        ...prev,
-                        schoolId: selectedClass?.schoolId || prev.schoolId,
-                        classId: nextClassId,
-                        className: selectedClass?.name || prev.className,
-                      }));
-                    }}
-                    className="px-3 py-2"
-                  >
-                    <option value="">-- Chọn lớp --</option>
-                    {classesBySelectedSchool.map((item) => (
-                      <option key={item.id} value={item.id}>
-                        {item.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <label className="grid gap-1 text-sm">
-                  <span className="font-semibold text-slate-700">Tên lớp hiển thị *</span>
-                  <input
-                    value={form.className}
-                    onChange={(event) => setForm((prev) => ({ ...prev, className: event.target.value }))}
-                    placeholder="Ví dụ: 11A11"
-                    className="px-3 py-2"
-                    required
-                  />
-                </label>
-              </div>
-
-              <div className="grid gap-3 md:grid-cols-3">
-                <label className="grid gap-1 text-sm">
-                  <span className="font-semibold text-slate-700">Môn học *</span>
-                  <input
-                    value={form.subject}
-                    onChange={(event) => setForm((prev) => ({ ...prev, subject: event.target.value }))}
-                    placeholder="Ví dụ: Tin học"
-                    className="px-3 py-2"
-                    required
-                  />
-                </label>
-                <label className="grid gap-1 text-sm">
-                  <span className="font-semibold text-slate-700">Phòng học / phòng máy</span>
-                  <input
-                    value={form.roomName}
-                    onChange={(event) => setForm((prev) => ({ ...prev, roomName: event.target.value }))}
-                    placeholder="Ví dụ: P.Máy 03"
-                    className="px-3 py-2"
-                  />
-                </label>
-                <label className="grid gap-1 text-sm">
-                  <span className="font-semibold text-slate-700">Tiết mấy</span>
-                  <input
-                    value={form.periodLabel}
-                    onChange={(event) => setForm((prev) => ({ ...prev, periodLabel: event.target.value }))}
-                    placeholder="Ví dụ: Tiết 1-2"
-                    className="px-3 py-2"
-                  />
-                </label>
-              </div>
-
-              <div className="grid gap-3 md:grid-cols-3">
-                <label className="grid gap-1 text-sm">
-                  <span className="font-semibold text-slate-700">Ngày dạy *</span>
-                  <input
-                    type="date"
-                    value={form.date}
-                    onChange={(event) => setForm((prev) => ({ ...prev, date: event.target.value }))}
-                    className="px-3 py-2"
-                    required
-                  />
-                </label>
-                <label className="grid gap-1 text-sm">
-                  <span className="font-semibold text-slate-700">Giờ bắt đầu *</span>
-                  <input
-                    type="time"
-                    value={form.startTime}
-                    onChange={(event) => setForm((prev) => ({ ...prev, startTime: event.target.value }))}
-                    className="px-3 py-2"
-                    required
-                  />
-                </label>
-                <label className="grid gap-1 text-sm">
-                  <span className="font-semibold text-slate-700">Giờ kết thúc *</span>
-                  <input
-                    type="time"
-                    value={form.endTime}
-                    onChange={(event) => setForm((prev) => ({ ...prev, endTime: event.target.value }))}
-                    className="px-3 py-2"
-                    required
-                  />
-                </label>
-              </div>
-
-              <label className="grid gap-1 text-sm">
-                <span className="font-semibold text-slate-700">Ghi chú</span>
-                <textarea
-                  value={form.notes}
-                  onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))}
-                  className="min-h-[80px] px-3 py-2"
-                  placeholder="Ghi chú thêm..."
-                />
-              </label>
-
-              {editing && (
-                <label className="inline-flex items-center gap-2 text-sm text-slate-700">
-                  <input
-                    type="checkbox"
-                    checked={form.isActive}
-                    onChange={(event) => setForm((prev) => ({ ...prev, isActive: event.target.checked }))}
-                  />
-                  Lịch đang hoạt động
-                </label>
-              )}
-
-              <div className="flex justify-end gap-2 border-t border-slate-200 pt-3">
-                <button
-                  type="button"
-                  onClick={() => setFormOpen(false)}
-                  className="app-btn-secondary px-4 py-2 text-sm"
-                >
-                  Hủy
-                </button>
-                <button type="submit" className="app-btn-primary px-4 py-2 text-sm">
-                  {editing ? 'Lưu cập nhật' : 'Tạo lịch'}
-                </button>
+                    Hủy
+                  </button>
+                  <button type="submit" className="app-btn-primary px-4 py-2 text-sm">
+                    {editing ? 'Lưu cập nhật' : 'Tạo lịch'}
+                  </button>
+                </div>
               </div>
             </form>
           </div>
