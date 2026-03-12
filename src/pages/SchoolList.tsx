@@ -9,7 +9,9 @@ import type { CreateSchoolRequest } from '../types';
 import { useAuth } from '../context/AuthContext';
 
 const SchoolList = () => {
-  const { getAccessToken } = useAuth();
+  const { getAccessToken, user } = useAuth();
+  const canDeleteSchool =
+    user?.role === 'Admin' || Boolean(user?.permissions?.includes('schools.delete'));
   const [searchParams, setSearchParams] = useSearchParams();
   const [schools, setSchools] = useState<School[]>([]);
   const [selectedSchool, setSelectedSchool] = useState<School | null>(null);
@@ -138,6 +140,11 @@ const SchoolList = () => {
   };
 
   const handleDelete = async (id: string, name: string) => {
+    if (!canDeleteSchool) {
+      alert('Chỉ Admin mới có quyền xóa trường.');
+      return;
+    }
+
     if (!confirm(`Bạn có chắc muốn xóa trường "${name}"?`)) return;
 
     try {
@@ -232,13 +239,15 @@ const SchoolList = () => {
                           >
                             <Edit size={18} />
                           </button>
-                          <button
-                            onClick={() => handleDelete(sch.id, sch.name)}
-                            className="p-1 text-red-600 hover:bg-red-100 rounded"
-                            title="Xóa trường"
-                          >
-                            <Trash2 size={18} />
-                          </button>
+                          {canDeleteSchool && (
+                            <button
+                              onClick={() => handleDelete(sch.id, sch.name)}
+                              className="p-1 text-red-600 hover:bg-red-100 rounded"
+                              title="Xóa trường"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
