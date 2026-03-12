@@ -67,3 +67,11 @@ export interface ProfileResponse {
   avatar?: string;
   isActive?: boolean;
 }
+
+export interface TeacherSummary {
+  userId: string;
+  username: string;
+  fullName?: string;
+  email?: string;
+  isActive?: boolean;
+}

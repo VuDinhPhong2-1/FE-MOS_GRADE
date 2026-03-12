@@ -144,5 +144,46 @@ export const classService = {
             throw new ApiServiceError(response.status, message);
         }
     },
+
+    async grantClassManagement(
+        classId: string,
+        teacherId: string,
+        getAccessToken: (forceRefresh?: boolean) => Promise<string | null>
+    ): Promise<Class> {
+        const response = await authFetch(`${API_BASE_URL}/class/${classId}/handover`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ teacherId }),
+        }, getAccessToken);
+
+        if (!response.ok) {
+            const message = await parseErrorMessage(response, 'Không thể bàn giao quyền quản lý lớp');
+            throw new ApiServiceError(response.status, message);
+        }
+
+        return response.json();
+    },
+
+    async revokeClassManagement(
+        classId: string,
+        teacherId: string,
+        getAccessToken: (forceRefresh?: boolean) => Promise<string | null>
+    ): Promise<Class> {
+        const response = await authFetch(`${API_BASE_URL}/class/${classId}/handover/${teacherId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        }, getAccessToken);
+
+        if (!response.ok) {
+            const message = await parseErrorMessage(response, 'Không thể thu hồi quyền quản lý lớp');
+            throw new ApiServiceError(response.status, message);
+        }
+
+        return response.json();
+    },
 };
 

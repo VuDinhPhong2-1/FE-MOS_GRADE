@@ -1,5 +1,5 @@
 import { AUTH_API_BASE_URL } from '../config/api';
-import type { ProfileResponse, UpdateProfileRequest } from '../types/auth.types';
+import type { ProfileResponse, TeacherSummary, UpdateProfileRequest } from '../types/auth.types';
 import { authFetch } from './auth-fetch';
 
 const jsonHeaders = { 'Content-Type': 'application/json' };
@@ -10,6 +10,28 @@ const parseErrorMessage = async (response: Response, fallback: string): Promise<
 };
 
 class AuthService {
+  async getTeachers(
+    getAccessToken: (forceRefresh?: boolean) => Promise<string | null>,
+    includeInactive = false
+  ): Promise<TeacherSummary[]> {
+    const query = includeInactive ? '?includeInactive=true' : '';
+    const response = await authFetch(
+      `${AUTH_API_BASE_URL}/teachers${query}`,
+      {
+        method: 'GET',
+        headers: jsonHeaders,
+      },
+      getAccessToken
+    );
+
+    if (!response.ok) {
+      const message = await parseErrorMessage(response, 'Không thể lấy danh sách giáo viên');
+      throw new Error(message);
+    }
+
+    return response.json();
+  }
+
   async updateCurrentUserProfile(
     data: UpdateProfileRequest,
     getAccessToken: (forceRefresh?: boolean) => Promise<string | null>

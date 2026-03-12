@@ -1137,13 +1137,46 @@ const GradingModal: React.FC<GradingModalProps> = ({
         }
     };
 
+    const scrollRowIntoStudentTable = (row: HTMLTableRowElement) => {
+        const scrollContainer = row.closest('[data-student-scroll-container="true"]') as HTMLElement | null;
+        if (!scrollContainer) {
+            row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return;
+        }
+
+        const stickyHeader = scrollContainer.querySelector('thead.sticky') as HTMLElement | null;
+        const stickyHeaderHeight = stickyHeader?.getBoundingClientRect().height ?? 0;
+        const padding = 12;
+
+        const currentScrollTop = scrollContainer.scrollTop;
+        const containerRect = scrollContainer.getBoundingClientRect();
+        const rowRect = row.getBoundingClientRect();
+        const rowTop = rowRect.top - containerRect.top + currentScrollTop;
+        const rowBottom = rowTop + rowRect.height;
+
+        const visibleTop = currentScrollTop + stickyHeaderHeight + padding;
+        const visibleBottom = currentScrollTop + scrollContainer.clientHeight - padding;
+
+        let nextScrollTop = currentScrollTop;
+        if (rowTop < visibleTop) {
+            nextScrollTop = rowTop - stickyHeaderHeight - padding;
+        } else if (rowBottom > visibleBottom) {
+            nextScrollTop = rowBottom - scrollContainer.clientHeight + padding;
+        }
+
+        scrollContainer.scrollTo({
+            top: Math.max(0, nextScrollTop),
+            behavior: 'smooth',
+        });
+    };
+
     const focusMatchedStudent = (matchedIds: string[], index: number) => {
         if (matchedIds.length === 0 || index < 0 || index >= matchedIds.length) return;
         const studentId = matchedIds[index];
         const student = gradingStudents.find((item) => item.id === studentId);
         const row = rowRefs.current.get(studentId);
         if (row) {
-            row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            scrollRowIntoStudentTable(row);
             row.classList.add('ring-2', 'ring-blue-300');
             window.setTimeout(() => row.classList.remove('ring-2', 'ring-blue-300'), 1200);
         }
@@ -1372,7 +1405,10 @@ const GradingModal: React.FC<GradingModalProps> = ({
         const selectedAssignmentData = assignments.find((a) => a.id === selectedAssignment);
 
         return (
-            <div className="max-h-[55vh] overflow-auto rounded-md border border-gray-200">
+            <div
+                data-student-scroll-container="true"
+                className="max-h-[55vh] overflow-auto rounded-md border border-gray-200"
+            >
                 <table className="min-w-full divide-y divide-gray-200">
                     <caption className="caption-top pb-2 text-left text-sm font-semibold text-gray-700">
                         Bảng chấm điểm học sinh
@@ -1802,7 +1838,10 @@ const GradingModal: React.FC<GradingModalProps> = ({
                 </div>
 
                 {selectedAssignments.length > 0 ? (
-                    <div className="max-h-[55vh] overflow-auto rounded-md border border-gray-200">
+                    <div
+                        data-student-scroll-container="true"
+                        className="max-h-[55vh] overflow-auto rounded-md border border-gray-200"
+                    >
                         <table className="min-w-full divide-y divide-gray-200">
                             <caption className="caption-top pb-2 text-left text-sm font-semibold text-gray-700">
                                 Bảng chấm điểm nhiều bài tập

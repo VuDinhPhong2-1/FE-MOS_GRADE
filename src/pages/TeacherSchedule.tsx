@@ -16,6 +16,7 @@ import {
   Power,
   Sparkles,
   Trash2,
+  RefreshCw,
   Volume2,
   Wind,
   Wrench,
@@ -363,7 +364,7 @@ const buildReportsDraft = (data: ScheduleAttendanceResponse, teacherName: string
       ? `${missingMachinesByFormula}`
       : roomSnapshot && Number.isFinite(roomSnapshot.missingMachinesForStudents)
         ? `${roomSnapshot.missingMachinesForStudents}`
-      : '';
+        : '';
 
   return {
     startLesson: {
@@ -483,6 +484,7 @@ const TeacherSchedule = () => {
   const [attendanceOpen, setAttendanceOpen] = useState(false);
   const [attendanceLoading, setAttendanceLoading] = useState(false);
   const [attendanceSaving, setAttendanceSaving] = useState(false);
+  const [attendanceSyncing, setAttendanceSyncing] = useState(false);
   const [attendanceData, setAttendanceData] = useState<ScheduleAttendanceResponse | null>(null);
   const [attendanceDraft, setAttendanceDraft] = useState<Record<string, AttendanceDraftState>>({});
   const [reportsDraft, setReportsDraft] = useState<ScheduleReportsPayload>(emptyReportsPayload());
@@ -653,6 +655,21 @@ const TeacherSchedule = () => {
       },
       { present: 0, absent: 0 }
     );
+  }, [attendanceData, attendanceDraft]);
+
+  const hasUnsavedAttendanceChanges = useMemo(() => {
+    if (!attendanceData) return false;
+
+    return attendanceData.students.some((student) => {
+      const draft = attendanceDraft[student.studentId];
+      if (!draft) return false;
+
+      const serverStatus = student.attendanceStatus ?? 'Present';
+      const serverNote = (student.note ?? '').trim();
+      const draftNote = (draft.note ?? '').trim();
+
+      return draft.status !== serverStatus || draftNote !== serverNote;
+    });
   }, [attendanceData, attendanceDraft]);
 
   const loadSchedules = async () => {
@@ -1089,9 +1106,8 @@ const TeacherSchedule = () => {
         return;
       }
 
-      const message = `Đã sao chép ${created} lịch${skipped > 0 ? `, bỏ qua ${skipped} lịch trùng` : ''}${
-        failed > 0 ? `, lỗi ${failed} lịch` : ''
-      }.`;
+      const message = `Đã sao chép ${created} lịch${skipped > 0 ? `, bỏ qua ${skipped} lịch trùng` : ''}${failed > 0 ? `, lỗi ${failed} lịch` : ''
+        }.`;
       if (failed > 0) {
         notify.warning(message);
       } else {
@@ -1111,8 +1127,9 @@ const TeacherSchedule = () => {
       setAttendanceData(null);
       setAttendanceKeyword('');
       setAttendanceTab('attendance');
-
+      console.log("fetching attendance for scheduleId", item.id);
       const response = await scheduleService.getAttendance(item.id, getAccessToken);
+      console.log("attendance response", response);
       setAttendanceData(response);
       setAttendanceDraft(buildAttendanceDraft(response));
       setReportsDraft(buildReportsDraft(response, teacherDisplayName));
@@ -1230,6 +1247,26 @@ const TeacherSchedule = () => {
       notify.error(error instanceof Error ? error.message : 'Không thể lưu điểm danh và báo cáo');
     } finally {
       setAttendanceSaving(false);
+    }
+  };
+
+  const handleSyncAttendanceToGoogleSheet = async () => {
+    if (!attendanceData) return;
+    console.log("attendanceData", attendanceData);
+    // return;
+    if (hasUnsavedAttendanceChanges) {
+      notify.error('Vui lòng lưu điểm danh trước khi đồng bộ Google Sheet');
+      return;
+    }
+
+    try {
+      setAttendanceSyncing(true);
+      const result = await scheduleService.syncAttendanceToGoogleSheet(attendanceData.scheduleId, getAccessToken);
+      notify.success(result.message || 'Đã đồng bộ điểm danh với Google Sheet');
+    } catch (error) {
+      notify.error(error instanceof Error ? error.message : 'Không thể đồng bộ điểm danh với Google Sheet');
+    } finally {
+      setAttendanceSyncing(false);
     }
   };
 
@@ -1361,9 +1398,8 @@ const TeacherSchedule = () => {
                       onClick={() => {
                         void openAttendance(item);
                       }}
-                      className={`cursor-pointer border-t border-slate-100 ${
-                        isToday ? 'bg-amber-50/85 hover:bg-amber-100/70' : 'hover:bg-slate-50/80'
-                      }`}
+                      className={`cursor-pointer border-t border-slate-100 ${isToday ? 'bg-amber-50/85 hover:bg-amber-100/70' : 'hover:bg-slate-50/80'
+                        }`}
                     >
                       <td className="px-3 py-3">
                         <div className="flex items-center gap-2">
@@ -1404,9 +1440,8 @@ const TeacherSchedule = () => {
                       <td className="max-w-[260px] truncate px-3 py-3 text-slate-600">{item.notes || '-'}</td>
                       <td className="px-3 py-3">
                         <span
-                          className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
-                            item.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'
-                          }`}
+                          className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${item.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'
+                            }`}
                         >
                           {item.isActive ? 'Hoạt động' : 'Tạm ẩn'}
                         </span>
@@ -1516,11 +1551,10 @@ const TeacherSchedule = () => {
                     <button
                       type="button"
                       onClick={() => setAttendanceTab('attendance')}
-                      className={`inline-flex items-center justify-center gap-1 rounded-lg border px-3 py-2 text-sm font-medium ${
-                        attendanceTab === 'attendance'
-                          ? 'border-blue-300 bg-blue-50 text-blue-700'
-                          : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-                      }`}
+                      className={`inline-flex items-center justify-center gap-1 rounded-lg border px-3 py-2 text-sm font-medium ${attendanceTab === 'attendance'
+                        ? 'border-blue-300 bg-blue-50 text-blue-700'
+                        : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                        }`}
                     >
                       <ClipboardCheck size={14} />
                       Điểm danh
@@ -1528,11 +1562,10 @@ const TeacherSchedule = () => {
                     <button
                       type="button"
                       onClick={() => setAttendanceTab('startLesson')}
-                      className={`inline-flex items-center justify-center gap-1 rounded-lg border px-3 py-2 text-sm font-medium ${
-                        attendanceTab === 'startLesson'
-                          ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
-                          : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-                      }`}
+                      className={`inline-flex items-center justify-center gap-1 rounded-lg border px-3 py-2 text-sm font-medium ${attendanceTab === 'startLesson'
+                        ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                        : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                        }`}
                     >
                       <FileText size={14} />
                       Báo cáo đầu buổi
@@ -1540,11 +1573,10 @@ const TeacherSchedule = () => {
                     <button
                       type="button"
                       onClick={() => setAttendanceTab('professional')}
-                      className={`inline-flex items-center justify-center gap-1 rounded-lg border px-3 py-2 text-sm font-medium ${
-                        attendanceTab === 'professional'
-                          ? 'border-violet-300 bg-violet-50 text-violet-700'
-                          : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-                      }`}
+                      className={`inline-flex items-center justify-center gap-1 rounded-lg border px-3 py-2 text-sm font-medium ${attendanceTab === 'professional'
+                        ? 'border-violet-300 bg-violet-50 text-violet-700'
+                        : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                        }`}
                     >
                       <BookOpen size={14} />
                       Báo cáo chuyên môn
@@ -1552,11 +1584,10 @@ const TeacherSchedule = () => {
                     <button
                       type="button"
                       onClick={() => setAttendanceTab('endLesson')}
-                      className={`inline-flex items-center justify-center gap-1 rounded-lg border px-3 py-2 text-sm font-medium ${
-                        attendanceTab === 'endLesson'
-                          ? 'border-amber-300 bg-amber-50 text-amber-700'
-                          : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-                      }`}
+                      className={`inline-flex items-center justify-center gap-1 rounded-lg border px-3 py-2 text-sm font-medium ${attendanceTab === 'endLesson'
+                        ? 'border-amber-300 bg-amber-50 text-amber-700'
+                        : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                        }`}
                     >
                       <ClipboardList size={14} />
                       Báo cáo cuối buổi
@@ -1564,181 +1595,193 @@ const TeacherSchedule = () => {
                   </div>
 
                   {attendanceTab === 'attendance' && (
-                  <>
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-                      Có mặt: <strong>{attendanceStats.present}</strong>
-                    </div>
-                    <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
-                      Vắng: <strong>{attendanceStats.absent}</strong>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-                    <input
-                      value={attendanceKeyword}
-                      onChange={(event) => setAttendanceKeyword(event.target.value)}
-                      placeholder="Tìm theo tên học sinh..."
-                      className="w-full px-3 py-2 text-sm sm:max-w-xs"
-                    />
-                    <button
-                      type="button"
-                      onClick={toggleAttendanceNameSort}
-                      className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 sm:w-auto"
-                      title="Sắp xếp theo tên"
-                    >
-                      Tên {attendanceNameSortDirection === 'asc' ? '▲' : attendanceNameSortDirection === 'desc' ? '▼' : '⇅'}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setAllAttendanceStatus('Present')}
-                      className="w-full rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-100 sm:w-auto"
-                    >
-                      <span className="inline-flex items-center gap-1">
-                        <CheckCheck size={14} />
-                        Tất cả có mặt
-                      </span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setAllAttendanceStatus('Absent')}
-                      className="w-full rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700 hover:bg-rose-100 sm:w-auto"
-                    >
-                      Tất cả vắng
-                    </button>
-                  </div>
-
-                  <p className="text-xs text-slate-500">
-                    Chạm vào nút trạng thái của từng học sinh để đổi nhanh giữa <strong>Có mặt</strong> và <strong>Vắng</strong>.
-                  </p>
-
-                  <div className="space-y-2 md:hidden">
-                    {filteredAttendanceStudents.map((student, index) => {
-                      const draft = attendanceDraft[student.studentId] ?? { status: 'Present' as AttendanceStatus, note: '' };
-                      const isAbsent = draft.status === 'Absent';
-                      return (
-                        <article
-                          key={student.studentId}
-                          className={`rounded-xl border p-3 ${
-                            isAbsent ? 'border-rose-200 bg-rose-50/60' : 'border-emerald-200 bg-emerald-50/60'
-                          }`}
-                        >
-                          <div className="flex items-start justify-between gap-3">
-                            <div>
-                              <p className="text-xs text-slate-500">#{index + 1}</p>
-                              <p className="font-semibold text-slate-900">
-                                {student.middleName} {student.firstName}
-                              </p>
-                              <p className="text-xs text-slate-500">Trạng thái học sinh: {student.studentStatus || '-'}</p>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => toggleAttendanceStatus(student.studentId)}
-                              className={`min-w-[104px] rounded-lg px-3 py-2 text-sm font-semibold ${
-                                isAbsent
-                                  ? 'border border-rose-300 bg-rose-100 text-rose-700'
-                                  : 'border border-emerald-300 bg-emerald-100 text-emerald-700'
-                              }`}
-                            >
-                              {isAbsent ? 'Vắng' : 'Có mặt'}
-                            </button>
-                          </div>
-
-                          <input
-                            value={draft.note}
-                            onChange={(event) => updateAttendanceNote(student.studentId, event.target.value)}
-                            className="mt-2 w-full px-3 py-2 text-sm"
-                            placeholder="Ghi chú..."
-                          />
-                        </article>
-                      );
-                    })}
-
-                    {filteredAttendanceStudents.length === 0 && (
-                      <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-8 text-center text-sm text-slate-500">
-                        Không có học sinh phù hợp với từ khóa tìm kiếm.
+                    <>
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+                          Có mặt: <strong>{attendanceStats.present}</strong>
+                        </div>
+                        <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+                          Vắng: <strong>{attendanceStats.absent}</strong>
+                        </div>
                       </div>
-                    )}
-                  </div>
 
-                  <div className="hidden overflow-x-auto rounded-xl border border-slate-200 md:block">
-                    <table className="min-w-full text-sm">
-                      <thead className="bg-slate-50 text-slate-700">
-                        <tr>
-                          <th className="px-3 py-2 text-left font-semibold">STT</th>
-                          <th className="px-3 py-2 text-left font-semibold">
-                            <button
-                              type="button"
-                              onClick={toggleAttendanceNameSort}
-                              className="inline-flex items-center gap-1 hover:text-slate-900"
-                              title="Sắp xếp theo tên"
-                            >
-                              Họ và tên
-                              <span className="text-[10px] text-slate-400">
-                                {attendanceNameSortDirection === 'asc'
-                                  ? '▲'
-                                  : attendanceNameSortDirection === 'desc'
-                                    ? '▼'
-                                    : '⇅'}
-                              </span>
-                            </button>
-                          </th>
-                          <th className="px-3 py-2 text-left font-semibold">Trạng thái</th>
-                          <th className="px-3 py-2 text-left font-semibold">Ghi chú điểm danh</th>
-                        </tr>
-                      </thead>
-                      <tbody>
+                      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+                        <input
+                          value={attendanceKeyword}
+                          onChange={(event) => setAttendanceKeyword(event.target.value)}
+                          placeholder="Tìm theo tên học sinh..."
+                          className="w-full px-3 py-2 text-sm sm:max-w-xs"
+                        />
+                        <button
+                          type="button"
+                          onClick={toggleAttendanceNameSort}
+                          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 sm:w-auto"
+                          title="Sắp xếp theo tên"
+                        >
+                          Tên {attendanceNameSortDirection === 'asc' ? '▲' : attendanceNameSortDirection === 'desc' ? '▼' : '⇅'}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setAllAttendanceStatus('Present')}
+                          className="w-full rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-100 sm:w-auto"
+                        >
+                          <span className="inline-flex items-center gap-1">
+                            <CheckCheck size={14} />
+                            Tất cả có mặt
+                          </span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setAllAttendanceStatus('Absent')}
+                          className="w-full rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700 hover:bg-rose-100 sm:w-auto"
+                        >
+                          Tất cả vắng
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void handleSyncAttendanceToGoogleSheet()}
+                          disabled={attendanceSyncing || attendanceSaving || attendanceLoading || !attendanceData || hasUnsavedAttendanceChanges}
+                          title={hasUnsavedAttendanceChanges ? 'Lưu điểm danh trước khi đồng bộ Google Sheet' : 'Đồng bộ điểm danh đã lưu với Google Sheet'}
+                          className={`w-full rounded-lg border px-3 py-2 text-sm font-medium sm:w-auto ${attendanceSyncing || attendanceSaving || attendanceLoading || !attendanceData || hasUnsavedAttendanceChanges
+                            ? 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400'
+                            : 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100'
+                            }`}
+                        >
+                          <span className="inline-flex items-center gap-1">
+                            <RefreshCw size={14} className={attendanceSyncing ? 'animate-spin' : ''} />
+                            {attendanceSyncing ? 'Đang đồng bộ...' : 'Đồng bộ GG Sheet'}
+                          </span>
+                        </button>
+                      </div>
+
+                      <p className="text-xs text-slate-500">
+                        Chạm vào nút trạng thái của từng học sinh để đổi nhanh giữa <strong>Có mặt</strong> và <strong>Vắng</strong>.
+                      </p>
+
+                      <div className="space-y-2 md:hidden">
                         {filteredAttendanceStudents.map((student, index) => {
                           const draft = attendanceDraft[student.studentId] ?? { status: 'Present' as AttendanceStatus, note: '' };
                           const isAbsent = draft.status === 'Absent';
                           return (
-                            <tr
+                            <article
                               key={student.studentId}
-                              className={`border-t ${isAbsent ? 'border-rose-100 bg-rose-50/40' : 'border-slate-100'}`}
+                              className={`rounded-xl border p-3 ${isAbsent ? 'border-rose-200 bg-rose-50/60' : 'border-emerald-200 bg-emerald-50/60'
+                                }`}
                             >
-                              <td className="px-3 py-2 text-slate-500">{index + 1}</td>
-                              <td className="px-3 py-2">
-                                <p className="font-medium text-slate-800">
-                                  {student.middleName} {student.firstName}
-                                </p>
-                                <p className="text-xs text-slate-500">Trạng thái học sinh: {student.studentStatus || '-'}</p>
-                              </td>
-                              <td className="px-3 py-2">
+                              <div className="flex items-start justify-between gap-3">
+                                <div>
+                                  <p className="text-xs text-slate-500">#{index + 1}</p>
+                                  <p className="font-semibold text-slate-900">
+                                    {student.middleName} {student.firstName}
+                                  </p>
+                                  <p className="text-xs text-slate-500">Trạng thái học sinh: {student.studentStatus || '-'}</p>
+                                </div>
                                 <button
                                   type="button"
                                   onClick={() => toggleAttendanceStatus(student.studentId)}
-                                  className={`min-w-[116px] rounded-lg px-3 py-2 text-sm font-semibold ${
-                                    isAbsent
-                                      ? 'border border-rose-300 bg-rose-100 text-rose-700'
-                                      : 'border border-emerald-300 bg-emerald-100 text-emerald-700'
-                                  }`}
+                                  className={`min-w-[104px] rounded-lg px-3 py-2 text-sm font-semibold ${isAbsent
+                                    ? 'border border-rose-300 bg-rose-100 text-rose-700'
+                                    : 'border border-emerald-300 bg-emerald-100 text-emerald-700'
+                                    }`}
                                 >
                                   {isAbsent ? 'Vắng' : 'Có mặt'}
                                 </button>
-                              </td>
-                              <td className="px-3 py-2">
-                                <input
-                                  value={draft.note}
-                                  onChange={(event) => updateAttendanceNote(student.studentId, event.target.value)}
-                                  className="w-full min-w-[240px] px-2 py-1.5 text-sm"
-                                  placeholder="Ghi chú..."
-                                />
-                              </td>
-                            </tr>
+                              </div>
+
+                              <input
+                                value={draft.note}
+                                onChange={(event) => updateAttendanceNote(student.studentId, event.target.value)}
+                                className="mt-2 w-full px-3 py-2 text-sm"
+                                placeholder="Ghi chú..."
+                              />
+                            </article>
                           );
                         })}
+
                         {filteredAttendanceStudents.length === 0 && (
-                          <tr>
-                            <td colSpan={4} className="px-3 py-8 text-center text-slate-500">
-                              Không có học sinh phù hợp với từ khóa tìm kiếm.
-                            </td>
-                          </tr>
+                          <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-8 text-center text-sm text-slate-500">
+                            Không có học sinh phù hợp với từ khóa tìm kiếm.
+                          </div>
                         )}
-                      </tbody>
-                    </table>
-                  </div>
-                  </>
+                      </div>
+
+                      <div className="hidden overflow-x-auto rounded-xl border border-slate-200 md:block">
+                        <table className="min-w-full text-sm">
+                          <thead className="bg-slate-50 text-slate-700">
+                            <tr>
+                              <th className="px-3 py-2 text-left font-semibold">STT</th>
+                              <th className="px-3 py-2 text-left font-semibold">
+                                <button
+                                  type="button"
+                                  onClick={toggleAttendanceNameSort}
+                                  className="inline-flex items-center gap-1 hover:text-slate-900"
+                                  title="Sắp xếp theo tên"
+                                >
+                                  Họ và tên
+                                  <span className="text-[10px] text-slate-400">
+                                    {attendanceNameSortDirection === 'asc'
+                                      ? '▲'
+                                      : attendanceNameSortDirection === 'desc'
+                                        ? '▼'
+                                        : '⇅'}
+                                  </span>
+                                </button>
+                              </th>
+                              <th className="px-3 py-2 text-left font-semibold">Trạng thái</th>
+                              <th className="px-3 py-2 text-left font-semibold">Ghi chú điểm danh</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {filteredAttendanceStudents.map((student, index) => {
+                              const draft = attendanceDraft[student.studentId] ?? { status: 'Present' as AttendanceStatus, note: '' };
+                              const isAbsent = draft.status === 'Absent';
+                              return (
+                                <tr
+                                  key={student.studentId}
+                                  className={`border-t ${isAbsent ? 'border-rose-100 bg-rose-50/40' : 'border-slate-100'}`}
+                                >
+                                  <td className="px-3 py-2 text-slate-500">{index + 1}</td>
+                                  <td className="px-3 py-2">
+                                    <p className="font-medium text-slate-800">
+                                      {student.middleName} {student.firstName}
+                                    </p>
+                                    <p className="text-xs text-slate-500">Trạng thái học sinh: {student.studentStatus || '-'}</p>
+                                  </td>
+                                  <td className="px-3 py-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => toggleAttendanceStatus(student.studentId)}
+                                      className={`min-w-[116px] rounded-lg px-3 py-2 text-sm font-semibold ${isAbsent
+                                        ? 'border border-rose-300 bg-rose-100 text-rose-700'
+                                        : 'border border-emerald-300 bg-emerald-100 text-emerald-700'
+                                        }`}
+                                    >
+                                      {isAbsent ? 'Vắng' : 'Có mặt'}
+                                    </button>
+                                  </td>
+                                  <td className="px-3 py-2">
+                                    <input
+                                      value={draft.note}
+                                      onChange={(event) => updateAttendanceNote(student.studentId, event.target.value)}
+                                      className="w-full min-w-[240px] px-2 py-1.5 text-sm"
+                                      placeholder="Ghi chú..."
+                                    />
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                            {filteredAttendanceStudents.length === 0 && (
+                              <tr>
+                                <td colSpan={4} className="px-3 py-8 text-center text-slate-500">
+                                  Không có học sinh phù hợp với từ khóa tìm kiếm.
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </>
                   )}
 
                   {attendanceTab === 'startLesson' && (
@@ -2068,130 +2111,128 @@ const TeacherSchedule = () => {
                       </span>
                     </div>
                     <div className="max-h-[58vh] overflow-y-auto bg-white p-3 sm:p-4">
-                    {roomManagerLoading && (
-                      <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-10 text-center text-sm text-slate-500">
-                        Đang tải phòng máy...
-                      </div>
-                    )}
+                      {roomManagerLoading && (
+                        <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-10 text-center text-sm text-slate-500">
+                          Đang tải phòng máy...
+                        </div>
+                      )}
 
-                    {!roomManagerLoading && roomManagerRows.length === 0 && (
-                      <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-10 text-center text-sm text-slate-500">
-                        Chưa có phòng máy nào trong trường này.
-                      </div>
-                    )}
+                      {!roomManagerLoading && roomManagerRows.length === 0 && (
+                        <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-10 text-center text-sm text-slate-500">
+                          Chưa có phòng máy nào trong trường này.
+                        </div>
+                      )}
 
-                    {!roomManagerLoading && roomManagerRows.length > 0 && (
-                      <div className="space-y-3">
-                        {roomManagerRows.map((room) => (
-                          <article
-                            key={room.id}
-                            className={`rounded-2xl border p-4 shadow-sm transition ${
-                              editingRoomId === room.id
+                      {!roomManagerLoading && roomManagerRows.length > 0 && (
+                        <div className="space-y-3">
+                          {roomManagerRows.map((room) => (
+                            <article
+                              key={room.id}
+                              className={`rounded-2xl border p-4 shadow-sm transition ${editingRoomId === room.id
                                 ? 'border-blue-300 bg-blue-50/70 shadow-blue-100'
                                 : 'border-slate-200 bg-white hover:border-blue-200 hover:shadow-md'
-                            }`}
-                          >
-                            <div className="flex flex-wrap items-start justify-between gap-3">
-                              <div>
-                                <div className="flex flex-wrap items-center gap-2">
-                                  <h5 className="text-lg font-bold text-slate-900">{room.name}</h5>
-                                  <span
-                                    className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
-                                      room.isActive
+                                }`}
+                            >
+                              <div className="flex flex-wrap items-start justify-between gap-3">
+                                <div>
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <h5 className="text-lg font-bold text-slate-900">{room.name}</h5>
+                                    <span
+                                      className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${room.isActive
                                         ? 'bg-emerald-100 text-emerald-700'
                                         : 'bg-slate-200 text-slate-600'
-                                    }`}
+                                        }`}
+                                    >
+                                      {room.isActive ? 'Đang dùng' : 'Tạm ẩn'}
+                                    </span>
+                                  </div>
+                                  <p className="mt-1 text-sm text-slate-500">
+                                    Tổng {room.totalMachinesText} · Máy lỗi {room.brokenMachineCount} · Dùng được{' '}
+                                    {room.availableStudentMachines}
+                                  </p>
+                                </div>
+
+                                <div className="flex flex-wrap gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleEditRoom(room)}
+                                    className="inline-flex items-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100"
                                   >
-                                    {room.isActive ? 'Đang dùng' : 'Tạm ẩn'}
+                                    <Pencil size={13} />
+                                    Sửa
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => void handleDeleteRoom(room)}
+                                    className="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-100"
+                                  >
+                                    <Trash2 size={13} />
+                                    Xóa
+                                  </button>
+                                </div>
+                              </div>
+
+                              <div className="mt-4 grid gap-2 sm:grid-cols-4">
+                                <div className="rounded-xl bg-slate-50 px-3 py-2">
+                                  <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                                    Máy HS
+                                  </div>
+                                  <div className="mt-1 text-base font-bold text-slate-800">
+                                    {room.studentMachineCount}
+                                  </div>
+                                </div>
+                                <div className="rounded-xl bg-slate-50 px-3 py-2">
+                                  <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                                    Máy GV
+                                  </div>
+                                  <div className="mt-1 text-base font-bold text-slate-800">
+                                    {room.teacherMachineCount}
+                                  </div>
+                                </div>
+                                <div className="rounded-xl bg-slate-50 px-3 py-2">
+                                  <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                                    Khả dụng
+                                  </div>
+                                  <div className="mt-1 text-base font-bold text-emerald-700">
+                                    {room.availableStudentMachines}
+                                  </div>
+                                </div>
+                                <div className="rounded-xl bg-slate-50 px-3 py-2">
+                                  <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                                    Máy lỗi
+                                  </div>
+                                  <div className="mt-1 text-base font-bold text-rose-600">
+                                    {room.brokenMachineCount}
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="mt-4 flex flex-wrap gap-2">
+                                {[
+                                  { label: 'NetSupport', value: room.netSupportStatus },
+                                  { label: 'Âm thanh', value: room.audioStatus },
+                                  { label: 'Làm mát', value: room.coolingStatus },
+                                  { label: 'Vệ sinh', value: room.roomHygieneStatus },
+                                ].map((item) => (
+                                  <span
+                                    key={`${room.id}-${item.label}`}
+                                    className={`rounded-full border px-2.5 py-1 text-[11px] font-medium ${getRoomConditionTone(item.value)}`}
+                                  >
+                                    {item.label}: {item.value || 'Chưa cập nhật'}
                                   </span>
-                                </div>
-                                <p className="mt-1 text-sm text-slate-500">
-                                  Tổng {room.totalMachinesText} · Máy lỗi {room.brokenMachineCount} · Dùng được{' '}
-                                  {room.availableStudentMachines}
-                                </p>
+                                ))}
                               </div>
 
-                              <div className="flex flex-wrap gap-2">
-                                <button
-                                  type="button"
-                                  onClick={() => handleEditRoom(room)}
-                                  className="inline-flex items-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100"
-                                >
-                                  <Pencil size={13} />
-                                  Sửa
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => void handleDeleteRoom(room)}
-                                  className="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-100"
-                                >
-                                  <Trash2 size={13} />
-                                  Xóa
-                                </button>
-                              </div>
-                            </div>
-
-                            <div className="mt-4 grid gap-2 sm:grid-cols-4">
-                              <div className="rounded-xl bg-slate-50 px-3 py-2">
-                                <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-                                  Máy HS
-                                </div>
-                                <div className="mt-1 text-base font-bold text-slate-800">
-                                  {room.studentMachineCount}
-                                </div>
-                              </div>
-                              <div className="rounded-xl bg-slate-50 px-3 py-2">
-                                <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-                                  Máy GV
-                                </div>
-                                <div className="mt-1 text-base font-bold text-slate-800">
-                                  {room.teacherMachineCount}
-                                </div>
-                              </div>
-                              <div className="rounded-xl bg-slate-50 px-3 py-2">
-                                <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-                                  Khả dụng
-                                </div>
-                                <div className="mt-1 text-base font-bold text-emerald-700">
-                                  {room.availableStudentMachines}
-                                </div>
-                              </div>
-                              <div className="rounded-xl bg-slate-50 px-3 py-2">
-                                <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-                                  Máy lỗi
-                                </div>
-                                <div className="mt-1 text-base font-bold text-rose-600">
-                                  {room.brokenMachineCount}
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="mt-4 flex flex-wrap gap-2">
-                              {[
-                                { label: 'NetSupport', value: room.netSupportStatus },
-                                { label: 'Âm thanh', value: room.audioStatus },
-                                { label: 'Làm mát', value: room.coolingStatus },
-                                { label: 'Vệ sinh', value: room.roomHygieneStatus },
-                              ].map((item) => (
-                                <span
-                                  key={`${room.id}-${item.label}`}
-                                  className={`rounded-full border px-2.5 py-1 text-[11px] font-medium ${getRoomConditionTone(item.value)}`}
-                                >
-                                  {item.label}: {item.value || 'Chưa cập nhật'}
-                                </span>
-                              ))}
-                            </div>
-
-                            <p className="mt-3 text-xs text-slate-500">
-                              Tắt điện: {room.devicesPoweredOffStatus || 'Chưa cập nhật'} · Xếp ghế:{' '}
-                              {room.seatingOrderStatus || 'Chưa cập nhật'}
-                            </p>
-                          </article>
-                        ))}
-                      </div>
-                    )}
+                              <p className="mt-3 text-xs text-slate-500">
+                                Tắt điện: {room.devicesPoweredOffStatus || 'Chưa cập nhật'} · Xếp ghế:{' '}
+                                {room.seatingOrderStatus || 'Chưa cập nhật'}
+                              </p>
+                            </article>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
                 </div>
 
                 <form onSubmit={handleSaveRoom} className="app-card flex min-h-[640px] flex-col overflow-hidden">

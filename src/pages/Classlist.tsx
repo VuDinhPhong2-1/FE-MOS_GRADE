@@ -16,9 +16,11 @@ import StudentList from './StudentList';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { ApiServiceError, classService } from '../services/class.service';
+import { authService } from '../services/auth.service';
 import studentService from '../services/student.service';
 import type { School } from '../types';
 import type { Class, CreateClassRequest, UpdateClassRequest } from '../types/class.types';
+import type { TeacherSummary } from '../types/auth.types';
 
 interface ClassListProps {
   selectedSchool: School;
@@ -27,7 +29,7 @@ interface ClassListProps {
 const OBJECT_ID_REGEX = /^[a-fA-F0-9]{24}$/;
 
 const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
-  const { getAccessToken, logout } = useAuth();
+  const { getAccessToken, logout, user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [classes, setClasses] = useState<Class[]>([]);
@@ -42,6 +44,13 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
   const [editingClass, setEditingClass] = useState<Class | null>(null);
   const [isActive, setIsActive] = useState(true);
   const [formError, setFormError] = useState('');
+  const [showHandoverModal, setShowHandoverModal] = useState(false);
+  const [handoverClass, setHandoverClass] = useState<Class | null>(null);
+  const [teachers, setTeachers] = useState<TeacherSummary[]>([]);
+  const [isLoadingTeachers, setIsLoadingTeachers] = useState(false);
+  const [handoverError, setHandoverError] = useState('');
+  const [handoverBusyTeacherId, setHandoverBusyTeacherId] = useState<string | null>(null);
+  const [handoverSearch, setHandoverSearch] = useState('');
 
   const [formData, setFormData] = useState<CreateClassRequest>({
     name: '',
@@ -53,6 +62,18 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
   });
 
   const schoolIdForCreate = selectedSchool.id || formData.schoolId || '';
+  const currentUserId = user?.userId || '';
+  const isAdmin = user?.role === 'Admin';
+  const canCreateClass = isAdmin || (Boolean(selectedSchool.ownerId) && selectedSchool.ownerId === currentUserId);
+  const canManageClass = useCallback(
+    (cls: Class): boolean =>
+      isAdmin || cls.ownerId === currentUserId || Boolean(cls.managerTeacherIds?.includes(currentUserId)),
+    [currentUserId, isAdmin]
+  );
+  const canHandoverClass = useCallback(
+    (cls: Class): boolean => isAdmin || cls.ownerId === currentUserId,
+    [currentUserId, isAdmin]
+  );
 
   const createFormValidation = useMemo(() => {
     const name = (formData.name || '').trim();
@@ -82,6 +103,20 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
 
     return '';
   }, [formData, schoolIdForCreate]);
+
+  const filteredTeachers = useMemo(() => {
+    const keyword = handoverSearch.trim().toLowerCase();
+    if (!keyword) {
+      return teachers;
+    }
+
+    return teachers.filter((teacher) => {
+      const fullName = (teacher.fullName || '').toLowerCase();
+      const username = (teacher.username || '').toLowerCase();
+      const email = (teacher.email || '').toLowerCase();
+      return fullName.includes(keyword) || username.includes(keyword) || email.includes(keyword);
+    });
+  }, [handoverSearch, teachers]);
 
   const isSubmitDisabled = isSubmitting || (!editingClass && !!createFormValidation);
 
@@ -149,7 +184,7 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
         window.location.href = '/login';
         return 'Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.';
       }
-      if (err.status === 403) return 'Bạn không có quyền tạo lớp trong trường này.';
+      if (err.status === 403) return 'Bạn chỉ có quyền xem lớp này.';
       if (err.status === 404) return 'Không tìm thấy trường.';
       if (err.status === 400) return err.message || 'Dữ liệu không hợp lệ.';
       if (err.status >= 500) return 'Có lỗi hệ thống, vui lòng thử lại.';
@@ -161,6 +196,11 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
   };
 
   const handleOpenAddModal = () => {
+    if (!canCreateClass) {
+      alert('Bạn không có quyền tạo lớp trong trường này.');
+      return;
+    }
+
     setEditingClass(null);
     setIsActive(true);
     setFormData({
@@ -176,6 +216,11 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
   };
 
   const handleOpenEditModal = (cls: Class) => {
+    if (!canManageClass(cls)) {
+      alert('Bạn chỉ có quyền xem lớp này.');
+      return;
+    }
+
     setEditingClass(cls);
     setIsActive(cls.isActive);
     setFormData({
@@ -234,6 +279,12 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
   };
 
   const handleDeleteClass = async (classId: string, className: string) => {
+    const classToDelete = classes.find((item) => item.id === classId);
+    if (classToDelete && !canManageClass(classToDelete)) {
+      alert('Bạn chỉ có quyền xem lớp này.');
+      return;
+    }
+
     if (!confirm(`Bạn có chắc muốn xóa vĩnh viễn lớp "${className}"?\n\nHành động này không thể hoàn tác.`)) {
       return;
     }
@@ -243,6 +294,52 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
       await fetchClasses();
     } catch {
       alert('Không thể xóa lớp học');
+    }
+  };
+
+  const handleOpenHandoverModal = async (cls: Class) => {
+    if (!canHandoverClass(cls)) {
+      alert('Chỉ giáo viên chính hoặc Admin mới được bàn giao quyền lớp.');
+      return;
+    }
+
+    setShowHandoverModal(true);
+    setHandoverClass(cls);
+    setHandoverError('');
+    setHandoverSearch('');
+    setIsLoadingTeachers(true);
+
+    try {
+      const teacherList = await authService.getTeachers(getAccessToken);
+      setTeachers(teacherList);
+    } catch (err) {
+      setTeachers([]);
+      setHandoverError(err instanceof Error ? err.message : 'Không thể tải danh sách giáo viên');
+    } finally {
+      setIsLoadingTeachers(false);
+    }
+  };
+
+  const handleToggleHandover = async (teacherId: string, granted: boolean) => {
+    if (!handoverClass) {
+      return;
+    }
+
+    setHandoverBusyTeacherId(teacherId);
+    setHandoverError('');
+
+    try {
+      const updatedClass = granted
+        ? await classService.revokeClassManagement(handoverClass.id, teacherId, getAccessToken)
+        : await classService.grantClassManagement(handoverClass.id, teacherId, getAccessToken);
+
+      setHandoverClass(updatedClass);
+      setClasses((prev) => prev.map((cls) => (cls.id === updatedClass.id ? { ...cls, ...updatedClass } : cls)));
+      setSelectedClass((prev) => (prev?.id === updatedClass.id ? { ...prev, ...updatedClass } : prev));
+    } catch (err) {
+      setHandoverError(err instanceof Error ? err.message : 'Không thể cập nhật bàn giao lớp');
+    } finally {
+      setHandoverBusyTeacherId(null);
     }
   };
 
@@ -257,12 +354,13 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
   };
 
   if (selectedClass) {
+    const selectedClassReadOnly = !canManageClass(selectedClass);
     return (
       <>
         <button className="app-btn-secondary mb-4 flex items-center gap-2 px-4 py-2" onClick={handleBackToClassList}>
           ← Quay lại danh sách lớp
         </button>
-        <StudentList selectedClass={selectedClass} />
+        <StudentList selectedClass={selectedClass} readOnly={selectedClassReadOnly} />
       </>
     );
   }
@@ -351,10 +449,12 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
           </label>
         </div>
 
-        <button onClick={handleOpenAddModal} className="app-btn-primary flex w-full items-center justify-center gap-2 px-4 py-2 sm:w-auto">
-          <Plus size={18} />
-          Thêm lớp mới
-        </button>
+        {canCreateClass && (
+          <button onClick={handleOpenAddModal} className="app-btn-primary flex w-full items-center justify-center gap-2 px-4 py-2 sm:w-auto">
+            <Plus size={18} />
+            Thêm lớp mới
+          </button>
+        )}
       </div>
 
       {classes.length > 0 ? (
@@ -410,20 +510,37 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
                   >
                     Xem học sinh
                   </button>
-                  <button
-                    onClick={() => handleOpenEditModal(cls)}
-                    className="p-2 text-green-600 hover:bg-green-100 rounded transition"
-                    title="Sửa lớp"
-                  >
-                    <Edit size={16} />
-                  </button>
-                  <button
-                    onClick={() => handleDeleteClass(cls.id, cls.name)}
-                    className="p-2 text-red-600 hover:bg-red-50 rounded transition"
-                    title="Xóa lớp"
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                  {canManageClass(cls) ? (
+                    <>
+                      {canHandoverClass(cls) && (
+                        <button
+                          onClick={() => handleOpenHandoverModal(cls)}
+                          className="p-2 text-indigo-600 hover:bg-indigo-100 rounded transition"
+                          title="Bàn giao quyền lớp"
+                        >
+                          <Users size={16} />
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleOpenEditModal(cls)}
+                        className="p-2 text-green-600 hover:bg-green-100 rounded transition"
+                        title="Sửa lớp"
+                      >
+                        <Edit size={16} />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteClass(cls.id, cls.name)}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded transition"
+                        title="Xóa lớp"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </>
+                  ) : (
+                    <span className="inline-flex items-center rounded px-2 py-1 text-xs font-medium text-slate-500 bg-slate-100">
+                      Chỉ xem
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -433,10 +550,97 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
         <div className="app-card py-12 text-center">
           <BookOpen className="w-16 h-16 mx-auto mb-4 text-gray-300" />
           <p className="text-gray-500 text-lg">Chưa có lớp học nào trong trường này</p>
-          <button onClick={handleOpenAddModal} className="app-btn-primary mt-4 px-4 py-2">
-            <Plus className="inline mr-2" size={18} />
-            Tạo lớp đầu tiên
-          </button>
+          {canCreateClass && (
+            <button onClick={handleOpenAddModal} className="app-btn-primary mt-4 px-4 py-2">
+              <Plus className="inline mr-2" size={18} />
+              Tạo lớp đầu tiên
+            </button>
+          )}
+        </div>
+      )}
+
+      {showHandoverModal && handoverClass && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 backdrop-blur-[1px]">
+          <div className="app-card w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b">
+              <h2 className="text-lg sm:text-xl font-semibold">
+                Bàn giao quyền lớp: <span className="text-blue-600">{handoverClass.name}</span>
+              </h2>
+              <button
+                onClick={() => {
+                  setShowHandoverModal(false);
+                  setHandoverClass(null);
+                  setHandoverError('');
+                }}
+                className="p-1 hover:bg-gray-100 rounded"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="p-4 sm:p-6 space-y-3">
+              <p className="text-sm text-gray-600">
+                Giáo viên chính/Admin có thể cấp hoặc thu hồi quyền quản lý lớp cho giáo viên khác.
+              </p>
+              <input
+                type="text"
+                value={handoverSearch}
+                onChange={(event) => setHandoverSearch(event.target.value)}
+                placeholder="Tìm theo tên, username hoặc email..."
+                className="w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+              {handoverError && <div className="rounded bg-red-50 text-red-700 px-3 py-2 text-sm">{handoverError}</div>}
+
+              {isLoadingTeachers ? (
+                <div className="flex items-center justify-center py-8 text-gray-600">
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  Đang tải danh sách giáo viên...
+                </div>
+              ) : filteredTeachers.length === 0 ? (
+                <div className="rounded border border-dashed border-gray-300 p-6 text-center text-gray-500">
+                  Không tìm thấy giáo viên phù hợp.
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {filteredTeachers.map((teacher) => {
+                    const isOwner = teacher.userId === handoverClass.ownerId;
+                    const granted = Boolean(handoverClass.managerTeacherIds?.includes(teacher.userId));
+                    const isBusy = handoverBusyTeacherId === teacher.userId;
+
+                    return (
+                      <div key={teacher.userId} className="flex items-center justify-between rounded border border-gray-200 px-3 py-2">
+                        <div className="min-w-0">
+                          <p className="font-medium text-gray-800 truncate">
+                            {teacher.fullName?.trim() || teacher.username}
+                          </p>
+                          <p className="text-xs text-gray-500 truncate">{teacher.email || teacher.username}</p>
+                        </div>
+
+                        {isOwner ? (
+                          <span className="rounded bg-emerald-100 px-2 py-1 text-xs font-medium text-emerald-700">
+                            Giáo viên chính
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            disabled={isBusy}
+                            onClick={() => handleToggleHandover(teacher.userId, granted)}
+                            className={`min-w-[110px] rounded px-3 py-1.5 text-sm font-medium transition ${
+                              granted
+                                ? 'bg-rose-100 text-rose-700 hover:bg-rose-200'
+                                : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
+                            } disabled:opacity-60`}
+                          >
+                            {isBusy ? 'Đang lưu...' : granted ? 'Thu hồi quyền' : 'Cấp quyền'}
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
 

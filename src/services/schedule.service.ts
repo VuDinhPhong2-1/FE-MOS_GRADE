@@ -156,6 +156,27 @@ class ScheduleService {
 
     return response.json();
   }
+
+  async syncAttendanceToGoogleSheet(
+    scheduleId: string,
+    getAccessToken: (forceRefresh?: boolean) => Promise<string | null>
+  ): Promise<{ message?: string }> {
+    const response = await authFetch(
+      `${SCHEDULE_API_BASE_URL}/${scheduleId}/attendance/sync-google-sheet`,
+      {
+        method: 'POST',
+        headers: jsonHeaders,
+      },
+      getAccessToken
+    );
+
+    if (!response.ok) {
+      const message = await parseErrorMessage(response, 'Không thể đồng bộ điểm danh với Google Sheet');
+      throw new Error(message);
+    }
+
+    return response.json().catch(() => ({}));
+  }
 }
 
 export const scheduleService = new ScheduleService();

@@ -15,6 +15,7 @@ export interface Class {
   academicYear?: string;
   grade?: string;
   studentIds: string[];
+  managerTeacherIds?: string[];
   
   // Metadata
   createdAt: Date;

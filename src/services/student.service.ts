@@ -137,6 +137,24 @@ class StudentService {
     const result = await response.json();
     return result.data;
   }
+
+  async syncStudentMetadataToGoogleSheet(
+    classId: string,
+    getAccessToken: (forceRefresh?: boolean) => Promise<string | null>
+  ): Promise<{ message?: string }> {
+    const response = await authFetch(
+      `${STUDENT_API_BASE_URL}/class/${classId}/sync-google-sheet-student-metadata`,
+      { method: 'POST', headers: jsonHeaders },
+      getAccessToken
+    );
+
+    if (!response.ok) {
+      const message = await parseErrorMessage(response, 'Không thể đồng bộ xếp loại và ghi chú lên Google Sheet');
+      throw new Error(message);
+    }
+
+    return response.json().catch(() => ({}));
+  }
 }
 
 export default new StudentService();

@@ -37,11 +37,17 @@ const vietnameseCollator = new Intl.Collator('vi', {
   numeric: true,
 });
 
-const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
+interface StudentListProps {
+  selectedClass: Class;
+  readOnly?: boolean;
+}
+
+const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
   const [students, setStudents] = useState<Student[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [scores, setScores] = useState<ScoreResponse[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isStudentMetadataSyncing, setIsStudentMetadataSyncing] = useState(false);
   const [isGradingModalOpen, setIsGradingModalOpen] = useState(false);
   const [isViewScoresModal, setIsViewScoresModal] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -250,6 +256,10 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
   };
 
   const handleFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
+    if (readOnly) {
+      return;
+    }
+
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -292,6 +302,10 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
   };
 
   const handleImportFromPaste = () => {
+    if (readOnly) {
+      return;
+    }
+
     if (!pasteInput.trim()) {
       setPasteError('Bạn chưa dán dữ liệu.');
       return;
@@ -313,6 +327,11 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
   };
 
   const handleSaveStudents = async () => {
+    if (readOnly) {
+      alert('Bạn chỉ có quyền xem lớp này.');
+      return;
+    }
+
     const newStudents = students.filter((st) => st.id.startsWith('temp-'));
     if (newStudents.length === 0) {
       alert('Không có học sinh mới để lưu!');
@@ -340,6 +359,11 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
   };
 
   const handleOpenAddStudentModal = () => {
+    if (readOnly) {
+      alert('Bạn chỉ có quyền xem lớp này.');
+      return;
+    }
+
     setAddForm({
       middleName: '',
       firstName: '',
@@ -353,6 +377,10 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
 
   const handleAddStudent = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (readOnly) {
+      setAddError('Bạn chỉ có quyền xem lớp này.');
+      return;
+    }
 
     const middleName = addForm.middleName.trim();
     const firstName = addForm.firstName.trim();
@@ -396,6 +424,11 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
   };
 
   const handleDeleteStudent = async (student: Student) => {
+    if (readOnly) {
+      alert('Bạn chỉ có quyền xem lớp này.');
+      return;
+    }
+
     const fullName = `${student.middleName} ${student.firstName}`.trim();
     if (!confirm(`Bạn có chắc muốn xóa học sinh "${fullName}"?`)) {
       return;
@@ -420,6 +453,11 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
   };
 
   const handleGrade = () => {
+    if (readOnly) {
+      alert('Bạn chỉ có quyền xem lớp này.');
+      return;
+    }
+
     if (activeStudents.length === 0) {
       alert('Không có học sinh đang hoạt động để chấm điểm!');
       return;
@@ -429,6 +467,10 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
   };
 
   const handleInlineCompetencyChange = async (student: Student, level: '' | 'A' | 'B' | 'C' | 'D') => {
+    if (readOnly) {
+      return;
+    }
+
     if (student.id.startsWith('temp-')) {
       setStudents((prev) =>
         prev.map((item) => (item.id === student.id ? { ...item, competencyLevel: level } : item))
@@ -479,6 +521,28 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
     await loadScores();
   };
 
+  const handleSyncStudentMetadataToGoogleSheet = async () => {
+    if (readOnly) {
+      alert('Bạn chỉ có quyền xem lớp này.');
+      return;
+    }
+
+    if (studentNewList.length > 0) {
+      alert('Vui lòng lưu danh sách học sinh trước khi đồng bộ Google Sheet.');
+      return;
+    }
+
+    try {
+      setIsStudentMetadataSyncing(true);
+      const result = await studentService.syncStudentMetadataToGoogleSheet(selectedClass.id, getAccessToken);
+      setFlashMessage(result.message || 'Đã đồng bộ xếp loại và ghi chú học sinh lên Google Sheet.');
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Không thể đồng bộ xếp loại và ghi chú lên Google Sheet.');
+    } finally {
+      setIsStudentMetadataSyncing(false);
+    }
+  };
+
   useEffect(() => {
     if (!flashMessage) return;
     const timer = window.setTimeout(() => setFlashMessage(''), 2500);
@@ -498,6 +562,11 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
   }, [inlineSavingStudentId]);
 
   const handleOpenEditStudent = (student: Student) => {
+    if (readOnly) {
+      alert('Bạn chỉ có quyền xem lớp này.');
+      return;
+    }
+
     if (student.id.startsWith('temp-')) {
       alert('Học sinh chưa được lưu lên hệ thống, không thể sửa.');
       return;
@@ -558,6 +627,11 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
 
   const handleSubmitEditStudent = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (readOnly) {
+      setEditError('Bạn chỉ có quyền xem lớp này.');
+      return;
+    }
+
     if (!editingStudent) return;
 
     const middleName = editForm.middleName.trim();
@@ -613,28 +687,49 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
           {flashMessage}
         </div>
       )}
+      {readOnly && (
+        <div className="mb-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
+          Bạn chỉ có quyền xem lớp này. Các chức năng chỉnh sửa đã bị khóa.
+        </div>
+      )}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
         <h1 className="text-xl sm:text-2xl font-bold text-gray-800">
           Bảng danh sách học sinh - {selectedClass.name}
         </h1>
 
         <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-          <button
-            onClick={handleOpenAddStudentModal}
-            className="w-full sm:w-auto bg-emerald-600 text-white px-4 py-2 rounded-md flex items-center justify-center gap-2 hover:bg-emerald-700"
-          >
-            <UserPlus size={18} />
-            Thêm học sinh
-          </button>
-          <button
-            onClick={handleGrade}
-            disabled={activeStudents.length === 0}
-            className="w-full sm:w-auto bg-purple-600 text-white px-4 py-2 rounded-md flex items-center justify-center gap-2 hover:bg-purple-700 disabled:bg-gray-400 text-base sm:text-lg font-semibold disabled:cursor-not-allowed"
-            title="Chấm điểm cho học sinh đang hoạt động"
-          >
-            <FileCheck2 size={20} />
-            Chấm điểm cho lớp
-          </button>
+          {!readOnly && (
+            <button
+              onClick={handleOpenAddStudentModal}
+              className="w-full sm:w-auto bg-emerald-600 text-white px-4 py-2 rounded-md flex items-center justify-center gap-2 hover:bg-emerald-700"
+            >
+              <UserPlus size={18} />
+              Thêm học sinh
+            </button>
+          )}
+          {!readOnly && (
+            <button
+              onClick={handleGrade}
+              disabled={activeStudents.length === 0}
+              className="w-full sm:w-auto bg-purple-600 text-white px-4 py-2 rounded-md flex items-center justify-center gap-2 hover:bg-purple-700 disabled:bg-gray-400 text-base sm:text-lg font-semibold disabled:cursor-not-allowed"
+              title="Chấm điểm cho học sinh đang hoạt động"
+            >
+              <FileCheck2 size={20} />
+              Chấm điểm cho lớp
+            </button>
+          )}
+          {!readOnly && (
+            <button
+              type="button"
+              onClick={handleSyncStudentMetadataToGoogleSheet}
+              disabled={isStudentMetadataSyncing || isLoading}
+              className="w-full sm:w-auto bg-sky-600 text-white px-4 py-2 rounded-md flex items-center justify-center gap-2 hover:bg-sky-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              title="Đồng bộ xếp loại và ghi chú học sinh lên Google Sheet"
+            >
+              <RefreshCw size={18} className={isStudentMetadataSyncing ? 'animate-spin' : ''} />
+              {isStudentMetadataSyncing ? 'Đang đồng bộ...' : 'Đồng bộ XL + ghi chú GG Sheet'}
+            </button>
+          )}
           <button
             onClick={handleOpenViewScoresModal}
             className="w-full sm:w-auto bg-gray-600 text-white px-4 py-2 rounded-md flex items-center justify-center gap-2 hover:bg-gray-700 text-base sm:text-lg ml-0"
@@ -676,38 +771,42 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
           Tải lại
         </button>
 
-        <input
-          type="file"
-          onChange={handleFileUpload}
-          accept=".xlsx, .xls"
-          className="hidden"
-          id="import-excel"
-        />
+        {!readOnly && (
+          <>
+            <input
+              type="file"
+              onChange={handleFileUpload}
+              accept=".xlsx, .xls"
+              className="hidden"
+              id="import-excel"
+            />
 
-        <label
-          htmlFor="import-excel"
-          className="w-full sm:w-auto bg-green-600 text-white px-4 py-2 rounded-md cursor-pointer flex items-center justify-center gap-2 hover:bg-green-700"
-        >
-          <Upload size={18} /> Nhập Excel
-        </label>
+            <label
+              htmlFor="import-excel"
+              className="w-full sm:w-auto bg-green-600 text-white px-4 py-2 rounded-md cursor-pointer flex items-center justify-center gap-2 hover:bg-green-700"
+            >
+              <Upload size={18} /> Nhập Excel
+            </label>
 
-        <button
-          type="button"
-          onClick={handleOpenPasteModal}
-          className="w-full sm:w-auto bg-indigo-600 text-white px-4 py-2 rounded-md flex items-center justify-center gap-2 hover:bg-indigo-700"
-        >
-          <ClipboardPaste size={18} /> Dán từ Excel
-        </button>
+            <button
+              type="button"
+              onClick={handleOpenPasteModal}
+              className="w-full sm:w-auto bg-indigo-600 text-white px-4 py-2 rounded-md flex items-center justify-center gap-2 hover:bg-indigo-700"
+            >
+              <ClipboardPaste size={18} /> Dán từ Excel
+            </button>
 
-        {studentNewList.length > 0 && (
-          <button
-            onClick={handleSaveStudents}
-            disabled={isLoading}
-            className="w-full sm:w-auto bg-blue-600 text-white px-4 py-2 rounded-md flex items-center gap-2 hover:bg-blue-700 disabled:bg-gray-400"
-          >
-            <Save size={18} />
-            {isLoading ? 'Đang lưu...' : 'Lưu danh sách'}
-          </button>
+            {studentNewList.length > 0 && (
+              <button
+                onClick={handleSaveStudents}
+                disabled={isLoading}
+                className="w-full sm:w-auto bg-blue-600 text-white px-4 py-2 rounded-md flex items-center gap-2 hover:bg-blue-700 disabled:bg-gray-400"
+              >
+                <Save size={18} />
+                {isLoading ? 'Đang lưu...' : 'Lưu danh sách'}
+              </button>
+            )}
+          </>
         )}
       </div>
 
@@ -783,7 +882,7 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
                     <div className="flex flex-col items-center gap-1">
                       <select
                         value={st.competencyLevel || ''}
-                        disabled={inlineSavingStudentId === st.id}
+                        disabled={readOnly || inlineSavingStudentId === st.id}
                         onChange={(event) =>
                           handleInlineCompetencyChange(
                             st,
@@ -823,25 +922,29 @@ const StudentList = ({ selectedClass }: { selectedClass: Class }) => {
                     </span>
                   </td>
                   <td className="px-2 sm:px-6 py-4 text-center">
-                    <div className="inline-flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => handleOpenEditStudent(st)}
-                        disabled={st.id.startsWith('temp-')}
-                        className="inline-flex items-center gap-1 rounded-md bg-blue-100 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-200 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
-                      >
-                        <Pencil size={14} />
-                        Sửa
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteStudent(st)}
-                        className="inline-flex items-center gap-1 rounded-md bg-red-100 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-200"
-                      >
-                        <Trash2 size={14} />
-                        Xóa
-                      </button>
-                    </div>
+                    {!readOnly ? (
+                      <div className="inline-flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEditStudent(st)}
+                          disabled={st.id.startsWith('temp-')}
+                          className="inline-flex items-center gap-1 rounded-md bg-blue-100 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-200 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
+                        >
+                          <Pencil size={14} />
+                          Sửa
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteStudent(st)}
+                          className="inline-flex items-center gap-1 rounded-md bg-red-100 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-200"
+                        >
+                          <Trash2 size={14} />
+                          Xóa
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-gray-400">Chỉ xem</span>
+                    )}
                   </td>
                 </tr>
               )})
