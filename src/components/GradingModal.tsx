@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import type { Assignment, CreateAssignmentRequest, GradingEndpointInfo, UpdateAssignmentRequest } from '../types/assignment.types';
 import type { Student } from '../types/student.types';
 import type { GradingResult, StudentGradingState } from '../types/grading.types';
+import type { ScoreResponse } from '../types/score.types';
 import { assignmentService } from '../services/assignment.service';
 import { scoreService } from '../services/score.service';
 import { gradingService } from '../services/grading.service';
@@ -31,6 +32,31 @@ interface MultiScoreCellValue {
     autoGradingErrors: string[];
 }
 
+interface PersistedScoreSnapshot {
+    scoreId: string;
+    scoreValue: number | null;
+    feedback: string;
+    autoGradingErrors: string[];
+}
+
+interface SingleUndoSnapshot {
+    previousState: {
+        studentFile: File | null;
+        isGrading: boolean;
+        gradingResult: GradingResult | null;
+        error: string | null;
+        manualScore: number | null;
+        manualComment: string;
+        autoGradingErrors: string[];
+    };
+    previousPersistedScore: PersistedScoreSnapshot | null;
+}
+
+interface MultiUndoSnapshot {
+    previousAutoState: MultiAutoCellState;
+    previousScoreState: MultiScoreCellValue;
+}
+
 const GradingModal: React.FC<GradingModalProps> = ({
     isOpen,
     onClose,
@@ -46,18 +72,24 @@ const GradingModal: React.FC<GradingModalProps> = ({
     const [gradingEndpoints, setGradingEndpoints] = useState<GradingEndpointInfo[]>([]);
     const [chooseMode, setChooseMode] = useState<null | 'new' | 'existing' | 'existing-multi' | 'manage'>(null);
     const [loading, setLoading] = useState(false);
+    const [showInactiveAssignments, setShowInactiveAssignments] = useState(false);
 
     // STATE CHAM DIEM CHO TUNG HOC SINH (DUY NHAT)
     const [studentGradingStates, setStudentGradingStates] = useState<Map<string, StudentGradingState>>(
         new Map()
     );
+    const [singlePersistedScores, setSinglePersistedScores] = useState<Map<string, PersistedScoreSnapshot>>(new Map());
+    const [singleUndoSnapshots, setSingleUndoSnapshots] = useState<Map<string, SingleUndoSnapshot>>(new Map());
+    const [undoingSingleStudentId, setUndoingSingleStudentId] = useState<string | null>(null);
     const [multiAssignmentIds, setMultiAssignmentIds] = useState<string[]>([]);
+    const [multiAssignmentDraftIds, setMultiAssignmentDraftIds] = useState<string[]>([]);
     const [multiScores, setMultiScores] = useState<Map<string, Map<string, MultiScoreCellValue>>>(
         new Map()
     );
     const [multiAutoStates, setMultiAutoStates] = useState<Map<string, Map<string, MultiAutoCellState>>>(
         new Map()
     );
+    const [multiUndoSnapshots, setMultiUndoSnapshots] = useState<Map<string, MultiUndoSnapshot>>(new Map());
     const [singleDragOverStudentId, setSingleDragOverStudentId] = useState<string | null>(null);
     const [multiDragOverCellKey, setMultiDragOverCellKey] = useState<string | null>(null);
     const [multiRowDragOverStudentId, setMultiRowDragOverStudentId] = useState<string | null>(null);
@@ -108,12 +140,18 @@ const GradingModal: React.FC<GradingModalProps> = ({
     // ============ EFFECTS ============
     useEffect(() => {
         if (isOpen && classId) {
-            loadAssignments();
-            loadGradingEndpoints();
             resetModalState();
+            loadGradingEndpoints();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen, classId]);
+
+    useEffect(() => {
+        if (isOpen && classId) {
+            loadAssignments();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isOpen, classId, showInactiveAssignments]);
 
     const gradingStudents = useMemo(
         () => students.filter((student) => isStudentActive(student)),
@@ -128,6 +166,12 @@ const GradingModal: React.FC<GradingModalProps> = ({
         () => activeAssignments.filter((assignment) => assignment.gradingType === 'auto'),
         [activeAssignments]
     );
+    const hasPendingMultiAssignmentSelectionChanges = useMemo(() => {
+        if (multiAssignmentDraftIds.length !== multiAssignmentIds.length) {
+            return true;
+        }
+        return multiAssignmentDraftIds.some((id, index) => id !== multiAssignmentIds[index]);
+    }, [multiAssignmentDraftIds, multiAssignmentIds]);
 
     useEffect(() => {
         if (isOpen && gradingStudents.length > 0) {
@@ -138,6 +182,9 @@ const GradingModal: React.FC<GradingModalProps> = ({
 
     useEffect(() => {
         if (selectedAssignment) {
+            setSinglePersistedScores(new Map());
+            setSingleUndoSnapshots(new Map());
+            setUndoingSingleStudentId(null);
             loadExistingScores(selectedAssignment);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -145,6 +192,9 @@ const GradingModal: React.FC<GradingModalProps> = ({
 
     useEffect(() => {
         setMultiAssignmentIds((prev) =>
+            prev.filter((id) => activeAutoAssignments.some((assignment) => assignment.id === id))
+        );
+        setMultiAssignmentDraftIds((prev) =>
             prev.filter((id) => activeAutoAssignments.some((assignment) => assignment.id === id))
         );
 
@@ -172,10 +222,16 @@ const GradingModal: React.FC<GradingModalProps> = ({
     const resetModalState = () => {
         setChooseMode(null);
         setSelectedAssignment('');
+        setShowInactiveAssignments(false);
         setStudentGradingStates(new Map());
+        setSinglePersistedScores(new Map());
+        setSingleUndoSnapshots(new Map());
+        setUndoingSingleStudentId(null);
         setMultiAssignmentIds([]);
+        setMultiAssignmentDraftIds([]);
         setMultiScores(new Map());
         setMultiAutoStates(new Map());
+        setMultiUndoSnapshots(new Map());
         setSingleDragOverStudentId(null);
         setMultiDragOverCellKey(null);
         setMultiRowDragOverStudentId(null);
@@ -329,7 +385,9 @@ const GradingModal: React.FC<GradingModalProps> = ({
     // ============ API CALLS ============
     const loadAssignments = async () => {
         try {
-            const data = await assignmentService.getByClass(classId, getAccessToken, { includeInactive: true });
+            const data = await assignmentService.getByClass(classId, getAccessToken, {
+                includeInactive: showInactiveAssignments,
+            });
             setAssignments(data);
         } catch (error) {
             console.error('Lỗi khi tải danh sách bài tập:', error);
@@ -349,6 +407,16 @@ const GradingModal: React.FC<GradingModalProps> = ({
     const loadExistingScores = async (assignmentId: string) => {
         try {
             const data = await scoreService.getByAssignment(assignmentId, getAccessToken);
+            const nextPersistedScores = new Map<string, PersistedScoreSnapshot>();
+            data.forEach((item) => {
+                nextPersistedScores.set(item.studentId, {
+                    scoreId: item.id,
+                    scoreValue: typeof item.scoreValue === 'number' ? item.scoreValue : null,
+                    feedback: item.feedback || '',
+                    autoGradingErrors: item.autoGradingErrors || [],
+                });
+            });
+            setSinglePersistedScores(nextPersistedScores);
 
             setStudentGradingStates((prev) => {
                 const newMap = new Map(prev);
@@ -373,6 +441,12 @@ const GradingModal: React.FC<GradingModalProps> = ({
     };
 
     const loadScoresForMultipleAssignments = async (assignmentIds: string[]) => {
+        if (assignmentIds.length === 0) {
+            setMultiScores(new Map());
+            setMultiAutoStates(new Map());
+            return;
+        }
+
         try {
             initializeMultiAutoStates(assignmentIds);
             const scoreGroups = await Promise.all(
@@ -411,36 +485,49 @@ const GradingModal: React.FC<GradingModalProps> = ({
         }
     };
 
-    const applyMultiAssignmentSelection = async (nextIds: string[]) => {
+    const normalizeMultiAssignmentIds = (ids: string[]) => {
+        // Giữ nguyên thứ tự giáo viên chọn, chỉ loại trùng và loại các id không còn hợp lệ.
+        const uniqueIdsInSelectionOrder = Array.from(new Set(ids));
+        const validIds = new Set(activeAutoAssignments.map((assignment) => assignment.id));
+        return uniqueIdsInSelectionOrder.filter((id) => validIds.has(id));
+    };
+
+    const buildMultiUndoCellKey = (assignmentId: string, studentId: string) =>
+        `${assignmentId}::${studentId}`;
+
+    const handleToggleMultiAssignmentSelection = (assignmentId: string) => {
+        if (isSelectingAssignments) return;
+
+        setMultiAssignmentDraftIds((prev) => {
+            const nextIds = prev.includes(assignmentId)
+                ? prev.filter((id) => id !== assignmentId)
+                : [...prev, assignmentId];
+            return normalizeMultiAssignmentIds(nextIds);
+        });
+    };
+
+    const handleSelectAllAutoAssignments = () => {
+        if (isSelectingAssignments) return;
+        setMultiAssignmentDraftIds(activeAutoAssignments.map((assignment) => assignment.id));
+    };
+
+    const handleClearAutoAssignments = () => {
+        if (isSelectingAssignments) return;
+        setMultiAssignmentDraftIds([]);
+    };
+
+    const handleCommitMultiAssignmentSelection = async () => {
+        if (isSelectingAssignments) return;
+
+        const normalizedDraftIds = normalizeMultiAssignmentIds(multiAssignmentDraftIds);
         setIsSelectingAssignments(true);
         try {
-            setMultiAssignmentIds(nextIds);
-            await loadScoresForMultipleAssignments(nextIds);
+            setMultiAssignmentIds(normalizedDraftIds);
+            setMultiUndoSnapshots(new Map());
+            await loadScoresForMultipleAssignments(normalizedDraftIds);
         } finally {
             setIsSelectingAssignments(false);
         }
-    };
-
-    const handleToggleMultiAssignmentSelection = async (assignmentId: string) => {
-        if (isSelectingAssignments) return;
-
-        const nextIds = multiAssignmentIds.includes(assignmentId)
-            ? multiAssignmentIds.filter((id) => id !== assignmentId)
-            : [...multiAssignmentIds, assignmentId];
-
-        await applyMultiAssignmentSelection(nextIds);
-    };
-
-    const handleSelectAllAutoAssignments = async () => {
-        if (isSelectingAssignments) return;
-        const allAutoIds = activeAutoAssignments.map((a) => a.id);
-
-        await applyMultiAssignmentSelection(allAutoIds);
-    };
-
-    const handleClearAutoAssignments = async () => {
-        if (isSelectingAssignments) return;
-        await applyMultiAssignmentSelection([]);
     };
 
     // ============ EVENT HANDLERS ============
@@ -453,6 +540,32 @@ const GradingModal: React.FC<GradingModalProps> = ({
         if (!skipValidation && !validateExcelFile(file)) {
             return;
         }
+
+        const previousState = studentGradingStates.get(studentId);
+        const previousPersistedScore = singlePersistedScores.get(studentId) || null;
+        setSingleUndoSnapshots((prev) => {
+            const next = new Map(prev);
+            next.set(studentId, {
+                previousState: {
+                    studentFile: previousState?.studentFile || null,
+                    isGrading: Boolean(previousState?.isGrading),
+                    gradingResult: previousState?.gradingResult || null,
+                    error: previousState?.error || null,
+                    manualScore: previousState?.manualScore ?? null,
+                    manualComment: previousState?.manualComment || '',
+                    autoGradingErrors: [...(previousState?.autoGradingErrors || [])],
+                },
+                previousPersistedScore: previousPersistedScore
+                    ? {
+                        scoreId: previousPersistedScore.scoreId,
+                        scoreValue: previousPersistedScore.scoreValue,
+                        feedback: previousPersistedScore.feedback,
+                        autoGradingErrors: [...(previousPersistedScore.autoGradingErrors || [])],
+                    }
+                    : null,
+            });
+            return next;
+        });
 
         setStudentGradingStates((prev) => {
             const newMap = new Map(prev);
@@ -561,6 +674,121 @@ const GradingModal: React.FC<GradingModalProps> = ({
         await uploadStudentFile(studentId, file);
     };
 
+    const handleUndoSingleStudentFile = async (studentId: string) => {
+        const currentState = studentGradingStates.get(studentId);
+        if (currentState?.isGrading || undoingSingleStudentId === studentId) {
+            return;
+        }
+
+        const snapshot = singleUndoSnapshots.get(studentId);
+        if (!snapshot) {
+            setStudentGradingStates((prev) => {
+                const next = new Map(prev);
+                const existing = next.get(studentId);
+                if (existing) {
+                    next.set(studentId, {
+                        ...existing,
+                        studentFile: null,
+                        gradingResult: null,
+                        error: null,
+                        manualScore: null,
+                        autoGradingErrors: [],
+                    });
+                }
+                return next;
+            });
+            return;
+        }
+
+        setUndoingSingleStudentId(studentId);
+        try {
+            setStudentGradingStates((prev) => {
+                const next = new Map(prev);
+                const existing = next.get(studentId);
+                if (existing) {
+                    next.set(studentId, {
+                        ...existing,
+                        studentFile: snapshot.previousState.studentFile,
+                        isGrading: false,
+                        gradingResult: snapshot.previousState.gradingResult,
+                        error: snapshot.previousState.error,
+                        manualScore: snapshot.previousState.manualScore,
+                        manualComment: snapshot.previousState.manualComment,
+                        autoGradingErrors: [...(snapshot.previousState.autoGradingErrors || [])],
+                    });
+                }
+                return next;
+            });
+
+            if (selectedAssignment) {
+                const previousPersisted = snapshot.previousPersistedScore;
+                if (previousPersisted && typeof previousPersisted.scoreValue === 'number') {
+                    const restored = await scoreService.bulkCreateOrUpdate(
+                        {
+                            assignmentId: selectedAssignment,
+                            classId: classId,
+                            scores: [
+                                {
+                                    studentId,
+                                    scoreValue: previousPersisted.scoreValue,
+                                    feedback: previousPersisted.feedback,
+                                    autoGradingErrors: previousPersisted.autoGradingErrors || [],
+                                },
+                            ],
+                        },
+                        getAccessToken
+                    );
+
+                    const restoredScore = restored.scores[0];
+                    if (restoredScore) {
+                        setSinglePersistedScores((prev) => {
+                            const next = new Map(prev);
+                            next.set(studentId, {
+                                scoreId: restoredScore.id,
+                                scoreValue:
+                                    typeof restoredScore.scoreValue === 'number'
+                                        ? restoredScore.scoreValue
+                                        : null,
+                                feedback: restoredScore.feedback || '',
+                                autoGradingErrors: restoredScore.autoGradingErrors || [],
+                            });
+                            return next;
+                        });
+                    }
+                } else {
+                    let scoreIdToDelete = singlePersistedScores.get(studentId)?.scoreId || null;
+                    if (!scoreIdToDelete) {
+                        const scores = await scoreService.getByAssignment(selectedAssignment, getAccessToken);
+                        scoreIdToDelete = scores.find((item) => item.studentId === studentId)?.id || null;
+                    }
+
+                    if (scoreIdToDelete) {
+                        await scoreService.delete(scoreIdToDelete, getAccessToken);
+                    }
+
+                    setSinglePersistedScores((prev) => {
+                        const next = new Map(prev);
+                        next.delete(studentId);
+                        return next;
+                    });
+                }
+            }
+
+            setSingleUndoSnapshots((prev) => {
+                const next = new Map(prev);
+                next.delete(studentId);
+                return next;
+            });
+        } catch (error) {
+            alert(error instanceof Error ? error.message : 'Không thể hoàn tác file vừa chọn.');
+            if (selectedAssignment) {
+                await loadExistingScores(selectedAssignment);
+            }
+        } finally {
+            setUndoingSingleStudentId(null);
+        }
+    };
+
     const handleAutoGrade = async (studentId: string, studentFile: File) => {
         const student = students.find((item) => item.id === studentId);
         if (student && !isStudentActive(student)) {
@@ -621,7 +849,19 @@ const GradingModal: React.FC<GradingModalProps> = ({
 
             if (selectedAssignment) {
                 const autoErrors = extractAutoGradingErrors(result);
-                await saveScoreForStudent(studentId, result.totalScore, autoErrors);
+                const savedScore = await saveScoreForStudent(studentId, result.totalScore, autoErrors);
+                if (savedScore) {
+                    setSinglePersistedScores((prev) => {
+                        const next = new Map(prev);
+                        next.set(studentId, {
+                            scoreId: savedScore.id,
+                            scoreValue: typeof savedScore.scoreValue === 'number' ? savedScore.scoreValue : null,
+                            feedback: savedScore.feedback || '',
+                            autoGradingErrors: savedScore.autoGradingErrors || [],
+                        });
+                        return next;
+                    });
+                }
             }
         } catch (error: unknown) {
             const errorMessage = error instanceof Error ? error.message : 'Lỗi không xác định';
@@ -658,6 +898,27 @@ const GradingModal: React.FC<GradingModalProps> = ({
         if (!skipValidation && !validateExcelFile(file)) {
             return;
         }
+
+        const currentAutoState = multiAutoStates.get(assignmentId)?.get(studentId);
+        const currentScoreState = multiScores.get(assignmentId)?.get(studentId);
+        const undoKey = buildMultiUndoCellKey(assignmentId, studentId);
+        setMultiUndoSnapshots((prev) => {
+            const next = new Map(prev);
+            next.set(undoKey, {
+                previousAutoState: {
+                    studentFile: currentAutoState?.studentFile || null,
+                    isGrading: Boolean(currentAutoState?.isGrading),
+                    error: currentAutoState?.error || null,
+                    gradingResult: currentAutoState?.gradingResult || null,
+                },
+                previousScoreState: {
+                    scoreValue: currentScoreState?.scoreValue ?? null,
+                    feedback: currentScoreState?.feedback || '',
+                    autoGradingErrors: [...(currentScoreState?.autoGradingErrors || [])],
+                },
+            });
+            return next;
+        });
 
         setMultiAutoStates((prev) => {
             const next = new Map(prev);
@@ -814,6 +1075,43 @@ const GradingModal: React.FC<GradingModalProps> = ({
         await uploadMultiStudentFile(assignmentId, studentId, file);
     };
 
+    const handleUndoMultiStudentFile = (assignmentId: string, studentId: string) => {
+        const undoKey = buildMultiUndoCellKey(assignmentId, studentId);
+        const snapshot = multiUndoSnapshots.get(undoKey);
+        if (!snapshot) return;
+
+        setMultiAutoStates((prev) => {
+            const next = new Map(prev);
+            const assignmentMap = new Map(next.get(assignmentId) || new Map());
+            assignmentMap.set(studentId, {
+                studentFile: snapshot.previousAutoState.studentFile,
+                isGrading: false,
+                error: snapshot.previousAutoState.error,
+                gradingResult: snapshot.previousAutoState.gradingResult,
+            });
+            next.set(assignmentId, assignmentMap);
+            return next;
+        });
+
+        setMultiScores((prev) => {
+            const next = new Map(prev);
+            const rowMap = new Map(next.get(assignmentId) || new Map());
+            rowMap.set(studentId, {
+                scoreValue: snapshot.previousScoreState.scoreValue,
+                feedback: snapshot.previousScoreState.feedback,
+                autoGradingErrors: [...(snapshot.previousScoreState.autoGradingErrors || [])],
+            });
+            next.set(assignmentId, rowMap);
+            return next;
+        });
+
+        setMultiUndoSnapshots((prev) => {
+            const next = new Map(prev);
+            next.delete(undoKey);
+            return next;
+        });
+    };
+
     const uploadMultipleFilesForOneStudent = async (studentId: string, filesInput: FileList | File[]) => {
         const files = Array.from(filesInput || []);
         if (files.length === 0) return;
@@ -938,10 +1236,10 @@ const GradingModal: React.FC<GradingModalProps> = ({
         studentId: string,
         scoreValue: number,
         autoGradingErrors: string[] = []
-    ) => {
-        if (!selectedAssignment) return;
+    ): Promise<ScoreResponse | null> => {
+        if (!selectedAssignment) return null;
         try {
-            await scoreService.bulkCreateOrUpdate(
+            const result = await scoreService.bulkCreateOrUpdate(
                 {
                     assignmentId: selectedAssignment,
                     classId: classId,
@@ -949,8 +1247,10 @@ const GradingModal: React.FC<GradingModalProps> = ({
                 },
                 getAccessToken
             );
+            return result.scores[0] || null;
         } catch (error) {
             console.error('Lỗi luu diem:', error);
+            return null;
         }
     };
 
@@ -1105,9 +1405,13 @@ const GradingModal: React.FC<GradingModalProps> = ({
             };
 
             const updated = await assignmentService.update(editingAssignment.id, payload, getAccessToken);
-            setAssignments((prev) =>
-                prev.map((item) => (item.id === updated.id ? updated : item))
-            );
+            setAssignments((prev) => {
+                if (!showInactiveAssignments && !updated.isActive) {
+                    return prev.filter((item) => item.id !== updated.id);
+                }
+
+                return prev.map((item) => (item.id === updated.id ? updated : item));
+            });
             setEditingAssignment(null);
             alert('Cập nhật bài tập thành công.');
         } catch (error) {
@@ -1123,12 +1427,22 @@ const GradingModal: React.FC<GradingModalProps> = ({
         setAssignmentSubmitLoading(true);
         try {
             await assignmentService.delete(assignment.id, getAccessToken);
-            setAssignments((prev) => prev.filter((item) => item.id !== assignment.id));
+            setAssignments((prev) => {
+                if (!showInactiveAssignments) {
+                    return prev.filter((item) => item.id !== assignment.id);
+                }
+
+                return prev.map((item) =>
+                    item.id === assignment.id
+                        ? { ...item, isActive: false }
+                        : item
+                );
+            });
             setMultiAssignmentIds((prev) => prev.filter((id) => id !== assignment.id));
             if (selectedAssignment === assignment.id) {
                 setSelectedAssignment('');
             }
-            alert('Đã xóa bài tập.');
+            alert(showInactiveAssignments ? 'Bài tập đã được ẩn.' : 'Đã xóa bài tập.');
         } catch (error) {
             console.error('Lỗi khi xóa bài tập:', error);
             alert(error instanceof Error ? error.message : 'Không thể xóa bài tập.');
@@ -1263,10 +1577,13 @@ const GradingModal: React.FC<GradingModalProps> = ({
                 </button>
                 {assignments.length > 0 && (
                     <button
-                        onClick={async () => {
-                            const ids = activeAutoAssignments.map((a) => a.id);
+                        onClick={() => {
                             setChooseMode('existing-multi');
-                            await applyMultiAssignmentSelection(ids);
+                            setMultiAssignmentIds([]);
+                            setMultiAssignmentDraftIds([]);
+                            setMultiScores(new Map());
+                            setMultiAutoStates(new Map());
+                            setMultiUndoSnapshots(new Map());
                         }}
                         disabled={activeAutoAssignments.length === 0}
                         className="bg-emerald-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-emerald-700 flex items-center gap-3 shadow-md transition"
@@ -1426,6 +1743,14 @@ const GradingModal: React.FC<GradingModalProps> = ({
                         {gradingStudents.map((student, index) => {
                             const state = studentGradingStates.get(student.id);
                             const autoErrors = state?.autoGradingErrors || extractAutoGradingErrors(state?.gradingResult || null);
+                            const canUndoSingle =
+                                singleUndoSnapshots.has(student.id) ||
+                                Boolean(
+                                    state?.studentFile ||
+                                    state?.gradingResult ||
+                                    state?.error ||
+                                    state?.manualScore !== null
+                                );
                             return (
                                 <tr
                                     key={student.id}
@@ -1479,6 +1804,16 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                                 <p className="text-xs text-gray-600 mt-1 truncate">
                                                     {state.studentFile.name}
                                                 </p>
+                                            )}
+                                            {canUndoSingle && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => void handleUndoSingleStudentFile(student.id)}
+                                                    disabled={Boolean(state?.isGrading) || undoingSingleStudentId === student.id}
+                                                    className="mt-2 inline-flex items-center gap-1 rounded border border-amber-200 bg-amber-50 px-2 py-1 text-[11px] text-amber-700 hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
+                                                >
+                                                    {undoingSingleStudentId === student.id ? 'Đang hoàn tác...' : 'Hoàn tác file vừa chọn'}
+                                                </button>
                                             )}
                                             {renderAutoErrorDropdown(autoErrors)}
                                         </div>
@@ -1677,8 +2012,10 @@ const GradingModal: React.FC<GradingModalProps> = ({
                     onClick={() => {
                         setChooseMode(null);
                         setMultiAssignmentIds([]);
+                        setMultiAssignmentDraftIds([]);
                         setMultiScores(new Map());
                         setMultiAutoStates(new Map());
+                        setMultiUndoSnapshots(new Map());
                     }}
                     className="text-sm text-gray-600 hover:text-gray-800 flex items-center gap-1 mb-4"
                 >
@@ -1692,7 +2029,10 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                 Chọn các bài tập cần chấm
                             </label>
                             <p className="text-xs text-gray-600 mt-1">
-                                Đã chọn {multiAssignmentIds.length}/{autoAssignments.length} bài tự động
+                                Đang chọn {multiAssignmentDraftIds.length}/{autoAssignments.length} bài tự động
+                            </p>
+                            <p className="text-xs text-emerald-700 mt-1">
+                                Đã chốt {multiAssignmentIds.length} bài để hiển thị trong bảng chấm điểm
                             </p>
                         </div>
                         <div className="flex gap-2">
@@ -1707,10 +2047,18 @@ const GradingModal: React.FC<GradingModalProps> = ({
                             <button
                                 type="button"
                                 onClick={handleClearAutoAssignments}
-                                disabled={isSelectingAssignments || multiAssignmentIds.length === 0}
+                                disabled={isSelectingAssignments || multiAssignmentDraftIds.length === 0}
                                 className="px-3 py-1.5 text-xs rounded-md border border-gray-300 text-gray-700 bg-white hover:bg-gray-100 disabled:opacity-50"
                             >
                                 Bỏ chọn
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleCommitMultiAssignmentSelection}
+                                disabled={isSelectingAssignments || !hasPendingMultiAssignmentSelectionChanges}
+                                className="px-3 py-1.5 text-xs rounded-md border border-emerald-200 text-emerald-700 bg-white hover:bg-emerald-50 disabled:opacity-50"
+                            >
+                                Chốt danh sách
                             </button>
                         </div>
                     </div>
@@ -1728,13 +2076,18 @@ const GradingModal: React.FC<GradingModalProps> = ({
                     {isSelectingAssignments && (
                         <div className="mt-2 text-xs text-blue-600 flex items-center gap-1">
                             <Loader2 size={13} className="animate-spin" />
-                            Đang cập nhật danh sách bài tập...
+                            Đang chốt danh sách bài tập...
+                        </div>
+                    )}
+                    {!isSelectingAssignments && hasPendingMultiAssignmentSelectionChanges && (
+                        <div className="mt-2 text-xs text-amber-700">
+                            Bạn vừa thay đổi danh sách chọn. Bấm <span className="font-semibold">Chốt danh sách</span> để áp dụng vào bảng chấm điểm.
                         </div>
                     )}
 
                     <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-2">
                         {filteredAutoAssignments.map((assignment) => {
-                            const isSelected = multiAssignmentIds.includes(assignment.id);
+                            const isSelected = multiAssignmentDraftIds.includes(assignment.id);
                             return (
                                 <button
                                     key={assignment.id}
@@ -1924,6 +2277,16 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                                 const autoStateMap = multiAutoStates.get(assignment.id);
                                                 const autoState = autoStateMap?.get(student.id);
                                                 const cellErrors = current?.autoGradingErrors || extractAutoGradingErrors(autoState?.gradingResult || null);
+                                                const undoKey = buildMultiUndoCellKey(assignment.id, student.id);
+                                                const canUndoCell =
+                                                    multiUndoSnapshots.has(undoKey) ||
+                                                    Boolean(
+                                                        autoState?.studentFile ||
+                                                        autoState?.gradingResult ||
+                                                        autoState?.error ||
+                                                        current?.scoreValue !== null ||
+                                                        (current?.autoGradingErrors?.length || 0) > 0
+                                                    );
 
                                                 return (
                                                     <td key={`${student.id}-${assignment.id}`} className="px-4 py-3 text-center align-top">
@@ -2001,6 +2364,16 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                                                 {autoState?.error && (
                                                                     <p className="text-xs text-red-600">Lỗi: {autoState.error}</p>
                                                                 )}
+                                                                {canUndoCell && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => handleUndoMultiStudentFile(assignment.id, student.id)}
+                                                                        disabled={Boolean(autoState?.isGrading)}
+                                                                        className="inline-flex items-center gap-1 rounded border border-amber-200 bg-amber-50 px-2 py-1 text-[11px] text-amber-700 hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
+                                                                    >
+                                                                        Hoàn tác
+                                                                    </button>
+                                                                )}
                                                                 {renderAutoErrorDropdown(cellErrors)}
                                                             </div>
                                                         )}
@@ -2031,6 +2404,20 @@ const GradingModal: React.FC<GradingModalProps> = ({
             >
                 <ArrowLeft size={16} /> Quay lại
             </button>
+
+            <div className="mb-3 flex items-center justify-between rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
+                <label className="inline-flex items-center gap-2 text-sm text-slate-700">
+                    <input
+                        type="checkbox"
+                        checked={showInactiveAssignments}
+                        onChange={(e) => setShowInactiveAssignments(e.target.checked)}
+                    />
+                    Hiển thị bài tập đã ẩn
+                </label>
+                <span className="text-xs text-slate-500">
+                    Khi tắt, danh sách chỉ hiển thị bài tập đang dùng.
+                </span>
+            </div>
 
             <div className="rounded-lg border border-gray-200 overflow-hidden">
                 <table className="min-w-full divide-y divide-gray-200">
@@ -2238,7 +2625,8 @@ const GradingModal: React.FC<GradingModalProps> = ({
                     {chooseMode === 'existing-multi' && multiAssignmentIds.length > 0 && (
                         <button
                             onClick={handleSaveMultipleAssignments}
-                            disabled={loading}
+                            disabled={loading || isSelectingAssignments || hasPendingMultiAssignmentSelectionChanges}
+                            title={hasPendingMultiAssignmentSelectionChanges ? 'Vui lòng chốt lại danh sách bài tập trước khi lưu.' : undefined}
                             className="bg-emerald-600 text-white px-4 py-2 rounded-md hover:bg-emerald-700 disabled:bg-gray-400 flex items-center gap-2"
                         >
                             {loading ? (

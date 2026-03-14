@@ -9,6 +9,8 @@ import studentService from '../services/student.service';
 
 type CompetencyLevel = '' | 'A' | 'B' | 'C' | 'D';
 type AssignmentColumnDisplayMode = 'full' | 'compact' | 'hidden';
+type ScoreTableSortKey = 'none' | 'name' | 'classification';
+type ScoreTableSortDirection = 'asc' | 'desc';
 
 interface DisplayStudentRow {
   id: string;
@@ -17,7 +19,9 @@ interface DisplayStudentRow {
   notes: string;
   calculatedScores: Record<string, number>;
   errorsByAssignment: Record<string, string[]>;
+  completedAssignments: number;
   totalScore: number;
+  totalPercentage: number;
   classification: CompetencyLevel;
 }
 
@@ -62,9 +66,23 @@ const classificationClassMap: Record<'A' | 'B' | 'C' | 'D', string> = {
   C: 'bg-amber-100 text-amber-700 border-amber-200',
   D: 'bg-rose-100 text-rose-700 border-rose-200',
 };
+const classificationLevels: Array<Exclude<CompetencyLevel, ''>> = ['A', 'B', 'C', 'D'];
 
 const sanitizeFileNamePart = (value: string): string =>
   value.replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g, ' ').trim();
+
+const vietnameseCollator = new Intl.Collator('vi', {
+  sensitivity: 'base',
+  numeric: true,
+});
+
+const classificationSortOrder: Record<CompetencyLevel, number> = {
+  A: 0,
+  B: 1,
+  C: 2,
+  D: 3,
+  '': 4,
+};
 
 const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
   isOpen,
@@ -90,6 +108,8 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
     Record<string, AssignmentColumnDisplayMode>
   >({});
   const [isClassificationColumnVisible, setIsClassificationColumnVisible] = useState(true);
+  const [sortKey, setSortKey] = useState<ScoreTableSortKey>('name');
+  const [sortDirection, setSortDirection] = useState<ScoreTableSortDirection>('asc');
 
   useEffect(() => {
     if (!isOpen) return;
@@ -114,6 +134,12 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
       return next;
     });
   }, [isOpen, assignments]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setSortKey('name');
+    setSortDirection('asc');
+  }, [isOpen]);
 
   const maxScoreTotal = useMemo(
     () => assignments.reduce((sum, assignment) => sum + (assignment.maxScore || 0), 0),
@@ -153,7 +179,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
     [displayedAssignments, columnDisplayByAssignmentId]
   );
 
-  const staticColumnCount = isClassificationColumnVisible ? 6 : 5;
+  const staticColumnCount = isClassificationColumnVisible ? 8 : 7;
 
   const areAllAssignmentsVisible = useMemo(
     () =>
@@ -188,6 +214,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
       const notes = notesMapValue !== undefined ? notesMapValue : (student.notes || '').trim();
 
       let totalScore = 0;
+      let completedAssignments = 0;
       const calculatedScores: Record<string, number> = {};
       const errorsByAssignment: Record<string, string[]> = {};
 
@@ -195,6 +222,9 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
         const key = `${student.id}::${assignment.id}`;
         const scoreObj = scoreLookup.get(key);
         const score = typeof scoreObj?.scoreValue === 'number' ? scoreObj.scoreValue : 0;
+        if (typeof scoreObj?.scoreValue === 'number') {
+          completedAssignments += 1;
+        }
         calculatedScores[assignment.id] = score;
         totalScore += score;
 
@@ -214,6 +244,8 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
       const mapValue = classificationByStudentId[student.id];
       const classification =
         mapValue !== undefined ? mapValue : normalizeClassification(student.competencyLevel);
+      const totalPercentage =
+        maxScoreTotal > 0 ? Math.round((totalScore / maxScoreTotal) * 10000) / 100 : 0;
 
       return {
         id: student.id,
@@ -222,11 +254,48 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
         notes,
         calculatedScores,
         errorsByAssignment,
+        completedAssignments,
         totalScore,
+        totalPercentage,
         classification,
       };
     });
-  }, [isOpen, students, assignments, scoreLookup, classificationByStudentId, notesByStudentId]);
+  }, [isOpen, students, assignments, scoreLookup, classificationByStudentId, notesByStudentId, maxScoreTotal]);
+
+  const sortedDisplayRows = useMemo<DisplayStudentRow[]>(() => {
+    if (sortKey === 'none') return displayRows;
+
+    const rows = [...displayRows];
+    rows.sort((left, right) => {
+      const leftFirstName = (left.firstName || '').trim();
+      const rightFirstName = (right.firstName || '').trim();
+      const leftMiddleName = (left.middleName || '').trim();
+      const rightMiddleName = (right.middleName || '').trim();
+      const leftFullName = `${leftMiddleName} ${leftFirstName}`.trim();
+      const rightFullName = `${rightMiddleName} ${rightFirstName}`.trim();
+
+      if (sortKey === 'name') {
+        // Ưu tiên sắp theo cột "Tên" trước, nếu trùng thì mới so theo "Họ và tên đệm".
+        const byFirstName = vietnameseCollator.compare(leftFirstName, rightFirstName);
+        if (byFirstName !== 0) {
+          return sortDirection === 'asc' ? byFirstName : -byFirstName;
+        }
+        const byMiddleName = vietnameseCollator.compare(leftMiddleName, rightMiddleName);
+        return sortDirection === 'asc' ? byMiddleName : -byMiddleName;
+      }
+
+      const leftOrder = classificationSortOrder[left.classification];
+      const rightOrder = classificationSortOrder[right.classification];
+      const byClassification = leftOrder - rightOrder;
+      if (byClassification !== 0) {
+        return sortDirection === 'asc' ? byClassification : -byClassification;
+      }
+
+      return vietnameseCollator.compare(leftFullName, rightFullName);
+    });
+
+    return rows;
+  }, [displayRows, sortKey, sortDirection]);
 
   const excelHeaders = useMemo(
     () => [
@@ -235,7 +304,9 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
       'Tên',
       ...assignments.map((assignment) => `${assignment.name} (tối đa ${assignment.maxScore})`),
       'Xếp loại',
+      'Tổng số bài',
       'Tổng điểm',
+      'Tỷ lệ đạt',
       'Ghi chú',
     ],
     [assignments]
@@ -243,7 +314,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 
   const excelBody = useMemo(
     () =>
-      displayRows.map((row, index) => [
+      sortedDisplayRows.map((row, index) => [
         index + 1,
         row.middleName,
         row.firstName,
@@ -254,10 +325,12 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
           return `${formatScore(score)} (${errors.length} lỗi)`;
         }),
         row.classification,
+        `${row.completedAssignments}/${assignments.length}`,
         `${formatScore(row.totalScore)}/${formatScore(maxScoreTotal)}`,
+        `${formatScore(row.totalPercentage)}%`,
         row.notes,
       ]),
-    [displayRows, assignments, maxScoreTotal]
+    [sortedDisplayRows, assignments, maxScoreTotal]
   );
 
   const excelErrorHeaders = useMemo(
@@ -265,10 +338,32 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
     []
   );
 
+  const excelClassificationStatsHeaders = useMemo(
+    () => ['Xếp loại', 'Số lượng', 'Tỷ lệ (%)'],
+    []
+  );
+
+  const excelClassificationStatsBody = useMemo(() => {
+    const totalStudents = sortedDisplayRows.length;
+    const rows: (string | number)[][] = classificationLevels.map((level) => {
+      const count = sortedDisplayRows.filter((row) => row.classification === level).length;
+      const percentage = totalStudents > 0 ? Math.round((count / totalStudents) * 10000) / 100 : 0;
+      return [level, count, `${formatScore(percentage)}%`];
+    });
+
+    rows.push([
+      'Tổng học sinh',
+      totalStudents,
+      totalStudents > 0 ? '100%' : '0%',
+    ]);
+
+    return rows;
+  }, [sortedDisplayRows]);
+
   const excelErrorBody = useMemo(() => {
     const rows: (string | number)[][] = [];
     let index = 1;
-    displayRows.forEach((row) => {
+    sortedDisplayRows.forEach((row) => {
       assignments.forEach((assignment) => {
         const errors = row.errorsByAssignment[assignment.id] || [];
         if (errors.length === 0) return;
@@ -285,7 +380,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
       });
     });
     return rows;
-  }, [displayRows, assignments]);
+  }, [sortedDisplayRows, assignments]);
 
   const titleClassName = (classDisplayName || '').trim() || 'Chưa đặt tên lớp';
   const safeClassName = sanitizeFileNamePart(titleClassName);
@@ -294,9 +389,16 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 
   const handleExportExcel = () => {
     const assignmentColumnWidths = assignments.map(() => 18);
-    const colWidths = [6, 24, 14, ...assignmentColumnWidths, 12, 16, 34];
-    const extraSheets =
-      excelErrorBody.length > 0
+    const colWidths = [6, 24, 14, ...assignmentColumnWidths, 12, 12, 16, 12, 34];
+    const extraSheets = [
+      {
+        sheetName: 'ThongKeXepLoai',
+        header: excelClassificationStatsHeaders,
+        body: excelClassificationStatsBody,
+        title: `Thống kê xếp loại - ${titleClassName}`,
+        colWidths: [18, 12, 14],
+      },
+      ...(excelErrorBody.length > 0
         ? [
             {
               sheetName: 'ChiTietLoi',
@@ -306,7 +408,8 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
               colWidths: [6, 24, 14, 24, 10, 8, 80],
             },
           ]
-        : [];
+        : []),
+    ];
 
     exportToExcel(exportExcelFileName, 'BangDiem', excelHeaders, excelBody, {
       title: `Bảng điểm lớp ${titleClassName}`,
@@ -503,6 +606,45 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
                   {isClassificationColumnVisible ? <EyeOff size={14} /> : <Eye size={14} />}
                   {isClassificationColumnVisible ? 'Ẩn cột xếp loại' : 'Hiện cột xếp loại'}
                 </button>
+
+                <div className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-2 py-1.5 shadow-sm">
+                  <span className="text-xs font-semibold text-slate-600">Sắp xếp</span>
+                  <select
+                    value={sortKey}
+                    onChange={(event) => {
+                      const nextSortKey = event.target.value as ScoreTableSortKey;
+                      setSortKey(nextSortKey);
+                      if (nextSortKey === 'name') {
+                        setSortDirection('asc');
+                      }
+                    }}
+                    className="rounded-md border border-slate-300 bg-white px-2 py-1 text-xs text-slate-700"
+                    title="Chọn kiểu sắp xếp bảng điểm"
+                  >
+                    <option value="none">Mặc định</option>
+                    <option value="name">Theo tên học sinh (A → Z)</option>
+                    <option value="classification">Theo xếp loại</option>
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'))}
+                    disabled={sortKey === 'none'}
+                    className={`rounded-md px-2 py-1 text-xs font-semibold transition ${
+                      sortKey === 'none'
+                        ? 'cursor-not-allowed bg-slate-100 text-slate-400'
+                        : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
+                    }`}
+                    title="Đảo chiều sắp xếp"
+                  >
+                    {sortKey === 'name'
+                      ? sortDirection === 'asc'
+                        ? 'A → Z'
+                        : 'Z → A'
+                      : sortDirection === 'asc'
+                      ? 'Tăng dần'
+                      : 'Giảm dần'}
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -580,15 +722,21 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
                       Xếp loại
                     </th>
                   )}
+                  <th className="min-w-[120px] bg-amber-50 px-4 py-3 text-center font-semibold text-amber-800">
+                    Tổng số bài
+                  </th>
                   <th className="min-w-[140px] bg-blue-50 px-4 py-3 text-right font-semibold text-blue-800">
                     Tổng điểm
+                  </th>
+                  <th className="min-w-[110px] bg-cyan-50 px-4 py-3 text-center font-semibold text-cyan-800">
+                    Tỷ lệ đạt
                   </th>
                   <th className="min-w-[220px] px-4 py-3 text-left font-semibold text-slate-700">Ghi chú</th>
                 </tr>
                 </thead>
 
                 <tbody>
-                {displayRows.map((row, index) => {
+                {sortedDisplayRows.map((row, index) => {
                   const stickyBgClass = index % 2 === 0 ? 'bg-white' : 'bg-slate-50';
                   return (
                     <tr
@@ -676,8 +824,16 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
                         </td>
                       )}
 
+                      <td className="bg-amber-50 px-4 py-3 text-center font-semibold text-amber-800">
+                        {row.completedAssignments}/{assignments.length}
+                      </td>
+
                       <td className="bg-blue-50 px-4 py-3 text-right font-bold text-blue-800">
                         {formatScore(row.totalScore)}/{formatScore(maxScoreTotal)}
+                      </td>
+
+                      <td className="bg-cyan-50 px-4 py-3 text-center font-semibold text-cyan-800">
+                        {formatScore(row.totalPercentage)}%
                       </td>
 
                       <td className="px-4 py-3 text-left text-slate-600">
@@ -705,7 +861,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
                   );
                 })}
 
-                {displayRows.length === 0 && (
+                {sortedDisplayRows.length === 0 && (
                   <tr>
                     <td
                       colSpan={displayedAssignments.length + staticColumnCount}
@@ -747,5 +903,3 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 };
 
 export default ViewAllScoresModal;
-
-

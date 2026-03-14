@@ -983,7 +983,7 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
           studentId: s.studentId,
           assignmentId: s.assignmentId,
           assignmentName: s.assignmentName,
-          scoreValue: typeof s.scoreValue === 'number' ? s.scoreValue : 0,
+          scoreValue: typeof s.scoreValue === 'number' ? s.scoreValue : null,
           autoGradingErrors: s.autoGradingErrors || [],
         }))}
       />
