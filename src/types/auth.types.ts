@@ -73,5 +73,16 @@ export interface TeacherSummary {
   username: string;
   fullName?: string;
   email?: string;
+  role?: string;
+  permissions?: string[];
   isActive?: boolean;
+}
+
+export interface PermissionCatalogResponse {
+  permissions: string[];
+  teacherDefaultPermissions?: string[];
+}
+
+export interface UpdateTeacherPermissionsRequest {
+  permissions: string[];
 }

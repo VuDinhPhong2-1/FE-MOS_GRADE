@@ -714,6 +714,12 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
                 />
               </div>
 
+              <div className="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-sm text-blue-700">
+                {selectedSchool.attendanceSpreadsheetId
+                  ? 'Google Sheet của lớp sẽ tự lấy theo cấu hình của Trường. Chỉ cần cấu hình tại màn hình Quản lý trường.'
+                  : 'Trường chưa cấu hình Google Sheet. Vui lòng vào Quản lý trường để thêm Spreadsheet ID.'}
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả</label>
                 <textarea

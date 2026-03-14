@@ -1,11 +1,12 @@
 ﻿import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
-import { CalendarClock, GraduationCap, LayoutDashboard } from 'lucide-react';
+import { CalendarClock, GraduationCap, LayoutDashboard, ShieldCheck } from 'lucide-react';
 import Layout from './components/Layout/Layout';
 import GradingView from './pages/GradingView';
 import Dashboard from './pages/Dashboard';
 import SchoolList from './pages/SchoolList';
 import AuthPage from './pages/AuthPage';
 import TeacherSchedule from './pages/TeacherSchedule';
+import PermissionManagement from './pages/PermissionManagement';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
 const ProtectedRoute: React.FC = () => {
@@ -27,6 +28,10 @@ const AppLayout: React.FC = () => {
     { id: 'schedule', label: 'Lịch dạy', icon: CalendarClock, path: '/schedule' },
   ];
 
+  if (user?.role === 'Admin') {
+    navItems.push({ id: 'permissions', label: 'Phân quyền', icon: ShieldCheck, path: '/permissions' });
+  }
+
   return (
     <Layout navItems={navItems} userName={user?.fullName}>
       <Outlet />
@@ -46,6 +51,7 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/schools" element={<SchoolList />} />
             <Route path="/schedule" element={<TeacherSchedule />} />
+            <Route path="/permissions" element={<PermissionManagement />} />
             <Route path="/grading" element={<GradingView />} />
           </Route>
         </Route>

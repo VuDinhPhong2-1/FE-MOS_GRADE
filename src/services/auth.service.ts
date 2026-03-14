@@ -1,5 +1,11 @@
 import { AUTH_API_BASE_URL } from '../config/api';
-import type { ProfileResponse, TeacherSummary, UpdateProfileRequest } from '../types/auth.types';
+import type {
+  PermissionCatalogResponse,
+  ProfileResponse,
+  TeacherSummary,
+  UpdateProfileRequest,
+  UpdateTeacherPermissionsRequest
+} from '../types/auth.types';
 import { authFetch } from './auth-fetch';
 
 const jsonHeaders = { 'Content-Type': 'application/json' };
@@ -48,6 +54,49 @@ class AuthService {
 
     if (!response.ok) {
       const message = await parseErrorMessage(response, 'Không thể cập nhật thông tin tài khoản');
+      throw new Error(message);
+    }
+
+    return response.json();
+  }
+
+  async getPermissionCatalog(
+    getAccessToken: (forceRefresh?: boolean) => Promise<string | null>
+  ): Promise<PermissionCatalogResponse> {
+    const response = await authFetch(
+      `${AUTH_API_BASE_URL}/permissions`,
+      {
+        method: 'GET',
+        headers: jsonHeaders,
+      },
+      getAccessToken
+    );
+
+    if (!response.ok) {
+      const message = await parseErrorMessage(response, 'Không thể lấy danh mục phân quyền');
+      throw new Error(message);
+    }
+
+    return response.json();
+  }
+
+  async updateTeacherPermissions(
+    teacherId: string,
+    data: UpdateTeacherPermissionsRequest,
+    getAccessToken: (forceRefresh?: boolean) => Promise<string | null>
+  ): Promise<TeacherSummary> {
+    const response = await authFetch(
+      `${AUTH_API_BASE_URL}/teachers/${teacherId}/permissions`,
+      {
+        method: 'PUT',
+        headers: jsonHeaders,
+        body: JSON.stringify(data),
+      },
+      getAccessToken
+    );
+
+    if (!response.ok) {
+      const message = await parseErrorMessage(response, 'Không thể cập nhật phân quyền giáo viên');
       throw new Error(message);
     }
 

@@ -10,6 +10,8 @@ import { useAuth } from '../context/AuthContext';
 
 const SchoolList = () => {
   const { getAccessToken, user } = useAuth();
+  const isAdmin = user?.role === 'Admin';
+  const canEditAttendanceSpreadsheetId = isAdmin;
   const canDeleteSchool =
     user?.role === 'Admin' || Boolean(user?.permissions?.includes('schools.delete'));
   const [searchParams, setSearchParams] = useSearchParams();
@@ -29,6 +31,7 @@ const SchoolList = () => {
     email: '',
     website: '',
     description: '',
+    attendanceSpreadsheetId: '',
   });
 
   const fetchSchools = useCallback(async () => {
@@ -89,6 +92,7 @@ const SchoolList = () => {
       email: '',
       website: '',
       description: '',
+      attendanceSpreadsheetId: '',
     });
     setShowModal(true);
   };
@@ -103,6 +107,7 @@ const SchoolList = () => {
       email: school.email || '',
       website: school.website || '',
       description: school.description || '',
+      attendanceSpreadsheetId: school.attendanceSpreadsheetId || '',
     });
     setShowModal(true);
   };
@@ -113,10 +118,15 @@ const SchoolList = () => {
     setError('');
 
     try {
+      const payload: CreateSchoolRequest = { ...formData };
+      if (!canEditAttendanceSpreadsheetId) {
+        delete payload.attendanceSpreadsheetId;
+      }
+
       if (editingSchool) {
-        await schoolService.updateSchool(editingSchool.id, formData, getAccessToken);
+        await schoolService.updateSchool(editingSchool.id, payload, getAccessToken);
       } else {
-        await schoolService.createSchool(formData, getAccessToken);
+        await schoolService.createSchool(payload, getAccessToken);
       }
 
       setFormData({
@@ -127,6 +137,7 @@ const SchoolList = () => {
         email: '',
         website: '',
         description: '',
+        attendanceSpreadsheetId: '',
       });
       setEditingSchool(null);
       setShowModal(false);
@@ -198,42 +209,47 @@ const SchoolList = () => {
           )}
 
           <div className="app-card overflow-x-auto">
-            <table className="min-w-[860px] w-full divide-y divide-gray-200">
+            <table className="min-w-[520px] w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">STT</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tên trường</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mã trường</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Địa chỉ</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">SĐT</th>
                   <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Chức năng</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {schools.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                    <td colSpan={3} className="px-6 py-8 text-center text-gray-500">
                       Chưa có trường nào. Hãy thêm trường mới!
                     </td>
                   </tr>
                 ) : (
                   schools.map((sch, index) => (
-                    <tr key={sch.id} className="hover:bg-gray-50">
+                    <tr
+                      key={sch.id}
+                      className="cursor-pointer hover:bg-gray-50 focus-within:bg-blue-50"
+                      onClick={() => handleSelectSchool(sch)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          handleSelectSchool(sch);
+                        }
+                      }}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`Xem lớp học của trường ${sch.name}`}
+                      title="Bấm để xem lớp học"
+                    >
                       <td className="px-6 py-4 text-sm text-gray-900">{index + 1}</td>
                       <td className="px-6 py-4 text-sm text-gray-900">{sch.name}</td>
-                      <td className="px-6 py-4 text-sm text-gray-500">{sch.code || '-'}</td>
-                      <td className="px-6 py-4 text-sm text-gray-500">{sch.address || '-'}</td>
-                      <td className="px-6 py-4 text-sm text-gray-500">{sch.phoneNumber || '-'}</td>
                       <td className="px-6 py-4 text-center">
                         <div className="flex items-center justify-center gap-2">
                           <button
-                            onClick={() => handleSelectSchool(sch)}
-                            className="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 text-sm"
-                          >
-                            Xem lớp học
-                          </button>
-                          <button
-                            onClick={() => handleOpenEditModal(sch)}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              handleOpenEditModal(sch);
+                            }}
                             className="p-1 text-green-600 hover:bg-green-100 rounded"
                             title="Sửa trường"
                           >
@@ -241,7 +257,10 @@ const SchoolList = () => {
                           </button>
                           {canDeleteSchool && (
                             <button
-                              onClick={() => handleDelete(sch.id, sch.name)}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                void handleDelete(sch.id, sch.name);
+                              }}
                               className="p-1 text-red-600 hover:bg-red-100 rounded"
                               title="Xóa trường"
                             >
@@ -307,6 +326,28 @@ const SchoolList = () => {
                       className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       placeholder="VD: THPT-ABC"
                     />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Spreadsheet ID Google Sheet
+                    </label>
+                    <input
+                      type="text"
+                      name="attendanceSpreadsheetId"
+                      value={formData.attendanceSpreadsheetId || ''}
+                      onChange={handleChange}
+                      disabled={!canEditAttendanceSpreadsheetId}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                        canEditAttendanceSpreadsheetId ? '' : 'cursor-not-allowed bg-gray-100 text-gray-500'
+                      }`}
+                      placeholder="Dán SpreadsheetId hoặc URL Google Sheet"
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      {canEditAttendanceSpreadsheetId
+                        ? 'Mỗi trường có 1 Google Sheet riêng. Lớp mới sẽ tự kế thừa từ trường.'
+                        : 'Chỉ Admin mới được thay đổi Spreadsheet ID Google Sheet.'}
+                    </p>
                   </div>
 
                   <div>
@@ -405,6 +446,7 @@ const SchoolList = () => {
               </div>
             </div>
           )}
+
         </>
       ) : (
         <>

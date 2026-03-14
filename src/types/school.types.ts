@@ -8,6 +8,7 @@ export interface School {
     website?: string;
     description?: string;
     logo?: string | null;
+    attendanceSpreadsheetId?: string | null;
     ownerId?: string;
     ownerName?: string | null;
     createdAt?: string;
@@ -21,4 +22,5 @@ export interface CreateSchoolRequest {
     email?: string;
     website?: string;
     description?: string;
+    attendanceSpreadsheetId?: string;
 }
