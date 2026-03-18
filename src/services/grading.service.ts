@@ -97,7 +97,7 @@ export const gradingService = {
     getAccessToken: (forceRefresh?: boolean) => Promise<string | null>,
     meta?: GradingRequestMeta
   ): Promise<GradingResult> {
-    return gradingService.gradeByEndpoint('/grading/project09', studentFile, getAccessToken, meta);
+    return gradingService.gradeByEndpoint('/grading/excel/project09', studentFile, getAccessToken, meta);
   },
 };
 

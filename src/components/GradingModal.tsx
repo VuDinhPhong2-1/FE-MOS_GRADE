@@ -289,6 +289,26 @@ const GradingModal: React.FC<GradingModalProps> = ({
         return isValid;
     };
 
+    const convertAutoScoreToAssignmentScale = (result: GradingResult, assignmentMaxScore?: number): number => {
+        const targetMaxScore =
+            typeof assignmentMaxScore === 'number' && Number.isFinite(assignmentMaxScore) && assignmentMaxScore > 0
+                ? assignmentMaxScore
+                : result.maxScore;
+
+        if (!targetMaxScore || !Number.isFinite(targetMaxScore)) {
+            return Number(result.totalScore.toFixed(2));
+        }
+
+        const pct = typeof result.percentage === 'number' && Number.isFinite(result.percentage)
+            ? result.percentage / 100
+            : result.maxScore > 0
+                ? result.totalScore / result.maxScore
+                : 0;
+
+        const scaledScore = Math.max(0, Math.min(targetMaxScore, targetMaxScore * pct));
+        return Number(scaledScore.toFixed(2));
+    };
+
     const getDroppedFile = (event: React.DragEvent<HTMLElement>): File | null => {
         const files = event.dataTransfer?.files;
         if (!files || files.length === 0) return null;
@@ -802,7 +822,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
         }
         const selectedAssignmentData = assignments.find((a) => a.id === selectedAssignment);
         const gradingEndpoint =
-            selectedAssignmentData?.gradingApiEndpoint || '/grading/project09';
+            selectedAssignmentData?.gradingApiEndpoint || '/grading/excel/project09';
 
         setStudentGradingStates((prev) => {
             const newMap = new Map(prev);
@@ -828,6 +848,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                     studentId,
                 }
             );
+            const scaledAutoScore = convertAutoScoreToAssignmentScale(result, selectedAssignmentData?.maxScore);
 
             setStudentGradingStates((prev) => {
                 const newMap = new Map(prev);
@@ -840,7 +861,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                         gradingResult: result,
                         error: null,
                         // GHI DE DIEM TU DONG VAO MANUAL SCORE
-                        manualScore: result.totalScore,
+                        manualScore: scaledAutoScore,
                         autoGradingErrors: autoErrors,
                     });
                 }
@@ -849,7 +870,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
 
             if (selectedAssignment) {
                 const autoErrors = extractAutoGradingErrors(result);
-                const savedScore = await saveScoreForStudent(studentId, result.totalScore, autoErrors);
+                const savedScore = await saveScoreForStudent(studentId, scaledAutoScore, autoErrors);
                 if (savedScore) {
                     setSinglePersistedScores((prev) => {
                         const next = new Map(prev);
@@ -986,6 +1007,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                     studentId,
                 }
             );
+            const scaledAutoScore = convertAutoScoreToAssignmentScale(result, assignment?.maxScore);
 
             setMultiAutoStates((prev) => {
                 const next = new Map(prev);
@@ -1004,7 +1026,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
             });
 
             const autoErrors = extractAutoGradingErrors(result);
-            handleMultiScoreChange(assignmentId, studentId, result.totalScore, autoErrors);
+            handleMultiScoreChange(assignmentId, studentId, scaledAutoScore, autoErrors);
         } catch (error: unknown) {
             const errorMessage = error instanceof Error ? error.message : 'Lỗi không xác định';
             setMultiAutoStates((prev) => {
@@ -1646,7 +1668,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                             }
                             className="w-full border border-gray-300 rounded-md px-3 py-2"
                             min="0"
-                            max="100"
+                            max="1000"
                             disabled
                             readOnly
                             style={{ backgroundColor: '#f1f5f9' }}
@@ -1829,7 +1851,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                                 className="w-20 border border-gray-300 rounded-md px-2 py-1 text-center bg-gray-50"
                                                 min="0"
                                                 max={selectedAssignmentData?.maxScore || 10}
-                                                step="0.5"
+                                                step="0.01"
                                                 placeholder="0"
                                             />
                                         )}
@@ -2297,7 +2319,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                                             className="w-24 border border-gray-300 rounded-md px-2 py-1 text-center bg-gray-50"
                                                             min="0"
                                                             max={assignment.maxScore}
-                                                            step="0.5"
+                                                            step="0.01"
                                                             placeholder="0"
                                                         />
                                                         {assignment.gradingType === 'auto' && (
@@ -2497,7 +2519,8 @@ const GradingModal: React.FC<GradingModalProps> = ({
                             value={assignmentEditForm.maxScore ?? 10}
                             onChange={(e) => setAssignmentEditForm((prev) => ({ ...prev, maxScore: Number(e.target.value) }))}
                             min={0}
-                            max={100}
+                            max={1000}
+                            step={0.01}
                             className="rounded-md border border-gray-300 px-3 py-2 text-sm"
                             placeholder="Điểm tối đa"
                         />

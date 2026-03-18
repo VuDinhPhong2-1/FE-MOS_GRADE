@@ -44,4 +44,11 @@ export interface GradingEndpointInfo {
   displayName: string;
   description: string;
   maxScore: number;
+  rawMaxScore?: number;
+  subject?: string;
+  practiceCode?: string;
+  practiceName?: string;
+  practiceTotalScore?: number;
+  practiceProjectCount?: number;
+  apiPath?: string;
 }

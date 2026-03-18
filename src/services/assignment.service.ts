@@ -10,61 +10,61 @@ import { authFetch } from './auth-fetch';
 
 const jsonHeaders = { 'Content-Type': 'application/json' };
 
+const PRACTICE_TOTAL_SCORE = 1000;
+const PRACTICE_PROJECT_COUNT: Record<string, number> = {
+  practice01: 8,
+  practice02: 9,
+  practice03: 17,
+};
+
+const getPracticeCodeByProject = (projectNumber: number): string => {
+  if (projectNumber >= 1 && projectNumber <= 8) return 'practice01';
+  if (projectNumber >= 9 && projectNumber <= 16) return 'practice02';
+  return 'practice03';
+};
+
+const getPracticeScoreByProject = (projectNumber: number): number => {
+  const practiceCode = getPracticeCodeByProject(projectNumber);
+  const count = PRACTICE_PROJECT_COUNT[practiceCode] || 1;
+  return Number((PRACTICE_TOTAL_SCORE / count).toFixed(2));
+};
+
+const createFallbackExcelEndpoint = (
+  projectNumber: number,
+  description: string,
+  rawMaxScore: number
+): GradingEndpointInfo => {
+  const practiceCode = getPracticeCodeByProject(projectNumber);
+  const practiceName = practiceCode.replace('practice', 'Practice ');
+  const maxScore = getPracticeScoreByProject(projectNumber);
+
+  return {
+    endpoint: `excel/project${String(projectNumber).padStart(2, '0')}`,
+    displayName: `Project ${String(projectNumber).padStart(2, '0')} - Excel`,
+    description: `${description}. Quy đổi theo ${practiceName}: ${maxScore}/${PRACTICE_TOTAL_SCORE} điểm.`,
+    maxScore,
+    rawMaxScore,
+    subject: 'excel',
+    practiceCode,
+    practiceName,
+    practiceTotalScore: PRACTICE_TOTAL_SCORE,
+    practiceProjectCount: PRACTICE_PROJECT_COUNT[practiceCode],
+    apiPath: `/api/grading/excel/project${String(projectNumber).padStart(2, '0')}`,
+  };
+};
+
 const fallbackGradingEndpoints: GradingEndpointInfo[] = [
-  {
-    endpoint: 'project01',
-    displayName: 'Dự án 01',
-    description: 'Chấm điểm dự án 01',
-    maxScore: 20,
-  },
-  {
-    endpoint: 'project02',
-    displayName: 'Dự án 02',
-    description: 'Chấm điểm dự án 02',
-    maxScore: 28,
-  },
-  {
-    endpoint: 'project03',
-    displayName: 'Dự án 03',
-    description: 'Chấm điểm dự án 03 (câu 1-5 tự động, câu 6 thủ công)',
-    maxScore: 20,
-  },
-  {
-    endpoint: 'project04',
-    displayName: 'Dự án 04',
-    description: 'Chấm điểm dự án 04',
-    maxScore: 28,
-  },
-  {
-    endpoint: 'project05',
-    displayName: 'Dự án 05',
-    description: 'Chấm điểm dự án 05',
-    maxScore: 24,
-  },
-  {
-    endpoint: 'project06',
-    displayName: 'Dự án 06',
-    description: 'Chấm điểm dự án 06',
-    maxScore: 24,
-  },
-  {
-    endpoint: 'project07',
-    displayName: 'Dự án 07',
-    description: 'Chấm điểm dự án 07',
-    maxScore: 24,
-  },
-  {
-    endpoint: 'project08',
-    displayName: 'Dự án 08',
-    description: 'Chấm điểm dự án 08',
-    maxScore: 24,
-  },
-  {
-    endpoint: 'project09',
-    displayName: 'Dự án 09',
-    description: 'Chấm điểm dự án 09',
-    maxScore: 32,
-  },
+  createFallbackExcelEndpoint(1, 'Chấm điểm dự án 01', 20),
+  createFallbackExcelEndpoint(2, 'Chấm điểm dự án 02', 28),
+  createFallbackExcelEndpoint(3, 'Chấm điểm dự án 03 (câu 1-5 tự động, câu 6 thủ công)', 20),
+  createFallbackExcelEndpoint(4, 'Chấm điểm dự án 04', 28),
+  createFallbackExcelEndpoint(5, 'Chấm điểm dự án 05', 24),
+  createFallbackExcelEndpoint(6, 'Chấm điểm dự án 06', 24),
+  createFallbackExcelEndpoint(7, 'Chấm điểm dự án 07', 24),
+  createFallbackExcelEndpoint(8, 'Chấm điểm dự án 08', 24),
+  createFallbackExcelEndpoint(9, 'Chấm điểm dự án 09', 32),
+  createFallbackExcelEndpoint(10, 'Chấm điểm dự án 10', 24),
+  createFallbackExcelEndpoint(11, 'Chấm điểm dự án 11', 24),
 ];
 
 const mergeEndpointFallback = (items: GradingEndpointInfo[]): GradingEndpointInfo[] => {
@@ -87,6 +87,30 @@ const mergeEndpointFallback = (items: GradingEndpointInfo[]): GradingEndpointInf
   );
 };
 
+const normalizeProjectEndpoint = (endpoint?: string): string | undefined => {
+  if (!endpoint) return endpoint;
+
+  let normalized = endpoint.trim().replace(/\\/g, '/').replace(/^\/+/, '');
+  normalized = normalized.replace(/^api\/grading\//i, '').replace(/^grading\//i, '');
+
+  const projectMatch = normalized.match(/^project(\d{1,2})$/i);
+  if (projectMatch) {
+    return `excel/project${projectMatch[1].padStart(2, '0')}`;
+  }
+
+  const excelMatch = normalized.match(/^excel\/project(\d{1,2})$/i);
+  if (excelMatch) {
+    return `excel/project${excelMatch[1].padStart(2, '0')}`;
+  }
+
+  return normalized;
+};
+
+const normalizeAssignmentEndpoint = <T extends Assignment>(assignment: T): T => ({
+  ...assignment,
+  gradingApiEndpoint: normalizeProjectEndpoint(assignment.gradingApiEndpoint),
+});
+
 export const assignmentService = {
   async getByClass(
     classId: string,
@@ -104,7 +128,8 @@ export const assignmentService = {
       throw new Error('Không thể lấy danh sách bài tập');
     }
 
-    return response.json();
+    const data = (await response.json()) as Assignment[];
+    return data.map(normalizeAssignmentEndpoint);
   },
 
   async getByClassWithStats(
@@ -121,7 +146,8 @@ export const assignmentService = {
       throw new Error('Không thể lấy danh sách bài tập kèm thống kê');
     }
 
-    return response.json();
+    const data = (await response.json()) as AssignmentWithStats[];
+    return data.map((item) => normalizeAssignmentEndpoint(item as AssignmentWithStats));
   },
 
   async getById(
@@ -138,16 +164,17 @@ export const assignmentService = {
       throw new Error('Không thể lấy thông tin bài tập');
     }
 
-    return response.json();
+    const data = (await response.json()) as Assignment;
+    return normalizeAssignmentEndpoint(data);
   },
 
   async create(
-    data: CreateAssignmentRequest,
+    payload: CreateAssignmentRequest,
     getAccessToken: (forceRefresh?: boolean) => Promise<string | null>
   ): Promise<Assignment> {
     const response = await authFetch(
       `${API_BASE_URL}/assignment`,
-      { method: 'POST', headers: jsonHeaders, body: JSON.stringify(data) },
+      { method: 'POST', headers: jsonHeaders, body: JSON.stringify(payload) },
       getAccessToken
     );
 
@@ -156,17 +183,18 @@ export const assignmentService = {
       throw new Error(errorData?.message || 'Không thể tạo bài tập');
     }
 
-    return response.json();
+    const assignment = (await response.json()) as Assignment;
+    return normalizeAssignmentEndpoint(assignment);
   },
 
   async update(
     id: string,
-    data: UpdateAssignmentRequest,
+    payload: UpdateAssignmentRequest,
     getAccessToken: (forceRefresh?: boolean) => Promise<string | null>
   ): Promise<Assignment> {
     const response = await authFetch(
       `${API_BASE_URL}/assignment/${id}`,
-      { method: 'PUT', headers: jsonHeaders, body: JSON.stringify(data) },
+      { method: 'PUT', headers: jsonHeaders, body: JSON.stringify(payload) },
       getAccessToken
     );
 
@@ -175,7 +203,8 @@ export const assignmentService = {
       throw new Error(errorData?.message || 'Không thể cập nhật bài tập');
     }
 
-    return response.json();
+    const assignment = (await response.json()) as Assignment;
+    return normalizeAssignmentEndpoint(assignment);
   },
 
   async delete(
@@ -208,7 +237,11 @@ export const assignmentService = {
       }
 
       const data = (await response.json()) as GradingEndpointInfo[];
-      return mergeEndpointFallback(data || []);
+      const normalized = (data || []).map((item) => ({
+        ...item,
+        endpoint: normalizeProjectEndpoint(item.endpoint) || item.endpoint,
+      }));
+      return mergeEndpointFallback(normalized);
     } catch {
       return fallbackGradingEndpoints;
     }

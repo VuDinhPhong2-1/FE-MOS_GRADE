@@ -7,7 +7,7 @@ import { useAuth } from '../context/AuthContext';
 
 const GradingView = () => {
   const { getAccessToken } = useAuth();
-  const [projectCode, setProjectCode] = useState('project09');
+  const [projectCode, setProjectCode] = useState('excel/project09');
   const [studentFile, setStudentFile] = useState<File | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -69,15 +69,15 @@ const GradingView = () => {
               onChange={(e) => setProjectCode(e.target.value)}
               className="w-full p-2 border border-gray-300 rounded-md bg-gray-50"
             >
-              <option value="project09">Dự án 09 - Báo cáo bán hàng và đơn hàng</option>
-              <option value="project08">Dự án 08 - Book Sales</option>
-              <option value="project07">Dự án 07 - Tea Sales Report</option>
-              <option value="project06">Dự án 06 - Sale Summary</option>
-              <option value="project05">Dự án 05 - Book Purchases</option>
-              <option value="project04">Dự án 04 - Lịch học lớp</option>
-              <option value="project03">Dự án 03 - Công thức Munson</option>
-              <option value="project02">Dự án 02 - Hợp đồng bảo hiểm</option>
-              <option value="project01">Dự án 01</option>
+              <option value="excel/project09">Dự án 09 - Báo cáo bán hàng và đơn hàng</option>
+              <option value="excel/project08">Dự án 08 - Book Sales</option>
+              <option value="excel/project07">Dự án 07 - Tea Sales Report</option>
+              <option value="excel/project06">Dự án 06 - Sale Summary</option>
+              <option value="excel/project05">Dự án 05 - Book Purchases</option>
+              <option value="excel/project04">Dự án 04 - Lịch học lớp</option>
+              <option value="excel/project03">Dự án 03 - Công thức Munson</option>
+              <option value="excel/project02">Dự án 02 - Hợp đồng bảo hiểm</option>
+              <option value="excel/project01">Dự án 01</option>
             </select>
           </div>
 
