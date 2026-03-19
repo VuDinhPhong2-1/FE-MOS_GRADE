@@ -1,5 +1,5 @@
 ﻿import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
-import { CalendarClock, GraduationCap, LayoutDashboard, ShieldCheck } from 'lucide-react';
+import { CalendarClock, FlaskConical, GraduationCap, LayoutDashboard, ShieldCheck } from 'lucide-react';
 import Layout from './components/Layout/Layout';
 import GradingView from './pages/GradingView';
 import Dashboard from './pages/Dashboard';
@@ -26,6 +26,7 @@ const AppLayout: React.FC = () => {
     { id: 'dashboard', label: 'Trang chủ', icon: LayoutDashboard, path: '/dashboard' },
     { id: 'schools', label: 'Quản lý trường', icon: GraduationCap, path: '/schools' },
     { id: 'schedule', label: 'Lịch dạy', icon: CalendarClock, path: '/schedule' },
+    { id: 'grading-test', label: 'Test chấm điểm', icon: FlaskConical, path: '/grading' },
   ];
 
   if (user?.role === 'Admin') {

@@ -9,6 +9,12 @@ interface GradingRequestMeta {
   studentId: string;
 }
 
+interface GradingTestProject {
+  code: string;
+  endpoint: string;
+  displayName: string;
+}
+
 const buildGradingUrl = (gradingEndpoint: string): string => {
   const raw = gradingEndpoint.trim();
   if (!raw) {
@@ -37,6 +43,40 @@ const buildGradingUrl = (gradingEndpoint: string): string => {
 
   const normalized = raw.replace(/^\/+/, '');
   return `${API_BASE_URL}/grading/${normalized}`;
+};
+
+const normalizeProjectCode = (projectCode: string): string => {
+  const raw = projectCode.trim();
+  if (!raw) {
+    throw new Error('Mã project đang trống');
+  }
+
+  let normalized = raw
+    .replace(/\\/g, '/')
+    .replace(/^\/+|\/+$/g, '')
+    .toLowerCase();
+
+  if (normalized.startsWith('api/grading/')) {
+    normalized = normalized.slice('api/grading/'.length);
+  } else if (normalized.startsWith('grading/')) {
+    normalized = normalized.slice('grading/'.length);
+  }
+
+  if (normalized.startsWith('excel/')) {
+    normalized = normalized.slice('excel/'.length);
+  }
+
+  const match = normalized.match(/^project(\d{1,2})$/);
+  if (!match) {
+    throw new Error('Mã project không hợp lệ');
+  }
+
+  const projectNumber = Number.parseInt(match[1], 10);
+  if (!Number.isFinite(projectNumber) || projectNumber < 1) {
+    throw new Error('Mã project không hợp lệ');
+  }
+
+  return `project${projectNumber.toString().padStart(2, '0')}`;
 };
 
 const parseErrorMessage = async (response: Response): Promise<string> => {
@@ -98,6 +138,47 @@ export const gradingService = {
     meta?: GradingRequestMeta
   ): Promise<GradingResult> {
     return gradingService.gradeByEndpoint('/grading/excel/project09', studentFile, getAccessToken, meta);
+  },
+
+  async gradeForTesting(
+    projectCode: string,
+    studentFile: File,
+    getAccessToken: (forceRefresh?: boolean) => Promise<string | null>
+  ): Promise<GradingResult> {
+    const normalizedProjectCode = normalizeProjectCode(projectCode);
+    const formData = new FormData();
+    formData.append('studentFile', studentFile);
+
+    const response = await authFetch(
+      `${API_BASE_URL}/grading-test/excel/${normalizedProjectCode}`,
+      {
+        method: 'POST',
+        body: formData,
+      },
+      getAccessToken
+    );
+
+    if (!response.ok) {
+      throw new Error(await parseErrorMessage(response));
+    }
+
+    return response.json();
+  },
+
+  async getTestingProjects(
+    getAccessToken: (forceRefresh?: boolean) => Promise<string | null>
+  ): Promise<GradingTestProject[]> {
+    const response = await authFetch(
+      `${API_BASE_URL}/grading-test/projects`,
+      { method: 'GET' },
+      getAccessToken
+    );
+
+    if (!response.ok) {
+      throw new Error(await parseErrorMessage(response));
+    }
+
+    return response.json();
   },
 };
 
