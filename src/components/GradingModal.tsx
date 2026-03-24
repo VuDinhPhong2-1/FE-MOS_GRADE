@@ -57,6 +57,14 @@ interface MultiUndoSnapshot {
     previousScoreState: MultiScoreCellValue;
 }
 
+const PRACTICE_OPTIONS = [
+    { code: 'practice01', label: 'Practice 01' },
+    { code: 'practice02', label: 'Practice 02' },
+    { code: 'practice03', label: 'Practice 03' },
+] as const;
+
+type PracticeCode = typeof PRACTICE_OPTIONS[number]['code'];
+
 const GradingModal: React.FC<GradingModalProps> = ({
     isOpen,
     onClose,
@@ -110,6 +118,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
         maxScore: 10,
         gradingType: 'auto',
     });
+    const [newAssignmentPracticeCode, setNewAssignmentPracticeCode] = useState<PracticeCode>('practice01');
     const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null);
     const [assignmentSubmitLoading, setAssignmentSubmitLoading] = useState(false);
     const [assignmentEditForm, setAssignmentEditForm] = useState<UpdateAssignmentRequest>({
@@ -166,6 +175,20 @@ const GradingModal: React.FC<GradingModalProps> = ({
         () => activeAssignments.filter((assignment) => assignment.gradingType === 'auto'),
         [activeAssignments]
     );
+    const excelGradingEndpoints = useMemo(
+        () =>
+            gradingEndpoints.filter(
+                (endpoint) => (endpoint.subject || '').toLowerCase() === 'excel' || !endpoint.subject
+            ),
+        [gradingEndpoints]
+    );
+    const newAssignmentPracticeEndpoints = useMemo(
+        () =>
+            excelGradingEndpoints.filter(
+                (endpoint) => (endpoint.practiceCode || '').toLowerCase() === newAssignmentPracticeCode
+            ),
+        [excelGradingEndpoints, newAssignmentPracticeCode]
+    );
     const hasPendingMultiAssignmentSelectionChanges = useMemo(() => {
         if (multiAssignmentDraftIds.length !== multiAssignmentIds.length) {
             return true;
@@ -203,20 +226,60 @@ const GradingModal: React.FC<GradingModalProps> = ({
         }
     }, [activeAutoAssignments, selectedAssignment]);
     useEffect(() => {
-        // Neu dang o che do AUTO va gradingApiEndpoint da duoc chon
-        if (newAssignment.gradingApiEndpoint) {
-            const selectedProject = gradingEndpoints.find(
-                ep => ep.endpoint === newAssignment.gradingApiEndpoint
-            );
-            // Neu tim thay project, tu dong set maxScore va khong cho user sua
-            if (selectedProject) {
-                setNewAssignment(prev => ({
-                    ...prev,
-                    maxScore: selectedProject.maxScore
-                }));
-            }
+        if (!isOpen || chooseMode !== 'new') {
+            return;
         }
-    }, [newAssignment.gradingApiEndpoint, gradingEndpoints]);
+
+        setNewAssignment((prev) => {
+            const currentEndpoint = prev.gradingApiEndpoint || '';
+            const selectedInPractice = newAssignmentPracticeEndpoints.find(
+                (endpoint) => endpoint.endpoint === currentEndpoint
+            );
+
+            if (selectedInPractice) {
+                const nextMaxScore = selectedInPractice.maxScore;
+                if (Object.is(prev.maxScore, nextMaxScore)) {
+                    return prev;
+                }
+
+                return {
+                    ...prev,
+                    maxScore: nextMaxScore,
+                };
+            }
+
+            const firstEndpoint = newAssignmentPracticeEndpoints[0];
+            if (!firstEndpoint) {
+                if (!prev.gradingApiEndpoint && Object.is(prev.maxScore, 10)) {
+                    return prev;
+                }
+
+                return {
+                    ...prev,
+                    gradingApiEndpoint: '',
+                    maxScore: 10,
+                };
+            }
+
+            const nextName = prev.name.trim() ? prev.name : firstEndpoint.displayName;
+            if (
+                prev.gradingType === 'auto' &&
+                prev.gradingApiEndpoint === firstEndpoint.endpoint &&
+                Object.is(prev.maxScore, firstEndpoint.maxScore) &&
+                prev.name === nextName
+            ) {
+                return prev;
+            }
+
+            return {
+                ...prev,
+                gradingType: 'auto',
+                gradingApiEndpoint: firstEndpoint.endpoint,
+                maxScore: firstEndpoint.maxScore,
+                name: nextName,
+            };
+        });
+    }, [isOpen, chooseMode, newAssignmentPracticeEndpoints]);
 
     // ============ HELPER FUNCTIONS ============
     const resetModalState = () => {
@@ -246,6 +309,14 @@ const GradingModal: React.FC<GradingModalProps> = ({
         rowRefs.current.clear();
         setEditingAssignment(null);
         setAssignmentSubmitLoading(false);
+        setNewAssignment({
+            name: '',
+            classId: classId,
+            maxScore: 10,
+            gradingType: 'auto',
+            gradingApiEndpoint: '',
+        });
+        setNewAssignmentPracticeCode('practice01');
         setAssignmentEditForm({
             name: '',
             description: '',
@@ -1379,7 +1450,9 @@ const GradingModal: React.FC<GradingModalProps> = ({
                 classId: classId,
                 maxScore: 10,
                 gradingType: 'auto',
+                gradingApiEndpoint: '',
             });
+            setNewAssignmentPracticeCode('practice01');
             alert('Tạo bài tập thanh cong!');
         } catch (error) {
             console.error('Lỗi khi tạo bài tập:', error);
@@ -1681,28 +1754,88 @@ const GradingModal: React.FC<GradingModalProps> = ({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-3">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Chọn dự án *
+                            Chọn Practice *
+                        </label>
+                        <select
+                            value={newAssignmentPracticeCode}
+                            onChange={(e) => {
+                                const nextPracticeCode = e.target.value as PracticeCode;
+                                setNewAssignmentPracticeCode(nextPracticeCode);
+
+                                const nextPracticeEndpoints = excelGradingEndpoints.filter(
+                                    (endpoint) => (endpoint.practiceCode || '').toLowerCase() === nextPracticeCode
+                                );
+
+                                setNewAssignment((prev) => {
+                                    const selectedInNextPractice = nextPracticeEndpoints.some(
+                                        (endpoint) => endpoint.endpoint === (prev.gradingApiEndpoint || '')
+                                    );
+                                    if (selectedInNextPractice) {
+                                        return prev;
+                                    }
+
+                                    const firstEndpoint = nextPracticeEndpoints[0];
+                                    if (!firstEndpoint) {
+                                        if (!prev.gradingApiEndpoint && Object.is(prev.maxScore, 10)) {
+                                            return prev;
+                                        }
+
+                                        return {
+                                            ...prev,
+                                            gradingApiEndpoint: '',
+                                            maxScore: 10,
+                                        };
+                                    }
+
+                                    const nextName = prev.name.trim() ? prev.name : firstEndpoint.displayName;
+                                    return {
+                                        ...prev,
+                                        gradingType: 'auto',
+                                        gradingApiEndpoint: firstEndpoint.endpoint,
+                                        maxScore: firstEndpoint.maxScore,
+                                        name: nextName,
+                                    };
+                                });
+                            }}
+                            className="w-full border border-gray-300 rounded-md px-3 py-2"
+                        >
+                            {PRACTICE_OPTIONS.map((practice) => (
+                                <option key={practice.code} value={practice.code}>
+                                    {practice.label}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Chọn Project *
                         </label>
                         <select
                             value={newAssignment.gradingApiEndpoint || ''}
                             onChange={e => {
-                                const selectedEp = gradingEndpoints.find(ep => ep.endpoint === e.target.value);
+                                const selectedEp = newAssignmentPracticeEndpoints.find(ep => ep.endpoint === e.target.value);
                                 setNewAssignment(prev => ({
                                     ...prev,
                                     gradingType: 'auto',
                                     gradingApiEndpoint: e.target.value,
-                                    maxScore: selectedEp ? selectedEp.maxScore : 10
+                                    maxScore: selectedEp ? selectedEp.maxScore : 10,
+                                    name: prev.name.trim() ? prev.name : selectedEp?.displayName || prev.name,
                                 }));
                             }}
                             className="w-full border border-gray-300 rounded-md px-3 py-2"
+                            disabled={newAssignmentPracticeEndpoints.length === 0}
                         >
                             <option value="">-- Chọn dự án --</option>
-                            {gradingEndpoints.map(ep => (
+                            {newAssignmentPracticeEndpoints.map(ep => (
                                 <option key={ep.endpoint} value={ep.endpoint}>
                                     {ep.displayName}
                                 </option>
                             ))}
                         </select>
+                        {newAssignmentPracticeEndpoints.length === 0 && (
+                            <span className="text-xs text-amber-700">Practice này chưa có Project khả dụng để chấm tự động.</span>
+                        )}
                     </div>
                 </div>
 

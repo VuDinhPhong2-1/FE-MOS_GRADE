@@ -13,8 +13,8 @@ const jsonHeaders = { 'Content-Type': 'application/json' };
 const PRACTICE_TOTAL_SCORE = 1000;
 const PRACTICE_PROJECT_COUNT: Record<string, number> = {
   practice01: 8,
-  practice02: 9,
-  practice03: 17,
+  practice02: 8,
+  practice03: 8,
 };
 
 const getPracticeCodeByProject = (projectNumber: number): string => {

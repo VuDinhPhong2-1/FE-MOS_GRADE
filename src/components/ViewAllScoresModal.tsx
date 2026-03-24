@@ -11,6 +11,13 @@ type CompetencyLevel = '' | 'A' | 'B' | 'C' | 'D';
 type AssignmentColumnDisplayMode = 'full' | 'compact' | 'hidden';
 type ScoreTableSortKey = 'none' | 'name' | 'classification';
 type ScoreTableSortDirection = 'asc' | 'desc';
+type PracticeCode = 'practice01' | 'practice02' | 'practice03';
+
+interface PracticeSummary {
+  completedAssignments: number;
+  completionText: string;
+  totalScore: number;
+}
 
 interface DisplayStudentRow {
   id: string;
@@ -23,6 +30,7 @@ interface DisplayStudentRow {
   totalScore: number;
   totalPercentage: number;
   classification: CompetencyLevel;
+  practiceSummaries: Record<PracticeCode, PracticeSummary>;
 }
 
 interface ViewAllScoresModalProps {
@@ -82,6 +90,40 @@ const classificationSortOrder: Record<CompetencyLevel, number> = {
   C: 2,
   D: 3,
   '': 4,
+};
+
+const PRACTICE_MAX_SCORE = 1000;
+const PRACTICE_COMPLETION_TARGET = 8;
+const PRACTICE_COLUMNS: Array<{ code: PracticeCode; shortLabel: string; title: string }> = [
+  { code: 'practice01', shortLabel: 'P01', title: 'Practice 01' },
+  { code: 'practice02', shortLabel: 'P02', title: 'Practice 02' },
+  { code: 'practice03', shortLabel: 'P03', title: 'Practice 03' },
+];
+
+const extractProjectNumberFromEndpoint = (endpoint?: string): number | null => {
+  if (!endpoint) return null;
+
+  let normalized = endpoint.trim().replace(/\\/g, '/').replace(/^\/+/, '');
+  normalized = normalized.replace(/^api\/grading\//i, '').replace(/^grading\//i, '');
+
+  const directProjectMatch = normalized.match(/^project(\d{1,2})$/i);
+  if (directProjectMatch) {
+    return Number.parseInt(directProjectMatch[1], 10);
+  }
+
+  const subjectProjectMatch = normalized.match(/^(excel|word|ppt|powerpoint)\/project(\d{1,2})$/i);
+  if (subjectProjectMatch) {
+    return Number.parseInt(subjectProjectMatch[2], 10);
+  }
+
+  return null;
+};
+
+const resolvePracticeByProjectNumber = (projectNumber: number): PracticeCode | null => {
+  if (projectNumber >= 1 && projectNumber <= 8) return 'practice01';
+  if (projectNumber >= 9 && projectNumber <= 16) return 'practice02';
+  if (projectNumber >= 17 && projectNumber <= 24) return 'practice03';
+  return null;
 };
 
 const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
@@ -179,7 +221,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
     [displayedAssignments, columnDisplayByAssignmentId]
   );
 
-  const staticColumnCount = isClassificationColumnVisible ? 8 : 7;
+  const staticColumnCount = isClassificationColumnVisible ? 11 : 10;
 
   const areAllAssignmentsVisible = useMemo(
     () =>
@@ -215,6 +257,11 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 
       let totalScore = 0;
       let completedAssignments = 0;
+      const practiceProjectScores: Record<PracticeCode, Map<number, { hasScore: boolean; score: number }>> = {
+        practice01: new Map(),
+        practice02: new Map(),
+        practice03: new Map(),
+      };
       const calculatedScores: Record<string, number> = {};
       const errorsByAssignment: Record<string, string[]> = {};
 
@@ -227,6 +274,22 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
         }
         calculatedScores[assignment.id] = score;
         totalScore += score;
+
+        const projectNumber = extractProjectNumberFromEndpoint(assignment.gradingApiEndpoint);
+        const practiceCode = projectNumber ? resolvePracticeByProjectNumber(projectNumber) : null;
+        if (projectNumber && practiceCode) {
+          const current = practiceProjectScores[practiceCode].get(projectNumber) ?? {
+            hasScore: false,
+            score: 0,
+          };
+
+          if (typeof scoreObj?.scoreValue === 'number') {
+            current.hasScore = true;
+            current.score = Math.max(current.score, scoreObj.scoreValue);
+          }
+
+          practiceProjectScores[practiceCode].set(projectNumber, current);
+        }
 
         const assignmentErrors: string[] = [];
         const seenErrors = new Set<string>();
@@ -246,6 +309,29 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
         mapValue !== undefined ? mapValue : normalizeClassification(student.competencyLevel);
       const totalPercentage =
         maxScoreTotal > 0 ? Math.round((totalScore / maxScoreTotal) * 10000) / 100 : 0;
+      const practiceSummaries = PRACTICE_COLUMNS.reduce(
+        (acc, practice) => {
+          const items = Array.from(practiceProjectScores[practice.code].values());
+          const completed = Math.min(
+            PRACTICE_COMPLETION_TARGET,
+            items.filter((item) => item.hasScore).length
+          );
+          const totalPracticeScore = items.reduce(
+            (sum, item) => sum + (item.hasScore ? item.score : 0),
+            0
+          );
+          const normalizedPracticeScore = Math.max(0, Math.min(PRACTICE_MAX_SCORE, totalPracticeScore));
+
+          acc[practice.code] = {
+            completedAssignments: completed,
+            completionText: `${completed}/${PRACTICE_COMPLETION_TARGET}`,
+            totalScore: normalizedPracticeScore,
+          };
+
+          return acc;
+        },
+        {} as Record<PracticeCode, PracticeSummary>
+      );
 
       return {
         id: student.id,
@@ -258,6 +344,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
         totalScore,
         totalPercentage,
         classification,
+        practiceSummaries,
       };
     });
   }, [isOpen, students, assignments, scoreLookup, classificationByStudentId, notesByStudentId, maxScoreTotal]);
@@ -304,6 +391,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
       'Tên',
       ...assignments.map((assignment) => `${assignment.name} (tối đa ${assignment.maxScore})`),
       'Xếp loại',
+      ...PRACTICE_COLUMNS.map((practice) => `${practice.title} - Số bài`),
       'Tổng số bài',
       'Tổng điểm',
       'Tỷ lệ đạt',
@@ -325,6 +413,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
           return `${formatScore(score)} (${errors.length} lỗi)`;
         }),
         row.classification,
+        ...PRACTICE_COLUMNS.map((practice) => row.practiceSummaries[practice.code].completionText),
         `${row.completedAssignments}/${assignments.length}`,
         `${formatScore(row.totalScore)}/${formatScore(maxScoreTotal)}`,
         `${formatScore(row.totalPercentage)}%`,
@@ -389,7 +478,8 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 
   const handleExportExcel = () => {
     const assignmentColumnWidths = assignments.map(() => 18);
-    const colWidths = [6, 24, 14, ...assignmentColumnWidths, 12, 12, 16, 12, 34];
+    const practiceColumnWidths = PRACTICE_COLUMNS.map(() => 16);
+    const colWidths = [6, 24, 14, ...assignmentColumnWidths, 12, ...practiceColumnWidths, 12, 16, 12, 34];
     const extraSheets = [
       {
         sheetName: 'ThongKeXepLoai',
@@ -688,7 +778,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
               Bảng điểm lớp {titleClassName}
             </div>
             <div className="max-h-[58vh] overflow-auto">
-              <table className="w-full min-w-[1120px] border-separate border-spacing-0 text-sm text-slate-700">
+              <table className="w-full min-w-[1680px] border-separate border-spacing-0 text-sm text-slate-700">
                 <thead className="sticky top-0 z-20">
                 <tr className="border-b border-slate-200 bg-slate-100">
                   <th className="sticky left-0 top-0 z-30 w-[70px] min-w-[70px] border-r border-slate-200 bg-slate-100 px-3 py-3 text-center font-semibold text-slate-700">
@@ -722,6 +812,14 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
                       Xếp loại
                     </th>
                   )}
+                  {PRACTICE_COLUMNS.map((practice) => (
+                    <th
+                      key={`${practice.code}-completion`}
+                      className="min-w-[120px] bg-emerald-50 px-4 py-3 text-center font-semibold text-emerald-800"
+                    >
+                      {practice.shortLabel} số bài
+                    </th>
+                  ))}
                   <th className="min-w-[120px] bg-amber-50 px-4 py-3 text-center font-semibold text-amber-800">
                     Tổng số bài
                   </th>
@@ -823,6 +921,16 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
                           </div>
                         </td>
                       )}
+
+                      {PRACTICE_COLUMNS.map((practice) => (
+                        <td
+                          key={`${row.id}-${practice.code}-completion`}
+                          className="bg-emerald-50 px-4 py-3 text-center font-semibold text-emerald-800"
+                          title={`${practice.title}: ${formatScore(row.practiceSummaries[practice.code].totalScore)}/${PRACTICE_MAX_SCORE} điểm`}
+                        >
+                          {row.practiceSummaries[practice.code].completionText}
+                        </td>
+                      ))}
 
                       <td className="bg-amber-50 px-4 py-3 text-center font-semibold text-amber-800">
                         {row.completedAssignments}/{assignments.length}

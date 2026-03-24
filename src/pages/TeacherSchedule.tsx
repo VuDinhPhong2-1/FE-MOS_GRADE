@@ -478,6 +478,7 @@ const TeacherSchedule = () => {
   const [roomForm, setRoomForm] = useState<ComputerRoomFormState>(createDefaultRoomForm());
   const [loading, setLoading] = useState(false);
   const [copying, setCopying] = useState(false);
+  const [selectedScheduleIds, setSelectedScheduleIds] = useState<string[]>([]);
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<ScheduleItem | null>(null);
   const [form, setForm] = useState<ScheduleFormState>(createDefaultForm(weekStart));
@@ -672,6 +673,14 @@ const TeacherSchedule = () => {
     });
   }, [attendanceData, attendanceDraft]);
 
+  const selectedSchedules = useMemo(() => {
+    if (selectedScheduleIds.length === 0) return [];
+    const selectedIdSet = new Set(selectedScheduleIds);
+    return schedules.filter((item) => selectedIdSet.has(item.id));
+  }, [schedules, selectedScheduleIds]);
+
+  const areAllSchedulesSelected = schedules.length > 0 && selectedScheduleIds.length === schedules.length;
+
   const loadSchedules = async () => {
     try {
       setLoading(true);
@@ -762,6 +771,15 @@ const TeacherSchedule = () => {
     void loadSchedules();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [weekStart]);
+
+  useEffect(() => {
+    setSelectedScheduleIds((prev) => {
+      if (prev.length === 0) return prev;
+      const validIds = new Set(schedules.map((item) => item.id));
+      const filtered = prev.filter((id) => validIds.has(id));
+      return filtered.length === prev.length ? prev : filtered;
+    });
+  }, [schedules]);
 
   useEffect(() => {
     if (!formOpen || editing || form.schoolId || schools.length !== 1) return;
@@ -996,6 +1014,23 @@ const TeacherSchedule = () => {
     }
   };
 
+  const toggleScheduleSelection = (scheduleId: string) => {
+    setSelectedScheduleIds((prev) => {
+      if (prev.includes(scheduleId)) {
+        return prev.filter((id) => id !== scheduleId);
+      }
+      return [...prev, scheduleId];
+    });
+  };
+
+  const toggleSelectAllSchedules = () => {
+    if (areAllSchedulesSelected) {
+      setSelectedScheduleIds([]);
+      return;
+    }
+    setSelectedScheduleIds(schedules.map((item) => item.id));
+  };
+
   const handleDelete = async (item: ScheduleItem) => {
     const confirmed = window.confirm(`Xóa lịch "${item.subject} - ${item.className}"?`);
     if (!confirmed) return;
@@ -1008,21 +1043,48 @@ const TeacherSchedule = () => {
     }
   };
 
+  const handleDeleteSelected = async () => {
+    if (selectedSchedules.length === 0) {
+      notify.info('Vui lòng chọn ít nhất 1 lịch để xóa.');
+      return;
+    }
+
+    const confirmed = window.confirm(`Xóa ${selectedSchedules.length} lịch đã chọn?`);
+    if (!confirmed) return;
+
+    const results = await Promise.allSettled(
+      selectedSchedules.map((item) => scheduleService.delete(item.id, getAccessToken))
+    );
+    const deleted = results.filter((result) => result.status === 'fulfilled').length;
+    const failed = results.length - deleted;
+
+    if (deleted > 0) {
+      notify.success(
+        failed > 0 ? `Đã xóa ${deleted} lịch, lỗi ${failed} lịch.` : `Đã xóa ${deleted} lịch dạy.`
+      );
+      setSelectedScheduleIds([]);
+      await loadSchedules();
+      return;
+    }
+
+    notify.error('Không thể xóa các lịch đã chọn');
+  };
+
   const shiftWeek = (offsetDays: number) => {
     const d = new Date(`${weekStart}T00:00:00`);
     d.setDate(d.getDate() + offsetDays);
     setWeekStart(toYmd(getWeekStart(d)));
   };
 
-  const handleCopyToNextWeek = async () => {
+  const copySchedulesToNextWeek = async (sourceSchedules: ScheduleItem[], sourceLabel: string) => {
     if (copying) return;
 
-    if (schedules.length === 0) {
-      notify.info('Tuần hiện tại chưa có lịch để sao chép.');
+    if (sourceSchedules.length === 0) {
+      notify.info('Không có lịch phù hợp để sao chép.');
       return;
     }
 
-    const confirmed = window.confirm(`Sao chép ${schedules.length} lịch hiện tại sang tuần sau?`);
+    const confirmed = window.confirm(`Sao chép ${sourceSchedules.length} lịch ${sourceLabel} sang tuần sau?`);
     if (!confirmed) return;
 
     setCopying(true);
@@ -1052,7 +1114,7 @@ const TeacherSchedule = () => {
       let skipped = 0;
       let failed = 0;
 
-      for (const item of schedules) {
+      for (const item of sourceSchedules) {
         const sourceDate = new Date(`${parseApiDateToLocalYmd(item.date)}T00:00:00`);
         sourceDate.setDate(sourceDate.getDate() + 7);
         const targetYmd = toYmd(sourceDate);
@@ -1113,11 +1175,28 @@ const TeacherSchedule = () => {
       } else {
         notify.success(message);
       }
+      setSelectedScheduleIds([]);
     } catch (error) {
       notify.error(error instanceof Error ? error.message : 'Không thể sao chép lịch sang tuần sau');
     } finally {
       setCopying(false);
     }
+  };
+
+  const handleCopyToNextWeek = async () => {
+    if (schedules.length === 0) {
+      notify.info('Tuần hiện tại chưa có lịch để sao chép.');
+      return;
+    }
+    await copySchedulesToNextWeek(schedules, 'trong tuần hiện tại');
+  };
+
+  const handleCopySelectedToNextWeek = async () => {
+    if (selectedSchedules.length === 0) {
+      notify.info('Vui lòng chọn ít nhất 1 lịch để sao chép.');
+      return;
+    }
+    await copySchedulesToNextWeek(selectedSchedules, 'đã chọn');
   };
 
   const openAttendance = async (item: ScheduleItem) => {
@@ -1341,6 +1420,45 @@ const TeacherSchedule = () => {
         <div className="mt-3 rounded-xl border border-blue-100 bg-blue-50/70 px-3 py-2 text-sm text-blue-800">
           Tuần đang xem: <strong>{formatDateViFromYmd(weekStart)}</strong> đến <strong>{formatDateViFromYmd(weekEnd)}</strong>
         </div>
+
+        {selectedScheduleIds.length > 0 && (
+          <div className="mt-3 flex flex-col gap-2 rounded-xl border border-sky-200 bg-sky-50/80 px-3 py-2 text-sm text-sky-900 sm:flex-row sm:items-center sm:justify-between">
+            <p>
+              Đã chọn <strong>{selectedScheduleIds.length}</strong> lịch dạy
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  void handleCopySelectedToNextWeek();
+                }}
+                disabled={copying || loading}
+                className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-3 py-1.5 text-sm font-medium text-blue-700 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <Copy size={14} />
+                {copying ? 'Đang sao chép...' : 'Sao chép đã chọn'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  void handleDeleteSelected();
+                }}
+                disabled={loading}
+                className="inline-flex items-center gap-2 rounded-lg border border-rose-200 bg-white px-3 py-1.5 text-sm font-medium text-rose-700 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <Trash2 size={14} />
+                Xóa đã chọn
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedScheduleIds([])}
+                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100"
+              >
+                Bỏ chọn
+              </button>
+            </div>
+          </div>
+        )}
       </section>
 
       <section className="app-card overflow-hidden">
@@ -1348,6 +1466,16 @@ const TeacherSchedule = () => {
           <table className="min-w-full text-sm">
             <thead className="bg-slate-50 text-slate-700">
               <tr>
+                <th className="w-12 px-3 py-3 text-center font-semibold">
+                  <input
+                    type="checkbox"
+                    checked={areAllSchedulesSelected}
+                    onChange={toggleSelectAllSchedules}
+                    disabled={loading || schedules.length === 0}
+                    className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    title="Chọn tất cả lịch trong tuần"
+                  />
+                </th>
                 <th className="px-3 py-3 text-left font-semibold">Ngày</th>
                 <th className="px-3 py-3 text-left font-semibold">Thứ</th>
                 <th className="px-3 py-3 text-left font-semibold">Tiết</th>
@@ -1364,7 +1492,7 @@ const TeacherSchedule = () => {
             <tbody>
               {loading && (
                 <tr>
-                  <td className="px-3 py-6 text-center text-slate-500" colSpan={11}>
+                  <td className="px-3 py-6 text-center text-slate-500" colSpan={12}>
                     Đang tải lịch dạy...
                   </td>
                 </tr>
@@ -1372,7 +1500,7 @@ const TeacherSchedule = () => {
 
               {!loading && schedules.length === 0 && (
                 <tr>
-                  <td className="px-3 py-8 text-center text-slate-500" colSpan={11}>
+                  <td className="px-3 py-8 text-center text-slate-500" colSpan={12}>
                     Tuần này chưa có lịch dạy.
                   </td>
                 </tr>
@@ -1380,6 +1508,7 @@ const TeacherSchedule = () => {
 
               {!loading &&
                 schedules.map((item) => {
+                  const isSelected = selectedScheduleIds.includes(item.id);
                   const localYmd = parseApiDateToLocalYmd(item.date);
                   const isToday = localYmd === todayYmd;
                   const startMinutes = parseTimeToMinutes(item.startTime);
@@ -1398,9 +1527,23 @@ const TeacherSchedule = () => {
                       onClick={() => {
                         void openAttendance(item);
                       }}
-                      className={`cursor-pointer border-t border-slate-100 ${isToday ? 'bg-amber-50/85 hover:bg-amber-100/70' : 'hover:bg-slate-50/80'
+                      className={`cursor-pointer border-t border-slate-100 ${isSelected
+                        ? 'bg-blue-50/75 hover:bg-blue-100/70'
+                        : isToday
+                          ? 'bg-amber-50/85 hover:bg-amber-100/70'
+                          : 'hover:bg-slate-50/80'
                         }`}
                     >
+                      <td className="px-3 py-3 text-center">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onClick={(event) => event.stopPropagation()}
+                          onChange={() => toggleScheduleSelection(item.id)}
+                          className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                          title={`Chọn lịch ${item.subject} - ${item.className}`}
+                        />
+                      </td>
                       <td className="px-3 py-3">
                         <div className="flex items-center gap-2">
                           <span>{formatDateViFromYmd(localYmd)}</span>
@@ -1488,7 +1631,7 @@ const TeacherSchedule = () => {
           </table>
         </div>
         <div className="border-t border-slate-100 px-3 py-2 text-xs text-slate-500">
-          Mẹo: bấm vào dòng lịch hoặc nút <span className="font-semibold text-emerald-700">Điểm danh</span> để mở danh sách điểm danh học sinh.
+          Mẹo: bấm vào dòng lịch hoặc nút <span className="font-semibold text-emerald-700">Điểm danh</span> để mở điểm danh. Tick checkbox để chọn nhiều lịch rồi xóa/sao chép cùng lúc.
         </div>
       </section>
 
