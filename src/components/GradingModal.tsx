@@ -1989,9 +1989,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                             />
                                         )}
                                         {state?.gradingResult && (
-                                            <p className="text-xs text-green-600 mt-1">
-                                                Tự động: {state.gradingResult.totalScore}/{state.gradingResult.maxScore}
-                                            </p>
+                                            <p className="text-xs text-green-600 mt-1">Đã chấm tự động</p>
                                         )}
                                     </td>
                                     <td className="px-4 py-3 text-center">
@@ -2512,9 +2510,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                                                     <p className="text-xs text-blue-600">Đang chấm...</p>
                                                                 )}
                                                                 {autoState?.gradingResult && (
-                                                                    <p className="text-xs text-green-600">
-                                                                        Tự động: {autoState.gradingResult.totalScore}/{autoState.gradingResult.maxScore}
-                                                                    </p>
+                                                                    <p className="text-xs text-green-600">Đã chấm tự động</p>
                                                                 )}
                                                                 {autoState?.error && (
                                                                     <p className="text-xs text-red-600">Lỗi: {autoState.error}</p>
