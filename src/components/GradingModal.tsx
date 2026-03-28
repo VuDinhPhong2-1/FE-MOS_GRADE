@@ -1347,6 +1347,9 @@ const GradingModal: React.FC<GradingModalProps> = ({
         }
     };
 
+    const getReadableErrorMessage = (error: unknown, fallback: string): string =>
+        error instanceof Error && error.message ? error.message : fallback;
+
     const handleSaveAllScores = async () => {
         if (!selectedAssignment) {
             alert('Vui lòng chọn bài tập!');
@@ -1379,7 +1382,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
             handleClose();
         } catch (error) {
             console.error('Lỗi khi lưu điểm:', error);
-            alert('Không thể lưu điểm!');
+            alert(getReadableErrorMessage(error, 'Không thể lưu điểm!'));
         } finally {
             setLoading(false);
         }
@@ -1394,6 +1397,10 @@ const GradingModal: React.FC<GradingModalProps> = ({
         setLoading(true);
         try {
             const activeStudentIds = new Set(gradingStudents.map((student) => student.id));
+            const assignmentNameById = new Map(assignments.map((assignment) => [assignment.id, assignment.name]));
+            const failedAssignments: string[] = [];
+            let savedAssignmentCount = 0;
+
             for (const assignmentId of multiAssignmentIds) {
                 const rowMap = multiScores.get(assignmentId);
                 if (!rowMap) continue;
@@ -1409,14 +1416,33 @@ const GradingModal: React.FC<GradingModalProps> = ({
 
                 if (scores.length === 0) continue;
 
-                await scoreService.bulkCreateOrUpdate(
-                    {
-                        assignmentId,
-                        classId,
-                        scores,
-                    },
-                    getAccessToken
-                );
+                try {
+                    await scoreService.bulkCreateOrUpdate(
+                        {
+                            assignmentId,
+                            classId,
+                            scores,
+                        },
+                        getAccessToken
+                    );
+                    savedAssignmentCount += 1;
+                } catch (error) {
+                    const assignmentName = assignmentNameById.get(assignmentId) || assignmentId;
+                    failedAssignments.push(
+                        `${assignmentName}: ${getReadableErrorMessage(error, 'Không thể lưu điểm cho bài này.')}`
+                    );
+                }
+            }
+
+            if (failedAssignments.length > 0) {
+                const message = failedAssignments.join('\n');
+                if (savedAssignmentCount > 0) {
+                    alert(`Đã lưu ${savedAssignmentCount} bài nhưng còn lỗi:\n${message}`);
+                    if (onSuccess) await onSuccess();
+                } else {
+                    alert(`Không thể lưu điểm cho nhiều bài tập:\n${message}`);
+                }
+                return;
             }
 
             alert('Luu diem cho nhieu bai tap thanh cong!');
@@ -1424,7 +1450,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
             handleClose();
         } catch (error) {
             console.error('Lỗi khi lưu điểm nhiều bài tập:', error);
-            alert('Không thể lưu điểm cho nhiều bài tập!');
+            alert(getReadableErrorMessage(error, 'Không thể lưu điểm cho nhiều bài tập!'));
         } finally {
             setLoading(false);
         }
