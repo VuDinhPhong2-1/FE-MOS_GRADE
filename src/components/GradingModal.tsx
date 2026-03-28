@@ -80,6 +80,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
     const [gradingEndpoints, setGradingEndpoints] = useState<GradingEndpointInfo[]>([]);
     const [chooseMode, setChooseMode] = useState<null | 'new' | 'existing' | 'existing-multi' | 'manage'>(null);
     const [loading, setLoading] = useState(false);
+    const [isCreatingAssignment, setIsCreatingAssignment] = useState(false);
     const [showInactiveAssignments, setShowInactiveAssignments] = useState(false);
 
     // STATE CHAM DIEM CHO TUNG HOC SINH (DUY NHAT)
@@ -110,6 +111,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
     const [studentSearchMatchIndex, setStudentSearchMatchIndex] = useState(-1);
     const [lastStudentSearchKeyword, setLastStudentSearchKeyword] = useState('');
     const rowRefs = useRef(new Map<string, HTMLTableRowElement>());
+    const isSavingScoresRef = useRef(false);
 
     // TAO BAI TAP MOI
     const [newAssignment, setNewAssignment] = useState<CreateAssignmentRequest>({
@@ -306,6 +308,9 @@ const GradingModal: React.FC<GradingModalProps> = ({
         setStudentSearchMatchedIds([]);
         setStudentSearchMatchIndex(-1);
         setLastStudentSearchKeyword('');
+        setLoading(false);
+        setIsCreatingAssignment(false);
+        isSavingScoresRef.current = false;
         rowRefs.current.clear();
         setEditingAssignment(null);
         setAssignmentSubmitLoading(false);
@@ -1356,6 +1361,11 @@ const GradingModal: React.FC<GradingModalProps> = ({
             return;
         }
 
+        if (isSavingScoresRef.current) {
+            return;
+        }
+
+        isSavingScoresRef.current = true;
         setLoading(true);
         try {
             const activeStudentIds = new Set(gradingStudents.map((student) => student.id));
@@ -1384,6 +1394,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
             console.error('Lỗi khi lưu điểm:', error);
             alert(getReadableErrorMessage(error, 'Không thể lưu điểm!'));
         } finally {
+            isSavingScoresRef.current = false;
             setLoading(false);
         }
     };
@@ -1394,6 +1405,11 @@ const GradingModal: React.FC<GradingModalProps> = ({
             return;
         }
 
+        if (isSavingScoresRef.current) {
+            return;
+        }
+
+        isSavingScoresRef.current = true;
         setLoading(true);
         try {
             const activeStudentIds = new Set(gradingStudents.map((student) => student.id));
@@ -1452,11 +1468,16 @@ const GradingModal: React.FC<GradingModalProps> = ({
             console.error('Lỗi khi lưu điểm nhiều bài tập:', error);
             alert(getReadableErrorMessage(error, 'Không thể lưu điểm cho nhiều bài tập!'));
         } finally {
+            isSavingScoresRef.current = false;
             setLoading(false);
         }
     };
 
     const handleCreateAssignment = async () => {
+        if (isCreatingAssignment) {
+            return;
+        }
+
         if (!newAssignment.name.trim()) {
             alert('Vui lòng nhập tên bài tập!');
             return;
@@ -1466,7 +1487,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
             return;
         }
 
-        setLoading(true);
+        setIsCreatingAssignment(true);
         try {
             const created = await assignmentService.create(newAssignment, getAccessToken);
             setAssignments([created, ...assignments]);
@@ -1484,7 +1505,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
             console.error('Lỗi khi tạo bài tập:', error);
             alert('Không thể tạo bài tập!');
         } finally {
-            setLoading(false);
+            setIsCreatingAssignment(false);
         }
     };
 
@@ -1878,10 +1899,10 @@ const GradingModal: React.FC<GradingModalProps> = ({
 
                 <button
                     onClick={handleCreateAssignment}
-                    disabled={loading}
+                    disabled={isCreatingAssignment}
                     className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-400 flex items-center justify-center gap-2"
                 >
-                    {loading ? (
+                    {isCreatingAssignment ? (
                         <>
                             <Loader2 size={18} className="animate-spin" />
                             Đang tạo...
