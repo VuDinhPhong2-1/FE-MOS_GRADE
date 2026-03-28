@@ -57,18 +57,27 @@ const applySafeComputedStylesForPdf = (sourceRoot: HTMLElement, targetRoot: HTML
 
 type ExcelCellValue = string | number;
 
+export interface ExcelCellComment {
+  row: number; // 0-based body row index
+  col: number; // 0-based column index
+  text: string;
+  author?: string;
+}
+
 interface ExcelSheetData {
   sheetName: string;
   header: string[];
   body: ExcelCellValue[][];
   title?: string;
   colWidths?: number[];
+  comments?: ExcelCellComment[];
 }
 
 interface ExportExcelOptions {
   title?: string;
   colWidths?: number[];
   extraSheets?: ExcelSheetData[];
+  comments?: ExcelCellComment[];
 }
 
 const buildStyledSheet = ({
@@ -76,6 +85,7 @@ const buildStyledSheet = ({
   body,
   title,
   colWidths,
+  comments,
 }: Omit<ExcelSheetData, 'sheetName'>): XLSX.WorkSheet => {
   const sheetTitle = title?.trim() || '';
   const rows: ExcelCellValue[][] = [];
@@ -243,6 +253,34 @@ const buildStyledSheet = ({
     }
   }
 
+  // Attach comments to body cells (if provided).
+  (comments || []).forEach((comment) => {
+    const text = (comment.text || '').trim();
+    if (!text) return;
+    if (comment.row < 0 || comment.col < 0) return;
+    if (comment.row >= body.length || comment.col >= header.length) return;
+
+    const address = XLSX.utils.encode_cell({
+      r: bodyStartRowIndex + comment.row,
+      c: comment.col,
+    });
+    if (!ws[address]) return;
+
+    const cell = ws[address] as XLSX.CellObject & {
+      c?: Array<{ a?: string; t?: string }>;
+    };
+
+    const commentBlock: XLSX.Comments = [
+      {
+        a: (comment.author || 'MOS Grader').trim() || 'MOS Grader',
+        t: text,
+      },
+    ];
+    commentBlock.hidden = true;
+
+    cell.c = commentBlock;
+  });
+
   return ws;
 };
 
@@ -259,6 +297,7 @@ export const exportToExcel = (
     body,
     title: options?.title,
     colWidths: options?.colWidths,
+    comments: options?.comments,
   });
   XLSX.utils.book_append_sheet(wb, mainSheet, sheetName);
 
@@ -268,6 +307,7 @@ export const exportToExcel = (
       body: sheet.body,
       title: sheet.title,
       colWidths: sheet.colWidths,
+      comments: sheet.comments,
     });
     XLSX.utils.book_append_sheet(wb, ws, sheet.sheetName);
   });

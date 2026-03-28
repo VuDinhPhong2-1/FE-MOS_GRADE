@@ -11,7 +11,26 @@ import { useAuth } from '../context/AuthContext';
 import GradingModal from '../components/GradingModal';
 import ViewAllScoresModal from '../components/ViewAllScoresModal';
 import ClassAnalyticsPanel from '../components/ClassAnalyticsPanel';
-import { Upload, FileCheck2, Eye, Save, RefreshCw, Pencil, X, Loader2, CheckCircle2, XCircle, Search, UserPlus, Trash2, ClipboardPaste } from 'lucide-react';
+import {
+  Upload,
+  FileCheck2,
+  Eye,
+  Save,
+  RefreshCw,
+  Pencil,
+  X,
+  Loader2,
+  CheckCircle2,
+  XCircle,
+  Search,
+  UserPlus,
+  Trash2,
+  ClipboardPaste,
+  Sparkles,
+  Users,
+  UserCheck,
+  UserX,
+} from 'lucide-react';
 
 type EditStudentForm = {
   middleName: string;
@@ -176,6 +195,10 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
 
   const activeStudents = useMemo(
     () => students.filter((student) => isStudentActive(student)),
+    [students, isStudentActive]
+  );
+  const inactiveStudentsCount = useMemo(
+    () => students.filter((student) => !isStudentActive(student)).length,
     [students, isStudentActive]
   );
 
@@ -681,277 +704,322 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
   };
 
   return (
-    <div className="container mx-auto p-2 sm:p-4">
+    <div className="mx-auto w-full space-y-4 px-2 pb-4 sm:px-4">
       {flashMessage && (
-        <div className="mb-3 rounded-md border border-green-300 bg-green-50 px-3 py-2 text-sm text-green-700">
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 shadow-sm">
           {flashMessage}
         </div>
       )}
       {readOnly && (
-        <div className="mb-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 shadow-sm">
           Bạn chỉ có quyền xem lớp này. Các chức năng chỉnh sửa đã bị khóa.
         </div>
       )}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-800">
-          Bảng danh sách học sinh - {selectedClass.name}
-        </h1>
 
-        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-          {!readOnly && (
-            <button
-              onClick={handleOpenAddStudentModal}
-              className="w-full sm:w-auto bg-emerald-600 text-white px-4 py-2 rounded-md flex items-center justify-center gap-2 hover:bg-emerald-700"
-            >
-              <UserPlus size={18} />
-              Thêm học sinh
-            </button>
-          )}
-          {!readOnly && (
-            <button
-              onClick={handleGrade}
-              disabled={activeStudents.length === 0}
-              className="w-full sm:w-auto bg-purple-600 text-white px-4 py-2 rounded-md flex items-center justify-center gap-2 hover:bg-purple-700 disabled:bg-gray-400 text-base sm:text-lg font-semibold disabled:cursor-not-allowed"
-              title="Chấm điểm cho học sinh đang hoạt động"
-            >
-              <FileCheck2 size={20} />
-              Chấm điểm cho lớp
-            </button>
-          )}
-          {!readOnly && (
-            <button
-              type="button"
-              onClick={handleSyncStudentMetadataToGoogleSheet}
-              disabled={isStudentMetadataSyncing || isLoading}
-              className="w-full sm:w-auto bg-sky-600 text-white px-4 py-2 rounded-md flex items-center justify-center gap-2 hover:bg-sky-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-              title="Đồng bộ xếp loại và ghi chú học sinh lên Google Sheet"
-            >
-              <RefreshCw size={18} className={isStudentMetadataSyncing ? 'animate-spin' : ''} />
-              {isStudentMetadataSyncing ? 'Đang đồng bộ...' : 'Đồng bộ XL + ghi chú GG Sheet'}
-            </button>
-          )}
-          <button
-            onClick={handleOpenViewScoresModal}
-            className="w-full sm:w-auto bg-gray-600 text-white px-4 py-2 rounded-md flex items-center justify-center gap-2 hover:bg-gray-700 text-base sm:text-lg ml-0"
-          >
-            <Eye size={18} />
-            Xem bảng điểm lớp
-          </button>
-        </div>
-      </div>
+      <section className="app-card relative overflow-hidden px-4 py-4 sm:px-6 sm:py-5">
+        <div className="pointer-events-none absolute -right-12 -top-16 h-40 w-40 rounded-full bg-sky-200/70 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-20 left-1/3 h-40 w-40 rounded-full bg-emerald-200/60 blur-3xl" />
+        <div className="relative flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+          <div className="space-y-3">
+            <div className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-sky-700">
+              <Sparkles size={14} />
+              Không gian lớp học
+            </div>
+            <div>
+              <h1 className="text-xl font-extrabold tracking-tight text-slate-900 sm:text-2xl">
+                Bảng danh sách học sinh - {selectedClass.name}
+              </h1>
+              <p className="mt-1 text-sm text-slate-600">
+                Quản lý danh sách, chấm điểm và đồng bộ dữ liệu ngay trên một màn hình.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white/90 px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm">
+                <Users size={14} />
+                Tổng {students.length} học sinh
+              </div>
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 shadow-sm">
+                <UserCheck size={14} />
+                Hoạt động {activeStudents.length}
+              </div>
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700 shadow-sm">
+                <UserX size={14} />
+                Ngừng {inactiveStudentsCount}
+              </div>
+              {studentNewList.length > 0 && (
+                <div className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 shadow-sm">
+                  <Save size={14} />
+                  Chưa lưu {studentNewList.length}
+                </div>
+              )}
+            </div>
+          </div>
 
-      <div className="mb-4 grid grid-cols-1 lg:grid-cols-3 gap-3">
-        <div className="relative lg:col-span-1">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-          <input
-            value={searchKeyword}
-            onChange={(event) => setSearchKeyword(event.target.value)}
-            placeholder="Tìm kiếm theo tên học sinh..."
-            className="w-full rounded-md border border-gray-300 bg-white pl-9 pr-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-          />
-        </div>
-        <div className="lg:col-span-2 flex items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-2 text-sm">
-          <span className="text-gray-600">
-            Hiển thị {displayedStudents.length}/{students.length} học sinh
-          </span>
-          <span className="text-xs text-gray-500">
-            Bấm vào tiêu đề cột <strong>Tên</strong> hoặc <strong>Trạng thái</strong> để sắp xếp
-          </span>
-        </div>
-      </div>
-
-      <div className="mb-4 flex flex-col sm:flex-row gap-2 sm:gap-4">
-        <button
-          onClick={loadStudents}
-          disabled={isLoading}
-          className="w-full sm:w-auto bg-gray-600 text-white px-4 py-2 rounded-md flex items-center gap-2 hover:bg-gray-700 disabled:bg-gray-400"
-          title="Tải lại danh sách"
-        >
-          <RefreshCw size={18} className={isLoading ? 'animate-spin' : ''} />
-          Tải lại
-        </button>
-
-        {!readOnly && (
-          <>
-            <input
-              type="file"
-              onChange={handleFileUpload}
-              accept=".xlsx, .xls"
-              className="hidden"
-              id="import-excel"
-            />
-
-            <label
-              htmlFor="import-excel"
-              className="w-full sm:w-auto bg-green-600 text-white px-4 py-2 rounded-md cursor-pointer flex items-center justify-center gap-2 hover:bg-green-700"
-            >
-              <Upload size={18} /> Nhập Excel
-            </label>
-
-            <button
-              type="button"
-              onClick={handleOpenPasteModal}
-              className="w-full sm:w-auto bg-indigo-600 text-white px-4 py-2 rounded-md flex items-center justify-center gap-2 hover:bg-indigo-700"
-            >
-              <ClipboardPaste size={18} /> Dán từ Excel
-            </button>
-
-            {studentNewList.length > 0 && (
+          <div className="grid w-full gap-2 sm:grid-cols-2 xl:w-auto xl:min-w-[640px]">
+            {!readOnly && (
               <button
-                onClick={handleSaveStudents}
-                disabled={isLoading}
-                className="w-full sm:w-auto bg-blue-600 text-white px-4 py-2 rounded-md flex items-center gap-2 hover:bg-blue-700 disabled:bg-gray-400"
+                onClick={handleOpenAddStudentModal}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-600/25 transition hover:-translate-y-0.5 hover:bg-emerald-700"
               >
-                <Save size={18} />
-                {isLoading ? 'Đang lưu...' : 'Lưu danh sách'}
+                <UserPlus size={18} />
+                Thêm học sinh
               </button>
             )}
-          </>
-        )}
-      </div>
+            {!readOnly && (
+              <button
+                onClick={handleGrade}
+                disabled={activeStudents.length === 0}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/25 transition hover:-translate-y-0.5 hover:bg-blue-700 disabled:translate-y-0 disabled:cursor-not-allowed disabled:bg-slate-400 disabled:shadow-none"
+                title="Chấm điểm cho học sinh đang hoạt động"
+              >
+                <FileCheck2 size={18} />
+                Chấm điểm cho lớp
+              </button>
+            )}
+            {!readOnly && (
+              <button
+                type="button"
+                onClick={handleSyncStudentMetadataToGoogleSheet}
+                disabled={isStudentMetadataSyncing || isLoading}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-sky-600/25 transition hover:-translate-y-0.5 hover:bg-sky-700 disabled:translate-y-0 disabled:cursor-not-allowed disabled:bg-slate-400 disabled:shadow-none"
+                title="Đồng bộ xếp loại và ghi chú học sinh lên Google Sheet"
+              >
+                <RefreshCw size={18} className={isStudentMetadataSyncing ? 'animate-spin' : ''} />
+                {isStudentMetadataSyncing ? 'Đang đồng bộ...' : 'Đồng bộ XL + ghi chú GG Sheet'}
+              </button>
+            )}
+            <button
+              onClick={handleOpenViewScoresModal}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50"
+            >
+              <Eye size={18} />
+              Xem bảng điểm lớp
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section className="app-card-soft p-3 sm:p-4">
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(260px,auto)]">
+          <div className="relative">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              value={searchKeyword}
+              onChange={(event) => setSearchKeyword(event.target.value)}
+              placeholder="Tìm kiếm theo tên học sinh..."
+              className="w-full rounded-xl border border-slate-200 bg-white pl-9 pr-3 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+            />
+          </div>
+          <div className="flex flex-col justify-center rounded-xl border border-slate-200 bg-white px-3 py-2">
+            <span className="text-sm font-medium text-slate-700">
+              Hiển thị {displayedStudents.length}/{students.length} học sinh
+            </span>
+            <span className="text-xs text-slate-500">
+              Bấm tiêu đề cột <strong>Tên</strong> hoặc <strong>Trạng thái</strong> để sắp xếp
+            </span>
+          </div>
+        </div>
+
+        <div className="mt-3 flex flex-wrap gap-2">
+          <button
+            onClick={loadStudents}
+            disabled={isLoading}
+            className="inline-flex items-center gap-2 rounded-xl bg-slate-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+            title="Tải lại danh sách"
+          >
+            <RefreshCw size={18} className={isLoading ? 'animate-spin' : ''} />
+            Tải lại
+          </button>
+
+          {!readOnly && (
+            <>
+              <input
+                type="file"
+                onChange={handleFileUpload}
+                accept=".xlsx, .xls"
+                className="hidden"
+                id="import-excel"
+              />
+
+              <label
+                htmlFor="import-excel"
+                className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
+              >
+                <Upload size={18} /> Nhập Excel
+              </label>
+
+              <button
+                type="button"
+                onClick={handleOpenPasteModal}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+              >
+                <ClipboardPaste size={18} /> Dán từ Excel
+              </button>
+
+              {studentNewList.length > 0 && (
+                <button
+                  onClick={handleSaveStudents}
+                  disabled={isLoading}
+                  className="inline-flex items-center gap-2 rounded-xl bg-cyan-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-cyan-700 disabled:cursor-not-allowed disabled:bg-slate-400"
+                >
+                  <Save size={18} />
+                  {isLoading ? 'Đang lưu...' : 'Lưu danh sách'}
+                </button>
+              )}
+            </>
+          )}
+        </div>
+      </section>
 
       <ClassAnalyticsPanel classId={selectedClass.id} assignments={assignments} />
 
-      <div className="bg-white shadow rounded-lg overflow-x-auto w-full">
-        <table className="min-w-[980px] w-full divide-y divide-gray-200 text-xs sm:text-sm">
-          <thead className="bg-gray-50 sticky top-0 z-10">
-            <tr>
-              <th className="px-2 sm:px-6 py-3 text-left font-medium text-gray-500 uppercase">STT</th>
-              <th className="px-2 sm:px-6 py-3 text-left font-medium text-gray-500 uppercase">Họ và tên đệm</th>
-              <th className="px-2 sm:px-6 py-3 text-left font-medium text-gray-500 uppercase">
-                <button
-                  type="button"
-                  onClick={toggleNameSort}
-                  className="inline-flex items-center gap-1 hover:text-gray-700"
-                  title="Sắp xếp theo tên"
-                >
-                  Tên
-                  <span className="text-[10px] text-gray-400">
-                    {nameSortDirection === 'asc' ? '▲' : nameSortDirection === 'desc' ? '▼' : '⇅'}
-                  </span>
-                </button>
-              </th>
-              <th className="px-2 sm:px-6 py-3 text-center font-medium text-gray-500 uppercase">Năng lực</th>
-              <th className="px-2 sm:px-6 py-3 text-left font-medium text-gray-500 uppercase">Ghi chú</th>
-              <th className="px-2 sm:px-6 py-3 text-center font-medium text-gray-500 uppercase">
-                <button
-                  type="button"
-                  onClick={toggleStatusSort}
-                  className="inline-flex items-center gap-1 hover:text-gray-700"
-                  title="Sắp xếp theo trạng thái"
-                >
-                  Trạng thái
-                  <span className="text-[10px] text-gray-400">
-                    {statusSortDirection === 'active-first' ? '▲' : statusSortDirection === 'inactive-first' ? '▼' : '⇅'}
-                  </span>
-                </button>
-              </th>
-              <th className="px-2 sm:px-6 py-3 text-center font-medium text-gray-500 uppercase">Hành động</th>
-            </tr>
-          </thead>
-
-          <tbody className="bg-white divide-y divide-gray-200">
-            {isLoading ? (
+      <section className="app-card overflow-hidden">
+        <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-3">
+          <span className="text-sm font-semibold text-slate-700">Danh sách học sinh</span>
+          <span className="text-xs text-slate-500">Bảng dữ liệu chi tiết theo từng học sinh</span>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="min-w-[980px] w-full text-xs sm:text-sm">
+            <thead className="sticky top-0 z-10 bg-slate-900">
               <tr>
-                <td colSpan={7} className="px-2 py-4 text-center text-gray-500">
-                  Đang tải dữ liệu...
-                </td>
-              </tr>
-            ) : displayedStudents.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="px-2 py-4 text-center text-gray-500">
-                  {students.length === 0
-                    ? 'Chưa có học sinh nào. Vui lòng nhập file Excel.'
-                    : 'Không có học sinh nào khớp từ khóa tìm kiếm.'}
-                </td>
-              </tr>
-            ) : (
-              displayedStudents.map((st, index) => {
-                const isActive = isStudentActive(st);
-                return (
-                <tr
-                  key={st.id}
-                  className={`transition-colors ${
-                    isActive ? 'hover:bg-gray-50' : 'bg-rose-50 hover:bg-rose-100/80'
-                  }`}
-                >
-                  <td className="px-2 sm:px-6 py-4 text-gray-500">{index + 1}</td>
-                  <td className="px-2 sm:px-6 py-4 font-medium text-gray-900">{st.middleName}</td>
-                  <td className="px-2 sm:px-6 py-4 font-medium text-gray-900">{st.firstName}</td>
-                  <td className="px-2 sm:px-6 py-4 text-center">
-                    <div className="flex flex-col items-center gap-1">
-                      <select
-                        value={st.competencyLevel || ''}
-                        disabled={readOnly || inlineSavingStudentId === st.id}
-                        onChange={(event) =>
-                          handleInlineCompetencyChange(
-                            st,
-                            event.target.value as '' | 'A' | 'B' | 'C' | 'D'
-                          )
-                        }
-                        className={`w-[72px] rounded-full border px-2 py-1 text-xs font-semibold text-center outline-none transition ${competencyBadgeClass(st.competencyLevel)} ${
-                          inlineSavingStudentId === st.id ? 'cursor-not-allowed opacity-70' : 'hover:brightness-95'
-                        }`}
-                        title={st.id.startsWith('temp-') ? 'Học sinh tạm, sẽ lưu cùng danh sách học sinh.' : 'Cập nhật nhanh năng lực'}
-                      >
-                        <option value="">--</option>
-                        {VALID_COMPETENCY_LEVELS.map((level) => (
-                          <option key={level} value={level}>
-                            {level}
-                          </option>
-                        ))}
-                      </select>
-                      {inlineSavingStudentId === st.id && (
-                        <span className="text-[10px] text-gray-500">Đang lưu...</span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-2 sm:px-6 py-4 text-gray-700">
-                    <div className="max-w-[260px] truncate" title={st.notes || ''}>
-                      {st.notes?.trim() || '--'}
-                    </div>
-                  </td>
-                  <td className="px-2 sm:px-6 py-4 text-center">
-                    <span
-                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
-                        isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                      }`}
-                    >
-                      {isActive ? <CheckCircle2 size={13} /> : <XCircle size={13} />}
-                      {isActive ? 'Hoạt động' : 'Ngừng'}
+                <th className="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-100 sm:px-6">STT</th>
+                <th className="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-100 sm:px-6">Họ và tên đệm</th>
+                <th className="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-100 sm:px-6">
+                  <button
+                    type="button"
+                    onClick={toggleNameSort}
+                    className="inline-flex items-center gap-1 text-slate-100 transition hover:text-white"
+                    title="Sắp xếp theo tên"
+                  >
+                    Tên
+                    <span className="text-[10px] text-slate-300">
+                      {nameSortDirection === 'asc' ? '▲' : nameSortDirection === 'desc' ? '▼' : '⇅'}
                     </span>
-                  </td>
-                  <td className="px-2 sm:px-6 py-4 text-center">
-                    {!readOnly ? (
-                      <div className="inline-flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => handleOpenEditStudent(st)}
-                          disabled={st.id.startsWith('temp-')}
-                          className="inline-flex items-center gap-1 rounded-md bg-blue-100 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-200 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
-                        >
-                          <Pencil size={14} />
-                          Sửa
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteStudent(st)}
-                          className="inline-flex items-center gap-1 rounded-md bg-red-100 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-200"
-                        >
-                          <Trash2 size={14} />
-                          Xóa
-                        </button>
-                      </div>
-                    ) : (
-                      <span className="text-xs text-gray-400">Chỉ xem</span>
-                    )}
+                  </button>
+                </th>
+                <th className="px-3 py-3 text-center text-[11px] font-semibold uppercase tracking-wide text-slate-100 sm:px-6">Năng lực</th>
+                <th className="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-100 sm:px-6">Ghi chú</th>
+                <th className="px-3 py-3 text-center text-[11px] font-semibold uppercase tracking-wide text-slate-100 sm:px-6">
+                  <button
+                    type="button"
+                    onClick={toggleStatusSort}
+                    className="inline-flex items-center gap-1 text-slate-100 transition hover:text-white"
+                    title="Sắp xếp theo trạng thái"
+                  >
+                    Trạng thái
+                    <span className="text-[10px] text-slate-300">
+                      {statusSortDirection === 'active-first' ? '▲' : statusSortDirection === 'inactive-first' ? '▼' : '⇅'}
+                    </span>
+                  </button>
+                </th>
+                <th className="px-3 py-3 text-center text-[11px] font-semibold uppercase tracking-wide text-slate-100 sm:px-6">Hành động</th>
+              </tr>
+            </thead>
+
+            <tbody className="divide-y divide-slate-100 bg-white">
+              {isLoading ? (
+                <tr>
+                  <td colSpan={7} className="px-3 py-6 text-center text-slate-500">
+                    Đang tải dữ liệu...
                   </td>
                 </tr>
-              )})
-            )}
-          </tbody>
-        </table>
-      </div>
+              ) : displayedStudents.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-3 py-6 text-center text-slate-500">
+                    {students.length === 0
+                      ? 'Chưa có học sinh nào. Vui lòng nhập file Excel.'
+                      : 'Không có học sinh nào khớp từ khóa tìm kiếm.'}
+                  </td>
+                </tr>
+              ) : (
+                displayedStudents.map((st, index) => {
+                  const isActive = isStudentActive(st);
+                  return (
+                    <tr
+                      key={st.id}
+                      className={`transition-colors ${
+                        isActive ? 'hover:bg-sky-50/70' : 'bg-rose-50/70 hover:bg-rose-100/70'
+                      }`}
+                    >
+                      <td className="px-3 py-4 text-slate-500 sm:px-6">{index + 1}</td>
+                      <td className="px-3 py-4 font-medium text-slate-900 sm:px-6">{st.middleName}</td>
+                      <td className="px-3 py-4 font-medium text-slate-900 sm:px-6">{st.firstName}</td>
+                      <td className="px-3 py-4 text-center sm:px-6">
+                        <div className="flex flex-col items-center gap-1">
+                          <select
+                            value={st.competencyLevel || ''}
+                            disabled={readOnly || inlineSavingStudentId === st.id}
+                            onChange={(event) =>
+                              handleInlineCompetencyChange(
+                                st,
+                                event.target.value as '' | 'A' | 'B' | 'C' | 'D'
+                              )
+                            }
+                            className={`w-[72px] rounded-full border px-2 py-1 text-center text-xs font-semibold outline-none transition ${competencyBadgeClass(st.competencyLevel)} ${
+                              inlineSavingStudentId === st.id ? 'cursor-not-allowed opacity-70' : 'hover:brightness-95'
+                            }`}
+                            title={st.id.startsWith('temp-') ? 'Học sinh tạm, sẽ lưu cùng danh sách học sinh.' : 'Cập nhật nhanh năng lực'}
+                          >
+                            <option value="">--</option>
+                            {VALID_COMPETENCY_LEVELS.map((level) => (
+                              <option key={level} value={level}>
+                                {level}
+                              </option>
+                            ))}
+                          </select>
+                          {inlineSavingStudentId === st.id && (
+                            <span className="text-[10px] text-slate-500">Đang lưu...</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-3 py-4 text-slate-700 sm:px-6">
+                        <div className="max-w-[260px] truncate" title={st.notes || ''}>
+                          {st.notes?.trim() || '--'}
+                        </div>
+                      </td>
+                      <td className="px-3 py-4 text-center sm:px-6">
+                        <span
+                          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${
+                            isActive ? 'bg-emerald-100 text-emerald-700 ring-emerald-200' : 'bg-rose-100 text-rose-700 ring-rose-200'
+                          }`}
+                        >
+                          {isActive ? <CheckCircle2 size={13} /> : <XCircle size={13} />}
+                          {isActive ? 'Hoạt động' : 'Ngừng'}
+                        </span>
+                      </td>
+                      <td className="px-3 py-4 text-center sm:px-6">
+                        {!readOnly ? (
+                          <div className="inline-flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEditStudent(st)}
+                              disabled={st.id.startsWith('temp-')}
+                              className="inline-flex items-center gap-1 rounded-lg bg-blue-100 px-3 py-1.5 text-xs font-medium text-blue-700 transition hover:bg-blue-200 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+                            >
+                              <Pencil size={14} />
+                              Sửa
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteStudent(st)}
+                              className="inline-flex items-center gap-1 rounded-lg bg-rose-100 px-3 py-1.5 text-xs font-medium text-rose-700 transition hover:bg-rose-200"
+                            >
+                              <Trash2 size={14} />
+                              Xóa
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-slate-400">Chỉ xem</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
 
       <GradingModal
         isOpen={isGradingModalOpen}

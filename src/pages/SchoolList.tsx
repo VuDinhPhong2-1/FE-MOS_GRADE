@@ -449,12 +449,16 @@ const SchoolList = () => {
 
         </>
       ) : (
-        <>
-            <button className="app-btn-secondary mb-4 flex items-center gap-2 px-4 py-2" onClick={handleBackToSchools}>
-            ← Quay lại danh sách trường
+        <div className="space-y-4">
+          <button
+            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50"
+            onClick={handleBackToSchools}
+          >
+            <span aria-hidden>←</span>
+            Quay lại danh sách trường
           </button>
           <ClassList selectedSchool={selectedSchool} />
-        </>
+        </div>
       )}
     </div>
   );

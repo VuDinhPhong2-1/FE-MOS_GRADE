@@ -4,6 +4,7 @@ import { X, FileDown, Eye, EyeOff } from 'lucide-react';
 import type { Assignment } from '../types/assignment.types';
 import type { Student } from '../types/student.types';
 import { exportToExcel, exportToPdf } from '../utils/exportUtils';
+import type { ExcelCellComment } from '../utils/exportUtils';
 import { useAuth } from '../context/AuthContext';
 import studentService from '../services/student.service';
 
@@ -14,7 +15,6 @@ type ScoreTableSortDirection = 'asc' | 'desc';
 type PracticeCode = 'practice01' | 'practice02' | 'practice03';
 
 interface PracticeSummary {
-  completedAssignments: number;
   completionText: string;
   totalScore: number;
 }
@@ -26,7 +26,6 @@ interface DisplayStudentRow {
   notes: string;
   calculatedScores: Record<string, number>;
   errorsByAssignment: Record<string, string[]>;
-  completedAssignments: number;
   totalScore: number;
   totalPercentage: number;
   classification: CompetencyLevel;
@@ -53,6 +52,24 @@ interface ViewAllScoresModalProps {
 const formatScore = (value: number): string => {
   if (!Number.isFinite(value)) return '0';
   return Number.isInteger(value) ? String(value) : value.toFixed(2).replace(/\.00$/, '');
+};
+
+const getScorePillClass = (score: number, maxScore: number): string => {
+  if (!Number.isFinite(maxScore) || maxScore <= 0) {
+    return 'border-slate-200 bg-slate-100 text-slate-600';
+  }
+  const ratio = score / maxScore;
+  if (ratio >= 0.85) return 'border-emerald-200 bg-emerald-50 text-emerald-700';
+  if (ratio >= 0.65) return 'border-blue-200 bg-blue-50 text-blue-700';
+  if (ratio > 0) return 'border-amber-200 bg-amber-50 text-amber-700';
+  return 'border-slate-200 bg-slate-100 text-slate-500';
+};
+
+const getPercentagePillClass = (percentage: number): string => {
+  if (percentage >= 75) return 'border-emerald-200 bg-emerald-50 text-emerald-700';
+  if (percentage >= 50) return 'border-blue-200 bg-blue-50 text-blue-700';
+  if (percentage > 0) return 'border-amber-200 bg-amber-50 text-amber-700';
+  return 'border-slate-200 bg-slate-100 text-slate-500';
 };
 
 const normalizeErrorText = (value: string): string => value.replace(/\s+/g, ' ').trim();
@@ -99,6 +116,35 @@ const PRACTICE_COLUMNS: Array<{ code: PracticeCode; shortLabel: string; title: s
   { code: 'practice02', shortLabel: 'P02', title: 'Practice 02' },
   { code: 'practice03', shortLabel: 'P03', title: 'Practice 03' },
 ];
+
+const PRACTICE_COLUMN_THEME: Record<
+  PracticeCode,
+  {
+    completionHeader: string;
+    completionCell: string;
+    scoreHeader: string;
+    scoreCell: string;
+  }
+> = {
+  practice01: {
+    completionHeader: 'bg-emerald-100 text-emerald-900',
+    completionCell: 'bg-emerald-50 text-emerald-900',
+    scoreHeader: 'bg-emerald-200 text-emerald-900',
+    scoreCell: 'bg-emerald-100/70 text-emerald-900',
+  },
+  practice02: {
+    completionHeader: 'bg-sky-100 text-sky-900',
+    completionCell: 'bg-sky-50 text-sky-900',
+    scoreHeader: 'bg-sky-200 text-sky-900',
+    scoreCell: 'bg-sky-100/70 text-sky-900',
+  },
+  practice03: {
+    completionHeader: 'bg-violet-100 text-violet-900',
+    completionCell: 'bg-violet-50 text-violet-900',
+    scoreHeader: 'bg-violet-200 text-violet-900',
+    scoreCell: 'bg-violet-100/70 text-violet-900',
+  },
+};
 
 const extractProjectNumberFromEndpoint = (endpoint?: string): number | null => {
   if (!endpoint) return null;
@@ -221,7 +267,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
     [displayedAssignments, columnDisplayByAssignmentId]
   );
 
-  const staticColumnCount = isClassificationColumnVisible ? 11 : 10;
+  const staticColumnCount = isClassificationColumnVisible ? 13 : 12;
 
   const areAllAssignmentsVisible = useMemo(
     () =>
@@ -256,7 +302,6 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
       const notes = notesMapValue !== undefined ? notesMapValue : (student.notes || '').trim();
 
       let totalScore = 0;
-      let completedAssignments = 0;
       const practiceProjectScores: Record<PracticeCode, Map<number, { hasScore: boolean; score: number }>> = {
         practice01: new Map(),
         practice02: new Map(),
@@ -269,9 +314,6 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
         const key = `${student.id}::${assignment.id}`;
         const scoreObj = scoreLookup.get(key);
         const score = typeof scoreObj?.scoreValue === 'number' ? scoreObj.scoreValue : 0;
-        if (typeof scoreObj?.scoreValue === 'number') {
-          completedAssignments += 1;
-        }
         calculatedScores[assignment.id] = score;
         totalScore += score;
 
@@ -323,7 +365,6 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
           const normalizedPracticeScore = Math.max(0, Math.min(PRACTICE_MAX_SCORE, totalPracticeScore));
 
           acc[practice.code] = {
-            completedAssignments: completed,
             completionText: `${completed}/${PRACTICE_COMPLETION_TARGET}`,
             totalScore: normalizedPracticeScore,
           };
@@ -340,7 +381,6 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
         notes,
         calculatedScores,
         errorsByAssignment,
-        completedAssignments,
         totalScore,
         totalPercentage,
         classification,
@@ -391,8 +431,10 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
       'Tên',
       ...assignments.map((assignment) => `${assignment.name} (tối đa ${assignment.maxScore})`),
       'Xếp loại',
-      ...PRACTICE_COLUMNS.map((practice) => `${practice.title} - Số bài`),
-      'Tổng số bài',
+      ...PRACTICE_COLUMNS.flatMap((practice) => [
+        `${practice.title} - Số bài`,
+        `${practice.title} - Tổng điểm`,
+      ]),
       'Tổng điểm',
       'Tỷ lệ đạt',
       'Ghi chú',
@@ -406,21 +448,43 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
         index + 1,
         row.middleName,
         row.firstName,
-        ...assignments.map((assignment) => {
-          const score = row.calculatedScores[assignment.id] ?? 0;
-          const errors = row.errorsByAssignment[assignment.id] || [];
-          if (errors.length === 0) return formatScore(score);
-          return `${formatScore(score)} (${errors.length} lỗi)`;
-        }),
+        ...assignments.map((assignment) => formatScore(row.calculatedScores[assignment.id] ?? 0)),
         row.classification,
-        ...PRACTICE_COLUMNS.map((practice) => row.practiceSummaries[practice.code].completionText),
-        `${row.completedAssignments}/${assignments.length}`,
+        ...PRACTICE_COLUMNS.flatMap((practice) => [
+          row.practiceSummaries[practice.code].completionText,
+          `${formatScore(row.practiceSummaries[practice.code].totalScore)}/${formatScore(
+            PRACTICE_MAX_SCORE
+          )}`,
+        ]),
         `${formatScore(row.totalScore)}/${formatScore(maxScoreTotal)}`,
         `${formatScore(row.totalPercentage)}%`,
         row.notes,
       ]),
     [sortedDisplayRows, assignments, maxScoreTotal]
   );
+
+  const excelScoreComments = useMemo<ExcelCellComment[]>(() => {
+    const comments: ExcelCellComment[] = [];
+    const assignmentStartColumnIndex = 3; // STT, Họ và tên đệm, Tên
+
+    sortedDisplayRows.forEach((row, rowIndex) => {
+      assignments.forEach((assignment, assignmentIndex) => {
+        const errors = row.errorsByAssignment[assignment.id] || [];
+        if (errors.length === 0) return;
+
+        comments.push({
+          row: rowIndex,
+          col: assignmentStartColumnIndex + assignmentIndex,
+          author: 'MOS Grader',
+          text: [`${assignment.name} - ${errors.length} lỗi`, ...errors.map((e, i) => `${i + 1}. ${e}`)].join(
+            '\n'
+          ),
+        });
+      });
+    });
+
+    return comments;
+  }, [sortedDisplayRows, assignments]);
 
   const excelErrorHeaders = useMemo(
     () => ['STT', 'Họ và tên đệm', 'Tên', 'Bài tập', 'Điểm', 'Số lỗi', 'Chi tiết lỗi'],
@@ -478,8 +542,20 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 
   const handleExportExcel = () => {
     const assignmentColumnWidths = assignments.map(() => 18);
-    const practiceColumnWidths = PRACTICE_COLUMNS.map(() => 16);
-    const colWidths = [6, 24, 14, ...assignmentColumnWidths, 12, ...practiceColumnWidths, 12, 16, 12, 34];
+    const practiceCompletionColumnWidths = PRACTICE_COLUMNS.map(() => 14);
+    const practiceScoreColumnWidths = PRACTICE_COLUMNS.map(() => 16);
+    const colWidths = [
+      6,
+      24,
+      14,
+      ...assignmentColumnWidths,
+      12,
+      ...practiceCompletionColumnWidths,
+      ...practiceScoreColumnWidths,
+      16,
+      12,
+      34,
+    ];
     const extraSheets = [
       {
         sheetName: 'ThongKeXepLoai',
@@ -504,6 +580,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
     exportToExcel(exportExcelFileName, 'BangDiem', excelHeaders, excelBody, {
       title: `Bảng điểm lớp ${titleClassName}`,
       colWidths,
+      comments: excelScoreComments,
       extraSheets,
     });
   };
@@ -773,64 +850,82 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
             )}
           </div>
 
-          <div id="score-table" className="relative overflow-hidden rounded-xl border border-slate-200 shadow-sm">
-            <div className="border-b border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700">
-              Bảng điểm lớp {titleClassName}
+          <div id="score-table" className="relative overflow-hidden rounded-2xl border border-slate-200 shadow-lg shadow-slate-900/5">
+            <div className="flex items-center justify-between border-b border-slate-700 bg-gradient-to-r from-slate-800 to-slate-700 px-4 py-2.5 text-sm font-semibold text-white">
+              <span>Bảng điểm lớp {titleClassName}</span>
+              <span className="text-xs font-medium text-slate-200">Nhấn badge lỗi để xem chi tiết</span>
             </div>
             <div className="max-h-[58vh] overflow-auto">
-              <table className="w-full min-w-[1680px] border-separate border-spacing-0 text-sm text-slate-700">
-                <thead className="sticky top-0 z-20">
-                <tr className="border-b border-slate-200 bg-slate-100">
-                  <th className="sticky left-0 top-0 z-30 w-[70px] min-w-[70px] border-r border-slate-200 bg-slate-100 px-3 py-3 text-center font-semibold text-slate-700">
-                    STT
-                  </th>
-                  <th className="sticky left-[70px] top-0 z-30 w-[220px] min-w-[220px] border-r border-slate-200 bg-slate-100 px-4 py-3 text-left font-semibold text-slate-700">
-                    Họ và tên đệm
-                  </th>
-                  <th className="sticky left-[290px] top-0 z-30 w-[120px] min-w-[120px] border-r border-slate-200 bg-slate-100 px-4 py-3 text-left font-semibold text-slate-700">
-                    Tên
-                  </th>
-                  {displayedAssignments.map((assignment) => {
-                    const mode = columnDisplayByAssignmentId[assignment.id] ?? 'full';
-                    const isCompact = mode === 'compact';
-                    return (
-                      <th
-                        key={assignment.id}
-                        className={`${isCompact ? 'w-[92px] min-w-[92px]' : 'min-w-[140px]'} px-3 py-3 text-center font-semibold text-slate-700`}
-                      >
-                        <div className={isCompact ? 'truncate' : ''} title={assignment.name}>
-                          {assignment.name}
-                        </div>
-                        {!isCompact && (
-                          <div className="text-[11px] font-normal text-slate-500">(tối đa {assignment.maxScore})</div>
-                        )}
-                      </th>
-                    );
-                  })}
-                  {isClassificationColumnVisible && (
-                    <th className="min-w-[130px] px-3 py-3 text-center font-semibold text-slate-700">
-                      Xếp loại
-                    </th>
-                  )}
-                  {PRACTICE_COLUMNS.map((practice) => (
+              <table className="w-full min-w-[1940px] border-separate border-spacing-0 text-sm text-slate-700">
+                <thead className="z-20">
+                  <tr className="border-b border-slate-700 bg-slate-800">
                     <th
-                      key={`${practice.code}-completion`}
-                      className="min-w-[120px] bg-emerald-50 px-4 py-3 text-center font-semibold text-emerald-800"
+                      className="sticky top-0 z-50 border-r border-slate-700 bg-slate-800 px-3 py-3 text-center text-xs font-bold uppercase tracking-wide text-slate-100 shadow-[1px_0_0_0_rgba(100,116,139,0.45)]"
+                      style={{ left: 0, width: 70, minWidth: 70 }}
                     >
-                      {practice.shortLabel} số bài
+                      STT
                     </th>
-                  ))}
-                  <th className="min-w-[120px] bg-amber-50 px-4 py-3 text-center font-semibold text-amber-800">
-                    Tổng số bài
-                  </th>
-                  <th className="min-w-[140px] bg-blue-50 px-4 py-3 text-right font-semibold text-blue-800">
-                    Tổng điểm
-                  </th>
-                  <th className="min-w-[110px] bg-cyan-50 px-4 py-3 text-center font-semibold text-cyan-800">
-                    Tỷ lệ đạt
-                  </th>
-                  <th className="min-w-[220px] px-4 py-3 text-left font-semibold text-slate-700">Ghi chú</th>
-                </tr>
+                    <th
+                      className="sticky top-0 z-50 border-r border-slate-700 bg-slate-800 px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-100 shadow-[1px_0_0_0_rgba(100,116,139,0.45)]"
+                      style={{ left: 70, width: 220, minWidth: 220 }}
+                    >
+                      Họ và tên đệm
+                    </th>
+                    <th
+                      className="sticky top-0 z-50 border-r border-slate-700 bg-slate-800 px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-100 shadow-[1px_0_0_0_rgba(100,116,139,0.45)]"
+                      style={{ left: 290, width: 120, minWidth: 120 }}
+                    >
+                      Tên
+                    </th>
+                    {displayedAssignments.map((assignment) => {
+                      const mode = columnDisplayByAssignmentId[assignment.id] ?? 'full';
+                      const isCompact = mode === 'compact';
+                      return (
+                        <th
+                          key={assignment.id}
+                          className={`sticky top-0 z-40 ${isCompact ? 'w-[92px] min-w-[92px]' : 'min-w-[140px]'} border-r border-slate-700 bg-slate-800 px-3 py-3 text-center text-xs font-bold text-slate-100`}
+                        >
+                          <div className={isCompact ? 'truncate' : ''} title={assignment.name}>
+                            {assignment.name}
+                          </div>
+                          {!isCompact && (
+                            <div className="text-[11px] font-normal text-slate-300">(tối đa {assignment.maxScore})</div>
+                          )}
+                        </th>
+                      );
+                    })}
+                    {isClassificationColumnVisible && (
+                      <th className="sticky top-0 z-40 min-w-[130px] border-r border-slate-700 bg-slate-800 px-3 py-3 text-center text-xs font-bold uppercase tracking-wide text-slate-100">
+                        Xếp loại
+                      </th>
+                    )}
+                    {PRACTICE_COLUMNS.flatMap((practice) => {
+                      const theme = PRACTICE_COLUMN_THEME[practice.code];
+                      return [
+                        <th
+                          key={`${practice.code}-completion-sub`}
+                          className={`sticky top-0 z-40 min-w-[112px] border-l border-slate-700 px-3 py-3 text-center text-xs font-bold uppercase tracking-wide ${theme.completionHeader}`}
+                        >
+                          {practice.shortLabel} số bài
+                        </th>,
+                        <th
+                          key={`${practice.code}-score-sub`}
+                          className={`sticky top-0 z-40 min-w-[132px] border-r border-slate-700 px-3 py-3 text-right text-xs font-bold uppercase tracking-wide ${theme.scoreHeader}`}
+                        >
+                          {practice.shortLabel} tổng điểm
+                        </th>,
+                      ];
+                    })}
+                    <th className="sticky top-0 z-40 min-w-[140px] border-l border-slate-700 bg-blue-200 px-4 py-3 text-right text-xs font-bold uppercase tracking-wide text-blue-900">
+                      Tổng điểm
+                    </th>
+                    <th className="sticky top-0 z-40 min-w-[110px] border-l border-slate-700 bg-cyan-200 px-4 py-3 text-center text-xs font-bold uppercase tracking-wide text-cyan-900">
+                      Tỷ lệ đạt
+                    </th>
+                    <th className="sticky top-0 z-40 min-w-[220px] border-l border-slate-700 bg-slate-800 px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-100">
+                      Ghi chú
+                    </th>
+                  </tr>
                 </thead>
 
                 <tbody>
@@ -840,34 +935,50 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
                     <tr
                       key={row.id}
                       className={
-                        index % 2 === 0 ? 'bg-white hover:bg-slate-50' : 'bg-slate-50 hover:bg-slate-100'
+                        index % 2 === 0
+                          ? 'bg-white transition-colors hover:bg-blue-50'
+                          : 'bg-slate-50 transition-colors hover:bg-blue-50'
                       }
                     >
-                      <td className={`sticky left-0 z-20 w-[70px] min-w-[70px] border-r border-slate-200 px-3 py-3 text-center font-medium text-slate-500 ${stickyBgClass}`}>
+                      <td
+                        className={`sticky z-30 border-r border-slate-200 px-3 py-3 text-center font-medium text-slate-500 shadow-[1px_0_0_0_rgba(148,163,184,0.35)] ${stickyBgClass}`}
+                        style={{ left: 0, width: 70, minWidth: 70 }}
+                      >
                         {index + 1}
                       </td>
-                      <td className={`sticky left-[70px] z-20 w-[220px] min-w-[220px] border-r border-slate-200 px-4 py-3 font-medium text-slate-900 ${stickyBgClass}`}>
+                      <td
+                        className={`sticky z-30 border-r border-slate-200 px-4 py-3 font-medium text-slate-900 shadow-[1px_0_0_0_rgba(148,163,184,0.35)] ${stickyBgClass}`}
+                        style={{ left: 70, width: 220, minWidth: 220 }}
+                      >
                         {row.middleName || '--'}
                       </td>
-                      <td className={`sticky left-[290px] z-20 w-[120px] min-w-[120px] border-r border-slate-200 px-4 py-3 font-semibold text-slate-900 ${stickyBgClass}`}>
+                      <td
+                        className={`sticky z-30 border-r border-slate-200 px-4 py-3 font-semibold text-slate-900 shadow-[1px_0_0_0_rgba(148,163,184,0.35)] ${stickyBgClass}`}
+                        style={{ left: 290, width: 120, minWidth: 120 }}
+                      >
                         {row.firstName || '--'}
                       </td>
 
                       {displayedAssignments.map((assignment) => {
                         const assignmentErrors = row.errorsByAssignment[assignment.id] || [];
                         const score = row.calculatedScores[assignment.id] || 0;
+                        const maxScore = assignment.maxScore || 0;
                         const mode = columnDisplayByAssignmentId[assignment.id] ?? 'full';
                         const isCompact = mode === 'compact';
 
                         return (
                           <td
                             key={`${row.id}-${assignment.id}`}
-                            className={`${isCompact ? 'w-[92px] min-w-[92px]' : ''} px-3 py-3 text-center align-top`}
+                            className={`${isCompact ? 'w-[92px] min-w-[92px]' : ''} border-r border-slate-100 px-3 py-3 text-center align-top`}
                           >
-                            <div className="font-semibold text-slate-700">{formatScore(score)}</div>
+                            <div
+                              className={`mx-auto inline-flex min-w-[62px] items-center justify-center rounded-full border px-2.5 py-1 text-xs font-bold ${getScorePillClass(score, maxScore)}`}
+                            >
+                              {formatScore(score)}
+                            </div>
                             {assignmentErrors.length > 0 && !isCompact && (
                               <details className="mt-1 text-left text-xs text-amber-800">
-                                <summary className="cursor-pointer font-medium">
+                                <summary className="inline-flex cursor-pointer items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 font-semibold text-amber-700 hover:bg-amber-100">
                                   {assignmentErrors.length} lỗi
                                 </summary>
                                 <ul className="mt-1 max-h-24 list-inside list-disc overflow-auto rounded border border-amber-200 bg-amber-50 p-2 text-[11px]">
@@ -878,7 +989,10 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
                               </details>
                             )}
                             {assignmentErrors.length > 0 && isCompact && (
-                              <div className="mt-1 text-[11px] text-amber-700" title={assignmentErrors.join(' | ')}>
+                              <div
+                                className="mt-1 inline-flex rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700"
+                                title={assignmentErrors.join(' | ')}
+                              >
                                 {assignmentErrors.length} lỗi
                               </div>
                             )}
@@ -887,7 +1001,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
                       })}
 
                       {isClassificationColumnVisible && (
-                        <td className="px-3 py-3 text-center">
+                        <td className="border-r border-slate-300 px-3 py-3 text-center">
                           <div className="inline-flex flex-col items-center gap-1">
                             <select
                               value={row.classification}
@@ -922,29 +1036,44 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
                         </td>
                       )}
 
-                      {PRACTICE_COLUMNS.map((practice) => (
-                        <td
-                          key={`${row.id}-${practice.code}-completion`}
-                          className="bg-emerald-50 px-4 py-3 text-center font-semibold text-emerald-800"
-                          title={`${practice.title}: ${formatScore(row.practiceSummaries[practice.code].totalScore)}/${PRACTICE_MAX_SCORE} điểm`}
+                      {PRACTICE_COLUMNS.flatMap((practice) => {
+                        const theme = PRACTICE_COLUMN_THEME[practice.code];
+                        return [
+                          <td
+                            key={`${row.id}-${practice.code}-completion`}
+                            className={`border-l border-slate-300 px-4 py-3 text-center font-semibold ${theme.completionCell}`}
+                            title={`${practice.title}: ${formatScore(row.practiceSummaries[practice.code].totalScore)}/${PRACTICE_MAX_SCORE} điểm`}
+                          >
+                            {row.practiceSummaries[practice.code].completionText}
+                          </td>,
+                          <td
+                            key={`${row.id}-${practice.code}-total-score`}
+                            className={`border-r border-slate-300 px-4 py-3 text-right font-semibold ${theme.scoreCell}`}
+                            title={`${practice.title}: tổng điểm chuẩn hóa theo thang ${PRACTICE_MAX_SCORE}`}
+                          >
+                            {formatScore(row.practiceSummaries[practice.code].totalScore)}/
+                            {formatScore(PRACTICE_MAX_SCORE)}
+                          </td>,
+                        ];
+                      })}
+
+                      <td className="border-l border-slate-300 bg-blue-50 px-4 py-3 text-right">
+                        <span className="inline-flex rounded-full border border-blue-200 bg-blue-100 px-2.5 py-1 text-xs font-bold text-blue-800">
+                          {formatScore(row.totalScore)}/{formatScore(maxScoreTotal)}
+                        </span>
+                      </td>
+
+                      <td className="border-l border-slate-300 bg-cyan-50 px-4 py-3 text-center">
+                        <span
+                          className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-bold ${getPercentagePillClass(
+                            row.totalPercentage
+                          )}`}
                         >
-                          {row.practiceSummaries[practice.code].completionText}
-                        </td>
-                      ))}
-
-                      <td className="bg-amber-50 px-4 py-3 text-center font-semibold text-amber-800">
-                        {row.completedAssignments}/{assignments.length}
+                          {formatScore(row.totalPercentage)}%
+                        </span>
                       </td>
 
-                      <td className="bg-blue-50 px-4 py-3 text-right font-bold text-blue-800">
-                        {formatScore(row.totalScore)}/{formatScore(maxScoreTotal)}
-                      </td>
-
-                      <td className="bg-cyan-50 px-4 py-3 text-center font-semibold text-cyan-800">
-                        {formatScore(row.totalPercentage)}%
-                      </td>
-
-                      <td className="px-4 py-3 text-left text-slate-600">
+                      <td className="border-l border-slate-300 px-4 py-3 text-left text-slate-600">
                         <div className="max-w-[260px] space-y-1">
                           <textarea
                             value={row.notes}

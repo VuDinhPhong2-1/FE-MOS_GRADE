@@ -59,110 +59,136 @@ const ClassAnalyticsPanel = ({ classId, assignments }: ClassAnalyticsPanelProps)
   const weakTaskChartRows = useMemo(() => mapWeakTasksToBarChart(weakTasks), [weakTasks]);
 
   return (
-    <div className="mb-4 rounded-lg border border-gray-200 bg-white p-4 shadow">
-      <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <h2 className="flex items-center gap-2 text-lg font-bold text-gray-800">
-          <BarChart3 size={20} className="text-blue-600" />
-          Phân tích kết quả lớp học
-        </h2>
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <select
-            value={projectEndpoint}
-            onChange={(e) => setProjectEndpoint(e.target.value)}
-            className="rounded-md border px-3 py-2 text-sm"
-          >
-            <option value="">Tất cả dự án</option>
-            {endpointOptions.map((ep) => (
-              <option key={ep} value={ep}>
-                {ep}
-              </option>
-            ))}
-          </select>
-          <select
-            value={top}
-            onChange={(e) => setTop(Number(e.target.value))}
-            className="rounded-md border px-3 py-2 text-sm"
-          >
-            <option value={5}>Top 5 câu sai nhiều</option>
-            <option value={10}>Top 10 câu sai nhiều</option>
-            <option value={15}>Top 15 câu sai nhiều</option>
-          </select>
-        </div>
-      </div>
+    <section className="app-card relative overflow-hidden p-4 sm:p-5">
+      <div className="pointer-events-none absolute -left-12 -top-12 h-28 w-28 rounded-full bg-blue-200/70 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-12 right-1/4 h-24 w-24 rounded-full bg-cyan-200/70 blur-3xl" />
 
-      <div className="mb-4 rounded-md border border-blue-100 bg-blue-50 px-3 py-2 text-xs text-blue-800">
-        Các chỉ số bên dưới được tính theo <strong>lượt chấm</strong> (mỗi lần nộp/chấm lại được tính là 1 lượt).
-      </div>
-
-      {error && (
-        <div className="mb-4 flex items-center gap-2 rounded-md bg-red-50 p-3 text-sm text-red-700">
-          <AlertCircle size={16} />
-          {error}
-        </div>
-      )}
-
-      {loading ? (
-        <div className="py-6 text-sm text-gray-500">Đang tải dữ liệu phân tích...</div>
-      ) : (
-        <>
-          <div className="mb-5 grid grid-cols-1 gap-3 md:grid-cols-4">
-            <div className="rounded-md border p-3" title="Trung bình % của tất cả lượt chấm trong lớp">
-              <div className="text-xs text-gray-500">Điểm TB theo lượt chấm</div>
-              <div className="text-xl font-bold text-blue-700">{pct(overview?.averagePercentage || 0)}</div>
-              <div className="mt-1 text-[11px] text-gray-400">TB % của tất cả lượt chấm</div>
-            </div>
-            <div className="rounded-md border p-3" title="Tỷ lệ lượt chấm có điểm từ 60% trở lên">
-              <div className="text-xs text-gray-500">Tỷ lệ đạt (&gt;= 60%)</div>
-              <div className="text-xl font-bold text-green-700">{pct(overview?.passRate || 0)}</div>
-              <div className="mt-1 text-[11px] text-gray-400">Số lượt đạt / tổng lượt</div>
-            </div>
-            <div className="rounded-md border p-3" title="Tỷ lệ lượt chấm dưới 40%">
-              <div className="text-xs text-gray-500">Tỷ lệ cảnh báo (&lt; 40%)</div>
-              <div className="text-xl font-bold text-amber-700">{pct(overview?.warningRate || 0)}</div>
-              <div className="mt-1 text-[11px] text-gray-400">Số lượt dưới 40%</div>
-            </div>
-            <div className="rounded-md border p-3" title="Tổng số lượt chấm đã được lưu">
-              <div className="text-xs text-gray-500">Tổng lượt chấm</div>
-              <div className="text-xl font-bold text-gray-800">{overview?.totalAttempts || 0}</div>
-              <div className="mt-1 text-[11px] text-gray-400">Không phải số học sinh</div>
-            </div>
+      <div className="relative">
+        <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+          <div>
+            <h2 className="flex items-center gap-2 text-lg font-bold text-slate-900">
+              <BarChart3 size={20} className="text-blue-600" />
+              Phân tích kết quả lớp học
+            </h2>
+            <p className="mt-1 text-sm text-slate-600">
+              Tổng hợp theo từng lượt chấm để xác định xu hướng học tập và câu hỏi cần củng cố.
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-4">
-            <div className="rounded-md border p-3">
-              <div className="mb-3 flex items-center gap-2 font-semibold text-gray-700">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <select
+              value={projectEndpoint}
+              onChange={(e) => setProjectEndpoint(e.target.value)}
+              className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm"
+            >
+              <option value="">Tất cả dự án</option>
+              {endpointOptions.map((ep) => (
+                <option key={ep} value={ep}>
+                  {ep}
+                </option>
+              ))}
+            </select>
+            <select
+              value={top}
+              onChange={(e) => setTop(Number(e.target.value))}
+              className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm"
+            >
+              <option value={5}>Top 5 câu sai nhiều</option>
+              <option value={10}>Top 10 câu sai nhiều</option>
+              <option value={15}>Top 15 câu sai nhiều</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="mb-4 rounded-xl border border-sky-100 bg-sky-50 px-3 py-2 text-xs text-sky-800">
+          Các chỉ số bên dưới được tính theo <strong>lượt chấm</strong> (mỗi lần nộp/chấm lại được tính là 1 lượt).
+        </div>
+
+        {error && (
+          <div className="mb-4 flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+            <AlertCircle size={16} />
+            {error}
+          </div>
+        )}
+
+        {loading ? (
+          <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-500">
+            Đang tải dữ liệu phân tích...
+          </div>
+        ) : (
+          <>
+            <div className="mb-5 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <div
+                className="rounded-xl border border-blue-100 bg-gradient-to-br from-blue-50 to-white p-3 shadow-sm"
+                title="Trung bình % của tất cả lượt chấm trong lớp"
+              >
+                <div className="text-xs font-medium text-slate-500">Điểm TB theo lượt chấm</div>
+                <div className="text-2xl font-bold text-blue-700">{pct(overview?.averagePercentage || 0)}</div>
+                <div className="mt-1 text-[11px] text-slate-400">TB % của tất cả lượt chấm</div>
+              </div>
+              <div
+                className="rounded-xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-white p-3 shadow-sm"
+                title="Tỷ lệ lượt chấm có điểm từ 60% trở lên"
+              >
+                <div className="text-xs font-medium text-slate-500">Tỷ lệ đạt (&gt;= 60%)</div>
+                <div className="text-2xl font-bold text-emerald-700">{pct(overview?.passRate || 0)}</div>
+                <div className="mt-1 text-[11px] text-slate-400">Số lượt đạt / tổng lượt</div>
+              </div>
+              <div
+                className="rounded-xl border border-amber-100 bg-gradient-to-br from-amber-50 to-white p-3 shadow-sm"
+                title="Tỷ lệ lượt chấm dưới 40%"
+              >
+                <div className="text-xs font-medium text-slate-500">Tỷ lệ cảnh báo (&lt; 40%)</div>
+                <div className="text-2xl font-bold text-amber-700">{pct(overview?.warningRate || 0)}</div>
+                <div className="mt-1 text-[11px] text-slate-400">Số lượt dưới 40%</div>
+              </div>
+              <div
+                className="rounded-xl border border-slate-200 bg-gradient-to-br from-slate-100 to-white p-3 shadow-sm"
+                title="Tổng số lượt chấm đã được lưu"
+              >
+                <div className="text-xs font-medium text-slate-500">Tổng lượt chấm</div>
+                <div className="text-2xl font-bold text-slate-800">{overview?.totalAttempts || 0}</div>
+                <div className="mt-1 text-[11px] text-slate-400">Không phải số học sinh</div>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+              <div className="mb-3 flex items-center gap-2 font-semibold text-slate-700">
                 <TriangleAlert size={16} className="text-amber-600" />
                 Các câu yếu nhất
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2.5">
                 {weakTaskChartRows.length === 0 && (
-                  <div className="text-sm text-gray-500">Không có dữ liệu câu yếu.</div>
+                  <div className="text-sm text-slate-500">Không có dữ liệu câu yếu.</div>
                 )}
                 {weakTaskChartRows.map((row) => (
                   <div key={row.x}>
                     <div className="mb-1 flex justify-between text-xs">
-                      <span className="font-medium">{row.x}</span>
-                      <span className="text-gray-500">
+                      <span className="font-semibold text-slate-700">{row.x}</span>
+                      <span className="text-slate-500">
                         {pct(row.y)} ({row.failed}/{row.attempts})
                       </span>
                     </div>
-                    <div className="h-2 rounded bg-gray-100">
-                      <div className="h-2 rounded bg-rose-500" style={{ width: barWidth(row.y) }} />
+                    <div className="h-2.5 rounded-full bg-rose-100">
+                      <div
+                        className="h-2.5 rounded-full bg-gradient-to-r from-rose-500 to-orange-500"
+                        style={{ width: barWidth(row.y) }}
+                      />
                     </div>
                   </div>
                 ))}
               </div>
             </div>
-          </div>
 
-          {gaugeData.length > 0 && (
-            <div className="mt-4 text-xs text-gray-500">
-              Chỉ số quy đổi (theo lượt chấm): {gaugeData.map((g) => `${g.label}: ${pct(g.value)}`).join(' | ')}
-            </div>
-          )}
-        </>
-      )}
-    </div>
+            {gaugeData.length > 0 && (
+              <div className="mt-4 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-500">
+                Chỉ số quy đổi (theo lượt chấm): {gaugeData.map((g) => `${g.label}: ${pct(g.value)}`).join(' | ')}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </section>
   );
 };
 

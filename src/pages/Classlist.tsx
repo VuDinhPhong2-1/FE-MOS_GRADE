@@ -356,12 +356,16 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
   if (selectedClass) {
     const selectedClassReadOnly = !canManageClass(selectedClass);
     return (
-      <>
-        <button className="app-btn-secondary mb-4 flex items-center gap-2 px-4 py-2" onClick={handleBackToClassList}>
-          ← Quay lại danh sách lớp
+      <div className="space-y-4">
+        <button
+          className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50"
+          onClick={handleBackToClassList}
+        >
+          <span aria-hidden>←</span>
+          Quay lại danh sách lớp
         </button>
         <StudentList selectedClass={selectedClass} readOnly={selectedClassReadOnly} />
-      </>
+      </div>
     );
   }
 
