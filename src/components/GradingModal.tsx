@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { X, Plus, Save, Loader2, ArrowLeft, XCircle, CheckCircle, Upload, Search, Check, Pencil, Trash2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import type { Assignment, CreateAssignmentRequest, GradingEndpointInfo, UpdateAssignmentRequest } from '../types/assignment.types';
+import type { Assignment, GradingEndpointInfo, UpdateAssignmentRequest } from '../types/assignment.types';
 import type { Student } from '../types/student.types';
 import type { GradingResult, StudentGradingState } from '../types/grading.types';
 import type { ScoreResponse } from '../types/score.types';
@@ -57,6 +57,14 @@ interface MultiUndoSnapshot {
     previousScoreState: MultiScoreCellValue;
 }
 
+interface BulkAssignmentDraft {
+    endpoint: string;
+    displayName: string;
+    maxScore: number;
+    name: string;
+    selected: boolean;
+}
+
 const PRACTICE_OPTIONS = [
     { code: 'practice01', label: 'Practice 01' },
     { code: 'practice02', label: 'Practice 02' },
@@ -64,6 +72,24 @@ const PRACTICE_OPTIONS = [
 ] as const;
 
 type PracticeCode = typeof PRACTICE_OPTIONS[number]['code'];
+
+const buildBulkAssignmentDrafts = (
+    endpoints: GradingEndpointInfo[],
+    previousDrafts: BulkAssignmentDraft[]
+): BulkAssignmentDraft[] => {
+    const previousMap = new Map(previousDrafts.map((draft) => [draft.endpoint, draft]));
+
+    return endpoints.map((endpoint) => {
+        const previous = previousMap.get(endpoint.endpoint);
+        return {
+            endpoint: endpoint.endpoint,
+            displayName: endpoint.displayName,
+            maxScore: endpoint.maxScore,
+            name: previous ? previous.name : endpoint.displayName,
+            selected: previous ? previous.selected : true,
+        };
+    });
+};
 
 const GradingModal: React.FC<GradingModalProps> = ({
     isOpen,
@@ -114,13 +140,9 @@ const GradingModal: React.FC<GradingModalProps> = ({
     const isSavingScoresRef = useRef(false);
 
     // TAO BAI TAP MOI
-    const [newAssignment, setNewAssignment] = useState<CreateAssignmentRequest>({
-        name: '',
-        classId: classId,
-        maxScore: 10,
-        gradingType: 'auto',
-    });
     const [newAssignmentPracticeCode, setNewAssignmentPracticeCode] = useState<PracticeCode>('practice01');
+    const [bulkAssignmentDrafts, setBulkAssignmentDrafts] = useState<BulkAssignmentDraft[]>([]);
+    const [bulkAssignmentDescription, setBulkAssignmentDescription] = useState('');
     const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null);
     const [assignmentSubmitLoading, setAssignmentSubmitLoading] = useState(false);
     const [assignmentEditForm, setAssignmentEditForm] = useState<UpdateAssignmentRequest>({
@@ -191,6 +213,10 @@ const GradingModal: React.FC<GradingModalProps> = ({
             ),
         [excelGradingEndpoints, newAssignmentPracticeCode]
     );
+    const selectedBulkAssignmentCount = useMemo(
+        () => bulkAssignmentDrafts.filter((draft) => draft.selected).length,
+        [bulkAssignmentDrafts]
+    );
     const hasPendingMultiAssignmentSelectionChanges = useMemo(() => {
         if (multiAssignmentDraftIds.length !== multiAssignmentIds.length) {
             return true;
@@ -232,55 +258,9 @@ const GradingModal: React.FC<GradingModalProps> = ({
             return;
         }
 
-        setNewAssignment((prev) => {
-            const currentEndpoint = prev.gradingApiEndpoint || '';
-            const selectedInPractice = newAssignmentPracticeEndpoints.find(
-                (endpoint) => endpoint.endpoint === currentEndpoint
-            );
-
-            if (selectedInPractice) {
-                const nextMaxScore = selectedInPractice.maxScore;
-                if (Object.is(prev.maxScore, nextMaxScore)) {
-                    return prev;
-                }
-
-                return {
-                    ...prev,
-                    maxScore: nextMaxScore,
-                };
-            }
-
-            const firstEndpoint = newAssignmentPracticeEndpoints[0];
-            if (!firstEndpoint) {
-                if (!prev.gradingApiEndpoint && Object.is(prev.maxScore, 10)) {
-                    return prev;
-                }
-
-                return {
-                    ...prev,
-                    gradingApiEndpoint: '',
-                    maxScore: 10,
-                };
-            }
-
-            const nextName = prev.name.trim() ? prev.name : firstEndpoint.displayName;
-            if (
-                prev.gradingType === 'auto' &&
-                prev.gradingApiEndpoint === firstEndpoint.endpoint &&
-                Object.is(prev.maxScore, firstEndpoint.maxScore) &&
-                prev.name === nextName
-            ) {
-                return prev;
-            }
-
-            return {
-                ...prev,
-                gradingType: 'auto',
-                gradingApiEndpoint: firstEndpoint.endpoint,
-                maxScore: firstEndpoint.maxScore,
-                name: nextName,
-            };
-        });
+        setBulkAssignmentDrafts((previousDrafts) =>
+            buildBulkAssignmentDrafts(newAssignmentPracticeEndpoints, previousDrafts)
+        );
     }, [isOpen, chooseMode, newAssignmentPracticeEndpoints]);
 
     // ============ HELPER FUNCTIONS ============
@@ -308,19 +288,14 @@ const GradingModal: React.FC<GradingModalProps> = ({
         setStudentSearchMatchedIds([]);
         setStudentSearchMatchIndex(-1);
         setLastStudentSearchKeyword('');
+        setBulkAssignmentDrafts([]);
+        setBulkAssignmentDescription('');
         setLoading(false);
         setIsCreatingAssignment(false);
         isSavingScoresRef.current = false;
         rowRefs.current.clear();
         setEditingAssignment(null);
         setAssignmentSubmitLoading(false);
-        setNewAssignment({
-            name: '',
-            classId: classId,
-            maxScore: 10,
-            gradingType: 'auto',
-            gradingApiEndpoint: '',
-        });
         setNewAssignmentPracticeCode('practice01');
         setAssignmentEditForm({
             name: '',
@@ -1473,37 +1448,106 @@ const GradingModal: React.FC<GradingModalProps> = ({
         }
     };
 
-    const handleCreateAssignment = async () => {
+    const handleToggleBulkAssignmentSelection = (endpoint: string) => {
+        setBulkAssignmentDrafts((previousDrafts) =>
+            previousDrafts.map((draft) =>
+                draft.endpoint === endpoint
+                    ? { ...draft, selected: !draft.selected }
+                    : draft
+            )
+        );
+    };
+
+    const handleBulkAssignmentNameChange = (endpoint: string, name: string) => {
+        setBulkAssignmentDrafts((previousDrafts) =>
+            previousDrafts.map((draft) =>
+                draft.endpoint === endpoint
+                    ? { ...draft, name }
+                    : draft
+            )
+        );
+    };
+
+    const handleSelectAllBulkAssignments = () => {
+        setBulkAssignmentDrafts((previousDrafts) =>
+            previousDrafts.map((draft) => ({ ...draft, selected: true }))
+        );
+    };
+
+    const handleClearBulkAssignments = () => {
+        setBulkAssignmentDrafts((previousDrafts) =>
+            previousDrafts.map((draft) => ({ ...draft, selected: false }))
+        );
+    };
+
+    const handleResetBulkAssignmentNames = () => {
+        setBulkAssignmentDrafts((previousDrafts) =>
+            previousDrafts.map((draft) => ({ ...draft, name: draft.displayName }))
+        );
+    };
+
+    const handleCreateBulkAssignments = async () => {
         if (isCreatingAssignment) {
             return;
         }
 
-        if (!newAssignment.name.trim()) {
-            alert('Vui lòng nhập tên bài tập!');
+        const selectedDrafts = bulkAssignmentDrafts.filter((draft) => draft.selected);
+        if (selectedDrafts.length === 0) {
+            alert('Vui lòng chọn ít nhất 1 project để tạo bài tập.');
             return;
         }
-        if (!newAssignment.gradingApiEndpoint) {
-            alert('Vui lòng chọn dự án để chấm điểm tự động!');
+
+        const invalidDraft = selectedDrafts.find((draft) => !draft.name.trim());
+        if (invalidDraft) {
+            alert(`Tên bài tập cho ${invalidDraft.displayName} không được để trống.`);
             return;
         }
 
         setIsCreatingAssignment(true);
         try {
-            const created = await assignmentService.create(newAssignment, getAccessToken);
-            setAssignments([created, ...assignments]);
-            setChooseMode(null);
-            setNewAssignment({
-                name: '',
-                classId: classId,
-                maxScore: 10,
-                gradingType: 'auto',
-                gradingApiEndpoint: '',
-            });
-            setNewAssignmentPracticeCode('practice01');
-            alert('Tạo bài tập thanh cong!');
-        } catch (error) {
-            console.error('Lỗi khi tạo bài tập:', error);
-            alert('Không thể tạo bài tập!');
+            const createdAssignments: Assignment[] = [];
+            const failedAssignments: string[] = [];
+            const sharedDescription = bulkAssignmentDescription.trim();
+
+            for (const draft of selectedDrafts) {
+                try {
+                    const created = await assignmentService.create(
+                        {
+                            name: draft.name.trim(),
+                            classId,
+                            maxScore: draft.maxScore,
+                            gradingType: 'auto',
+                            gradingApiEndpoint: draft.endpoint,
+                            description: sharedDescription || undefined,
+                        },
+                        getAccessToken
+                    );
+                    createdAssignments.push(created);
+                } catch (error) {
+                    failedAssignments.push(
+                        `${draft.displayName}: ${getReadableErrorMessage(error, 'Không thể tạo bài tập.')}`
+                    );
+                }
+            }
+
+            if (createdAssignments.length > 0) {
+                setAssignments((prev) => [...createdAssignments, ...prev]);
+            }
+
+            if (failedAssignments.length === 0) {
+                alert(`Tạo thành công ${createdAssignments.length} bài tập.`);
+                setChooseMode(null);
+                return;
+            }
+
+            if (createdAssignments.length > 0) {
+                alert(
+                    `Đã tạo ${createdAssignments.length}/${selectedDrafts.length} bài tập.\nLỗi:\n${failedAssignments.join('\n')}`
+                );
+                return;
+            }
+
+            alert(`Không thể tạo bài tập.\n${failedAssignments.join('\n')}`);
         } finally {
             setIsCreatingAssignment(false);
         }
@@ -1757,163 +1801,145 @@ const GradingModal: React.FC<GradingModalProps> = ({
             </button>
 
             <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                <h3 className="font-semibold mb-4 text-lg">Tạo bài chấm mới</h3>
+                <h3 className="font-semibold mb-4 text-lg">Tạo nhanh bài tập theo Practice</h3>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-3">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Tên bài tập *
-                        </label>
-                        <input
-                            type="text"
-                            value={newAssignment.name}
-                            onChange={(e) => setNewAssignment({ ...newAssignment, name: e.target.value })}
-                            className="w-full border border-gray-300 rounded-md px-3 py-2"
-                            placeholder="Ví dụ: Bài tập Excel dự án 09"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Điểm tối đa
-                        </label>
-                        <input
-                            type="number"
-                            value={newAssignment.maxScore}
-                            onChange={(e) =>
-                                setNewAssignment((prev) => ({
-                                    ...prev,
-                                    maxScore: Number(e.target.value),
-                                }))
-                            }
-                            className="w-full border border-gray-300 rounded-md px-3 py-2"
-                            min="0"
-                            max="1000"
-                            disabled
-                            readOnly
-                            style={{ backgroundColor: '#f1f5f9' }}
-                        />
-                        <span className="text-xs text-blue-600">Điểm tối đa được lấy tự động từ dự án.</span>
-                    </div>
-
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-3">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Chọn Practice *
-                        </label>
-                        <select
-                            value={newAssignmentPracticeCode}
-                            onChange={(e) => {
-                                const nextPracticeCode = e.target.value as PracticeCode;
-                                setNewAssignmentPracticeCode(nextPracticeCode);
-
-                                const nextPracticeEndpoints = excelGradingEndpoints.filter(
-                                    (endpoint) => (endpoint.practiceCode || '').toLowerCase() === nextPracticeCode
-                                );
-
-                                setNewAssignment((prev) => {
-                                    const selectedInNextPractice = nextPracticeEndpoints.some(
-                                        (endpoint) => endpoint.endpoint === (prev.gradingApiEndpoint || '')
-                                    );
-                                    if (selectedInNextPractice) {
-                                        return prev;
-                                    }
-
-                                    const firstEndpoint = nextPracticeEndpoints[0];
-                                    if (!firstEndpoint) {
-                                        if (!prev.gradingApiEndpoint && Object.is(prev.maxScore, 10)) {
-                                            return prev;
-                                        }
-
-                                        return {
-                                            ...prev,
-                                            gradingApiEndpoint: '',
-                                            maxScore: 10,
-                                        };
-                                    }
-
-                                    const nextName = prev.name.trim() ? prev.name : firstEndpoint.displayName;
-                                    return {
-                                        ...prev,
-                                        gradingType: 'auto',
-                                        gradingApiEndpoint: firstEndpoint.endpoint,
-                                        maxScore: firstEndpoint.maxScore,
-                                        name: nextName,
-                                    };
-                                });
-                            }}
-                            className="w-full border border-gray-300 rounded-md px-3 py-2"
-                        >
-                            {PRACTICE_OPTIONS.map((practice) => (
-                                <option key={practice.code} value={practice.code}>
-                                    {practice.label}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Chọn Project *
-                        </label>
-                        <select
-                            value={newAssignment.gradingApiEndpoint || ''}
-                            onChange={e => {
-                                const selectedEp = newAssignmentPracticeEndpoints.find(ep => ep.endpoint === e.target.value);
-                                setNewAssignment(prev => ({
-                                    ...prev,
-                                    gradingType: 'auto',
-                                    gradingApiEndpoint: e.target.value,
-                                    maxScore: selectedEp ? selectedEp.maxScore : 10,
-                                    name: prev.name.trim() ? prev.name : selectedEp?.displayName || prev.name,
-                                }));
-                            }}
-                            className="w-full border border-gray-300 rounded-md px-3 py-2"
-                            disabled={newAssignmentPracticeEndpoints.length === 0}
-                        >
-                            <option value="">-- Chọn dự án --</option>
-                            {newAssignmentPracticeEndpoints.map(ep => (
-                                <option key={ep.endpoint} value={ep.endpoint}>
-                                    {ep.displayName}
-                                </option>
-                            ))}
-                        </select>
-                        {newAssignmentPracticeEndpoints.length === 0 && (
-                            <span className="text-xs text-amber-700">Practice này chưa có Project khả dụng để chấm tự động.</span>
-                        )}
-                    </div>
+                <div className="mb-3">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Chọn Practice *
+                    </label>
+                    <select
+                        value={newAssignmentPracticeCode}
+                        onChange={(e) => setNewAssignmentPracticeCode(e.target.value as PracticeCode)}
+                        className="w-full border border-gray-300 rounded-md px-3 py-2"
+                    >
+                        {PRACTICE_OPTIONS.map((practice) => (
+                            <option key={practice.code} value={practice.code}>
+                                {practice.label}
+                            </option>
+                        ))}
+                    </select>
+                    <p className="text-xs text-slate-600 mt-1">
+                        Hệ thống sẽ lấy danh sách project của practice này và điền sẵn tên theo project.
+                    </p>
                 </div>
 
                 <div className="mb-3">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Mô tả dùng chung (tuỳ chọn)
+                    </label>
                     <textarea
-                        value={newAssignment.description || ''}
-                        onChange={(e) => setNewAssignment({ ...newAssignment, description: e.target.value })}
+                        value={bulkAssignmentDescription}
+                        onChange={(e) => setBulkAssignmentDescription(e.target.value)}
                         className="w-full border border-gray-300 rounded-md px-3 py-2"
                         rows={2}
-                        placeholder="Mô tả bài tập..."
+                        placeholder="Nội dung này sẽ áp dụng cho tất cả bài được tạo nhanh."
                     />
                 </div>
 
-                <button
-                    onClick={handleCreateAssignment}
-                    disabled={isCreatingAssignment}
-                    className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-400 flex items-center justify-center gap-2"
-                >
-                    {isCreatingAssignment ? (
-                        <>
-                            <Loader2 size={18} className="animate-spin" />
-                            Đang tạo...
-                        </>
+                <div className="mb-4 rounded-md border border-emerald-200 bg-emerald-50 p-3">
+                    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                        <div>
+                            <h4 className="text-sm font-semibold text-emerald-800">Danh sách project sẽ tạo</h4>
+                            <p className="text-xs text-emerald-700 mt-1">
+                                Bạn có thể bỏ chọn project không cần tạo và đổi tên từng bài trước khi lưu.
+                            </p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                            <button
+                                type="button"
+                                onClick={handleSelectAllBulkAssignments}
+                                disabled={isCreatingAssignment || bulkAssignmentDrafts.length === 0}
+                                className="px-2.5 py-1 text-xs rounded-md border border-emerald-300 bg-white text-emerald-700 hover:bg-emerald-100 disabled:opacity-50"
+                            >
+                                Chọn tất cả
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleClearBulkAssignments}
+                                disabled={isCreatingAssignment || bulkAssignmentDrafts.length === 0}
+                                className="px-2.5 py-1 text-xs rounded-md border border-emerald-300 bg-white text-emerald-700 hover:bg-emerald-100 disabled:opacity-50"
+                            >
+                                Bỏ chọn
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleResetBulkAssignmentNames}
+                                disabled={isCreatingAssignment || bulkAssignmentDrafts.length === 0}
+                                className="px-2.5 py-1 text-xs rounded-md border border-emerald-300 bg-white text-emerald-700 hover:bg-emerald-100 disabled:opacity-50"
+                            >
+                                Reset tên theo Project
+                            </button>
+                        </div>
+                    </div>
+
+                    {bulkAssignmentDrafts.length === 0 ? (
+                        <p className="mt-3 text-xs text-amber-700">
+                            Practice này chưa có project khả dụng để tạo nhanh.
+                        </p>
                     ) : (
-                        <>
-                            <Plus size={18} />
-                            Tạo bài tập
-                        </>
+                        <div className="mt-3 overflow-x-auto rounded-md border border-emerald-100 bg-white">
+                            <table className="min-w-full divide-y divide-emerald-100">
+                                <thead className="bg-emerald-50">
+                                    <tr>
+                                        <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase text-emerald-800">Chọn</th>
+                                        <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase text-emerald-800">Project</th>
+                                        <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase text-emerald-800">Tên bài tập</th>
+                                        <th className="px-3 py-2 text-center text-[11px] font-semibold uppercase text-emerald-800">Điểm tối đa</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-emerald-50">
+                                    {bulkAssignmentDrafts.map((draft) => (
+                                        <tr key={draft.endpoint}>
+                                            <td className="px-3 py-2">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={draft.selected}
+                                                    onChange={() => handleToggleBulkAssignmentSelection(draft.endpoint)}
+                                                    disabled={isCreatingAssignment}
+                                                />
+                                            </td>
+                                            <td className="px-3 py-2 text-xs text-gray-700">{draft.displayName}</td>
+                                            <td className="px-3 py-2">
+                                                <input
+                                                    type="text"
+                                                    value={draft.name}
+                                                    onChange={(e) =>
+                                                        handleBulkAssignmentNameChange(draft.endpoint, e.target.value)
+                                                    }
+                                                    disabled={isCreatingAssignment}
+                                                    className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+                                                    placeholder="Nhập tên bài tập"
+                                                />
+                                            </td>
+                                            <td className="px-3 py-2 text-center text-sm text-gray-700">{draft.maxScore}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     )}
-                </button>
+
+                    <div className="mt-3">
+                        <button
+                            type="button"
+                            onClick={handleCreateBulkAssignments}
+                            disabled={isCreatingAssignment || selectedBulkAssignmentCount === 0}
+                            className="w-full rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        >
+                            {isCreatingAssignment ? (
+                                <>
+                                    <Loader2 size={16} className="animate-spin" />
+                                    Đang tạo nhiều bài...
+                                </>
+                            ) : (
+                                <>
+                                    <Plus size={16} />
+                                    Tạo nhanh {selectedBulkAssignmentCount} bài đã chọn
+                                </>
+                            )}
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     );

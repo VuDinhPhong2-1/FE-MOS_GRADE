@@ -64,7 +64,8 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
   const schoolIdForCreate = selectedSchool.id || formData.schoolId || '';
   const currentUserId = user?.userId || '';
   const isAdmin = user?.role === 'Admin';
-  const canCreateClass = isAdmin || (Boolean(selectedSchool.ownerId) && selectedSchool.ownerId === currentUserId);
+  const isTeacher = user?.role === 'Teacher';
+  const canCreateClass = isAdmin || isTeacher;
   const canManageClass = useCallback(
     (cls: Class): boolean =>
       isAdmin || cls.ownerId === currentUserId || Boolean(cls.managerTeacherIds?.includes(currentUserId)),
