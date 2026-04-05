@@ -1,4 +1,5 @@
 import type { GradingResult } from '../types/grading.types';
+import type { CreateGradingTestBugNoteRequest, GradingTestBugNote } from '../types/grading-test-bug-note.types';
 import { authFetch } from './auth-fetch';
 import { API_BASE_URL, API_ORIGIN } from '../config/api';
 
@@ -14,6 +15,8 @@ interface GradingTestProject {
   endpoint: string;
   displayName: string;
 }
+
+const jsonHeaders = { 'Content-Type': 'application/json' };
 
 const buildGradingUrl = (gradingEndpoint: string): string => {
   const raw = gradingEndpoint.trim();
@@ -179,6 +182,60 @@ export const gradingService = {
     }
 
     return response.json();
+  },
+
+  async getTestingBugNotes(
+    getAccessToken: (forceRefresh?: boolean) => Promise<string | null>,
+    projectCode?: string
+  ): Promise<GradingTestBugNote[]> {
+    const query = projectCode ? `?projectCode=${encodeURIComponent(projectCode)}` : '';
+    const response = await authFetch(
+      `${API_BASE_URL}/grading-test/bug-notes${query}`,
+      { method: 'GET', headers: jsonHeaders, cache: 'no-store' },
+      getAccessToken
+    );
+
+    if (!response.ok) {
+      throw new Error(await parseErrorMessage(response));
+    }
+
+    return response.json();
+  },
+
+  async createTestingBugNote(
+    request: CreateGradingTestBugNoteRequest,
+    getAccessToken: (forceRefresh?: boolean) => Promise<string | null>
+  ): Promise<GradingTestBugNote> {
+    const response = await authFetch(
+      `${API_BASE_URL}/grading-test/bug-notes`,
+      {
+        method: 'POST',
+        headers: jsonHeaders,
+        body: JSON.stringify(request),
+      },
+      getAccessToken
+    );
+
+    if (!response.ok) {
+      throw new Error(await parseErrorMessage(response));
+    }
+
+    return response.json();
+  },
+
+  async deleteTestingBugNote(
+    id: string,
+    getAccessToken: (forceRefresh?: boolean) => Promise<string | null>
+  ): Promise<void> {
+    const response = await authFetch(
+      `${API_BASE_URL}/grading-test/bug-notes/${id}`,
+      { method: 'DELETE', headers: jsonHeaders },
+      getAccessToken
+    );
+
+    if (!response.ok) {
+      throw new Error(await parseErrorMessage(response));
+    }
   },
 };
 

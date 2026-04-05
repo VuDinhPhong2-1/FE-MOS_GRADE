@@ -111,6 +111,49 @@ const normalizeAssignmentEndpoint = <T extends Assignment>(assignment: T): T => 
   gradingApiEndpoint: normalizeProjectEndpoint(assignment.gradingApiEndpoint),
 });
 
+const extractProjectNumber = (assignment: Pick<Assignment, 'gradingApiEndpoint' | 'name'>): number | null => {
+  const normalizedEndpoint = normalizeProjectEndpoint(assignment.gradingApiEndpoint);
+  const endpointMatch = normalizedEndpoint?.match(/project(\d{1,3})$/i);
+  if (endpointMatch) {
+    return Number.parseInt(endpointMatch[1], 10);
+  }
+
+  const normalizedName = (assignment.name || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+  const nameMatch = normalizedName.match(/(?:project|du an)\s*0*(\d{1,3})/i);
+  if (nameMatch) {
+    return Number.parseInt(nameMatch[1], 10);
+  }
+
+  return null;
+};
+
+const compareAssignmentsForDisplay = <T extends Assignment>(left: T, right: T): number => {
+  const leftProjectNumber = extractProjectNumber(left);
+  const rightProjectNumber = extractProjectNumber(right);
+
+  if (leftProjectNumber !== null && rightProjectNumber !== null && leftProjectNumber !== rightProjectNumber) {
+    return leftProjectNumber - rightProjectNumber;
+  }
+
+  if (leftProjectNumber !== null && rightProjectNumber === null) return -1;
+  if (leftProjectNumber === null && rightProjectNumber !== null) return 1;
+
+  const byName = (left.name || '').localeCompare(right.name || '', 'vi', {
+    numeric: true,
+    sensitivity: 'base',
+  });
+  if (byName !== 0) return byName;
+
+  const leftCreatedAt = new Date(left.createdAt || 0).getTime();
+  const rightCreatedAt = new Date(right.createdAt || 0).getTime();
+  return rightCreatedAt - leftCreatedAt;
+};
+
+const sortAssignmentsForDisplay = <T extends Assignment>(items: T[]): T[] =>
+  [...items].sort(compareAssignmentsForDisplay);
+
 export const assignmentService = {
   async getByClass(
     classId: string,
@@ -129,7 +172,7 @@ export const assignmentService = {
     }
 
     const data = (await response.json()) as Assignment[];
-    return data.map(normalizeAssignmentEndpoint);
+    return sortAssignmentsForDisplay(data.map(normalizeAssignmentEndpoint));
   },
 
   async getByClassWithStats(
@@ -147,7 +190,9 @@ export const assignmentService = {
     }
 
     const data = (await response.json()) as AssignmentWithStats[];
-    return data.map((item) => normalizeAssignmentEndpoint(item as AssignmentWithStats));
+    return sortAssignmentsForDisplay(
+      data.map((item) => normalizeAssignmentEndpoint(item as AssignmentWithStats))
+    );
   },
 
   async getById(

@@ -700,9 +700,9 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-[1px]">
-      <div className="flex max-h-[92vh] w-full max-w-7xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-slate-200 bg-gradient-to-r from-slate-50 to-blue-50 px-6 py-5">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-1 sm:p-3 backdrop-blur-[1px]">
+      <div className="flex h-[96vh] w-[calc(100vw-0.5rem)] max-w-[1920px] flex-col overflow-hidden rounded-xl bg-white shadow-2xl sm:h-[94vh] sm:w-[calc(100vw-1.5rem)] sm:rounded-2xl">
+        <div className="flex items-center justify-between border-b border-slate-200 bg-gradient-to-r from-slate-50 to-blue-50 px-4 py-4 sm:px-6 sm:py-5">
           <div className="flex items-center gap-3">
             <div className="grid h-10 w-10 place-items-center rounded-xl bg-blue-600 font-bold text-white">
               BD
@@ -720,7 +720,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
           </button>
         </div>
 
-        <div className="flex-1 overflow-auto px-6 pb-4 pt-4">
+        <div className="flex-1 overflow-auto px-2 pb-3 pt-3 sm:px-4 sm:pb-4 sm:pt-4 lg:px-5">
           <div className="mb-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
             <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
               <div className="text-sm font-semibold text-slate-700">Tùy chỉnh cột điểm</div>
@@ -855,7 +855,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
               <span>Bảng điểm lớp {titleClassName}</span>
               <span className="text-xs font-medium text-slate-200">Nhấn badge lỗi để xem chi tiết</span>
             </div>
-            <div className="max-h-[58vh] overflow-auto">
+            <div className="min-h-[18rem] max-h-[calc(100vh-20rem)] overflow-auto">
               <table className="w-full min-w-[1940px] border-separate border-spacing-0 text-sm text-slate-700">
                 <thead className="z-20">
                   <tr className="border-b border-slate-700 bg-slate-800">
@@ -1114,7 +1114,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
           </div>
         </div>
 
-        <div className="flex flex-col items-center justify-end gap-2 border-t border-slate-200 bg-slate-50 p-5 sm:flex-row">
+        <div className="flex flex-col items-center justify-end gap-2 border-t border-slate-200 bg-slate-50 p-3 sm:flex-row sm:p-4">
           <button
             onClick={handleExportExcel}
             className="flex w-full items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-white hover:bg-green-700 sm:w-auto"

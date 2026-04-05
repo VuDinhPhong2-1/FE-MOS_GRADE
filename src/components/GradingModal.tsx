@@ -108,6 +108,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
     const [loading, setLoading] = useState(false);
     const [isCreatingAssignment, setIsCreatingAssignment] = useState(false);
     const [showInactiveAssignments, setShowInactiveAssignments] = useState(false);
+    const [manageSelectedAssignmentIds, setManageSelectedAssignmentIds] = useState<string[]>([]);
 
     // STATE CHAM DIEM CHO TUNG HOC SINH (DUY NHAT)
     const [studentGradingStates, setStudentGradingStates] = useState<Map<string, StudentGradingState>>(
@@ -199,6 +200,19 @@ const GradingModal: React.FC<GradingModalProps> = ({
         () => activeAssignments.filter((assignment) => assignment.gradingType === 'auto'),
         [activeAssignments]
     );
+    const manageableActiveAssignments = useMemo(
+        () => assignments.filter((assignment) => assignment.isActive),
+        [assignments]
+    );
+    const isAllManageActiveSelected = useMemo(() => {
+        if (manageableActiveAssignments.length === 0) {
+            return false;
+        }
+
+        return manageableActiveAssignments.every((assignment) =>
+            manageSelectedAssignmentIds.includes(assignment.id)
+        );
+    }, [manageableActiveAssignments, manageSelectedAssignmentIds]);
     const excelGradingEndpoints = useMemo(
         () =>
             gradingEndpoints.filter(
@@ -254,6 +268,22 @@ const GradingModal: React.FC<GradingModalProps> = ({
         }
     }, [activeAutoAssignments, selectedAssignment]);
     useEffect(() => {
+        const activeAssignmentIds = new Set(
+            assignments
+                .filter((assignment) => assignment.isActive)
+                .map((assignment) => assignment.id)
+        );
+
+        setManageSelectedAssignmentIds((prev) =>
+            prev.filter((id) => activeAssignmentIds.has(id))
+        );
+    }, [assignments]);
+    useEffect(() => {
+        if (chooseMode !== 'manage') {
+            setManageSelectedAssignmentIds((prev) => (prev.length > 0 ? [] : prev));
+        }
+    }, [chooseMode]);
+    useEffect(() => {
         if (!isOpen || chooseMode !== 'new') {
             return;
         }
@@ -268,6 +298,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
         setChooseMode(null);
         setSelectedAssignment('');
         setShowInactiveAssignments(false);
+        setManageSelectedAssignmentIds([]);
         setStudentGradingStates(new Map());
         setSinglePersistedScores(new Map());
         setSingleUndoSnapshots(new Map());
@@ -1486,6 +1517,108 @@ const GradingModal: React.FC<GradingModalProps> = ({
         );
     };
 
+    const handleToggleManageAssignmentSelection = (assignment: Assignment) => {
+        if (assignmentSubmitLoading || !assignment.isActive) return;
+
+        setManageSelectedAssignmentIds((prev) =>
+            prev.includes(assignment.id)
+                ? prev.filter((id) => id !== assignment.id)
+                : [...prev, assignment.id]
+        );
+    };
+
+    const handleSelectAllManageAssignments = () => {
+        if (assignmentSubmitLoading) return;
+        setManageSelectedAssignmentIds(
+            manageableActiveAssignments.map((assignment) => assignment.id)
+        );
+    };
+
+    const handleClearManageAssignments = () => {
+        if (assignmentSubmitLoading) return;
+        setManageSelectedAssignmentIds([]);
+    };
+
+    const handleDeactivateSelectedAssignments = async () => {
+        if (assignmentSubmitLoading) return;
+
+        const selectedActiveAssignments = manageableActiveAssignments.filter((assignment) =>
+            manageSelectedAssignmentIds.includes(assignment.id)
+        );
+
+        if (selectedActiveAssignments.length === 0) {
+            alert('Vui lòng chọn ít nhất 1 bài tập đang dùng.');
+            return;
+        }
+
+        const confirmed = confirm(
+            `Bạn có chắc muốn bỏ hoạt động ${selectedActiveAssignments.length} bài tập đã chọn?`
+        );
+        if (!confirmed) return;
+
+        setAssignmentSubmitLoading(true);
+        try {
+            const results = await Promise.allSettled(
+                selectedActiveAssignments.map((assignment) =>
+                    assignmentService.update(assignment.id, { isActive: false }, getAccessToken)
+                )
+            );
+
+            const updatedAssignments: Assignment[] = [];
+            const failedAssignments: string[] = [];
+
+            results.forEach((result, index) => {
+                const sourceAssignment = selectedActiveAssignments[index];
+                if (result.status === 'fulfilled') {
+                    updatedAssignments.push(result.value);
+                    return;
+                }
+
+                failedAssignments.push(
+                    `${sourceAssignment.name}: ${getReadableErrorMessage(result.reason, 'Không thể bỏ hoạt động bài tập này.')}`
+                );
+            });
+
+            if (updatedAssignments.length > 0) {
+                const updatedIds = new Set(updatedAssignments.map((assignment) => assignment.id));
+                const updatedById = new Map(updatedAssignments.map((assignment) => [assignment.id, assignment]));
+
+                setAssignments((prev) => {
+                    if (!showInactiveAssignments) {
+                        return prev.filter((item) => !updatedIds.has(item.id));
+                    }
+
+                    return prev.map((item) => updatedById.get(item.id) || item);
+                });
+                setMultiAssignmentIds((prev) => prev.filter((id) => !updatedIds.has(id)));
+                setMultiAssignmentDraftIds((prev) => prev.filter((id) => !updatedIds.has(id)));
+                setManageSelectedAssignmentIds((prev) => prev.filter((id) => !updatedIds.has(id)));
+                if (selectedAssignment && updatedIds.has(selectedAssignment)) {
+                    setSelectedAssignment('');
+                }
+            }
+
+            if (failedAssignments.length === 0) {
+                alert(`Đã bỏ hoạt động ${updatedAssignments.length} bài tập.`);
+                return;
+            }
+
+            if (updatedAssignments.length > 0) {
+                alert(
+                    `Đã bỏ hoạt động ${updatedAssignments.length}/${selectedActiveAssignments.length} bài tập.\nLỗi:\n${failedAssignments.join('\n')}`
+                );
+                return;
+            }
+
+            alert(`Không thể bỏ hoạt động các bài tập đã chọn.\n${failedAssignments.join('\n')}`);
+        } catch (error) {
+            console.error('Lỗi khi bỏ hoạt động nhiều bài tập:', error);
+            alert(getReadableErrorMessage(error, 'Không thể bỏ hoạt động các bài tập đã chọn.'));
+        } finally {
+            setAssignmentSubmitLoading(false);
+        }
+    };
+
     const handleCreateBulkAssignments = async () => {
         if (isCreatingAssignment) {
             return;
@@ -2642,11 +2775,59 @@ const GradingModal: React.FC<GradingModalProps> = ({
                     Khi tắt, danh sách chỉ hiển thị bài tập đang dùng.
                 </span>
             </div>
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-md border border-slate-200 bg-white px-3 py-2">
+                <span className="text-sm text-slate-700">
+                    Đã chọn {manageSelectedAssignmentIds.length}/{manageableActiveAssignments.length} bài đang dùng
+                </span>
+                <div className="flex flex-wrap items-center gap-2">
+                    <button
+                        type="button"
+                        onClick={handleSelectAllManageAssignments}
+                        disabled={
+                            assignmentSubmitLoading ||
+                            manageableActiveAssignments.length === 0 ||
+                            isAllManageActiveSelected
+                        }
+                        className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                        Chọn tất cả
+                    </button>
+                    <button
+                        type="button"
+                        onClick={handleClearManageAssignments}
+                        disabled={assignmentSubmitLoading || manageSelectedAssignmentIds.length === 0}
+                        className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                        Bỏ chọn
+                    </button>
+                    <button
+                        type="button"
+                        onClick={handleDeactivateSelectedAssignments}
+                        disabled={assignmentSubmitLoading || manageSelectedAssignmentIds.length === 0}
+                        className="inline-flex items-center gap-1 rounded-md bg-amber-100 px-3 py-1.5 text-xs font-medium text-amber-800 hover:bg-amber-200 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                        {assignmentSubmitLoading ? <Loader2 size={14} className="animate-spin" /> : <XCircle size={14} />}
+                        Bỏ hoạt động đã chọn
+                    </button>
+                </div>
+            </div>
 
             <div className="rounded-lg border border-gray-200 overflow-hidden">
                 <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                         <tr>
+                            <th className="px-3 py-2 text-center text-xs font-semibold text-gray-600 uppercase">
+                                <input
+                                    type="checkbox"
+                                    aria-label="Chọn tất cả bài tập đang dùng"
+                                    checked={isAllManageActiveSelected}
+                                    onChange={(e) =>
+                                        e.target.checked ? handleSelectAllManageAssignments() : handleClearManageAssignments()
+                                    }
+                                    disabled={assignmentSubmitLoading || manageableActiveAssignments.length === 0}
+                                    className="h-4 w-4 rounded border-gray-300 disabled:cursor-not-allowed"
+                                />
+                            </th>
                             <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Tên bài tập</th>
                             <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Loại</th>
                             <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Endpoint</th>
@@ -2658,6 +2839,17 @@ const GradingModal: React.FC<GradingModalProps> = ({
                     <tbody className="divide-y divide-gray-100 bg-white">
                         {assignments.map((assignment) => (
                             <tr key={assignment.id}>
+                                <td className="px-3 py-2 text-center">
+                                    <input
+                                        type="checkbox"
+                                        aria-label={`Chọn bài tập ${assignment.name}`}
+                                        checked={manageSelectedAssignmentIds.includes(assignment.id)}
+                                        onChange={() => handleToggleManageAssignmentSelection(assignment)}
+                                        disabled={assignmentSubmitLoading || !assignment.isActive}
+                                        className="h-4 w-4 rounded border-gray-300 disabled:cursor-not-allowed"
+                                        title={!assignment.isActive ? 'Bài tập đã ẩn' : undefined}
+                                    />
+                                </td>
                                 <td className="px-3 py-2 text-sm text-gray-800">
                                     <div className="font-medium">{assignment.name}</div>
                                     {assignment.description && (
@@ -2697,7 +2889,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                         ))}
                         {assignments.length === 0 && (
                             <tr>
-                                <td colSpan={6} className="px-3 py-5 text-center text-sm text-gray-500">
+                                <td colSpan={7} className="px-3 py-5 text-center text-sm text-gray-500">
                                     Chưa có bài tập nào trong lớp này.
                                 </td>
                             </tr>
