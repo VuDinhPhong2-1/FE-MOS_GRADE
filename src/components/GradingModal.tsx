@@ -393,12 +393,6 @@ const GradingModal: React.FC<GradingModalProps> = ({
         return Number(scaledScore.toFixed(2));
     };
 
-    const getDroppedFile = (event: React.DragEvent<HTMLElement>): File | null => {
-        const files = event.dataTransfer?.files;
-        if (!files || files.length === 0) return null;
-        return files[0];
-    };
-
     const normalizeErrorText = (value: string): string => value.replace(/\s+/g, ' ').trim();
     const toDedupKey = (value: string): string =>
         normalizeErrorText(value)
