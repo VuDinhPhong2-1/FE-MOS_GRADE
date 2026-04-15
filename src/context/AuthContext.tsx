@@ -213,13 +213,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           },
         });
 
-        if (!meResponse.ok && meResponse.status !== 404) {
+        // ✅ Chỉ logout khi server xác nhận token không hợp lệ (401)
+        if (meResponse.status === 401) {
           clearSession();
           if (mounted) setUser(null);
         }
+        // Các lỗi khác (500, 503, network...) → giữ session, không logout
       } catch {
-        clearSession();
-        if (mounted) setUser(null);
+        // ✅ Lỗi mạng → KHÔNG logout, giữ nguyên session
+        console.warn('Không thể kết nối server khi khởi tạo session, giữ session hiện tại.');
       } finally {
         if (mounted) setLoading(false);
       }

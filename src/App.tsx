@@ -2,6 +2,8 @@
 import { CalendarClock, FlaskConical, GraduationCap, LayoutDashboard, ShieldCheck } from 'lucide-react';
 import Layout from './components/Layout/Layout';
 import GradingView from './pages/GradingView';
+import ClassGradingPage from './pages/ClassGradingPage';
+import ClassScoreboardPage from './pages/ClassScoreboardPage';
 import Dashboard from './pages/Dashboard';
 import SchoolList from './pages/SchoolList';
 import AuthPage from './pages/AuthPage';
@@ -54,6 +56,8 @@ function App() {
             <Route path="/schedule" element={<TeacherSchedule />} />
             <Route path="/permissions" element={<PermissionManagement />} />
             <Route path="/grading" element={<GradingView />} />
+            <Route path="/grading/class/:classId" element={<ClassGradingPage />} />
+            <Route path="/scores/class/:classId" element={<ClassScoreboardPage />} />
           </Route>
         </Route>
 

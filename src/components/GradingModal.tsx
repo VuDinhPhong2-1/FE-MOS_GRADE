@@ -1,4 +1,4 @@
-﻿// src/components/GradingModal.optimized.tsx
+// src/components/GradingModal.optimized.tsx
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { X, Plus, Save, Loader2, ArrowLeft, XCircle, CheckCircle, Upload, Search, Check, Pencil, Trash2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -17,6 +17,8 @@ interface GradingModalProps {
     classId: string;
     students: Student[];
     onSuccess?: () => void | Promise<void>;
+    displayMode?: 'modal' | 'page';
+    title?: string;
 }
 
 interface MultiAutoCellState {
@@ -97,6 +99,8 @@ const GradingModal: React.FC<GradingModalProps> = ({
     classId,
     students,
     onSuccess,
+    displayMode = 'modal',
+    title = 'Chấm điểm',
 }) => {
     const { getAccessToken } = useAuth();
 
@@ -128,7 +132,6 @@ const GradingModal: React.FC<GradingModalProps> = ({
     const [multiUndoSnapshots, setMultiUndoSnapshots] = useState<Map<string, MultiUndoSnapshot>>(new Map());
     const [singleDragOverStudentId, setSingleDragOverStudentId] = useState<string | null>(null);
     const [multiDragOverCellKey, setMultiDragOverCellKey] = useState<string | null>(null);
-    const [multiRowDragOverStudentId, setMultiRowDragOverStudentId] = useState<string | null>(null);
     const [isBulkUploading, setIsBulkUploading] = useState(false);
     const [multiAssignmentQuery, setMultiAssignmentQuery] = useState('');
     const [isSelectingAssignments, setIsSelectingAssignments] = useState(false);
@@ -310,7 +313,6 @@ const GradingModal: React.FC<GradingModalProps> = ({
         setMultiUndoSnapshots(new Map());
         setSingleDragOverStudentId(null);
         setMultiDragOverCellKey(null);
-        setMultiRowDragOverStudentId(null);
         setIsBulkUploading(false);
         setMultiAssignmentQuery('');
         setIsSelectingAssignments(false);
@@ -770,10 +772,36 @@ const GradingModal: React.FC<GradingModalProps> = ({
         setSingleDragOverStudentId(null);
         if (isDisabled) return;
 
-        const file = getDroppedFile(e);
-        if (!file) return;
+        const files = Array.from(e.dataTransfer?.files || []);
+        if (files.length === 0) return;
 
-        await uploadStudentFile(studentId, file);
+        const startIndex = gradingStudents.findIndex((s) => s.id === studentId);
+        if (startIndex === -1) return;
+
+        const maxCount = Math.min(files.length, gradingStudents.length - startIndex);
+        const invalidFiles: string[] = [];
+
+        for (let i = 0; i < maxCount; i++) {
+            const file = files[i];
+            if (!validateExcelFile(file, false)) {
+                invalidFiles.push(file.name);
+                continue;
+            }
+            const targetStudent = gradingStudents[startIndex + i];
+            await uploadStudentFile(targetStudent.id, file, { skipValidation: true });
+        }
+
+        const extraFiles = files.length - maxCount;
+        if (invalidFiles.length > 0 || extraFiles > 0) {
+            const notes: string[] = [];
+            if (invalidFiles.length > 0) {
+                notes.push(`Bỏ qua file sai định dạng: ${invalidFiles.join(', ')}`);
+            }
+            if (extraFiles > 0) {
+                notes.push(`Bỏ qua ${extraFiles} file do vượt số học sinh còn lại trong danh sách.`);
+            }
+            alert(notes.join('\n'));
+        }
     };
 
     const handleUndoSingleStudentFile = async (studentId: string) => {
@@ -1173,10 +1201,36 @@ const GradingModal: React.FC<GradingModalProps> = ({
         setMultiDragOverCellKey(null);
         if (isDisabled) return;
 
-        const file = getDroppedFile(e);
-        if (!file) return;
+        const files = Array.from(e.dataTransfer?.files || []);
+        if (files.length === 0) return;
 
-        await uploadMultiStudentFile(assignmentId, studentId, file);
+        const startAssignmentIndex = multiAssignmentIds.findIndex((id) => id === assignmentId);
+        if (startAssignmentIndex === -1) return;
+
+        const maxCount = Math.min(files.length, multiAssignmentIds.length - startAssignmentIndex);
+        const invalidFiles: string[] = [];
+
+        for (let i = 0; i < maxCount; i++) {
+            const file = files[i];
+            if (!validateExcelFile(file, false)) {
+                invalidFiles.push(file.name);
+                continue;
+            }
+            const targetAssignmentId = multiAssignmentIds[startAssignmentIndex + i];
+            await uploadMultiStudentFile(targetAssignmentId, studentId, file, { skipValidation: true });
+        }
+
+        const extraFiles = files.length - maxCount;
+        if (invalidFiles.length > 0 || extraFiles > 0) {
+            const notes: string[] = [];
+            if (invalidFiles.length > 0) {
+                notes.push(`Bỏ qua file sai định dạng: ${invalidFiles.join(', ')}`);
+            }
+            if (extraFiles > 0) {
+                notes.push(`Bỏ qua ${extraFiles} file do vượt số bài tập còn lại trên dòng.`);
+            }
+            alert(notes.join('\n'));
+        }
     };
 
     const handleUndoMultiStudentFile = (assignmentId: string, studentId: string) => {
@@ -1214,102 +1268,6 @@ const GradingModal: React.FC<GradingModalProps> = ({
             next.delete(undoKey);
             return next;
         });
-    };
-
-    const uploadMultipleFilesForOneStudent = async (studentId: string, filesInput: FileList | File[]) => {
-        const files = Array.from(filesInput || []);
-        if (files.length === 0) return;
-        if (isBulkUploading) return;
-
-        const autoAssignments = multiAssignmentIds
-            .map((id) => assignments.find((a) => a.id === id))
-            .filter((a): a is Assignment => Boolean(a && a.gradingType === 'auto'));
-
-        if (autoAssignments.length === 0) {
-            alert('Can chon it nhat 1 bai tap auto de cham nhieu file cho hoc sinh.');
-            return;
-        }
-
-        setIsBulkUploading(true);
-        try {
-            const validFiles: File[] = [];
-            const invalidFiles: string[] = [];
-
-            files.forEach((file) => {
-                if (validateExcelFile(file, false)) {
-                    validFiles.push(file);
-                } else {
-                    invalidFiles.push(file.name);
-                }
-            });
-
-            const maxCount = Math.min(validFiles.length, autoAssignments.length);
-            for (let i = 0; i < maxCount; i++) {
-                await uploadMultiStudentFile(autoAssignments[i].id, studentId, validFiles[i], {
-                    skipValidation: true,
-                });
-            }
-
-            const notes: string[] = [];
-            if (invalidFiles.length > 0) {
-                notes.push(`Bo qua file sai dinh dang: ${invalidFiles.join(', ')}`);
-            }
-            if (validFiles.length > autoAssignments.length) {
-                notes.push(
-                    `Bo qua ${validFiles.length - autoAssignments.length} file vi vuot so bai auto da chon.`
-                );
-            }
-            if (validFiles.length < autoAssignments.length) {
-                notes.push(
-                    `Thieu ${autoAssignments.length - validFiles.length} file de map du cho tat ca bai auto.`
-                );
-            }
-
-            if (notes.length > 0) {
-                alert(notes.join('\n'));
-            }
-        } finally {
-            setIsBulkUploading(false);
-        }
-    };
-
-    const handleMultiStudentBulkFilesChange = async (
-        studentId: string,
-        e: React.ChangeEvent<HTMLInputElement>
-    ) => {
-        await uploadMultipleFilesForOneStudent(studentId, e.target.files || []);
-        e.target.value = '';
-    };
-
-    const handleMultiStudentBulkDragOver = (
-        studentId: string,
-        isDisabled: boolean,
-        e: React.DragEvent<HTMLDivElement>
-    ) => {
-        e.preventDefault();
-        if (isDisabled || isBulkUploading) return;
-        e.dataTransfer.dropEffect = 'copy';
-        if (multiRowDragOverStudentId !== studentId) {
-            setMultiRowDragOverStudentId(studentId);
-        }
-    };
-
-    const handleMultiStudentBulkDragLeave = (studentId: string) => {
-        if (multiRowDragOverStudentId === studentId) {
-            setMultiRowDragOverStudentId(null);
-        }
-    };
-
-    const handleMultiStudentBulkDrop = async (
-        studentId: string,
-        isDisabled: boolean,
-        e: React.DragEvent<HTMLDivElement>
-    ) => {
-        e.preventDefault();
-        setMultiRowDragOverStudentId(null);
-        if (isDisabled || isBulkUploading) return;
-
-        await uploadMultipleFilesForOneStudent(studentId, e.dataTransfer.files || []);
     };
 
     const handleMultiScoreChange = (
@@ -1894,32 +1852,33 @@ const GradingModal: React.FC<GradingModalProps> = ({
                     <Plus size={24} />
                     Tạo bài chấm mới
                 </button>
-                {assignments.length > 0 && (
-                    <button
-                        onClick={() => {
-                            setChooseMode('existing-multi');
-                            setMultiAssignmentIds([]);
-                            setMultiAssignmentDraftIds([]);
-                            setMultiScores(new Map());
-                            setMultiAutoStates(new Map());
-                            setMultiUndoSnapshots(new Map());
-                        }}
-                        disabled={activeAutoAssignments.length === 0}
-                        className="bg-emerald-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-emerald-700 flex items-center gap-3 shadow-md transition"
-                    >
-                        <Save size={24} />
-                        Chấm nhiều bài tự động
-                    </button>
-                )}
-                {assignments.length > 0 && (
-                    <button
-                        onClick={() => setChooseMode('manage')}
-                        className="bg-amber-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-amber-700 flex items-center gap-3 shadow-md transition"
-                    >
-                        <Pencil size={24} />
-                        Quản lý bài tập
-                    </button>
-                )}
+                <button
+                    onClick={() => {
+                        setChooseMode('existing-multi');
+                        setMultiAssignmentIds([]);
+                        setMultiAssignmentDraftIds([]);
+                        setMultiScores(new Map());
+                        setMultiAutoStates(new Map());
+                        setMultiUndoSnapshots(new Map());
+                    }}
+                    disabled={activeAutoAssignments.length === 0}
+                    title={
+                        activeAutoAssignments.length === 0
+                            ? 'Chua co bai tap tu dong dang hoat dong. Hay vao Quan ly bai tap de kich hoat.'
+                            : undefined
+                    }
+                    className="bg-emerald-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-emerald-700 flex items-center gap-3 shadow-md transition disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                    <Save size={24} />
+                    Chấm nhiều bài tự động
+                </button>
+                <button
+                    onClick={() => setChooseMode('manage')}
+                    className="bg-amber-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-amber-700 flex items-center gap-3 shadow-md transition"
+                >
+                    <Pencil size={24} />
+                    Quản lý bài tập
+                </button>
             </div>
         </div>
     );
@@ -2574,11 +2533,6 @@ const GradingModal: React.FC<GradingModalProps> = ({
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
                                 {gradingStudents.map((student, index) => {
-                                    const isStudentAutoGrading = selectedAssignments.some((assignment) =>
-                                        Boolean(multiAutoStates.get(assignment.id)?.get(student.id)?.isGrading)
-                                    );
-                                    const isRowUploadDisabled = isStudentAutoGrading || isBulkUploading;
-
                                     return (
                                         <tr
                                             key={student.id}
@@ -2591,44 +2545,9 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                             <td className="px-4 py-3 text-sm text-gray-500">{index + 1}</td>
                                             <td className="px-4 py-3 text-sm font-medium text-gray-900 align-top">
                                                 <div>{student.middleName} {student.firstName}</div>
-                                                <div
-                                                    className={`mt-2 rounded-md border border-dashed p-2 transition ${
-                                                        multiRowDragOverStudentId === student.id
-                                                            ? 'border-blue-500 bg-blue-50'
-                                                            : 'border-gray-200'
-                                                    } ${isRowUploadDisabled ? 'opacity-60 cursor-not-allowed' : ''}`}
-                                                    onDragOver={(e) =>
-                                                        handleMultiStudentBulkDragOver(student.id, isRowUploadDisabled, e)
-                                                    }
-                                                    onDragLeave={() => handleMultiStudentBulkDragLeave(student.id)}
-                                                    onDrop={(e) =>
-                                                        handleMultiStudentBulkDrop(student.id, isRowUploadDisabled, e)
-                                                    }
-                                                >
-                                                    <input
-                                                        id={`multi-row-files-${student.id}`}
-                                                        type="file"
-                                                        accept=".xls,.xlsx,.xlsm"
-                                                        multiple
-                                                        className="hidden"
-                                                        onChange={(e) => handleMultiStudentBulkFilesChange(student.id, e)}
-                                                        disabled={isRowUploadDisabled}
-                                                    />
-                                                    <label
-                                                        htmlFor={`multi-row-files-${student.id}`}
-                                                        className={`inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] border ${
-                                                            isRowUploadDisabled
-                                                                ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
-                                                                : 'bg-blue-50 text-blue-700 border-blue-200 cursor-pointer hover:bg-blue-100'
-                                                        }`}
-                                                    >
-                                                        <Upload size={12} />
-                                                        Nhiều file / 1 học sinh
-                                                    </label>
-                                                    <p className="mt-1 text-[11px] text-gray-500">
-                                                        Kéo-thả nhiều file vào đây để ghép theo thứ tự bài đã chọn.
-                                                    </p>
-                                                </div>
+                                                <p className="mt-1 text-[11px] text-gray-500">
+                                                    Chọn file theo từng cột bài tập.
+                                                </p>
                                             </td>
                                             {selectedAssignments.map((assignment) => {
                                                 const assignmentMap = multiScores.get(assignment.id);
@@ -2992,75 +2911,90 @@ const GradingModal: React.FC<GradingModalProps> = ({
     );
     if (!isOpen) return null;
 
+    const isPageMode = displayMode === 'page';
+    const containerClassName = isPageMode
+        ? 'bg-white rounded-lg border border-slate-200 shadow-sm w-full flex flex-col'
+        : 'bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col';
+    const bodyClassName = isPageMode
+        ? 'flex-1'
+        : 'flex-1 overflow-y-auto';
+    const content = (
+        <div className={containerClassName}>
+            {/* HEADER */}
+            <div className="flex justify-between items-center p-6 border-b">
+                <h2 className="text-2xl font-bold text-gray-800">{title}</h2>
+                <button onClick={handleClose} className="text-gray-400 hover:text-gray-600">
+                    <X size={24} />
+                </button>
+            </div>
+
+            {/* BODY */}
+            <div className={bodyClassName}>
+                {chooseMode === null && renderModeSelector()}
+                {chooseMode === 'new' && renderNewAssignmentForm()}
+                {chooseMode === 'existing' && renderExistingMode()}
+                {chooseMode === 'existing-multi' && renderExistingMultiMode()}
+                {chooseMode === 'manage' && renderAssignmentManager()}
+            </div>
+
+            {/* FOOTER */}
+            <div className="flex justify-end gap-2 p-6 border-t">
+                <button
+                    onClick={handleClose}
+                    className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                >
+                    {isPageMode ? 'Quay lại' : 'Hủy'}
+                </button>
+                {chooseMode === 'existing' && selectedAssignment && (
+                    <button
+                        onClick={handleSaveAllScores}
+                        disabled={loading}
+                        className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-400 flex items-center gap-2"
+                    >
+                        {loading ? (
+                            <>
+                                <Loader2 size={18} className="animate-spin" />
+                                Đang lưu...
+                            </>
+                        ) : (
+                            <>
+                                <Save size={18} />
+                                Lưu điểm
+                            </>
+                        )}
+                    </button>
+                )}
+                {chooseMode === 'existing-multi' && multiAssignmentIds.length > 0 && (
+                    <button
+                        onClick={handleSaveMultipleAssignments}
+                        disabled={loading || isSelectingAssignments || hasPendingMultiAssignmentSelectionChanges}
+                        title={hasPendingMultiAssignmentSelectionChanges ? 'Vui lòng chốt lại danh sách bài tập trước khi lưu.' : undefined}
+                        className="bg-emerald-600 text-white px-4 py-2 rounded-md hover:bg-emerald-700 disabled:bg-gray-400 flex items-center gap-2"
+                    >
+                        {loading ? (
+                            <>
+                                <Loader2 size={18} className="animate-spin" />
+                                Đang lưu...
+                            </>
+                        ) : (
+                            <>
+                                <Save size={18} />
+                                Lưu nhiều bài
+                            </>
+                        )}
+                    </button>
+                )}
+            </div>
+        </div>
+    );
+
+    if (isPageMode) {
+        return <div className="w-full">{content}</div>;
+    }
+
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-                {/* HEADER */}
-                <div className="flex justify-between items-center p-6 border-b">
-                    <h2 className="text-2xl font-bold text-gray-800">Chấm điểm</h2>
-                    <button onClick={handleClose} className="text-gray-400 hover:text-gray-600">
-                        <X size={24} />
-                    </button>
-                </div>
-
-                {/* BODY */}
-                <div className="flex-1 overflow-y-auto">
-                    {chooseMode === null && renderModeSelector()}
-                    {chooseMode === 'new' && renderNewAssignmentForm()}
-                    {chooseMode === 'existing' && renderExistingMode()}
-                    {chooseMode === 'existing-multi' && renderExistingMultiMode()}
-                    {chooseMode === 'manage' && renderAssignmentManager()}
-                </div>
-
-                {/* FOOTER */}
-                <div className="flex justify-end gap-2 p-6 border-t">
-                    <button
-                        onClick={handleClose}
-                        className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-                    >
-                        Hủy
-                    </button>
-                    {chooseMode === 'existing' && selectedAssignment && (
-                        <button
-                            onClick={handleSaveAllScores}
-                            disabled={loading}
-                            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-400 flex items-center gap-2"
-                        >
-                            {loading ? (
-                                <>
-                                    <Loader2 size={18} className="animate-spin" />
-                                    Đang lưu...
-                                </>
-                            ) : (
-                                <>
-                                    <Save size={18} />
-                                    Lưu điểm
-                                </>
-                            )}
-                        </button>
-                    )}
-                    {chooseMode === 'existing-multi' && multiAssignmentIds.length > 0 && (
-                        <button
-                            onClick={handleSaveMultipleAssignments}
-                            disabled={loading || isSelectingAssignments || hasPendingMultiAssignmentSelectionChanges}
-                            title={hasPendingMultiAssignmentSelectionChanges ? 'Vui lòng chốt lại danh sách bài tập trước khi lưu.' : undefined}
-                            className="bg-emerald-600 text-white px-4 py-2 rounded-md hover:bg-emerald-700 disabled:bg-gray-400 flex items-center gap-2"
-                        >
-                            {loading ? (
-                                <>
-                                    <Loader2 size={18} className="animate-spin" />
-                                    Đang lưu...
-                                </>
-                            ) : (
-                                <>
-                                    <Save size={18} />
-                                    Lưu nhiều bài
-                                </>
-                            )}
-                        </button>
-                    )}
-                </div>
-            </div>
+            {content}
         </div>
     );
 };

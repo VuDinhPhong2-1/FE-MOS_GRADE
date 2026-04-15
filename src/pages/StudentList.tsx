@@ -1,15 +1,12 @@
-﻿import { useState, useEffect, useMemo, useCallback, useRef, type ChangeEvent } from 'react';
+﻿import { useState, useEffect, useMemo, useCallback, type ChangeEvent } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import type { Class } from '../types/class.types';
 import type { Assignment } from '../types/assignment.types';
 import type { Student, StudentImportItem } from '../types/student.types';
-import type { ScoreResponse } from '../types/score.types';
 import studentService from '../services/student.service';
 import { assignmentService } from '../services/assignment.service';
-import { scoreService } from '../services/score.service';
 import { useAuth } from '../context/AuthContext';
-import GradingModal from '../components/GradingModal';
-import ViewAllScoresModal from '../components/ViewAllScoresModal';
 import ClassAnalyticsPanel from '../components/ClassAnalyticsPanel';
 import {
   Upload,
@@ -64,11 +61,8 @@ interface StudentListProps {
 const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
   const [students, setStudents] = useState<Student[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
-  const [scores, setScores] = useState<ScoreResponse[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isStudentMetadataSyncing, setIsStudentMetadataSyncing] = useState(false);
-  const [isGradingModalOpen, setIsGradingModalOpen] = useState(false);
-  const [isViewScoresModal, setIsViewScoresModal] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isEditSubmitting, setIsEditSubmitting] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
@@ -107,8 +101,9 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
     competencyLevel: '',
     notes: '',
   });
-  const latestScoresRequestRef = useRef(0);
   const { getAccessToken } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const normalizeText = (value?: string) =>
     (value || '')
@@ -133,34 +128,25 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
     return 'bg-gray-100 text-gray-600';
   };
 
-  const loadScores = useCallback(async () => {
-    const requestId = ++latestScoresRequestRef.current;
-    try {
-      const data = await scoreService.getByClass(selectedClass.id, getAccessToken);
-      if (requestId === latestScoresRequestRef.current) {
-        setScores(data);
-      }
-      return data;
-    } catch {
-      if (requestId === latestScoresRequestRef.current) {
-        setScores([]);
-      }
-      return [];
-    }
-  }, [selectedClass.id, getAccessToken]);
-
   useEffect(() => {
     if (selectedClass?.id) {
       loadStudents();
       loadAssignments();
-      void loadScores();
     }
     // eslint-disable-next-line
-  }, [selectedClass?.id, loadScores]);
+  }, [selectedClass?.id]);
 
   const handleOpenViewScoresModal = () => {
-    setIsViewScoresModal(true);
-    void loadScores();
+    if (!selectedClass?.id) {
+      return;
+    }
+
+    navigate(`/scores/class/${selectedClass.id}`, {
+      state: {
+        className: selectedClass.name,
+        returnPath: `${location.pathname}${location.search}`,
+      },
+    });
   };
 
   const studentNewList = students.filter((st) => st.id.startsWith('temp-'));
@@ -486,7 +472,12 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
       return;
     }
 
-    setIsGradingModalOpen(true);
+    navigate(`/grading/class/${selectedClass.id}`, {
+      state: {
+        className: selectedClass.name,
+        returnPath: `${location.pathname}${location.search}`,
+      },
+    });
   };
 
   const handleInlineCompetencyChange = async (student: Student, level: '' | 'A' | 'B' | 'C' | 'D') => {
@@ -538,10 +529,6 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
     } finally {
       setInlineSavingStudentId(null);
     }
-  };
-
-  const handleGradingSuccess = async () => {
-    await loadScores();
   };
 
   const handleSyncStudentMetadataToGoogleSheet = async () => {
@@ -1021,41 +1008,6 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
         </div>
       </section>
 
-      <GradingModal
-        isOpen={isGradingModalOpen}
-        onClose={() => setIsGradingModalOpen(false)}
-        classId={selectedClass.id}
-        students={activeStudents}
-        onSuccess={handleGradingSuccess}
-      />
-
-      <ViewAllScoresModal
-        isOpen={isViewScoresModal}
-        onClose={() => setIsViewScoresModal(false)}
-        assignments={assignments}
-        students={students}
-        classDisplayName={selectedClass.name}
-        onStudentClassificationUpdated={(studentId, classification) => {
-          setStudents((prev) =>
-            prev.map((student) =>
-              student.id === studentId ? { ...student, competencyLevel: classification } : student
-            )
-          );
-        }}
-        onStudentNotesUpdated={(studentId, notes) => {
-          setStudents((prev) =>
-            prev.map((student) => (student.id === studentId ? { ...student, notes } : student))
-          );
-        }}
-        scores={scores.map((s) => ({
-          studentId: s.studentId,
-          assignmentId: s.assignmentId,
-          assignmentName: s.assignmentName,
-          scoreValue: typeof s.scoreValue === 'number' ? s.scoreValue : null,
-          autoGradingErrors: s.autoGradingErrors || [],
-        }))}
-      />
-
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
           <div className="w-full max-w-md rounded-lg bg-white shadow-xl">
@@ -1350,6 +1302,3 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
 };
 
 export default StudentList;
-
-
-

@@ -11,6 +11,7 @@ import {
   Trash2,
   X,
   Filter,
+  Search,
 } from 'lucide-react';
 import StudentList from './StudentList';
 import { useSearchParams } from 'react-router-dom';
@@ -27,6 +28,23 @@ interface ClassListProps {
 }
 
 const OBJECT_ID_REGEX = /^[a-fA-F0-9]{24}$/;
+const VIETNAMESE_TONE_MARKS_REGEX = /[\u0300-\u036f]/g;
+
+const normalizeSearchText = (value: string): string =>
+  value
+    .normalize('NFD')
+    .replace(VIETNAMESE_TONE_MARKS_REGEX, '')
+    .toLowerCase()
+    .trim();
+
+const getGradeOrderValue = (grade?: string): number | null => {
+  if (!grade) return null;
+  const match = grade.match(/\d+/);
+  if (!match) return null;
+
+  const gradeValue = Number.parseInt(match[0], 10);
+  return Number.isNaN(gradeValue) ? null : gradeValue;
+};
 
 const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
   const { getAccessToken, logout, user } = useAuth();
@@ -38,6 +56,7 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
   const [error, setError] = useState('');
 
   const [showInactive, setShowInactive] = useState(false);
+  const [classSearch, setClassSearch] = useState('');
 
   const [showModal, setShowModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -118,6 +137,31 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
       return fullName.includes(keyword) || username.includes(keyword) || email.includes(keyword);
     });
   }, [handoverSearch, teachers]);
+
+  const visibleClasses = useMemo(() => {
+    const searchKeyword = normalizeSearchText(classSearch);
+
+    return [...classes]
+      .filter((cls) => !searchKeyword || normalizeSearchText(cls.name).includes(searchKeyword))
+      .sort((classA, classB) => {
+        const gradeA = getGradeOrderValue(classA.grade);
+        const gradeB = getGradeOrderValue(classB.grade);
+
+        if (gradeA !== null && gradeB !== null && gradeA !== gradeB) {
+          return gradeA - gradeB;
+        }
+
+        if (gradeA !== null && gradeB === null) {
+          return -1;
+        }
+
+        if (gradeA === null && gradeB !== null) {
+          return 1;
+        }
+
+        return classA.name.localeCompare(classB.name, 'vi', { numeric: true, sensitivity: 'base' });
+      });
+  }, [classSearch, classes]);
 
   const isSubmitDisabled = isSubmitting || (!editingClass && !!createFormValidation);
 
@@ -441,17 +485,30 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center mb-4">
-        <div className="flex items-center gap-2">
-          <Filter size={18} className="text-gray-600" />
-          <label className="flex items-center gap-2 cursor-pointer">
+        <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="flex items-center gap-2">
+            <Filter size={18} className="text-gray-600" />
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={showInactive}
+                onChange={(e) => setShowInactive(e.target.checked)}
+                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <span className="text-sm text-gray-700">Hiển thị lớp không hoạt động</span>
+            </label>
+          </div>
+
+          <div className="relative w-full sm:max-w-xs">
+            <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
-              type="checkbox"
-              checked={showInactive}
-              onChange={(e) => setShowInactive(e.target.checked)}
-              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              type="text"
+              value={classSearch}
+              onChange={(event) => setClassSearch(event.target.value)}
+              placeholder="Tìm theo tên lớp..."
+              className="w-full rounded-lg border border-gray-300 py-2 pl-9 pr-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
             />
-            <span className="text-sm text-gray-700">Hiển thị lớp không hoạt động</span>
-          </label>
+          </div>
         </div>
 
         {canCreateClass && (
@@ -462,9 +519,9 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
         )}
       </div>
 
-      {classes.length > 0 ? (
+      {visibleClasses.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {classes.map((cls) => (
+          {visibleClasses.map((cls) => (
             <div
               key={cls.id}
               className={`app-card overflow-hidden transition-shadow hover:shadow-xl ${
@@ -554,8 +611,18 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
       ) : (
         <div className="app-card py-12 text-center">
           <BookOpen className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-          <p className="text-gray-500 text-lg">Chưa có lớp học nào trong trường này</p>
-          {canCreateClass && (
+          <p className="text-gray-500 text-lg">
+            {classes.length === 0 ? 'Chưa có lớp học nào trong trường này' : 'Không tìm thấy lớp phù hợp với từ khóa tìm kiếm'}
+          </p>
+          {classes.length > 0 && classSearch.trim() && (
+            <button
+              onClick={() => setClassSearch('')}
+              className="mt-4 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+            >
+              Xóa từ khóa tìm kiếm
+            </button>
+          )}
+          {classes.length === 0 && canCreateClass && (
             <button onClick={handleOpenAddModal} className="app-btn-primary mt-4 px-4 py-2">
               <Plus className="inline mr-2" size={18} />
               Tạo lớp đầu tiên

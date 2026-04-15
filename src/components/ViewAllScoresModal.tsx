@@ -9,7 +9,7 @@ import { useAuth } from '../context/AuthContext';
 import studentService from '../services/student.service';
 
 type CompetencyLevel = '' | 'A' | 'B' | 'C' | 'D';
-type AssignmentColumnDisplayMode = 'full' | 'compact' | 'hidden';
+type AssignmentColumnDisplayMode = 'full' | 'hidden';
 type ScoreTableSortKey = 'none' | 'name' | 'classification';
 type ScoreTableSortDirection = 'asc' | 'desc';
 type PracticeCode = 'practice01' | 'practice02' | 'practice03';
@@ -38,6 +38,8 @@ interface ViewAllScoresModalProps {
   assignments: Assignment[];
   students: Student[];
   classDisplayName?: string;
+  displayMode?: 'modal' | 'page';
+  title?: string;
   onStudentClassificationUpdated?: (studentId: string, classification: CompetencyLevel) => void;
   onStudentNotesUpdated?: (studentId: string, notes: string) => void;
   scores: {
@@ -178,6 +180,8 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
   assignments,
   students,
   classDisplayName,
+  displayMode = 'modal',
+  title,
   onStudentClassificationUpdated,
   onStudentNotesUpdated,
   scores,
@@ -217,7 +221,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
     setColumnDisplayByAssignmentId((prev) => {
       const next: Record<string, AssignmentColumnDisplayMode> = {};
       assignments.forEach((assignment) => {
-        next[assignment.id] = prev[assignment.id] ?? 'full';
+        next[assignment.id] = prev[assignment.id] === 'hidden' ? 'hidden' : 'full';
       });
       return next;
     });
@@ -259,29 +263,12 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
     [assignments, columnDisplayByAssignmentId]
   );
 
-  const compactAssignmentsCount = useMemo(
-    () =>
-      displayedAssignments.filter(
-        (assignment) => (columnDisplayByAssignmentId[assignment.id] ?? 'full') === 'compact'
-      ).length,
-    [displayedAssignments, columnDisplayByAssignmentId]
-  );
-
   const staticColumnCount = isClassificationColumnVisible ? 13 : 12;
 
   const areAllAssignmentsVisible = useMemo(
     () =>
       assignments.length > 0 &&
       assignments.every((assignment) => (columnDisplayByAssignmentId[assignment.id] ?? 'full') === 'full'),
-    [assignments, columnDisplayByAssignmentId]
-  );
-
-  const areAllAssignmentsCompact = useMemo(
-    () =>
-      assignments.length > 0 &&
-      assignments.every(
-        (assignment) => (columnDisplayByAssignmentId[assignment.id] ?? 'full') === 'compact'
-      ),
     [assignments, columnDisplayByAssignmentId]
   );
 
@@ -536,6 +523,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
   }, [sortedDisplayRows, assignments]);
 
   const titleClassName = (classDisplayName || '').trim() || 'Chưa đặt tên lớp';
+  const headerTitle = (title || '').trim() || `Bảng điểm lớp ${titleClassName}`;
   const safeClassName = sanitizeFileNamePart(titleClassName);
   const exportExcelFileName = `Bảng điểm ${safeClassName}`;
   const exportPdfFileName = `Bảng điểm ${safeClassName}.pdf`;
@@ -589,22 +577,22 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
     exportToPdf('score-table', exportPdfFileName);
   };
 
-  const handleAssignmentColumnDisplayChange = (
-    assignmentId: string,
-    mode: AssignmentColumnDisplayMode
-  ) => {
-    setColumnDisplayByAssignmentId((prev) => ({
-      ...prev,
-      [assignmentId]: mode,
-    }));
-  };
-
   const handleApplyColumnDisplayForAll = (mode: AssignmentColumnDisplayMode) => {
     const next: Record<string, AssignmentColumnDisplayMode> = {};
     assignments.forEach((assignment) => {
       next[assignment.id] = mode;
     });
     setColumnDisplayByAssignmentId(next);
+  };
+
+  const handleToggleAssignmentColumnDisplay = (assignmentId: string) => {
+    setColumnDisplayByAssignmentId((prev) => {
+      const currentMode = prev[assignmentId] ?? 'full';
+      return {
+        ...prev,
+        [assignmentId]: currentMode === 'hidden' ? 'full' : 'hidden',
+      };
+    });
   };
 
   const handleClassificationChange = async (studentId: string, nextLevel: CompetencyLevel) => {
@@ -698,17 +686,19 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
   };
 
   if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-1 sm:p-3 backdrop-blur-[1px]">
-      <div className="flex h-[96vh] w-[calc(100vw-0.5rem)] max-w-[1920px] flex-col overflow-hidden rounded-xl bg-white shadow-2xl sm:h-[94vh] sm:w-[calc(100vw-1.5rem)] sm:rounded-2xl">
+  const isPageMode = displayMode === 'page';
+  const containerClassName = isPageMode
+    ? 'flex w-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm'
+    : 'flex h-[96vh] w-[calc(100vw-0.5rem)] max-w-[1920px] flex-col overflow-hidden rounded-xl bg-white shadow-2xl sm:h-[94vh] sm:w-[calc(100vw-1.5rem)] sm:rounded-2xl';
+  const content = (
+      <div className={containerClassName}>
         <div className="flex items-center justify-between border-b border-slate-200 bg-gradient-to-r from-slate-50 to-blue-50 px-4 py-4 sm:px-6 sm:py-5">
           <div className="flex items-center gap-3">
             <div className="grid h-10 w-10 place-items-center rounded-xl bg-blue-600 font-bold text-white">
               BD
             </div>
             <div>
-              <h2 className="text-xl font-extrabold text-slate-800">Bảng điểm lớp {titleClassName}</h2>
+              <h2 className="text-xl font-extrabold text-slate-800">{headerTitle}</h2>
               <p className="text-sm text-slate-500">
                 {students.length} học sinh, {assignments.length} bài tập, hiện {displayedAssignments.length}/
                 {assignments.length} cột điểm
@@ -739,17 +729,6 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleApplyColumnDisplayForAll('compact')}
-                    className={`border-l border-slate-200 px-3 py-1.5 text-xs font-semibold transition ${
-                      areAllAssignmentsCompact
-                        ? 'bg-amber-500 text-white'
-                        : 'text-slate-700 hover:bg-slate-100'
-                    }`}
-                  >
-                    Thu gọn tất cả
-                  </button>
-                  <button
-                    type="button"
                     onClick={() => handleApplyColumnDisplayForAll('hidden')}
                     className={`border-l border-slate-200 px-3 py-1.5 text-xs font-semibold transition ${
                       areAllAssignmentsHidden
@@ -757,7 +736,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
                         : 'text-slate-700 hover:bg-slate-100'
                     }`}
                   >
-                    Ẩn tất cả
+                    Tắt tất cả
                   </button>
                 </div>
 
@@ -818,36 +797,30 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
             <div className="flex flex-wrap gap-2">
               {assignments.map((assignment) => {
                 const mode = columnDisplayByAssignmentId[assignment.id] ?? 'full';
+                const isVisible = mode === 'full';
                 return (
-                  <label
+                  <div
                     key={`column-config-${assignment.id}`}
                     className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700"
                     title={assignment.name}
                   >
                     <span className="max-w-[160px] truncate">{assignment.name}</span>
-                    <select
-                      value={mode}
-                      onChange={(event) =>
-                        handleAssignmentColumnDisplayChange(
-                          assignment.id,
-                          event.target.value as AssignmentColumnDisplayMode
-                        )
-                      }
-                      className="rounded border border-slate-300 bg-white px-1 py-0.5 text-xs"
+                    <button
+                      type="button"
+                      onClick={() => handleToggleAssignmentColumnDisplay(assignment.id)}
+                      className={`inline-flex min-w-[68px] items-center justify-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold transition ${
+                        isVisible
+                          ? 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                          : 'border-slate-300 bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      }`}
                     >
-                      <option value="full">Hiện</option>
-                      <option value="compact">Thu gọn</option>
-                      <option value="hidden">Ẩn</option>
-                    </select>
-                  </label>
+                      {isVisible ? <Eye size={12} /> : <EyeOff size={12} />}
+                      {isVisible ? 'Hiện' : 'Tắt'}
+                    </button>
+                  </div>
                 );
               })}
             </div>
-            {compactAssignmentsCount > 0 && (
-              <div className="mt-2 text-[11px] text-slate-500">
-                Cột thu gọn chỉ hiển thị điểm và số lỗi.
-              </div>
-            )}
           </div>
 
           <div id="score-table" className="relative overflow-hidden rounded-2xl border border-slate-200 shadow-lg shadow-slate-900/5">
@@ -878,19 +851,13 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
                       Tên
                     </th>
                     {displayedAssignments.map((assignment) => {
-                      const mode = columnDisplayByAssignmentId[assignment.id] ?? 'full';
-                      const isCompact = mode === 'compact';
                       return (
                         <th
                           key={assignment.id}
-                          className={`sticky top-0 z-40 ${isCompact ? 'w-[92px] min-w-[92px]' : 'min-w-[140px]'} border-r border-slate-700 bg-slate-800 px-3 py-3 text-center text-xs font-bold text-slate-100`}
+                          className="sticky top-0 z-40 min-w-[140px] border-r border-slate-700 bg-slate-800 px-3 py-3 text-center text-xs font-bold text-slate-100"
                         >
-                          <div className={isCompact ? 'truncate' : ''} title={assignment.name}>
-                            {assignment.name}
-                          </div>
-                          {!isCompact && (
-                            <div className="text-[11px] font-normal text-slate-300">(tối đa {assignment.maxScore})</div>
-                          )}
+                          <div title={assignment.name}>{assignment.name}</div>
+                          <div className="text-[11px] font-normal text-slate-300">(tối đa {assignment.maxScore})</div>
                         </th>
                       );
                     })}
@@ -963,20 +930,18 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
                         const assignmentErrors = row.errorsByAssignment[assignment.id] || [];
                         const score = row.calculatedScores[assignment.id] || 0;
                         const maxScore = assignment.maxScore || 0;
-                        const mode = columnDisplayByAssignmentId[assignment.id] ?? 'full';
-                        const isCompact = mode === 'compact';
 
                         return (
                           <td
                             key={`${row.id}-${assignment.id}`}
-                            className={`${isCompact ? 'w-[92px] min-w-[92px]' : ''} border-r border-slate-100 px-3 py-3 text-center align-top`}
+                            className="border-r border-slate-100 px-3 py-3 text-center align-top"
                           >
                             <div
                               className={`mx-auto inline-flex min-w-[62px] items-center justify-center rounded-full border px-2.5 py-1 text-xs font-bold ${getScorePillClass(score, maxScore)}`}
                             >
                               {formatScore(score)}
                             </div>
-                            {assignmentErrors.length > 0 && !isCompact && (
+                            {assignmentErrors.length > 0 && (
                               <details className="mt-1 text-left text-xs text-amber-800">
                                 <summary className="inline-flex cursor-pointer items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 font-semibold text-amber-700 hover:bg-amber-100">
                                   {assignmentErrors.length} lỗi
@@ -987,14 +952,6 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
                                   ))}
                                 </ul>
                               </details>
-                            )}
-                            {assignmentErrors.length > 0 && isCompact && (
-                              <div
-                                className="mt-1 inline-flex rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700"
-                                title={assignmentErrors.join(' | ')}
-                              >
-                                {assignmentErrors.length} lỗi
-                              </div>
                             )}
                           </td>
                         );
@@ -1131,10 +1088,19 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
             onClick={onClose}
             className="w-full rounded-lg bg-slate-200 px-4 py-2 text-slate-800 hover:bg-slate-300 sm:w-auto"
           >
-            Đóng
+            {isPageMode ? 'Quay lại' : 'Đóng'}
           </button>
         </div>
       </div>
+  );
+
+  if (isPageMode) {
+    return <div className="w-full">{content}</div>;
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-1 sm:p-3 backdrop-blur-[1px]">
+      {content}
     </div>
   );
 };
