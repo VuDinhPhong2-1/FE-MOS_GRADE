@@ -378,23 +378,16 @@ const GradingModal: React.FC<GradingModalProps> = ({
     };
 
     const convertAutoScoreToAssignmentScale = (result: GradingResult, assignmentMaxScore?: number): number => {
-        const targetMaxScore =
-            typeof assignmentMaxScore === 'number' && Number.isFinite(assignmentMaxScore) && assignmentMaxScore > 0
-                ? assignmentMaxScore
-                : result.maxScore;
+        void assignmentMaxScore;
+        // Backend quyết định hoàn toàn điểm tự động; frontend chỉ hiển thị/lưu lại.
+        const backendMax = typeof result.maxScore === 'number' && Number.isFinite(result.maxScore) ? result.maxScore : 0;
+        const backendScore = typeof result.totalScore === 'number' && Number.isFinite(result.totalScore) ? result.totalScore : 0;
 
-        if (!targetMaxScore || !Number.isFinite(targetMaxScore)) {
-            return Number(result.totalScore.toFixed(2));
+        if (backendMax > 0) {
+            return Number(Math.max(0, Math.min(backendMax, backendScore)).toFixed(2));
         }
 
-        const pct = typeof result.percentage === 'number' && Number.isFinite(result.percentage)
-            ? result.percentage / 100
-            : result.maxScore > 0
-                ? result.totalScore / result.maxScore
-                : 0;
-
-        const scaledScore = Math.max(0, Math.min(targetMaxScore, targetMaxScore * pct));
-        return Number(scaledScore.toFixed(2));
+        return Number(Math.max(0, backendScore).toFixed(2));
     };
 
     const normalizeErrorText = (value: string): string => value.replace(/\s+/g, ' ').trim();
