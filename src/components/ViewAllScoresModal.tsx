@@ -10,7 +10,7 @@ import studentService from '../services/student.service';
 
 type CompetencyLevel = '' | 'A' | 'B' | 'C' | 'D';
 type AssignmentColumnDisplayMode = 'full' | 'hidden';
-type ScoreTableSortKey = 'none' | 'name' | 'classification';
+type ScoreTableSortKey = 'none' | 'name' | 'classification' | 'totalScore';
 type ScoreTableSortDirection = 'asc' | 'desc';
 type PracticeCode = 'practice01' | 'practice02' | 'practice03';
 
@@ -202,6 +202,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
   const [isClassificationColumnVisible, setIsClassificationColumnVisible] = useState(true);
   const [sortKey, setSortKey] = useState<ScoreTableSortKey>('name');
   const [sortDirection, setSortDirection] = useState<ScoreTableSortDirection>('asc');
+  const [searchTerm, setSearchTerm] = useState<string>('');
 
   useEffect(() => {
     if (!isOpen) return;
@@ -231,6 +232,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
     if (!isOpen) return;
     setSortKey('name');
     setSortDirection('asc');
+    setSearchTerm('');
   }, [isOpen]);
 
   const maxScoreTotal = useMemo(
@@ -377,9 +379,24 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
   }, [isOpen, students, assignments, scoreLookup, classificationByStudentId, notesByStudentId, maxScoreTotal]);
 
   const sortedDisplayRows = useMemo<DisplayStudentRow[]>(() => {
-    if (sortKey === 'none') return displayRows;
+    // First, filter rows by search term
+    const filteredRows = displayRows.filter((row) => {
+      if (!searchTerm.trim()) {
+        return true;
+      }
+      const searchLower = searchTerm.toLowerCase().trim();
+      const firstName = (row.firstName || '').toLowerCase();
+      const middleName = (row.middleName || '').toLowerCase();
+      const fullName = `${middleName} ${firstName}`.toLowerCase();
+      
+      return firstName.includes(searchLower) || middleName.includes(searchLower) || fullName.includes(searchLower);
+    });
 
-    const rows = [...displayRows];
+    if (sortKey === 'none') {
+      return filteredRows;
+    }
+
+    const rows = [...filteredRows];
     rows.sort((left, right) => {
       const leftFirstName = (left.firstName || '').trim();
       const rightFirstName = (right.firstName || '').trim();
@@ -398,6 +415,19 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
         return sortDirection === 'asc' ? byMiddleName : -byMiddleName;
       }
 
+      if (sortKey === 'totalScore') {
+        const byTotalScore = left.totalScore - right.totalScore;
+        if (byTotalScore !== 0) {
+          return sortDirection === 'asc' ? byTotalScore : -byTotalScore;
+        }
+        // If total scores are equal, sort by name
+        const byFirstName = vietnameseCollator.compare(leftFirstName, rightFirstName);
+        if (byFirstName !== 0) {
+          return byFirstName;
+        }
+        return vietnameseCollator.compare(leftMiddleName, rightMiddleName);
+      }
+
       const leftOrder = classificationSortOrder[left.classification];
       const rightOrder = classificationSortOrder[right.classification];
       const byClassification = leftOrder - rightOrder;
@@ -409,7 +439,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
     });
 
     return rows;
-  }, [displayRows, sortKey, sortDirection]);
+  }, [displayRows, sortKey, sortDirection, searchTerm]);
 
   const excelHeaders = useMemo(
     () => [
@@ -700,7 +730,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
             <div>
               <h2 className="text-xl font-extrabold text-slate-800">{headerTitle}</h2>
               <p className="text-sm text-slate-500">
-                {students.length} học sinh, {assignments.length} bài tập, hiện {displayedAssignments.length}/
+                {searchTerm ? `${sortedDisplayRows.length}/` : ''}{students.length} học sinh, {assignments.length} bài tập, hiện {displayedAssignments.length}/
                 {assignments.length} cột điểm
               </p>
             </div>
@@ -770,6 +800,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
                     <option value="none">Mặc định</option>
                     <option value="name">Theo tên học sinh (A → Z)</option>
                     <option value="classification">Theo xếp loại</option>
+                    <option value="totalScore">Theo tổng điểm</option>
                   </select>
                   <button
                     type="button"
@@ -792,6 +823,30 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
                   </button>
                 </div>
               </div>
+            </div>
+
+            <div className="mb-3 flex flex-wrap items-center gap-3">
+              <div className="flex-1 min-w-[200px] max-w-[400px]">
+                <input
+                  type="text"
+                  placeholder="Tìm kiếm tên học sinh..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+              <div className="text-sm text-slate-600">
+                Kết quả: <span className="font-semibold text-slate-800">{sortedDisplayRows.length}/{students.length}</span>
+              </div>
+              {searchTerm && (
+                <button
+                  type="button"
+                  onClick={() => setSearchTerm('')}
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                >
+                  Xóa tìm kiếm
+                </button>
+              )}
             </div>
 
             <div className="flex flex-wrap gap-2">

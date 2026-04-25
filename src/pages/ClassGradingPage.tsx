@@ -146,7 +146,7 @@ const ClassGradingPage = () => {
     return (
       <div className="flex h-64 items-center justify-center text-slate-600">
         <Loader2 size={20} className="mr-2 animate-spin" />
-        Dang tai man hinh cham diem...
+        Đang tảo màn hình chấm điểm...
       </div>
     );
   }

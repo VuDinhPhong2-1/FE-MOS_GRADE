@@ -20,25 +20,25 @@ interface ClassScoreboardLocationState {
 const mapLoadError = (error: unknown): string => {
   if (error instanceof ApiServiceError) {
     if (error.status === 403) {
-      return 'Ban chi co quyen xem lop nay.';
+      return 'Bạn chỉ có quyền xem lớp này.';
     }
 
     if (error.status === 404) {
-      return 'Khong tim thay lop hoc.';
+      return 'Không tìm thấy lớp học.';
     }
 
     if (error.status >= 500) {
-      return 'He thong dang ban, vui long thu lai.';
+      return 'Hệ thống đang bận, vui lòng thử lại.';
     }
 
-    return error.message || 'Khong the tai bang diem lop.';
+    return error.message || 'Không thể tải bảng điểm lớp.';
   }
 
   if (error instanceof Error) {
     return error.message;
   }
 
-  return 'Khong the tai bang diem lop.';
+  return 'Không thể tải bảng điểm lớp.';
 };
 
 const ClassScoreboardPage = () => {
@@ -69,7 +69,7 @@ const ClassScoreboardPage = () => {
 
     const loadData = async () => {
       if (!classId) {
-        setError('Thieu ma lop de xem bang diem.');
+        setError('Thiếu mã lớp để xem bảng điểm.');
         setIsLoading(false);
         return;
       }
@@ -149,7 +149,7 @@ const ClassScoreboardPage = () => {
           className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50"
         >
           <ArrowLeft size={16} />
-          Quay lai
+          Quay lại
         </button>
         <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
           {error}
@@ -167,10 +167,10 @@ const ClassScoreboardPage = () => {
           className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50"
         >
           <ArrowLeft size={16} />
-          Quay lai
+          Quay lại
         </button>
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          Ban chi co quyen xem lop nay, khong the xem bang diem.
+          ạn chỉ có quyền xem lớp này, không thể xem bảng điểm.
         </div>
       </div>
     );
@@ -185,7 +185,7 @@ const ClassScoreboardPage = () => {
           className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50"
         >
           <ArrowLeft size={16} />
-          Quay lai danh sach hoc sinh
+          Quay lại danh sách học sinh
         </button>
         <div className="text-sm text-slate-600">
           Lop: <span className="font-semibold text-slate-800">{classDisplayName}</span> | Tong {students.length} hoc
@@ -197,7 +197,7 @@ const ClassScoreboardPage = () => {
         isOpen
         onClose={handleBack}
         displayMode="page"
-        title={`Bang diem lop ${classDisplayName}`}
+        title={`Bảng điểm lớp ${classDisplayName}`}
         assignments={assignments}
         students={students}
         classDisplayName={classDisplayName}

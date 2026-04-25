@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useMemo, useCallback, type ChangeEvent } from 'react';
+import { useState, useEffect, useMemo, useCallback, type ChangeEvent } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import type { Class } from '../types/class.types';
@@ -785,6 +785,8 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
           </div>
         </div>
       </section>
+
+      <ClassAnalyticsPanel classId={selectedClass.id} assignments={assignments} />
 
       <section className="app-card-soft p-3 sm:p-4">
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(260px,auto)]">

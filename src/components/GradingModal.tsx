@@ -126,6 +126,9 @@ const GradingModal: React.FC<GradingModalProps> = ({
     const [multiScores, setMultiScores] = useState<Map<string, Map<string, MultiScoreCellValue>>>(
         new Map()
     );
+    const [multiPersistedScores, setMultiPersistedScores] = useState<
+        Map<string, Map<string, PersistedScoreSnapshot>>
+    >(new Map());
     const [multiAutoStates, setMultiAutoStates] = useState<Map<string, Map<string, MultiAutoCellState>>>(
         new Map()
     );
@@ -309,6 +312,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
         setMultiAssignmentIds([]);
         setMultiAssignmentDraftIds([]);
         setMultiScores(new Map());
+        setMultiPersistedScores(new Map());
         setMultiAutoStates(new Map());
         setMultiUndoSnapshots(new Map());
         setSingleDragOverStudentId(null);
@@ -555,20 +559,30 @@ const GradingModal: React.FC<GradingModalProps> = ({
             );
 
             const nextMap = new Map<string, Map<string, MultiScoreCellValue>>();
+            const nextPersistedMap = new Map<string, Map<string, PersistedScoreSnapshot>>();
 
             assignmentIds.forEach((assignmentId) => {
                 const rowMap = new Map<string, MultiScoreCellValue>();
+                const persistedRowMap = new Map<string, PersistedScoreSnapshot>();
                 gradingStudents.forEach((student) => {
                     rowMap.set(student.id, { scoreValue: null, feedback: '', autoGradingErrors: [] });
                 });
                 nextMap.set(assignmentId, rowMap);
+                nextPersistedMap.set(assignmentId, persistedRowMap);
             });
 
             scoreGroups.forEach(({ assignmentId, data }) => {
                 const rowMap = nextMap.get(assignmentId);
-                if (!rowMap) return;
+                const persistedRowMap = nextPersistedMap.get(assignmentId);
+                if (!rowMap || !persistedRowMap) return;
                 data.forEach((item) => {
                     rowMap.set(item.studentId, {
+                        scoreValue: typeof item.scoreValue === 'number' ? item.scoreValue : null,
+                        feedback: item.feedback || '',
+                        autoGradingErrors: item.autoGradingErrors || [],
+                    });
+                    persistedRowMap.set(item.studentId, {
+                        scoreId: item.id,
                         scoreValue: typeof item.scoreValue === 'number' ? item.scoreValue : null,
                         feedback: item.feedback || '',
                         autoGradingErrors: item.autoGradingErrors || [],
@@ -577,6 +591,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
             });
 
             setMultiScores(nextMap);
+            setMultiPersistedScores(nextPersistedMap);
         } catch (error) {
             console.error('Lỗi khi tải điểm của nhiều bài tập:', error);
             alert('Không thể tải điểm cho nhiều bài tập!');
@@ -1375,12 +1390,37 @@ const GradingModal: React.FC<GradingModalProps> = ({
             const failedAssignments: string[] = [];
             let savedAssignmentCount = 0;
 
+            // Helper function để kiểm tra xem score có thay đổi không
+            const hasScoreChanged = (
+                current: MultiScoreCellValue | undefined,
+                persisted: PersistedScoreSnapshot | undefined
+            ): boolean => {
+                if (!current) return false;
+                if (!persisted) {
+                    // Nếu không có persisted nhưng có current với scoreValue !== null => có thay đổi
+                    return current.scoreValue !== null;
+                }
+                // So sánh scoreValue
+                if (current.scoreValue !== persisted.scoreValue) return true;
+                // So sánh autoGradingErrors
+                const currentErrors = current.autoGradingErrors || [];
+                const persistedErrors = persisted.autoGradingErrors || [];
+                if (currentErrors.length !== persistedErrors.length) return true;
+                return !currentErrors.every((err, idx) => err === persistedErrors[idx]);
+            };
+
             for (const assignmentId of multiAssignmentIds) {
                 const rowMap = multiScores.get(assignmentId);
+                const persistedRowMap = multiPersistedScores.get(assignmentId);
                 if (!rowMap) continue;
 
+                // ✅ Chỉ lưu scores có thay đổi
                 const scores = Array.from(rowMap.entries())
-                    .filter(([studentId, item]) => item.scoreValue !== null && activeStudentIds.has(studentId))
+                    .filter(([studentId, item]) => {
+                        if (!activeStudentIds.has(studentId)) return false;
+                        const persistedItem = persistedRowMap?.get(studentId);
+                        return hasScoreChanged(item, persistedItem);
+                    })
                     .map(([studentId, item]) => ({
                         studentId,
                         scoreValue: item.scoreValue!,

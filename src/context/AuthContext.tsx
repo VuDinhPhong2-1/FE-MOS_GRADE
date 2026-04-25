@@ -14,6 +14,12 @@ interface AuthProviderProps {
 }
 
 const REFRESH_EARLY_MS = 5 * 60 * 1000;
+const REFRESH_LOCK_KEY = 'auth_refresh_lock';
+const REFRESH_BROADCAST_KEY = 'auth_refresh_broadcast';
+const REFRESH_LOCK_TTL_MS = 12_000;
+const REFRESH_WAIT_TIMEOUT_MS = 12_500;
+const REFRESH_WAIT_INTERVAL_MS = 250;
+const REFRESH_MAX_ATTEMPTS = 2;
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -58,6 +64,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const refreshPromiseRef = useRef<Promise<string | null> | null>(null);
   const proactiveTimerRef = useRef<number | null>(null);
+  const tabIdRef = useRef<string>(
+    typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID()
+      : `${Date.now()}_${Math.random().toString(36).slice(2)}`
+  );
 
   const scheduleProactiveRefresh = (token: string | null) => {
     if (proactiveTimerRef.current) {
@@ -74,49 +85,231 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }, delay);
   };
 
+  const isAccessTokenUsable = (token: string | null): token is string =>
+    Boolean(token) && !isTokenExpired(token);
+
+  const readRefreshLock = (): { owner: string; expiresAt: number } | null => {
+    const raw = localStorage.getItem(REFRESH_LOCK_KEY);
+    if (!raw) return null;
+
+    try {
+      const parsed = JSON.parse(raw) as { owner?: unknown; expiresAt?: unknown };
+      if (typeof parsed.owner !== 'string' || typeof parsed.expiresAt !== 'number') {
+        return null;
+      }
+      return { owner: parsed.owner, expiresAt: parsed.expiresAt };
+    } catch {
+      return null;
+    }
+  };
+
+  const tryAcquireRefreshLock = (): boolean => {
+    const now = Date.now();
+    const currentLock = readRefreshLock();
+    if (currentLock && currentLock.owner !== tabIdRef.current && currentLock.expiresAt > now) {
+      return false;
+    }
+
+    const newLock = JSON.stringify({
+      owner: tabIdRef.current,
+      expiresAt: now + REFRESH_LOCK_TTL_MS,
+    });
+
+    localStorage.setItem(REFRESH_LOCK_KEY, newLock);
+    const confirmedLock = readRefreshLock();
+    return confirmedLock?.owner === tabIdRef.current;
+  };
+
+  const releaseRefreshLock = () => {
+    const currentLock = readRefreshLock();
+    if (currentLock?.owner === tabIdRef.current) {
+      localStorage.removeItem(REFRESH_LOCK_KEY);
+    }
+  };
+
+  const broadcastRefreshSuccess = () => {
+    localStorage.setItem(
+      REFRESH_BROADCAST_KEY,
+      JSON.stringify({ at: Date.now(), by: tabIdRef.current })
+    );
+  };
+
+  const waitForAnotherTabRefresh = async (
+    previousRefreshToken: string | null
+  ): Promise<string | null> => {
+    const nowUsableToken = localStorage.getItem('accessToken');
+    const nowRefreshToken = localStorage.getItem('refreshToken');
+    if (
+      isAccessTokenUsable(nowUsableToken) &&
+      nowRefreshToken &&
+      nowRefreshToken !== previousRefreshToken
+    ) {
+      return nowUsableToken;
+    }
+
+    return new Promise((resolve) => {
+      const startedAt = Date.now();
+      let intervalId: number | null = null;
+
+      const finish = (token: string | null) => {
+        window.removeEventListener('storage', onStorage);
+        if (intervalId !== null) {
+          window.clearInterval(intervalId);
+        }
+        resolve(token);
+      };
+
+      const tryResolveFromStorage = () => {
+        const latestAccessToken = localStorage.getItem('accessToken');
+        const latestRefreshToken = localStorage.getItem('refreshToken');
+        if (
+          isAccessTokenUsable(latestAccessToken) &&
+          latestRefreshToken &&
+          latestRefreshToken !== previousRefreshToken
+        ) {
+          finish(latestAccessToken);
+          return;
+        }
+
+        if (Date.now() - startedAt >= REFRESH_WAIT_TIMEOUT_MS) {
+          finish(null);
+        }
+      };
+
+      const onStorage = (event: StorageEvent) => {
+        if (
+          event.key === 'accessToken' ||
+          event.key === 'refreshToken' ||
+          event.key === REFRESH_BROADCAST_KEY ||
+          event.key === REFRESH_LOCK_KEY
+        ) {
+          tryResolveFromStorage();
+        }
+      };
+
+      window.addEventListener('storage', onStorage);
+      intervalId = window.setInterval(tryResolveFromStorage, REFRESH_WAIT_INTERVAL_MS);
+      tryResolveFromStorage();
+    });
+  };
+
+  const callRefreshEndpoint = async (
+    refreshToken: string
+  ): Promise<
+    | { type: 'success'; accessToken: string; refreshToken: string }
+    | { type: 'unauthorized' }
+    | { type: 'error' }
+  > => {
+    try {
+      const response = await fetch(`${AUTH_API_BASE_URL}/refresh-token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken }),
+      });
+
+      if (response.status === 401) {
+        return { type: 'unauthorized' };
+      }
+
+      if (!response.ok) {
+        console.warn('Refresh token API error:', response.status, response.statusText);
+        return { type: 'error' };
+      }
+
+      const data = await response.json();
+      if (!data?.accessToken || !data?.refreshToken) {
+        console.warn('Invalid refresh token response: missing accessToken or refreshToken');
+        return { type: 'error' };
+      }
+
+      return {
+        type: 'success',
+        accessToken: data.accessToken as string,
+        refreshToken: data.refreshToken as string,
+      };
+    } catch (error) {
+      console.warn(
+        'Network error when refreshing token:',
+        error instanceof Error ? error.message : 'Unknown error'
+      );
+      return { type: 'error' };
+    }
+  };
+
   const refreshAccessToken = async (): Promise<string | null> => {
     if (refreshPromiseRef.current) {
       return refreshPromiseRef.current;
     }
 
     refreshPromiseRef.current = (async () => {
-      const refreshToken = localStorage.getItem('refreshToken');
-      if (!refreshToken) {
+      const currentAccessToken = localStorage.getItem('accessToken');
+      if (isAccessTokenUsable(currentAccessToken)) {
+        scheduleProactiveRefresh(currentAccessToken);
+        return currentAccessToken;
+      }
+
+      if (!localStorage.getItem('refreshToken')) {
         clearSession();
         setUser(null);
         return null;
       }
 
-      try {
-        const response = await fetch(`${AUTH_API_BASE_URL}/refresh-token`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ refreshToken }),
-        });
-
-        if (!response.ok) {
+      for (let attempt = 0; attempt < REFRESH_MAX_ATTEMPTS; attempt += 1) {
+        const previousRefreshToken = localStorage.getItem('refreshToken');
+        if (!previousRefreshToken) {
           clearSession();
           setUser(null);
           return null;
         }
 
-        const data = await response.json();
-        if (!data?.accessToken || !data?.refreshToken) {
-          clearSession();
-          setUser(null);
-          return null;
+        if (!tryAcquireRefreshLock()) {
+          const tokenFromOtherTab = await waitForAnotherTabRefresh(previousRefreshToken);
+          if (tokenFromOtherTab) {
+            scheduleProactiveRefresh(tokenFromOtherTab);
+            return tokenFromOtherTab;
+          }
+
+          continue;
         }
 
-        localStorage.setItem('accessToken', data.accessToken);
-        localStorage.setItem('refreshToken', data.refreshToken);
-        scheduleProactiveRefresh(data.accessToken);
+        try {
+          const latestRefreshToken = localStorage.getItem('refreshToken');
+          if (!latestRefreshToken) {
+            clearSession();
+            setUser(null);
+            return null;
+          }
 
-        return data.accessToken;
-      } catch {
-        clearSession();
-        setUser(null);
-        return null;
+          const refreshResult = await callRefreshEndpoint(latestRefreshToken);
+          if (refreshResult.type === 'success') {
+            localStorage.setItem('accessToken', refreshResult.accessToken);
+            localStorage.setItem('refreshToken', refreshResult.refreshToken);
+            broadcastRefreshSuccess();
+            scheduleProactiveRefresh(refreshResult.accessToken);
+            return refreshResult.accessToken;
+          }
+
+          if (refreshResult.type === 'unauthorized') {
+            const tokenFromOtherTab = await waitForAnotherTabRefresh(previousRefreshToken);
+            if (tokenFromOtherTab) {
+              scheduleProactiveRefresh(tokenFromOtherTab);
+              return tokenFromOtherTab;
+            }
+
+            if (attempt === REFRESH_MAX_ATTEMPTS - 1) {
+              clearSession();
+              setUser(null);
+              return null;
+            }
+          } else {
+            return null;
+          }
+        } finally {
+          releaseRefreshLock();
+        }
       }
+
+      return null;
     })();
 
     try {
@@ -191,40 +384,50 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setUser(savedUser);
 
       let token = localStorage.getItem('accessToken');
+      let refreshFailed = false;
+      
       if (!token || isTokenExpired(token)) {
-        token = await refreshAccessToken();
-      }
-
-      if (!token) {
-        if (mounted) {
-          setUser(null);
-          setLoading(false);
+        const refreshedToken = await refreshAccessToken();
+        if (refreshedToken) {
+          token = refreshedToken;
+        } else {
+          // ✅ Refresh thất bại → đừng gọi /me vì token đã expire
+          // Giữ session, user sẽ được refresh token lại ở lần request tiếp theo
+          console.warn('Failed to refresh access token on init, keeping session for next request');
+          refreshFailed = true;
+          // Không lấy lại accessToken cũ vì nó đã expire
+          token = null;
         }
-        return;
       }
 
       scheduleProactiveRefresh(token);
 
-      try {
-        const meResponse = await fetch(`${AUTH_API_BASE_URL}/me`, {
-          method: 'GET',
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+      // ✅ Chỉ gọi /me nếu có token hợp lệ (refresh thành công hoặc token chưa expire)
+      if (!refreshFailed) {
+        try {
+          const headers: HeadersInit = {};
+          if (token) {
+            headers.Authorization = `Bearer ${token}`;
+          }
 
-        // ✅ Chỉ logout khi server xác nhận token không hợp lệ (401)
-        if (meResponse.status === 401) {
-          clearSession();
-          if (mounted) setUser(null);
+          const meResponse = await fetch(`${AUTH_API_BASE_URL}/me`, {
+            method: 'GET',
+            headers,
+          });
+
+          // ✅ Chỉ logout khi server xác nhận token không hợp lệ (401)
+          if (meResponse.status === 401) {
+            clearSession();
+            if (mounted) setUser(null);
+          }
+          // Các lỗi khác (500, 503, network...) → giữ session, không logout
+        } catch {
+          // ✅ Lỗi mạng → KHÔNG logout, giữ nguyên session
+          console.warn('Không thể kết nối server khi khởi tạo session, giữ session hiện tại.');
         }
-        // Các lỗi khác (500, 503, network...) → giữ session, không logout
-      } catch {
-        // ✅ Lỗi mạng → KHÔNG logout, giữ nguyên session
-        console.warn('Không thể kết nối server khi khởi tạo session, giữ session hiện tại.');
-      } finally {
-        if (mounted) setLoading(false);
       }
+
+      if (mounted) setLoading(false);
     };
 
     void initializeSession();
