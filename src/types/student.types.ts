@@ -8,6 +8,8 @@ export interface Student {
     status?: string;
     competencyLevel?: 'A' | 'B' | 'C' | 'D' | '';
     notes?: string;
+    takesExam?: boolean;
+    thi?: boolean;
     teacherId?: string;
     classId?: string;
     createdAt?: string;
@@ -42,6 +44,8 @@ export interface StudentResponse {
     status: string;
     competencyLevel?: 'A' | 'B' | 'C' | 'D' | '';
     notes?: string;
+    takesExam?: boolean;
+    thi: boolean;
     teacherId?: string;
     classId?: string;
     createdAt: string;

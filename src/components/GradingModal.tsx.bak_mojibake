@@ -1,7 +1,6 @@
-// src/components/GradingModal.optimized.tsx
+﻿// src/components/GradingModal.optimized.tsx
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { X, Plus, Save, Loader2, ArrowLeft, XCircle, CheckCircle, Upload, Search, Check, Pencil, Trash2 } from 'lucide-react';
-import * as XLSX from 'xlsx';
 import { useAuth } from '../context/AuthContext';
 import type { Assignment, GradingEndpointInfo, UpdateAssignmentRequest } from '../types/assignment.types';
 import type { Student } from '../types/student.types';
@@ -60,16 +59,6 @@ interface MultiUndoSnapshot {
     previousScoreState: MultiScoreCellValue;
 }
 
-interface PendingManualMultiFileMatch {
-    id: string;
-    fileKey: string;
-    studentId: string;
-    file: File;
-    reason: string;
-    selectedAssignmentId: string;
-    candidateAssignmentIds: string[];
-}
-
 interface BulkAssignmentDraft {
     endpoint: string;
     displayName: string;
@@ -82,7 +71,7 @@ const PRACTICE_OPTIONS = [
     { code: 'practice01', label: 'Practice 01' },
     { code: 'practice02', label: 'Practice 02' },
     { code: 'practice03', label: 'Practice 03' },
-    { code: 'exam_review', label: 'Tạo bài ôn thi' },
+    { code: 'exam_review', label: 'Táº¡o bÃ i Ã´n thi' },
 ] as const;
 
 type PracticeCode = typeof PRACTICE_OPTIONS[number]['code'];
@@ -90,7 +79,7 @@ const QUICK_SELECT_PRACTICE_OPTIONS = [
     { code: 'practice01', label: 'Practice 01' },
     { code: 'practice02', label: 'Practice 02' },
     { code: 'practice03', label: 'Practice 03' },
-    { code: 'exam_review', label: 'Ôn thi' },
+    { code: 'exam_review', label: 'Ã”n thi' },
 ] as const;
 
 const EXAM_REVIEW_PROJECT_NUMBERS = [2, 4, 5, 6, 8, 9, 10, 12, 14, 16, 18, 20, 22];
@@ -156,72 +145,6 @@ const resolveAssignmentPracticeCode = (
     return resolvePracticeCodeByProjectNumber(projectNumber);
 };
 
-const extractProjectNumbersFromText = (value?: string): number[] => {
-    const normalized = normalizeVietnameseText(value)
-        .replace(/[_-]+/g, ' ')
-        // Tach ranh gioi chu-so de bat duoc ten file bi dinh lien (vi du: 02Project09).
-        .replace(/([0-9])([a-z])/g, '$1 $2')
-        .replace(/([a-z])([0-9])/g, '$1 $2');
-    if (!normalized) return [];
-
-    const patterns = [
-        /project\s*0*(\d{1,2})\b/g,
-        /proj\s*0*(\d{1,2})\b/g,
-        /pro\s*0*(\d{1,2})\b/g,
-        /pr\s*0*(\d{1,2})\b/g,
-        /bai\s*0*(\d{1,2})\b/g,
-        /\bp\s*0*(\d{1,2})\b/g,
-    ];
-
-    const numbers = new Set<number>();
-    patterns.forEach((pattern) => {
-        let match: RegExpExecArray | null;
-        while ((match = pattern.exec(normalized)) !== null) {
-            const parsed = Number.parseInt(match[1], 10);
-            if (!Number.isFinite(parsed) || parsed < 1 || parsed > 24) continue;
-            numbers.add(parsed);
-        }
-    });
-
-    return Array.from(numbers);
-};
-
-const rankProjectCandidates = (fromFileName: number[], fromWorkbookTitle: number[]): number[] => {
-    const scoreMap = new Map<number, number>();
-    Array.from(new Set(fromFileName)).forEach((projectNumber) => {
-        scoreMap.set(projectNumber, (scoreMap.get(projectNumber) || 0) + 2);
-    });
-    Array.from(new Set(fromWorkbookTitle)).forEach((projectNumber) => {
-        scoreMap.set(projectNumber, (scoreMap.get(projectNumber) || 0) + 1);
-    });
-
-    return Array.from(scoreMap.entries())
-        .sort((a, b) => b[1] - a[1])
-        .map(([projectNumber]) => projectNumber);
-};
-
-const isWorkbookTitleReadable = (fileName: string): boolean => {
-    const normalized = fileName.toLowerCase();
-    return normalized.endsWith('.xlsx') || normalized.endsWith('.xlsm');
-};
-
-const readWorkbookTitle = async (file: File): Promise<string> => {
-    if (!isWorkbookTitleReadable(file.name)) return '';
-
-    try {
-        const buffer = await file.arrayBuffer();
-        const workbook = XLSX.read(buffer, {
-            type: 'array',
-            bookProps: true,
-            bookSheets: true,
-        });
-        const title = workbook.Props?.Title;
-        return typeof title === 'string' ? title.trim() : '';
-    } catch {
-        return '';
-    }
-};
-
 const buildBulkAssignmentDrafts = (
     endpoints: GradingEndpointInfo[],
     previousDrafts: BulkAssignmentDraft[],
@@ -232,10 +155,10 @@ const buildBulkAssignmentDrafts = (
     return endpoints.map((endpoint) => {
         const previous = previousMap.get(endpoint.endpoint);
         const previousName = (previous?.name || '').trim();
-        const legacyExamReviewPrefixName = `Ôn thi - ${endpoint.displayName}`;
+        const legacyExamReviewPrefixName = `Ã”n thi - ${endpoint.displayName}`;
         const defaultName =
             practiceCode === 'exam_review'
-                ? `${endpoint.displayName} - Ôn thi`
+                ? `${endpoint.displayName} - Ã”n thi`
                 : endpoint.displayName;
         const shouldUseDefaultExamReviewName =
             practiceCode === 'exam_review'
@@ -270,7 +193,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
     students,
     onSuccess,
     displayMode = 'modal',
-    title = 'Chấm điểm',
+    title = 'Cháº¥m Ä‘iá»ƒm',
 }) => {
     const { getAccessToken } = useAuth();
 
@@ -308,10 +231,6 @@ const GradingModal: React.FC<GradingModalProps> = ({
     const [isBulkUploading, setIsBulkUploading] = useState(false);
     const [multiAssignmentQuery, setMultiAssignmentQuery] = useState('');
     const [isSelectingAssignments, setIsSelectingAssignments] = useState(false);
-    const [pendingManualMultiFileMatches, setPendingManualMultiFileMatches] = useState<
-        PendingManualMultiFileMatch[]
-    >([]);
-    const [isApplyingManualMultiFileMatches, setIsApplyingManualMultiFileMatches] = useState(false);
     const [studentSearchQuery, setStudentSearchQuery] = useState('');
     const [studentSearchHint, setStudentSearchHint] = useState('');
     const [studentSearchMatchedIds, setStudentSearchMatchedIds] = useState<string[]>([]);
@@ -494,12 +413,6 @@ const GradingModal: React.FC<GradingModalProps> = ({
         }
     }, [chooseMode]);
     useEffect(() => {
-        if (chooseMode !== 'existing-multi') {
-            setPendingManualMultiFileMatches((prev) => (prev.length > 0 ? [] : prev));
-            setIsApplyingManualMultiFileMatches(false);
-        }
-    }, [chooseMode]);
-    useEffect(() => {
         if (!isOpen || chooseMode !== 'new') {
             return;
         }
@@ -534,8 +447,6 @@ const GradingModal: React.FC<GradingModalProps> = ({
         setIsBulkUploading(false);
         setMultiAssignmentQuery('');
         setIsSelectingAssignments(false);
-        setPendingManualMultiFileMatches([]);
-        setIsApplyingManualMultiFileMatches(false);
         setStudentSearchQuery('');
         setStudentSearchHint('');
         setStudentSearchMatchedIds([]);
@@ -595,7 +506,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
 
     const convertAutoScoreToAssignmentScale = (result: GradingResult, assignmentMaxScore?: number): number => {
         void assignmentMaxScore;
-        // Backend quyết định hoàn toàn điểm tự động; frontend chỉ hiển thị/lưu lại.
+        // Backend quyáº¿t Ä‘á»‹nh hoÃ n toÃ n Ä‘iá»ƒm tá»± Ä‘á»™ng; frontend chá»‰ hiá»ƒn thá»‹/lÆ°u láº¡i.
         const backendMax = typeof result.maxScore === 'number' && Number.isFinite(result.maxScore) ? result.maxScore : 0;
         const backendScore = typeof result.totalScore === 'number' && Number.isFinite(result.totalScore) ? result.totalScore : 0;
 
@@ -733,8 +644,8 @@ const GradingModal: React.FC<GradingModalProps> = ({
             });
             setAssignments(data);
         } catch (error) {
-            console.error('Lỗi khi tải danh sách bài tập:', error);
-            alert('Không thể tải danh sách bài tập!');
+            console.error('Lá»—i khi táº£i danh sÃ¡ch bÃ i táº­p:', error);
+            alert('KhÃ´ng thá»ƒ táº£i danh sÃ¡ch bÃ i táº­p!');
         }
     };
 
@@ -743,7 +654,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
             const data = await assignmentService.getGradingEndpoints(getAccessToken);
             setGradingEndpoints(data);
         } catch (error) {
-            console.error('Lỗi khi tải danh sách đầu chấm điểm:', error);
+            console.error('Lá»—i khi táº£i danh sÃ¡ch Ä‘áº§u cháº¥m Ä‘iá»ƒm:', error);
         }
     };
 
@@ -779,7 +690,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                 return newMap;
             });
         } catch (error) {
-            console.error('Lỗi khi tải điểm:', error);
+            console.error('Lá»—i khi táº£i Ä‘iá»ƒm:', error);
         }
     };
 
@@ -834,13 +745,13 @@ const GradingModal: React.FC<GradingModalProps> = ({
             setMultiScores(nextMap);
             setMultiPersistedScores(nextPersistedMap);
         } catch (error) {
-            console.error('Lỗi khi tải điểm của nhiều bài tập:', error);
-            alert('Không thể tải điểm cho nhiều bài tập!');
+            console.error('Lá»—i khi táº£i Ä‘iá»ƒm cá»§a nhiá»u bÃ i táº­p:', error);
+            alert('KhÃ´ng thá»ƒ táº£i Ä‘iá»ƒm cho nhiá»u bÃ i táº­p!');
         }
     };
 
     const normalizeMultiAssignmentIds = (ids: string[]) => {
-        // Giữ nguyên thứ tự giáo viên chọn, chỉ loại trùng và loại các id không còn hợp lệ.
+        // Giá»¯ nguyÃªn thá»© tá»± giÃ¡o viÃªn chá»n, chá»‰ loáº¡i trÃ¹ng vÃ  loáº¡i cÃ¡c id khÃ´ng cÃ²n há»£p lá»‡.
         const uniqueIdsInSelectionOrder = Array.from(new Set(ids));
         const validIds = new Set(activeAutoAssignments.map((assignment) => assignment.id));
         return uniqueIdsInSelectionOrder.filter((id) => validIds.has(id));
@@ -903,78 +814,10 @@ const GradingModal: React.FC<GradingModalProps> = ({
         try {
             setMultiAssignmentIds(normalizedDraftIds);
             setMultiUndoSnapshots(new Map());
-            setPendingManualMultiFileMatches([]);
             await loadScoresForMultipleAssignments(normalizedDraftIds);
         } finally {
             setIsSelectingAssignments(false);
         }
-    };
-
-    const handlePendingManualMultiFileAssignmentChange = (matchId: string, assignmentId: string) => {
-        setPendingManualMultiFileMatches((prev) =>
-            prev.map((item) =>
-                item.id === matchId
-                    ? { ...item, selectedAssignmentId: assignmentId }
-                    : item
-            )
-        );
-    };
-
-    const handleRemovePendingManualMultiFileMatch = (matchId: string) => {
-        if (isApplyingManualMultiFileMatches) return;
-        setPendingManualMultiFileMatches((prev) => prev.filter((item) => item.id !== matchId));
-    };
-
-    const applyPendingManualMultiFileMatches = async (matches: PendingManualMultiFileMatch[]) => {
-        if (matches.length === 0) return;
-        if (isApplyingManualMultiFileMatches) return;
-
-        setIsApplyingManualMultiFileMatches(true);
-        try {
-            for (const match of matches) {
-                if (!match.selectedAssignmentId) continue;
-                await uploadMultiStudentFile(match.selectedAssignmentId, match.studentId, match.file, {
-                    skipValidation: true,
-                });
-            }
-
-            const processedIds = new Set(matches.map((item) => item.id));
-            setPendingManualMultiFileMatches((prev) =>
-                prev.filter((item) => !processedIds.has(item.id))
-            );
-        } finally {
-            setIsApplyingManualMultiFileMatches(false);
-        }
-    };
-
-    const handleApplyPendingManualMultiFileMatch = async (matchId: string) => {
-        const target = pendingManualMultiFileMatches.find((item) => item.id === matchId);
-        if (!target) return;
-        if (!target.selectedAssignmentId) {
-            alert('Vui lòng chọn cột bài tập trước khi gán file.');
-            return;
-        }
-        await applyPendingManualMultiFileMatches([target]);
-    };
-
-    const handleApplyAllPendingManualMultiFileMatches = async () => {
-        const readyMatches = pendingManualMultiFileMatches.filter((item) => item.selectedAssignmentId);
-        if (readyMatches.length === 0) {
-            alert('Chưa có file nào được chọn cột bài tập để gán.');
-            return;
-        }
-
-        const duplicateKey = new Set<string>();
-        for (const match of readyMatches) {
-            const key = `${match.studentId}::${match.selectedAssignmentId}`;
-            if (duplicateKey.has(key)) {
-                alert('Có ít nhất 2 file đang chọn cùng một cột bài tập cho cùng 1 học sinh. Vui lòng chỉnh lại trước khi gán.');
-                return;
-            }
-            duplicateKey.add(key);
-        }
-
-        await applyPendingManualMultiFileMatches(readyMatches);
     };
 
     // ============ EVENT HANDLERS ============
@@ -1049,7 +892,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
 
         if (files.length === 0) return;
         if (!selectedAssignment) {
-            alert('Vui lòng chọn bài tập trước khi chọn nhiều file.');
+            alert('Vui lÃ²ng chá»n bÃ i táº­p trÆ°á»›c khi chá»n nhiá»u file.');
             return;
         }
         if (isBulkUploading) return;
@@ -1138,10 +981,10 @@ const GradingModal: React.FC<GradingModalProps> = ({
         if (invalidFiles.length > 0 || extraFiles > 0) {
             const notes: string[] = [];
             if (invalidFiles.length > 0) {
-                notes.push(`Bỏ qua file sai định dạng: ${invalidFiles.join(', ')}`);
+                notes.push(`Bá» qua file sai Ä‘á»‹nh dáº¡ng: ${invalidFiles.join(', ')}`);
             }
             if (extraFiles > 0) {
-                notes.push(`Bỏ qua ${extraFiles} file do vượt số học sinh còn lại trong danh sách.`);
+                notes.push(`Bá» qua ${extraFiles} file do vÆ°á»£t sá»‘ há»c sinh cÃ²n láº¡i trong danh sÃ¡ch.`);
             }
             alert(notes.join('\n'));
         }
@@ -1253,7 +1096,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                 return next;
             });
         } catch (error) {
-            alert(error instanceof Error ? error.message : 'Không thể hoàn tác file vừa chọn.');
+            alert(error instanceof Error ? error.message : 'KhÃ´ng thá»ƒ hoÃ n tÃ¡c file vá»«a chá»n.');
             if (selectedAssignment) {
                 await loadExistingScores(selectedAssignment);
             }
@@ -1265,12 +1108,12 @@ const GradingModal: React.FC<GradingModalProps> = ({
     const handleAutoGrade = async (studentId: string, studentFile: File) => {
         const student = students.find((item) => item.id === studentId);
         if (student && !isStudentActive(student)) {
-            alert('Học sinh đang ở trạng thái ngừng, không thể chấm điểm.');
+            alert('Há»c sinh Ä‘ang á»Ÿ tráº¡ng thÃ¡i ngá»«ng, khÃ´ng thá»ƒ cháº¥m Ä‘iá»ƒm.');
             return;
         }
 
         if (!selectedAssignment) {
-            alert('Vui lòng chọn bài tập trước khi chấm điểm.');
+            alert('Vui lÃ²ng chá»n bÃ i táº­p trÆ°á»›c khi cháº¥m Ä‘iá»ƒm.');
             return;
         }
         const selectedAssignmentData = assignments.find((a) => a.id === selectedAssignment);
@@ -1339,8 +1182,8 @@ const GradingModal: React.FC<GradingModalProps> = ({
                 }
             }
         } catch (error: unknown) {
-            const errorMessage = error instanceof Error ? error.message : 'Lỗi không xác định';
-            console.error('Lỗi cham diem:', error);
+            const errorMessage = error instanceof Error ? error.message : 'Lá»—i khÃ´ng xÃ¡c Ä‘á»‹nh';
+            console.error('Lá»—i cham diem:', error);
             setStudentGradingStates((prev) => {
                 const newMap = new Map(prev);
                 const currentState = newMap.get(studentId);
@@ -1365,7 +1208,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
     ) => {
         const student = students.find((item) => item.id === studentId);
         if (student && !isStudentActive(student)) {
-            alert('Học sinh đang ở trạng thái ngừng, không thể chấm điểm.');
+            alert('Há»c sinh Ä‘ang á»Ÿ tráº¡ng thÃ¡i ngá»«ng, khÃ´ng thá»ƒ cháº¥m Ä‘iá»ƒm.');
             return;
         }
 
@@ -1441,7 +1284,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                     assignmentMap.set(studentId, {
                         ...current,
                         isGrading: false,
-                        error: 'Không tìm thấy gradingApiEndpoint cho bài tập.',
+                        error: 'KhÃ´ng tÃ¬m tháº¥y gradingApiEndpoint cho bÃ i táº­p.',
                     });
                 }
                 next.set(assignmentId, assignmentMap);
@@ -1482,7 +1325,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
             const autoErrors = extractAutoGradingErrors(result);
             handleMultiScoreChange(assignmentId, studentId, scaledAutoScore, autoErrors);
         } catch (error: unknown) {
-            const errorMessage = error instanceof Error ? error.message : 'Lỗi không xác định';
+            const errorMessage = error instanceof Error ? error.message : 'Lá»—i khÃ´ng xÃ¡c Ä‘á»‹nh';
             setMultiAutoStates((prev) => {
                 const next = new Map(prev);
                 const assignmentMap = new Map(next.get(assignmentId) || new Map());
@@ -1551,167 +1394,29 @@ const GradingModal: React.FC<GradingModalProps> = ({
         const startAssignmentIndex = multiAssignmentIds.findIndex((id) => id === assignmentId);
         if (startAssignmentIndex === -1) return;
 
-        const candidateAssignmentIds = multiAssignmentIds.slice(startAssignmentIndex);
-        if (candidateAssignmentIds.length === 0) return;
-
-        const assignmentIdsByProjectNumber = new Map<number, string[]>();
-        candidateAssignmentIds.forEach((candidateId) => {
-            const assignment = assignments.find((item) => item.id === candidateId);
-            const projectNumber = extractProjectNumberFromEndpoint(assignment?.gradingApiEndpoint);
-            if (!projectNumber) return;
-
-            const existing = assignmentIdsByProjectNumber.get(projectNumber) || [];
-            existing.push(candidateId);
-            assignmentIdsByProjectNumber.set(projectNumber, existing);
-        });
-
+        const maxCount = Math.min(files.length, multiAssignmentIds.length - startAssignmentIndex);
         const invalidFiles: string[] = [];
-        const unresolvedFiles: Array<{
-            file: File;
-            reason: string;
-            candidateAssignmentIds: string[];
-            selectedAssignmentId: string;
-        }> = [];
-        const smartMatchedUploads: Array<{ targetAssignmentId: string; file: File }> = [];
-        const usedAssignmentIds = new Set<string>();
 
-        const resolveTargetAssignmentId = (rankedProjectNumbers: number[]): { targetAssignmentId: string | null; reason: string } => {
-            if (rankedProjectNumbers.length === 0) {
-                return { targetAssignmentId: null, reason: 'Không tìm thấy mã project trong tên file hoặc Title.' };
-            }
-
-            let hasProjectInSelection = false;
-            let hasOnlyUsedAssignments = false;
-            for (const projectNumber of rankedProjectNumbers) {
-                const assignmentIds = assignmentIdsByProjectNumber.get(projectNumber) || [];
-                if (assignmentIds.length === 0) continue;
-
-                hasProjectInSelection = true;
-                const availableIds = assignmentIds.filter((id) => !usedAssignmentIds.has(id));
-                if (availableIds.length === 1) {
-                    return { targetAssignmentId: availableIds[0], reason: '' };
-                }
-                if (availableIds.length > 1) {
-                    return {
-                        targetAssignmentId: null,
-                        reason: `Project ${projectNumber.toString().padStart(2, '0')} đang trùng nhiều cột bài tập.`,
-                    };
-                }
-                hasOnlyUsedAssignments = true;
-            }
-
-            if (hasProjectInSelection && hasOnlyUsedAssignments) {
-                return {
-                    targetAssignmentId: null,
-                    reason: 'Đã có file khác được gán vào project này trên cùng hàng.',
-                };
-            }
-            if (hasProjectInSelection) {
-                return {
-                    targetAssignmentId: null,
-                    reason: 'Không còn cột bài tập phù hợp để tự động gán.',
-                };
-            }
-            return {
-                targetAssignmentId: null,
-                reason: 'Project trong file không nằm trong danh sách bài đã chọn.',
-            };
-        };
-
-        for (const file of files) {
+        for (let i = 0; i < maxCount; i++) {
+            const file = files[i];
             if (!validateExcelFile(file, false)) {
                 invalidFiles.push(file.name);
                 continue;
             }
-
-            const fileNameCandidates = extractProjectNumbersFromText(file.name);
-            let workbookTitleCandidates: number[] = [];
-
-            const initialResolution = resolveTargetAssignmentId(rankProjectCandidates(fileNameCandidates, workbookTitleCandidates));
-            if (!initialResolution.targetAssignmentId) {
-                const workbookTitle = await readWorkbookTitle(file);
-                if (workbookTitle) {
-                    workbookTitleCandidates = extractProjectNumbersFromText(workbookTitle);
-                }
-            }
-
-            const rankedProjectNumbers = rankProjectCandidates(fileNameCandidates, workbookTitleCandidates);
-            const resolution = resolveTargetAssignmentId(rankedProjectNumbers);
-            if (!resolution.targetAssignmentId) {
-                const suggestedCandidateIds = rankedProjectNumbers
-                    .flatMap((projectNumber) => assignmentIdsByProjectNumber.get(projectNumber) || [])
-                    .filter((id) => !usedAssignmentIds.has(id));
-                const fallbackCandidateIds = candidateAssignmentIds.filter((id) => !usedAssignmentIds.has(id));
-                const resolvedCandidateIds = Array.from(
-                    new Set(
-                        (suggestedCandidateIds.length > 0 ? suggestedCandidateIds : fallbackCandidateIds).length > 0
-                            ? (suggestedCandidateIds.length > 0 ? suggestedCandidateIds : fallbackCandidateIds)
-                            : candidateAssignmentIds
-                    )
-                );
-
-                unresolvedFiles.push({
-                    file,
-                    reason: resolution.reason,
-                    candidateAssignmentIds: resolvedCandidateIds,
-                    selectedAssignmentId: resolvedCandidateIds.length === 1 ? resolvedCandidateIds[0] : '',
-                });
-                continue;
-            }
-
-            usedAssignmentIds.add(resolution.targetAssignmentId);
-            smartMatchedUploads.push({
-                targetAssignmentId: resolution.targetAssignmentId,
-                file,
-            });
+            const targetAssignmentId = multiAssignmentIds[startAssignmentIndex + i];
+            await uploadMultiStudentFile(targetAssignmentId, studentId, file, { skipValidation: true });
         }
 
-        for (const upload of smartMatchedUploads) {
-            await uploadMultiStudentFile(upload.targetAssignmentId, studentId, upload.file, { skipValidation: true });
-        }
-
-        if (unresolvedFiles.length > 0) {
-            setPendingManualMultiFileMatches((prev) => {
-                const next = [...prev];
-                unresolvedFiles.forEach((item, index) => {
-                    const fileKey = `${item.file.name}-${item.file.size}-${item.file.lastModified}`;
-                    const duplicateIndex = next.findIndex(
-                        (existing) => existing.studentId === studentId && existing.fileKey === fileKey
-                    );
-                    const pendingItem: PendingManualMultiFileMatch = {
-                        id: `${Date.now()}-${index}-${Math.random().toString(36).slice(2, 8)}`,
-                        fileKey,
-                        studentId,
-                        file: item.file,
-                        reason: item.reason,
-                        selectedAssignmentId: item.selectedAssignmentId,
-                        candidateAssignmentIds: item.candidateAssignmentIds,
-                    };
-
-                    if (duplicateIndex >= 0) {
-                        next[duplicateIndex] = pendingItem;
-                    } else {
-                        next.push(pendingItem);
-                    }
-                });
-                return next;
-            });
-        }
-
-        if (smartMatchedUploads.length > 0 || invalidFiles.length > 0 || unresolvedFiles.length > 0) {
+        const extraFiles = files.length - maxCount;
+        if (invalidFiles.length > 0 || extraFiles > 0) {
             const notes: string[] = [];
-            if (smartMatchedUploads.length > 0) {
-                notes.push(`Đã tự động nhận diện và gán ${smartMatchedUploads.length} file theo mã project.`);
-            }
             if (invalidFiles.length > 0) {
-                notes.push(`Bỏ qua file sai định dạng: ${invalidFiles.join(', ')}`);
+                notes.push(`Bá» qua file sai Ä‘á»‹nh dáº¡ng: ${invalidFiles.join(', ')}`);
             }
-            if (unresolvedFiles.length > 0) {
-                notes.push(`Có ${unresolvedFiles.length} file cần chọn tay. Xử lý nhanh trong khung "File cần chọn tay" phía trên bảng.`);
+            if (extraFiles > 0) {
+                notes.push(`Bá» qua ${extraFiles} file do vÆ°á»£t sá»‘ bÃ i táº­p cÃ²n láº¡i trÃªn dÃ²ng.`);
             }
-            if (notes.length > 0) {
-                alert(notes.join('\n'));
-            }
+            alert(notes.join('\n'));
         }
     };
 
@@ -1794,7 +1499,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
             );
             return result.scores[0] || null;
         } catch (error) {
-            console.error('Lỗi luu diem:', error);
+            console.error('Lá»—i luu diem:', error);
             return null;
         }
     };
@@ -1804,7 +1509,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
 
     const handleSaveAllScores = async () => {
         if (!selectedAssignment) {
-            alert('Vui lòng chọn bài tập!');
+            alert('Vui lÃ²ng chá»n bÃ i táº­p!');
             return;
         }
 
@@ -1839,8 +1544,8 @@ const GradingModal: React.FC<GradingModalProps> = ({
             if (onSuccess) await onSuccess();
             handleClose();
         } catch (error) {
-            console.error('Lỗi khi lưu điểm:', error);
-            alert(getReadableErrorMessage(error, 'Không thể lưu điểm!'));
+            console.error('Lá»—i khi lÆ°u Ä‘iá»ƒm:', error);
+            alert(getReadableErrorMessage(error, 'KhÃ´ng thá»ƒ lÆ°u Ä‘iá»ƒm!'));
         } finally {
             isSavingScoresRef.current = false;
             setLoading(false);
@@ -1849,7 +1554,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
 
     const handleSaveMultipleAssignments = async () => {
         if (multiAssignmentIds.length === 0) {
-            alert('Vui lòng chọn ít nhất 1 bài tập!');
+            alert('Vui lÃ²ng chá»n Ã­t nháº¥t 1 bÃ i táº­p!');
             return;
         }
 
@@ -1865,19 +1570,19 @@ const GradingModal: React.FC<GradingModalProps> = ({
             const failedAssignments: string[] = [];
             let savedAssignmentCount = 0;
 
-            // Helper function để kiểm tra xem score có thay đổi không
+            // Helper function Ä‘á»ƒ kiá»ƒm tra xem score cÃ³ thay Ä‘á»•i khÃ´ng
             const hasScoreChanged = (
                 current: MultiScoreCellValue | undefined,
                 persisted: PersistedScoreSnapshot | undefined
             ): boolean => {
                 if (!current) return false;
                 if (!persisted) {
-                    // Nếu không có persisted nhưng có current với scoreValue !== null => có thay đổi
+                    // Náº¿u khÃ´ng cÃ³ persisted nhÆ°ng cÃ³ current vá»›i scoreValue !== null => cÃ³ thay Ä‘á»•i
                     return current.scoreValue !== null;
                 }
-                // So sánh scoreValue
+                // So sÃ¡nh scoreValue
                 if (current.scoreValue !== persisted.scoreValue) return true;
-                // So sánh autoGradingErrors
+                // So sÃ¡nh autoGradingErrors
                 const currentErrors = current.autoGradingErrors || [];
                 const persistedErrors = persisted.autoGradingErrors || [];
                 if (currentErrors.length !== persistedErrors.length) return true;
@@ -1889,7 +1594,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                 const persistedRowMap = multiPersistedScores.get(assignmentId);
                 if (!rowMap) continue;
 
-                // ✅ Chỉ lưu scores có thay đổi
+                // âœ… Chá»‰ lÆ°u scores cÃ³ thay Ä‘á»•i
                 const scores = Array.from(rowMap.entries())
                     .filter(([studentId, item]) => {
                         if (!activeStudentIds.has(studentId)) return false;
@@ -1922,7 +1627,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                 } catch (error) {
                     const assignmentName = assignmentNameById.get(assignmentId) || assignmentId;
                     failedAssignments.push(
-                        `${assignmentName}: ${getReadableErrorMessage(error, 'Không thể lưu điểm cho bài này.')}`
+                        `${assignmentName}: ${getReadableErrorMessage(error, 'KhÃ´ng thá»ƒ lÆ°u Ä‘iá»ƒm cho bÃ i nÃ y.')}`
                     );
                 }
             }
@@ -1930,10 +1635,10 @@ const GradingModal: React.FC<GradingModalProps> = ({
             if (failedAssignments.length > 0) {
                 const message = failedAssignments.join('\n');
                 if (savedAssignmentCount > 0) {
-                    alert(`Đã lưu ${savedAssignmentCount} bài nhưng còn lỗi:\n${message}`);
+                    alert(`ÄÃ£ lÆ°u ${savedAssignmentCount} bÃ i nhÆ°ng cÃ²n lá»—i:\n${message}`);
                     if (onSuccess) await onSuccess();
                 } else {
-                    alert(`Không thể lưu điểm cho nhiều bài tập:\n${message}`);
+                    alert(`KhÃ´ng thá»ƒ lÆ°u Ä‘iá»ƒm cho nhiá»u bÃ i táº­p:\n${message}`);
                 }
                 return;
             }
@@ -1942,8 +1647,8 @@ const GradingModal: React.FC<GradingModalProps> = ({
             if (onSuccess) await onSuccess();
             handleClose();
         } catch (error) {
-            console.error('Lỗi khi lưu điểm nhiều bài tập:', error);
-            alert(getReadableErrorMessage(error, 'Không thể lưu điểm cho nhiều bài tập!'));
+            console.error('Lá»—i khi lÆ°u Ä‘iá»ƒm nhiá»u bÃ i táº­p:', error);
+            alert(getReadableErrorMessage(error, 'KhÃ´ng thá»ƒ lÆ°u Ä‘iá»ƒm cho nhiá»u bÃ i táº­p!'));
         } finally {
             isSavingScoresRef.current = false;
             setLoading(false);
@@ -2018,12 +1723,12 @@ const GradingModal: React.FC<GradingModalProps> = ({
         );
 
         if (selectedActiveAssignments.length === 0) {
-            alert('Vui lòng chọn ít nhất 1 bài tập đang dùng.');
+            alert('Vui lÃ²ng chá»n Ã­t nháº¥t 1 bÃ i táº­p Ä‘ang dÃ¹ng.');
             return;
         }
 
         const confirmed = confirm(
-            `Bạn có chắc muốn bỏ hoạt động ${selectedActiveAssignments.length} bài tập đã chọn?`
+            `Báº¡n cÃ³ cháº¯c muá»‘n bá» hoáº¡t Ä‘á»™ng ${selectedActiveAssignments.length} bÃ i táº­p Ä‘Ã£ chá»n?`
         );
         if (!confirmed) return;
 
@@ -2046,7 +1751,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                 }
 
                 failedAssignments.push(
-                    `${sourceAssignment.name}: ${getReadableErrorMessage(result.reason, 'Không thể bỏ hoạt động bài tập này.')}`
+                    `${sourceAssignment.name}: ${getReadableErrorMessage(result.reason, 'KhÃ´ng thá»ƒ bá» hoáº¡t Ä‘á»™ng bÃ i táº­p nÃ y.')}`
                 );
             });
 
@@ -2070,21 +1775,21 @@ const GradingModal: React.FC<GradingModalProps> = ({
             }
 
             if (failedAssignments.length === 0) {
-                alert(`Đã bỏ hoạt động ${updatedAssignments.length} bài tập.`);
+                alert(`ÄÃ£ bá» hoáº¡t Ä‘á»™ng ${updatedAssignments.length} bÃ i táº­p.`);
                 return;
             }
 
             if (updatedAssignments.length > 0) {
                 alert(
-                    `Đã bỏ hoạt động ${updatedAssignments.length}/${selectedActiveAssignments.length} bài tập.\nLỗi:\n${failedAssignments.join('\n')}`
+                    `ÄÃ£ bá» hoáº¡t Ä‘á»™ng ${updatedAssignments.length}/${selectedActiveAssignments.length} bÃ i táº­p.\nLá»—i:\n${failedAssignments.join('\n')}`
                 );
                 return;
             }
 
-            alert(`Không thể bỏ hoạt động các bài tập đã chọn.\n${failedAssignments.join('\n')}`);
+            alert(`KhÃ´ng thá»ƒ bá» hoáº¡t Ä‘á»™ng cÃ¡c bÃ i táº­p Ä‘Ã£ chá»n.\n${failedAssignments.join('\n')}`);
         } catch (error) {
-            console.error('Lỗi khi bỏ hoạt động nhiều bài tập:', error);
-            alert(getReadableErrorMessage(error, 'Không thể bỏ hoạt động các bài tập đã chọn.'));
+            console.error('Lá»—i khi bá» hoáº¡t Ä‘á»™ng nhiá»u bÃ i táº­p:', error);
+            alert(getReadableErrorMessage(error, 'KhÃ´ng thá»ƒ bá» hoáº¡t Ä‘á»™ng cÃ¡c bÃ i táº­p Ä‘Ã£ chá»n.'));
         } finally {
             setAssignmentSubmitLoading(false);
         }
@@ -2097,13 +1802,13 @@ const GradingModal: React.FC<GradingModalProps> = ({
 
         const selectedDrafts = bulkAssignmentDrafts.filter((draft) => draft.selected);
         if (selectedDrafts.length === 0) {
-            alert('Vui lòng chọn ít nhất 1 project để tạo bài tập.');
+            alert('Vui lÃ²ng chá»n Ã­t nháº¥t 1 project Ä‘á»ƒ táº¡o bÃ i táº­p.');
             return;
         }
 
         const invalidDraft = selectedDrafts.find((draft) => !draft.name.trim());
         if (invalidDraft) {
-            alert(`Tên bài tập cho ${invalidDraft.displayName} không được để trống.`);
+            alert(`TÃªn bÃ i táº­p cho ${invalidDraft.displayName} khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng.`);
             return;
         }
 
@@ -2129,7 +1834,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                     createdAssignments.push(created);
                 } catch (error) {
                     failedAssignments.push(
-                        `${draft.displayName}: ${getReadableErrorMessage(error, 'Không thể tạo bài tập.')}`
+                        `${draft.displayName}: ${getReadableErrorMessage(error, 'KhÃ´ng thá»ƒ táº¡o bÃ i táº­p.')}`
                     );
                 }
             }
@@ -2139,19 +1844,19 @@ const GradingModal: React.FC<GradingModalProps> = ({
             }
 
             if (failedAssignments.length === 0) {
-                alert(`Tạo thành công ${createdAssignments.length} bài tập.`);
+                alert(`Táº¡o thÃ nh cÃ´ng ${createdAssignments.length} bÃ i táº­p.`);
                 setChooseMode(null);
                 return;
             }
 
             if (createdAssignments.length > 0) {
                 alert(
-                    `Đã tạo ${createdAssignments.length}/${selectedDrafts.length} bài tập.\nLỗi:\n${failedAssignments.join('\n')}`
+                    `ÄÃ£ táº¡o ${createdAssignments.length}/${selectedDrafts.length} bÃ i táº­p.\nLá»—i:\n${failedAssignments.join('\n')}`
                 );
                 return;
             }
 
-            alert(`Không thể tạo bài tập.\n${failedAssignments.join('\n')}`);
+            alert(`KhÃ´ng thá»ƒ táº¡o bÃ i táº­p.\n${failedAssignments.join('\n')}`);
         } finally {
             setIsCreatingAssignment(false);
         }
@@ -2172,11 +1877,11 @@ const GradingModal: React.FC<GradingModalProps> = ({
     const handleSaveAssignmentEdit = async () => {
         if (!editingAssignment) return;
         if (!assignmentEditForm.name?.trim()) {
-            alert('Vui lòng nhập tên bài tập.');
+            alert('Vui lÃ²ng nháº­p tÃªn bÃ i táº­p.');
             return;
         }
         if (assignmentEditForm.gradingType === 'auto' && !assignmentEditForm.gradingApiEndpoint) {
-            alert('Bài tập auto phải có đầu chấm điểm.');
+            alert('BÃ i táº­p auto pháº£i cÃ³ Ä‘áº§u cháº¥m Ä‘iá»ƒm.');
             return;
         }
 
@@ -2203,17 +1908,17 @@ const GradingModal: React.FC<GradingModalProps> = ({
                 return prev.map((item) => (item.id === updated.id ? updated : item));
             });
             setEditingAssignment(null);
-            alert('Cập nhật bài tập thành công.');
+            alert('Cáº­p nháº­t bÃ i táº­p thÃ nh cÃ´ng.');
         } catch (error) {
-            console.error('Lỗi khi cập nhật bài tập:', error);
-            alert(error instanceof Error ? error.message : 'Không thể cập nhật bài tập.');
+            console.error('Lá»—i khi cáº­p nháº­t bÃ i táº­p:', error);
+            alert(error instanceof Error ? error.message : 'KhÃ´ng thá»ƒ cáº­p nháº­t bÃ i táº­p.');
         } finally {
             setAssignmentSubmitLoading(false);
         }
     };
 
     const handleDeleteAssignment = async (assignment: Assignment) => {
-        if (!confirm(`Bạn có chắc muốn xóa bài tập "${assignment.name}"?`)) return;
+        if (!confirm(`Báº¡n cÃ³ cháº¯c muá»‘n xÃ³a bÃ i táº­p "${assignment.name}"?`)) return;
         setAssignmentSubmitLoading(true);
         try {
             await assignmentService.delete(assignment.id, getAccessToken);
@@ -2232,10 +1937,10 @@ const GradingModal: React.FC<GradingModalProps> = ({
             if (selectedAssignment === assignment.id) {
                 setSelectedAssignment('');
             }
-            alert(showInactiveAssignments ? 'Bài tập đã được ẩn.' : 'Đã xóa bài tập.');
+            alert(showInactiveAssignments ? 'BÃ i táº­p Ä‘Ã£ Ä‘Æ°á»£c áº©n.' : 'ÄÃ£ xÃ³a bÃ i táº­p.');
         } catch (error) {
-            console.error('Lỗi khi xóa bài tập:', error);
-            alert(error instanceof Error ? error.message : 'Không thể xóa bài tập.');
+            console.error('Lá»—i khi xÃ³a bÃ i táº­p:', error);
+            alert(error instanceof Error ? error.message : 'KhÃ´ng thá»ƒ xÃ³a bÃ i táº­p.');
         } finally {
             setAssignmentSubmitLoading(false);
         }
@@ -2287,7 +1992,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
 
         if (student) {
             setStudentSearchHint(
-                `Đã cuộn tới kết quả ${index + 1}/${matchedIds.length}: ${student.middleName} ${student.firstName}`
+                `ÄÃ£ cuá»™n tá»›i káº¿t quáº£ ${index + 1}/${matchedIds.length}: ${student.middleName} ${student.firstName}`
             );
         }
     };
@@ -2305,7 +2010,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
     const scrollToStudentByKeyword = () => {
         const keyword = normalizeText(studentSearchQuery);
         if (!keyword) {
-            setStudentSearchHint('Vui lòng nhập tên học sinh cần tìm.');
+            setStudentSearchHint('Vui lÃ²ng nháº­p tÃªn há»c sinh cáº§n tÃ¬m.');
             setStudentSearchMatchedIds([]);
             setStudentSearchMatchIndex(-1);
             setLastStudentSearchKeyword('');
@@ -2322,7 +2027,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
 
         const matchedIds = buildMatchedStudentIds(keyword);
         if (matchedIds.length === 0) {
-            setStudentSearchHint(`Không tìm thấy học sinh phù hợp với từ khóa "${studentSearchQuery}".`);
+            setStudentSearchHint(`KhÃ´ng tÃ¬m tháº¥y há»c sinh phÃ¹ há»£p vá»›i tá»« khÃ³a "${studentSearchQuery}".`);
             setStudentSearchMatchedIds([]);
             setStudentSearchMatchIndex(-1);
             setLastStudentSearchKeyword(keyword);
@@ -2356,14 +2061,14 @@ const GradingModal: React.FC<GradingModalProps> = ({
     // ============ RENDER FUNCTIONS ============
     const renderModeSelector = () => (
         <div className="flex-1 flex flex-col items-center justify-center gap-6 py-12">
-            <h3 className="text-xl font-semibold text-gray-700">Bạn muốn làm gì?</h3>
+            <h3 className="text-xl font-semibold text-gray-700">Báº¡n muá»‘n lÃ m gÃ¬?</h3>
             <div className="flex flex-col gap-4">
                 <button
                     onClick={() => setChooseMode('new')}
                     className="bg-blue-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-700 flex items-center gap-3 shadow-md transition"
                 >
                     <Plus size={24} />
-                    Tạo bài chấm mới
+                    Táº¡o bÃ i cháº¥m má»›i
                 </button>
                 <button
                     onClick={() => {
@@ -2383,14 +2088,14 @@ const GradingModal: React.FC<GradingModalProps> = ({
                     className="bg-emerald-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-emerald-700 flex items-center gap-3 shadow-md transition disabled:cursor-not-allowed disabled:opacity-60"
                 >
                     <Save size={24} />
-                    Chấm nhiều bài tự động
+                    Cháº¥m nhiá»u bÃ i tá»± Ä‘á»™ng
                 </button>
                 <button
                     onClick={() => setChooseMode('manage')}
                     className="bg-amber-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-amber-700 flex items-center gap-3 shadow-md transition"
                 >
                     <Pencil size={24} />
-                    Quản lý bài tập
+                    Quáº£n lÃ½ bÃ i táº­p
                 </button>
             </div>
         </div>
@@ -2402,15 +2107,15 @@ const GradingModal: React.FC<GradingModalProps> = ({
                 onClick={() => setChooseMode(null)}
                 className="text-sm text-gray-600 hover:text-gray-800 flex items-center gap-1 mb-4"
             >
-                <ArrowLeft size={16} /> Quay lại
+                <ArrowLeft size={16} /> Quay láº¡i
             </button>
 
             <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                <h3 className="font-semibold mb-4 text-lg">Tạo nhanh bài tập theo Practice</h3>
+                <h3 className="font-semibold mb-4 text-lg">Táº¡o nhanh bÃ i táº­p theo Practice</h3>
 
                 <div className="mb-3">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Chọn Practice *
+                        Chá»n Practice *
                     </label>
                     <select
                         value={newAssignmentPracticeCode}
@@ -2424,29 +2129,29 @@ const GradingModal: React.FC<GradingModalProps> = ({
                         ))}
                     </select>
                     <p className="text-xs text-slate-600 mt-1">
-                        Hệ thống sẽ lấy danh sách project của practice này và điền sẵn tên theo project.
+                        Há»‡ thá»‘ng sáº½ láº¥y danh sÃ¡ch project cá»§a practice nÃ y vÃ  Ä‘iá»n sáºµn tÃªn theo project.
                     </p>
                 </div>
 
                 <div className="mb-3">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Mô tả dùng chung (tuỳ chọn)
+                        MÃ´ táº£ dÃ¹ng chung (tuá»³ chá»n)
                     </label>
                     <textarea
                         value={bulkAssignmentDescription}
                         onChange={(e) => setBulkAssignmentDescription(e.target.value)}
                         className="w-full border border-gray-300 rounded-md px-3 py-2"
                         rows={2}
-                        placeholder="Nội dung này sẽ áp dụng cho tất cả bài được tạo nhanh."
+                        placeholder="Ná»™i dung nÃ y sáº½ Ã¡p dá»¥ng cho táº¥t cáº£ bÃ i Ä‘Æ°á»£c táº¡o nhanh."
                     />
                 </div>
 
                 <div className="mb-4 rounded-md border border-emerald-200 bg-emerald-50 p-3">
                     <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                         <div>
-                            <h4 className="text-sm font-semibold text-emerald-800">Danh sách project sẽ tạo</h4>
+                            <h4 className="text-sm font-semibold text-emerald-800">Danh sÃ¡ch project sáº½ táº¡o</h4>
                             <p className="text-xs text-emerald-700 mt-1">
-                                Bạn có thể bỏ chọn project không cần tạo và đổi tên từng bài trước khi lưu.
+                                Báº¡n cÃ³ thá»ƒ bá» chá»n project khÃ´ng cáº§n táº¡o vÃ  Ä‘á»•i tÃªn tá»«ng bÃ i trÆ°á»›c khi lÆ°u.
                             </p>
                         </div>
                         <div className="flex flex-wrap gap-2">
@@ -2456,7 +2161,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                 disabled={isCreatingAssignment || bulkAssignmentDrafts.length === 0}
                                 className="px-2.5 py-1 text-xs rounded-md border border-emerald-300 bg-white text-emerald-700 hover:bg-emerald-100 disabled:opacity-50"
                             >
-                                Chọn tất cả
+                                Chá»n táº¥t cáº£
                             </button>
                             <button
                                 type="button"
@@ -2464,7 +2169,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                 disabled={isCreatingAssignment || bulkAssignmentDrafts.length === 0}
                                 className="px-2.5 py-1 text-xs rounded-md border border-emerald-300 bg-white text-emerald-700 hover:bg-emerald-100 disabled:opacity-50"
                             >
-                                Bỏ chọn
+                                Bá» chá»n
                             </button>
                             <button
                                 type="button"
@@ -2472,24 +2177,24 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                 disabled={isCreatingAssignment || bulkAssignmentDrafts.length === 0}
                                 className="px-2.5 py-1 text-xs rounded-md border border-emerald-300 bg-white text-emerald-700 hover:bg-emerald-100 disabled:opacity-50"
                             >
-                                Reset tên theo Project
+                                Reset tÃªn theo Project
                             </button>
                         </div>
                     </div>
 
                     {bulkAssignmentDrafts.length === 0 ? (
                         <p className="mt-3 text-xs text-amber-700">
-                            Practice này chưa có project khả dụng để tạo nhanh.
+                            Practice nÃ y chÆ°a cÃ³ project kháº£ dá»¥ng Ä‘á»ƒ táº¡o nhanh.
                         </p>
                     ) : (
                         <div className="mt-3 overflow-x-auto rounded-md border border-emerald-100 bg-white">
                             <table className="min-w-full divide-y divide-emerald-100">
                                 <thead className="bg-emerald-50">
                                     <tr>
-                                        <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase text-emerald-800">Chọn</th>
+                                        <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase text-emerald-800">Chá»n</th>
                                         <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase text-emerald-800">Project</th>
-                                        <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase text-emerald-800">Tên bài tập</th>
-                                        <th className="px-3 py-2 text-center text-[11px] font-semibold uppercase text-emerald-800">Điểm tối đa</th>
+                                        <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase text-emerald-800">TÃªn bÃ i táº­p</th>
+                                        <th className="px-3 py-2 text-center text-[11px] font-semibold uppercase text-emerald-800">Äiá»ƒm tá»‘i Ä‘a</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-emerald-50">
@@ -2513,7 +2218,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                                     }
                                                     disabled={isCreatingAssignment}
                                                     className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm"
-                                                    placeholder="Nhập tên bài tập"
+                                                    placeholder="Nháº­p tÃªn bÃ i táº­p"
                                                 />
                                             </td>
                                             <td className="px-3 py-2 text-center text-sm text-gray-700">{draft.maxScore}</td>
@@ -2534,12 +2239,12 @@ const GradingModal: React.FC<GradingModalProps> = ({
                             {isCreatingAssignment ? (
                                 <>
                                     <Loader2 size={16} className="animate-spin" />
-                                    Đang tạo nhiều bài...
+                                    Äang táº¡o nhiá»u bÃ i...
                                 </>
                             ) : (
                                 <>
                                     <Plus size={16} />
-                                    Tạo nhanh {selectedBulkAssignmentCount} bài đã chọn
+                                    Táº¡o nhanh {selectedBulkAssignmentCount} bÃ i Ä‘Ã£ chá»n
                                 </>
                             )}
                         </button>
@@ -2561,15 +2266,15 @@ const GradingModal: React.FC<GradingModalProps> = ({
             >
                 <table className="min-w-full divide-y divide-gray-200">
                     <caption className="caption-top pb-2 text-left text-sm font-semibold text-gray-700">
-                        Bảng chấm điểm học sinh
+                        Báº£ng cháº¥m Ä‘iá»ƒm há»c sinh
                     </caption>
                     <thead className="sticky top-0 z-10 bg-gray-50">
                         <tr>
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">STT</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Học sinh</th>
-                            <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">File bài làm</th>
-                            <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Điểm</th>
-                            <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Trạng thái</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Há»c sinh</th>
+                            <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">File bÃ i lÃ m</th>
+                            <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Äiá»ƒm</th>
+                            <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Tráº¡ng thÃ¡i</th>
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
@@ -2628,10 +2333,10 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                                         : 'bg-blue-50 text-blue-700 border-blue-200 cursor-pointer hover:bg-blue-100'
                                                 }`}
                                             >
-                                                {state?.studentFile ? 'Đổi file bài làm' : 'Chọn file bài làm'}
+                                                {state?.studentFile ? 'Äá»•i file bÃ i lÃ m' : 'Chá»n file bÃ i lÃ m'}
                                             </label>
                                             <p className="mt-1 text-[11px] text-gray-500">
-                                                Kéo thả file vào đây
+                                                KÃ©o tháº£ file vÃ o Ä‘Ã¢y
                                             </p>
                                             {state?.studentFile && (
                                                 <p className="text-xs text-gray-600 mt-1 truncate">
@@ -2645,7 +2350,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                                     disabled={Boolean(state?.isGrading) || undoingSingleStudentId === student.id}
                                                     className="mt-2 inline-flex items-center gap-1 rounded border border-amber-200 bg-amber-50 px-2 py-1 text-[11px] text-amber-700 hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
                                                 >
-                                                    {undoingSingleStudentId === student.id ? 'Đang hoàn tác...' : 'Hoàn tác file vừa chọn'}
+                                                    {undoingSingleStudentId === student.id ? 'Äang hoÃ n tÃ¡c...' : 'HoÃ n tÃ¡c file vá»«a chá»n'}
                                                 </button>
                                             )}
                                             {renderAutoErrorDropdown(autoErrors)}
@@ -2667,24 +2372,24 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                             />
                                         )}
                                         {state?.gradingResult && (
-                                            <p className="text-xs text-green-600 mt-1">Đã chấm tự động</p>
+                                            <p className="text-xs text-green-600 mt-1">ÄÃ£ cháº¥m tá»± Ä‘á»™ng</p>
                                         )}
                                     </td>
                                     <td className="px-4 py-3 text-center">
                                         {state?.isGrading ? (
-                                            <span className="text-blue-600 text-sm">Đang chấm...</span>
+                                            <span className="text-blue-600 text-sm">Äang cháº¥m...</span>
                                         ) : state?.error ? (
                                             <span className="text-red-600 text-sm flex items-center gap-1 justify-center">
                                                 <XCircle size={16} />
-                                                Lỗi
+                                                Lá»—i
                                             </span>
                                         ) : state?.gradingResult ? (
                                             <span className="text-green-600 text-sm flex items-center gap-1 justify-center">
                                                 <CheckCircle size={16} />
-                                                Hoàn thành
+                                                HoÃ n thÃ nh
                                             </span>
                                         ) : (
-                                            <span className="text-gray-400 text-sm">Chờ file</span>
+                                            <span className="text-gray-400 text-sm">Chá» file</span>
                                         )}
                                     </td>
                                 </tr>
@@ -2705,22 +2410,22 @@ const GradingModal: React.FC<GradingModalProps> = ({
                 }}
                 className="text-sm text-gray-600 hover:text-gray-800 flex items-center gap-1 mb-4"
             >
-                <ArrowLeft size={16} /> Quay lại
+                <ArrowLeft size={16} /> Quay láº¡i
             </button>
 
             <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Chọn bài tập
+                    Chá»n bÃ i táº­p
                 </label>
                 <select
                     value={selectedAssignment}
                     onChange={(e) => setSelectedAssignment(e.target.value)}
                     className="w-full border border-gray-300 rounded-md px-3 py-2"
                 >
-                    <option value="">-- Chọn bài tập --</option>
+                    <option value="">-- Chá»n bÃ i táº­p --</option>
                     {activeAutoAssignments.map((a) => (
                         <option key={a.id} value={a.id}>
-                            {a.name} (Tự động)
+                            {a.name} (Tá»± Ä‘á»™ng)
                         </option>
                     ))}
                 </select>
@@ -2728,7 +2433,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
 
             <div className="sticky top-0 z-30 mb-4 rounded-md border border-gray-200 bg-gray-50 p-3 shadow-sm">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Tìm học sinh và cuộn tới vị trí trong bảng
+                    TÃ¬m há»c sinh vÃ  cuá»™n tá»›i vá»‹ trÃ­ trong báº£ng
                 </label>
                 <div className="flex flex-col sm:flex-row gap-2">
                     <div className="relative flex-1">
@@ -2748,7 +2453,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                     scrollToStudentByKeyword();
                                 }
                             }}
-                            placeholder="Nhập tên học sinh..."
+                            placeholder="Nháº­p tÃªn há»c sinh..."
                             className="w-full rounded-md border border-gray-300 pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
                         />
                     </div>
@@ -2758,7 +2463,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                             onClick={() => moveToMatchedStudent(-1)}
                             className="inline-flex items-center justify-center gap-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
                         >
-                            Trước
+                            TrÆ°á»›c
                         </button>
                         <button
                             type="button"
@@ -2766,7 +2471,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                             className="inline-flex items-center justify-center gap-1 rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
                         >
                             <Search size={14} />
-                            Tìm / Kế tiếp
+                            TÃ¬m / Káº¿ tiáº¿p
                         </button>
                         <button
                             type="button"
@@ -2804,17 +2509,17 @@ const GradingModal: React.FC<GradingModalProps> = ({
                         {isBulkUploading ? (
                             <>
                                 <Loader2 size={16} className="animate-spin" />
-                                Đang chấm nhiều file...
+                                Äang cháº¥m nhiá»u file...
                             </>
                         ) : (
                             <>
                                 <Upload size={16} />
-                                Chọn nhiều file 1 lần
+                                Chá»n nhiá»u file 1 láº§n
                             </>
                         )}
                     </label>
                     <p className="mt-2 text-xs text-blue-700">
-                        Hệ thống ghép file theo thứ tự danh sách học sinh trên bảng: file 1 -&gt; học sinh 1, file 2 -&gt; học sinh 2...
+                        Há»‡ thá»‘ng ghÃ©p file theo thá»© tá»± danh sÃ¡ch há»c sinh trÃªn báº£ng: file 1 -&gt; há»c sinh 1, file 2 -&gt; há»c sinh 2...
                     </p>
                 </div>
             )}
@@ -2836,10 +2541,6 @@ const GradingModal: React.FC<GradingModalProps> = ({
         const selectedAssignments = multiAssignmentIds
             .map((id) => autoAssignments.find((a) => a.id === id))
             .filter((a): a is Assignment => Boolean(a));
-        const assignmentNameById = new Map(autoAssignments.map((assignment) => [assignment.id, assignment.name]));
-        const studentNameById = new Map(
-            gradingStudents.map((student) => [student.id, `${student.middleName} ${student.firstName}`.trim()])
-        );
 
         return (
             <div className="flex-1 overflow-y-auto p-6">
@@ -2851,8 +2552,6 @@ const GradingModal: React.FC<GradingModalProps> = ({
                         setMultiScores(new Map());
                         setMultiAutoStates(new Map());
                         setMultiUndoSnapshots(new Map());
-                        setPendingManualMultiFileMatches([]);
-                        setIsApplyingManualMultiFileMatches(false);
                     }}
                     className="text-sm text-gray-600 hover:text-gray-800 flex items-center gap-1 mb-4"
                 >
@@ -2863,13 +2562,13 @@ const GradingModal: React.FC<GradingModalProps> = ({
                     <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                         <div>
                             <label className="block text-sm font-semibold text-gray-800">
-                                Chọn các bài tập cần chấm
+                                Chá»n cÃ¡c bÃ i táº­p cáº§n cháº¥m
                             </label>
                             <p className="text-xs text-gray-600 mt-1">
-                                Đang chọn {multiAssignmentDraftIds.length}/{autoAssignments.length} bài tự động
+                                Äang chá»n {multiAssignmentDraftIds.length}/{autoAssignments.length} bÃ i tá»± Ä‘á»™ng
                             </p>
                             <p className="text-xs text-emerald-700 mt-1">
-                                Đã chốt {multiAssignmentIds.length} bài để hiển thị trong bảng chấm điểm
+                                ÄÃ£ chá»‘t {multiAssignmentIds.length} bÃ i Ä‘á»ƒ hiá»ƒn thá»‹ trong báº£ng cháº¥m Ä‘iá»ƒm
                             </p>
                         </div>
                         <div className="flex gap-2">
@@ -2879,7 +2578,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                 disabled={isSelectingAssignments || autoAssignments.length === 0}
                                 className="px-3 py-1.5 text-xs rounded-md border border-blue-200 text-blue-700 bg-white hover:bg-blue-50 disabled:opacity-50"
                             >
-                                Chọn tất cả
+                                Chá»n táº¥t cáº£
                             </button>
                             <button
                                 type="button"
@@ -2887,7 +2586,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                 disabled={isSelectingAssignments || multiAssignmentDraftIds.length === 0}
                                 className="px-3 py-1.5 text-xs rounded-md border border-gray-300 text-gray-700 bg-white hover:bg-gray-100 disabled:opacity-50"
                             >
-                                Bỏ chọn
+                                Bá» chá»n
                             </button>
                             <button
                                 type="button"
@@ -2895,7 +2594,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                 disabled={isSelectingAssignments || !hasPendingMultiAssignmentSelectionChanges}
                                 className="px-3 py-1.5 text-xs rounded-md border border-emerald-200 text-emerald-700 bg-white hover:bg-emerald-50 disabled:opacity-50"
                             >
-                                Chốt danh sách
+                                Chá»‘t danh sÃ¡ch
                             </button>
                         </div>
                     </div>
@@ -2905,7 +2604,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                         <input
                             value={multiAssignmentQuery}
                             onChange={(e) => setMultiAssignmentQuery(e.target.value)}
-                            placeholder="Tìm theo tên bài tập, mô tả, đường dẫn API..."
+                            placeholder="TÃ¬m theo tÃªn bÃ i táº­p, mÃ´ táº£, Ä‘Æ°á»ng dáº«n API..."
                             className="w-full border border-gray-300 rounded-md pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
                         />
                     </div>
@@ -2954,12 +2653,12 @@ const GradingModal: React.FC<GradingModalProps> = ({
                     {isSelectingAssignments && (
                         <div className="mt-2 text-xs text-blue-600 flex items-center gap-1">
                             <Loader2 size={13} className="animate-spin" />
-                            Đang chốt danh sách bài tập...
+                            Äang chá»‘t danh sÃ¡ch bÃ i táº­p...
                         </div>
                     )}
                     {!isSelectingAssignments && hasPendingMultiAssignmentSelectionChanges && (
                         <div className="mt-2 text-xs text-amber-700">
-                            Bạn vừa thay đổi danh sách chọn. Bấm <span className="font-semibold">Chốt danh sách</span> để áp dụng vào bảng chấm điểm.
+                            Báº¡n vá»«a thay Ä‘á»•i danh sÃ¡ch chá»n. Báº¥m <span className="font-semibold">Chá»‘t danh sÃ¡ch</span> Ä‘á»ƒ Ã¡p dá»¥ng vÃ o báº£ng cháº¥m Ä‘iá»ƒm.
                         </div>
                     )}
 
@@ -2995,7 +2694,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                             {isSelected && (
                                                 <span className="inline-flex items-center gap-1 text-[11px] text-blue-700">
                                                     <Check size={12} />
-                                                    Đã chọn
+                                                    ÄÃ£ chá»n
                                                 </span>
                                             )}
                                         </div>
@@ -3007,103 +2706,14 @@ const GradingModal: React.FC<GradingModalProps> = ({
 
                     {filteredAutoAssignments.length === 0 && (
                         <div className="mt-3 text-sm text-gray-500">
-                            Không tìm thấy bài tập phù hợp với từ khóa "{multiAssignmentQuery}".
+                            KhÃ´ng tÃ¬m tháº¥y bÃ i táº­p phÃ¹ há»£p vá»›i tá»« khÃ³a "{multiAssignmentQuery}".
                         </div>
                     )}
                 </div>
 
-                {pendingManualMultiFileMatches.length > 0 && (
-                    <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 p-3">
-                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                            <div>
-                                <p className="text-sm font-semibold text-amber-900">File cần chọn tay</p>
-                                <p className="text-xs text-amber-800">
-                                    {pendingManualMultiFileMatches.length} file chưa xác định được cột bài tập.
-                                </p>
-                            </div>
-                            <div className="flex gap-2">
-                                <button
-                                    type="button"
-                                    onClick={handleApplyAllPendingManualMultiFileMatches}
-                                    disabled={isApplyingManualMultiFileMatches}
-                                    className="rounded-md border border-emerald-300 bg-white px-3 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-50 disabled:opacity-50"
-                                >
-                                    {isApplyingManualMultiFileMatches ? 'Đang gán...' : 'Gán tất cả đã chọn'}
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setPendingManualMultiFileMatches([])}
-                                    disabled={isApplyingManualMultiFileMatches}
-                                    className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50"
-                                >
-                                    Xóa danh sách
-                                </button>
-                            </div>
-                        </div>
-
-                        <div className="mt-3 space-y-2">
-                            {pendingManualMultiFileMatches.map((item, index) => {
-                                const studentName = studentNameById.get(item.studentId) || item.studentId;
-                                return (
-                                    <div
-                                        key={item.id}
-                                        className="rounded-md border border-amber-200 bg-white p-2"
-                                    >
-                                        <p className="text-xs font-medium text-gray-800">
-                                            {index + 1}. {item.file.name} - {studentName}
-                                        </p>
-                                        <p className="mt-1 text-[11px] text-amber-800">{item.reason}</p>
-                                        <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
-                                            <select
-                                                value={item.selectedAssignmentId}
-                                                onChange={(event) =>
-                                                    handlePendingManualMultiFileAssignmentChange(
-                                                        item.id,
-                                                        event.target.value
-                                                    )
-                                                }
-                                                disabled={isApplyingManualMultiFileMatches}
-                                                className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-xs sm:w-72"
-                                            >
-                                                <option value="">-- Chọn cột bài tập --</option>
-                                                {item.candidateAssignmentIds.map((candidateId) => (
-                                                    <option key={`${item.id}-${candidateId}`} value={candidateId}>
-                                                        {assignmentNameById.get(candidateId) || candidateId}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                            <div className="flex gap-2">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleApplyPendingManualMultiFileMatch(item.id)}
-                                                    disabled={
-                                                        isApplyingManualMultiFileMatches
-                                                        || !item.selectedAssignmentId
-                                                    }
-                                                    className="rounded-md border border-blue-300 bg-blue-50 px-2.5 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100 disabled:opacity-50"
-                                                >
-                                                    Gán file
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleRemovePendingManualMultiFileMatch(item.id)}
-                                                    disabled={isApplyingManualMultiFileMatches}
-                                                    className="rounded-md border border-gray-300 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50"
-                                                >
-                                                    Bỏ
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                )}
-
                 <div className="sticky top-0 z-30 mb-4 rounded-md border border-gray-200 bg-gray-50 p-3 shadow-sm">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Tìm học sinh và cuộn tới vị trí trong bảng
+                        TÃ¬m há»c sinh vÃ  cuá»™n tá»›i vá»‹ trÃ­ trong báº£ng
                     </label>
                     <div className="flex flex-col sm:flex-row gap-2">
                         <div className="relative flex-1">
@@ -3123,7 +2733,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                         scrollToStudentByKeyword();
                                     }
                                 }}
-                                placeholder="Nhập tên học sinh..."
+                                placeholder="Nháº­p tÃªn há»c sinh..."
                                 className="w-full rounded-md border border-gray-300 pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
                             />
                         </div>
@@ -3133,7 +2743,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                 onClick={() => moveToMatchedStudent(-1)}
                                 className="inline-flex items-center justify-center gap-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
                             >
-                                Trước
+                                TrÆ°á»›c
                             </button>
                             <button
                                 type="button"
@@ -3141,7 +2751,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                 className="inline-flex items-center justify-center gap-1 rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
                             >
                                 <Search size={14} />
-                                Tìm / Kế tiếp
+                                TÃ¬m / Káº¿ tiáº¿p
                             </button>
                             <button
                                 type="button"
@@ -3164,12 +2774,12 @@ const GradingModal: React.FC<GradingModalProps> = ({
                     >
                         <table className="min-w-full divide-y divide-gray-200">
                             <caption className="caption-top pb-2 text-left text-sm font-semibold text-gray-700">
-                                Bảng chấm điểm nhiều bài tập
+                                Báº£ng cháº¥m Ä‘iá»ƒm nhiá»u bÃ i táº­p
                             </caption>
                             <thead className="sticky top-0 z-10 bg-gray-50">
                                 <tr>
                                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">STT</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Học sinh</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Há»c sinh</th>
                                     {selectedAssignments.map((assignment) => (
                                         <th
                                             key={assignment.id}
@@ -3195,7 +2805,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                             <td className="px-4 py-3 text-sm font-medium text-gray-900 align-top">
                                                 <div>{student.middleName} {student.firstName}</div>
                                                 <p className="mt-1 text-[11px] text-gray-500">
-                                                    Kéo nhiều file để tự nhận diện theo mã project (tên file/Title); file không chắc chắn sẽ yêu cầu chọn tay.
+                                                    Chá»n file theo tá»«ng cá»™t bÃ i táº­p.
                                                 </p>
                                             </td>
                                             {selectedAssignments.map((assignment) => {
@@ -3272,22 +2882,22 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                                                             : 'bg-blue-50 text-blue-700 border-blue-200 cursor-pointer hover:bg-blue-100'
                                                                     }`}
                                                                 >
-                                                                    {autoState?.studentFile ? 'Đổi file bài làm' : 'Chọn file bài làm'}
+                                                                    {autoState?.studentFile ? 'Äá»•i file bÃ i lÃ m' : 'Chá»n file bÃ i lÃ m'}
                                                                 </label>
-                                                                <p className="text-[11px] text-gray-500">Kéo thả file vào đây</p>
+                                                                <p className="text-[11px] text-gray-500">KÃ©o tháº£ file vÃ o Ä‘Ã¢y</p>
                                                                 {autoState?.studentFile && (
                                                                     <p className="text-xs text-gray-600 truncate">
                                                                         {autoState.studentFile.name}
                                                                     </p>
                                                                 )}
                                                                 {autoState?.isGrading && (
-                                                                    <p className="text-xs text-blue-600">Đang chấm...</p>
+                                                                    <p className="text-xs text-blue-600">Äang cháº¥m...</p>
                                                                 )}
                                                                 {autoState?.gradingResult && (
-                                                                    <p className="text-xs text-green-600">Đã chấm tự động</p>
+                                                                    <p className="text-xs text-green-600">ÄÃ£ cháº¥m tá»± Ä‘á»™ng</p>
                                                                 )}
                                                                 {autoState?.error && (
-                                                                    <p className="text-xs text-red-600">Lỗi: {autoState.error}</p>
+                                                                    <p className="text-xs text-red-600">Lá»—i: {autoState.error}</p>
                                                                 )}
                                                                 {canUndoCell && (
                                                                     <button
@@ -3296,7 +2906,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                                                         disabled={Boolean(autoState?.isGrading)}
                                                                         className="inline-flex items-center gap-1 rounded border border-amber-200 bg-amber-50 px-2 py-1 text-[11px] text-amber-700 hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
                                                                     >
-                                                                        Hoàn tác
+                                                                        HoÃ n tÃ¡c
                                                                     </button>
                                                                 )}
                                                                 {renderAutoErrorDropdown(cellErrors)}
@@ -3312,7 +2922,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                         </table>
                     </div>
                 ) : (
-                    <div className="text-sm text-gray-500">Chưa chọn bài tập nào.</div>
+                    <div className="text-sm text-gray-500">ChÆ°a chá»n bÃ i táº­p nÃ o.</div>
                 )}
             </div>
         );
@@ -3327,7 +2937,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                 }}
                 className="text-sm text-gray-600 hover:text-gray-800 flex items-center gap-1 mb-4"
             >
-                <ArrowLeft size={16} /> Quay lại
+                <ArrowLeft size={16} /> Quay láº¡i
             </button>
 
             <div className="mb-3 flex items-center justify-between rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
@@ -3337,15 +2947,15 @@ const GradingModal: React.FC<GradingModalProps> = ({
                         checked={showInactiveAssignments}
                         onChange={(e) => setShowInactiveAssignments(e.target.checked)}
                     />
-                    Hiển thị bài tập đã ẩn
+                    Hiá»ƒn thá»‹ bÃ i táº­p Ä‘Ã£ áº©n
                 </label>
                 <span className="text-xs text-slate-500">
-                    Khi tắt, danh sách chỉ hiển thị bài tập đang dùng.
+                    Khi táº¯t, danh sÃ¡ch chá»‰ hiá»ƒn thá»‹ bÃ i táº­p Ä‘ang dÃ¹ng.
                 </span>
             </div>
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-md border border-slate-200 bg-white px-3 py-2">
                 <span className="text-sm text-slate-700">
-                    Đã chọn {manageSelectedAssignmentIds.length}/{manageableActiveAssignments.length} bài đang dùng
+                    ÄÃ£ chá»n {manageSelectedAssignmentIds.length}/{manageableActiveAssignments.length} bÃ i Ä‘ang dÃ¹ng
                 </span>
                 <div className="flex flex-wrap items-center gap-2">
                     <button
@@ -3358,7 +2968,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                         }
                         className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                        Chọn tất cả
+                        Chá»n táº¥t cáº£
                     </button>
                     <button
                         type="button"
@@ -3366,7 +2976,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                         disabled={assignmentSubmitLoading || manageSelectedAssignmentIds.length === 0}
                         className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                        Bỏ chọn
+                        Bá» chá»n
                     </button>
                     <button
                         type="button"
@@ -3375,7 +2985,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                         className="inline-flex items-center gap-1 rounded-md bg-amber-100 px-3 py-1.5 text-xs font-medium text-amber-800 hover:bg-amber-200 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                         {assignmentSubmitLoading ? <Loader2 size={14} className="animate-spin" /> : <XCircle size={14} />}
-                        Bỏ hoạt động đã chọn
+                        Bá» hoáº¡t Ä‘á»™ng Ä‘Ã£ chá»n
                     </button>
                 </div>
             </div>
@@ -3387,7 +2997,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                             <th className="px-3 py-2 text-center text-xs font-semibold text-gray-600 uppercase">
                                 <input
                                     type="checkbox"
-                                    aria-label="Chọn tất cả bài tập đang dùng"
+                                    aria-label="Chá»n táº¥t cáº£ bÃ i táº­p Ä‘ang dÃ¹ng"
                                     checked={isAllManageActiveSelected}
                                     onChange={(e) =>
                                         e.target.checked ? handleSelectAllManageAssignments() : handleClearManageAssignments()
@@ -3396,12 +3006,12 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                     className="h-4 w-4 rounded border-gray-300 disabled:cursor-not-allowed"
                                 />
                             </th>
-                            <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Tên bài tập</th>
-                            <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Loại</th>
+                            <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">TÃªn bÃ i táº­p</th>
+                            <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Loáº¡i</th>
                             <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Endpoint</th>
-                            <th className="px-3 py-2 text-center text-xs font-semibold text-gray-600 uppercase">Điểm tối đa</th>
-                            <th className="px-3 py-2 text-center text-xs font-semibold text-gray-600 uppercase">Trạng thái</th>
-                            <th className="px-3 py-2 text-center text-xs font-semibold text-gray-600 uppercase">Hành động</th>
+                            <th className="px-3 py-2 text-center text-xs font-semibold text-gray-600 uppercase">Äiá»ƒm tá»‘i Ä‘a</th>
+                            <th className="px-3 py-2 text-center text-xs font-semibold text-gray-600 uppercase">Tráº¡ng thÃ¡i</th>
+                            <th className="px-3 py-2 text-center text-xs font-semibold text-gray-600 uppercase">HÃ nh Ä‘á»™ng</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100 bg-white">
@@ -3410,12 +3020,12 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                 <td className="px-3 py-2 text-center">
                                     <input
                                         type="checkbox"
-                                        aria-label={`Chọn bài tập ${assignment.name}`}
+                                        aria-label={`Chá»n bÃ i táº­p ${assignment.name}`}
                                         checked={manageSelectedAssignmentIds.includes(assignment.id)}
                                         onChange={() => handleToggleManageAssignmentSelection(assignment)}
                                         disabled={assignmentSubmitLoading || !assignment.isActive}
                                         className="h-4 w-4 rounded border-gray-300 disabled:cursor-not-allowed"
-                                        title={!assignment.isActive ? 'Bài tập đã ẩn' : undefined}
+                                        title={!assignment.isActive ? 'BÃ i táº­p Ä‘Ã£ áº©n' : undefined}
                                     />
                                 </td>
                                 <td className="px-3 py-2 text-sm text-gray-800">
@@ -3424,12 +3034,12 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                         <div className="text-xs text-gray-500">{assignment.description}</div>
                                     )}
                                 </td>
-                                <td className="px-3 py-2 text-sm text-gray-700">{assignment.gradingType === 'auto' ? 'Tự động' : 'Thủ công'}</td>
+                                <td className="px-3 py-2 text-sm text-gray-700">{assignment.gradingType === 'auto' ? 'Tá»± Ä‘á»™ng' : 'Thá»§ cÃ´ng'}</td>
                                 <td className="px-3 py-2 text-xs text-gray-600">{assignment.gradingApiEndpoint || '-'}</td>
                                 <td className="px-3 py-2 text-sm text-center text-gray-700">{assignment.maxScore}</td>
                                 <td className="px-3 py-2 text-center">
                                     <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${assignment.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                        {assignment.isActive ? 'Đang dùng' : 'Đã ẩn'}
+                                        {assignment.isActive ? 'Äang dÃ¹ng' : 'ÄÃ£ áº©n'}
                                     </span>
                                 </td>
                                 <td className="px-3 py-2 text-center">
@@ -3440,7 +3050,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                             className="inline-flex items-center gap-1 rounded-md bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-700 hover:bg-blue-200"
                                         >
                                             <Pencil size={12} />
-                                            Sửa
+                                            Sá»­a
                                         </button>
                                         <button
                                             type="button"
@@ -3449,7 +3059,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                             className="inline-flex items-center gap-1 rounded-md bg-red-100 px-2.5 py-1 text-xs font-medium text-red-700 hover:bg-red-200 disabled:opacity-60"
                                         >
                                             <Trash2 size={12} />
-                                            Xóa
+                                            XÃ³a
                                         </button>
                                     </div>
                                 </td>
@@ -3458,7 +3068,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                         {assignments.length === 0 && (
                             <tr>
                                 <td colSpan={7} className="px-3 py-5 text-center text-sm text-gray-500">
-                                    Chưa có bài tập nào trong lớp này.
+                                    ChÆ°a cÃ³ bÃ i táº­p nÃ o trong lá»›p nÃ y.
                                 </td>
                             </tr>
                         )}
@@ -3468,13 +3078,13 @@ const GradingModal: React.FC<GradingModalProps> = ({
 
             {editingAssignment && (
                 <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 p-4 space-y-3">
-                    <h4 className="text-sm font-semibold text-blue-800">Chỉnh sửa bài tập</h4>
+                    <h4 className="text-sm font-semibold text-blue-800">Chá»‰nh sá»­a bÃ i táº­p</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <input
                             value={assignmentEditForm.name || ''}
                             onChange={(e) => setAssignmentEditForm((prev) => ({ ...prev, name: e.target.value }))}
                             className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-                            placeholder="Tên bài tập"
+                            placeholder="TÃªn bÃ i táº­p"
                         />
                         <input
                             type="number"
@@ -3484,7 +3094,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                             max={1000}
                             step={0.01}
                             className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-                            placeholder="Điểm tối đa"
+                            placeholder="Äiá»ƒm tá»‘i Ä‘a"
                         />
                         <select
                             value={assignmentEditForm.gradingType || 'auto'}
@@ -3500,8 +3110,8 @@ const GradingModal: React.FC<GradingModalProps> = ({
                             }
                             className="rounded-md border border-gray-300 px-3 py-2 text-sm"
                         >
-                            <option value="auto">Tự động</option>
-                            <option value="manual">Thủ công</option>
+                            <option value="auto">Tá»± Ä‘á»™ng</option>
+                            <option value="manual">Thá»§ cÃ´ng</option>
                         </select>
                         <select
                             value={assignmentEditForm.gradingApiEndpoint || ''}
@@ -3511,7 +3121,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                             disabled={assignmentEditForm.gradingType === 'manual'}
                             className="rounded-md border border-gray-300 px-3 py-2 text-sm disabled:bg-gray-100"
                         >
-                            <option value="">-- Chọn đầu chấm điểm --</option>
+                            <option value="">-- Chá»n Ä‘áº§u cháº¥m Ä‘iá»ƒm --</option>
                             {gradingEndpoints.map((ep) => (
                                 <option key={ep.endpoint} value={ep.endpoint}>
                                     {ep.displayName}
@@ -3523,7 +3133,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                             onChange={(e) => setAssignmentEditForm((prev) => ({ ...prev, description: e.target.value }))}
                             rows={2}
                             className="rounded-md border border-gray-300 px-3 py-2 text-sm md:col-span-2"
-                            placeholder="Mô tả bài tập"
+                            placeholder="MÃ´ táº£ bÃ i táº­p"
                         />
                         <label className="inline-flex items-center gap-2 text-sm text-gray-700">
                             <input
@@ -3533,7 +3143,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                     setAssignmentEditForm((prev) => ({ ...prev, isActive: e.target.checked }))
                                 }
                             />
-                            Bài tập đang hoạt động
+                            BÃ i táº­p Ä‘ang hoáº¡t Ä‘á»™ng
                         </label>
                     </div>
                     <div className="flex justify-end gap-2">
@@ -3542,7 +3152,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                             onClick={() => setEditingAssignment(null)}
                             className="rounded-md bg-gray-100 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-200"
                         >
-                            Hủy
+                            Há»§y
                         </button>
                         <button
                             type="button"
@@ -3551,7 +3161,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                             className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700 disabled:opacity-60"
                         >
                             {assignmentSubmitLoading ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-                            Lưu cập nhật
+                            LÆ°u cáº­p nháº­t
                         </button>
                     </div>
                 </div>
@@ -3592,7 +3202,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                     onClick={handleClose}
                     className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
                 >
-                    {isPageMode ? 'Quay lại' : 'Hủy'}
+                    {isPageMode ? 'Quay láº¡i' : 'Há»§y'}
                 </button>
                 {chooseMode === 'existing' && selectedAssignment && (
                     <button
@@ -3603,12 +3213,12 @@ const GradingModal: React.FC<GradingModalProps> = ({
                         {loading ? (
                             <>
                                 <Loader2 size={18} className="animate-spin" />
-                                Đang lưu...
+                                Äang lÆ°u...
                             </>
                         ) : (
                             <>
                                 <Save size={18} />
-                                Lưu điểm
+                                LÆ°u Ä‘iá»ƒm
                             </>
                         )}
                     </button>
@@ -3617,18 +3227,18 @@ const GradingModal: React.FC<GradingModalProps> = ({
                     <button
                         onClick={handleSaveMultipleAssignments}
                         disabled={loading || isSelectingAssignments || hasPendingMultiAssignmentSelectionChanges}
-                        title={hasPendingMultiAssignmentSelectionChanges ? 'Vui lòng chốt lại danh sách bài tập trước khi lưu.' : undefined}
+                        title={hasPendingMultiAssignmentSelectionChanges ? 'Vui lÃ²ng chá»‘t láº¡i danh sÃ¡ch bÃ i táº­p trÆ°á»›c khi lÆ°u.' : undefined}
                         className="bg-emerald-600 text-white px-4 py-2 rounded-md hover:bg-emerald-700 disabled:bg-gray-400 flex items-center gap-2"
                     >
                         {loading ? (
                             <>
                                 <Loader2 size={18} className="animate-spin" />
-                                Đang lưu...
+                                Äang lÆ°u...
                             </>
                         ) : (
                             <>
                                 <Save size={18} />
-                                Lưu nhiều bài
+                                LÆ°u nhiá»u bÃ i
                             </>
                         )}
                     </button>

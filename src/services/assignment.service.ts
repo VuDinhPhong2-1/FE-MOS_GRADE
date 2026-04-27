@@ -65,6 +65,14 @@ const fallbackGradingEndpoints: GradingEndpointInfo[] = [
   createFallbackExcelEndpoint(9, 'Chấm điểm dự án 09', 32),
   createFallbackExcelEndpoint(10, 'Chấm điểm dự án 10', 24),
   createFallbackExcelEndpoint(11, 'Chấm điểm dự án 11', 24),
+  createFallbackExcelEndpoint(12, 'Chấm điểm dự án 12', 24),
+  createFallbackExcelEndpoint(13, 'Chấm điểm dự án 13', 24),
+  createFallbackExcelEndpoint(14, 'Chấm điểm dự án 14', 24),
+  createFallbackExcelEndpoint(15, 'Chấm điểm dự án 15', 24),
+  createFallbackExcelEndpoint(16, 'Chấm điểm dự án 16', 24),
+  createFallbackExcelEndpoint(18, 'Chấm điểm dự án 18', 24),
+  createFallbackExcelEndpoint(20, 'Chấm điểm dự án 20', 24),
+  createFallbackExcelEndpoint(22, 'Chấm điểm dự án 22', 24),
 ];
 
 const mergeEndpointFallback = (items: GradingEndpointInfo[]): GradingEndpointInfo[] => {

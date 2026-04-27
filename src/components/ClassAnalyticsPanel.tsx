@@ -155,7 +155,10 @@ const ClassAnalyticsPanel = ({ classId, assignments }: ClassAnalyticsPanelProps)
             <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
               <div className="mb-3 flex items-center gap-2 font-semibold text-slate-700">
                 <TriangleAlert size={16} className="text-amber-600" />
-                Các câu yếu nhất
+                Các câu yếu nhất (lần chấm mới nhất mỗi học sinh)
+              </div>
+              <div className="mb-2 text-[11px] text-slate-500">
+                Chỉ tính lỗi từ lần chấm gần nhất của từng học sinh trong bộ lọc hiện tại.
               </div>
               <div className="space-y-2.5">
                 {weakTaskChartRows.length === 0 && (

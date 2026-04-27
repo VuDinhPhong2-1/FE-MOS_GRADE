@@ -294,9 +294,9 @@ const GradingView = () => {
 
   return (
     <div className="mx-auto max-w-4xl p-4">
-      <h1 className="mb-2 text-2xl font-bold text-gray-800">Kiem thu cham diem Excel</h1>
+      <h1 className="mb-2 text-2xl font-bold text-gray-800">Kiểm thử chấm điểm Excel</h1>
       <p className="mb-6 text-sm text-slate-600">
-        Trang nay de test nhanh luong cham diem. Ban co the luu bug note theo tung project de theo doi.
+        Trang này để test nhanh lượng chấm điểm. Bạn có thể lưu bug note theo từng project để theo dõi.
       </p>
 
       {!result ? (
@@ -363,7 +363,7 @@ const GradingView = () => {
             className="flex w-full items-center justify-center gap-2 rounded-md bg-blue-600 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:bg-gray-400"
           >
             {loading ? <RefreshCw className="animate-spin" /> : <Upload size={20} />}
-            {loading ? 'Dang cham diem...' : 'Bat dau cham'}
+            {loading ? 'Đang chấm điểm...' : 'Bắt đầu chấm'}
           </button>
         </div>
       ) : (
@@ -373,7 +373,7 @@ const GradingView = () => {
               onClick={handleReset}
               className="flex items-center gap-2 font-medium text-blue-600 hover:text-blue-800"
             >
-              <RefreshCw size={16} /> Cham bai khac
+              <RefreshCw size={16} /> Chấm bài khác
             </button>
           </div>
           <ResultCard result={result} />

@@ -35,6 +35,7 @@ type EditStudentForm = {
   status: string;
   competencyLevel: '' | 'A' | 'B' | 'C' | 'D';
   notes: string;
+  thi: boolean;
   classId: string;
 };
 
@@ -44,6 +45,7 @@ type AddStudentForm = {
   status: string;
   competencyLevel: '' | 'A' | 'B' | 'C' | 'D';
   notes: string;
+  thi: boolean;
 };
 
 const VALID_STATUSES = ['Active', 'Inactive'];
@@ -74,6 +76,7 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
     status: 'Active',
     competencyLevel: '',
     notes: '',
+    thi: false,
     classId: '',
   });
   const [initialEditForm, setInitialEditForm] = useState<EditStudentForm>({
@@ -82,6 +85,7 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
     status: 'Active',
     competencyLevel: '',
     notes: '',
+    thi: false,
     classId: '',
   });
   const [searchKeyword, setSearchKeyword] = useState('');
@@ -100,6 +104,7 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
     status: 'Active',
     competencyLevel: '',
     notes: '',
+    thi: false,
   });
   const { getAccessToken } = useAuth();
   const navigate = useNavigate();
@@ -257,6 +262,7 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
           middleName,
           firstName,
           status: 'Active',
+          thi: false,
           isActive: true,
           gradingApiEndpoint: String(row[2] ?? '').trim(),
         } as Student;
@@ -379,6 +385,7 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
       status: 'Active',
       competencyLevel: '',
       notes: '',
+      thi: false,
     });
     setAddError('');
     setIsAddModalOpen(true);
@@ -418,6 +425,7 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
           status: addForm.status,
           competencyLevel: addForm.competencyLevel,
           notes,
+          thi: addForm.thi,
           classId: selectedClass.id,
         },
         getAccessToken
@@ -506,6 +514,7 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
           status,
           competencyLevel: level,
           notes: student.notes?.trim() || '',
+          thi: Boolean(student.thi),
           classId: student.classId || selectedClass.id,
         },
         getAccessToken
@@ -519,6 +528,7 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
                 competencyLevel: (updatedStudent.competencyLevel ?? level) as '' | 'A' | 'B' | 'C' | 'D',
                 notes: updatedStudent.notes ?? item.notes,
                 status: updatedStudent.status ?? item.status,
+                thi: updatedStudent.thi ?? item.thi ?? false,
               }
             : item
         )
@@ -526,6 +536,49 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
       setFlashMessage('Cập nhật năng lực thành công.');
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Không thể cập nhật năng lực học sinh.');
+    } finally {
+      setInlineSavingStudentId(null);
+    }
+  };
+
+  const handleInlineExamToggle = async (student: Student) => {
+    if (readOnly) {
+      return;
+    }
+
+    const nextExamState = !(student.thi ?? false);
+
+    if (student.id.startsWith('temp-')) {
+      setStudents((prev) =>
+        prev.map((item) => (item.id === student.id ? { ...item, thi: nextExamState } : item))
+      );
+      return;
+    }
+
+    setInlineSavingStudentId(student.id);
+    try {
+      const updatedStudent = await studentService.updateStudent(
+        student.id,
+        {
+          thi: nextExamState,
+        },
+        getAccessToken
+      );
+
+      const resolvedExamState = updatedStudent.thi ?? nextExamState;
+      setStudents((prev) =>
+        prev.map((item) =>
+          item.id === student.id
+            ? {
+                ...item,
+                thi: resolvedExamState,
+              }
+            : item
+        )
+      );
+      setFlashMessage('Updated exam status successfully.');
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Cannot update exam status.');
     } finally {
       setInlineSavingStudentId(null);
     }
@@ -590,6 +643,7 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
         : (student.isActive ? 'Active' : 'Inactive'),
       competencyLevel: (student.competencyLevel || '') as '' | 'A' | 'B' | 'C' | 'D',
       notes: student.notes || '',
+      thi: Boolean(student.thi),
       classId: student.classId || selectedClass.id,
     };
     setEditingStudent(student);
@@ -605,6 +659,7 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
     editForm.status !== initialEditForm.status ||
     editForm.competencyLevel !== initialEditForm.competencyLevel ||
     editForm.notes !== initialEditForm.notes ||
+    editForm.thi !== initialEditForm.thi ||
     editForm.classId !== initialEditForm.classId;
 
   const handleCloseEditModal = () => {
@@ -630,7 +685,11 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
   }, [isEditModalOpen, hasUnsavedEditChanges]);
 
   const handleEditFieldChange = (event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = event.target;
+    const { name } = event.target;
+    const value =
+      event.target instanceof HTMLInputElement && event.target.type === 'checkbox'
+        ? event.target.checked
+        : event.target.value;
     setEditError('');
     setEditForm((prev) => ({ ...prev, [name]: value }));
   };
@@ -675,6 +734,7 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
           status,
           competencyLevel: editForm.competencyLevel,
           notes,
+          thi: editForm.thi,
           classId: editForm.classId || selectedClass.id,
         },
         getAccessToken
@@ -860,8 +920,6 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
         </div>
       </section>
 
-      <ClassAnalyticsPanel classId={selectedClass.id} assignments={assignments} />
-
       <section className="app-card overflow-hidden">
         <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-3">
           <span className="text-sm font-semibold text-slate-700">Danh sách học sinh</span>
@@ -901,6 +959,7 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
                     </span>
                   </button>
                 </th>
+                <th className="px-3 py-3 text-center text-[11px] font-semibold uppercase tracking-wide text-slate-100 sm:px-6">Exam</th>
                 <th className="px-3 py-3 text-center text-[11px] font-semibold uppercase tracking-wide text-slate-100 sm:px-6">Hành động</th>
               </tr>
             </thead>
@@ -908,13 +967,13 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
             <tbody className="divide-y divide-slate-100 bg-white">
               {isLoading ? (
                 <tr>
-                  <td colSpan={7} className="px-3 py-6 text-center text-slate-500">
+                  <td colSpan={8} className="px-3 py-6 text-center text-slate-500">
                     Đang tải dữ liệu...
                   </td>
                 </tr>
               ) : displayedStudents.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-3 py-6 text-center text-slate-500">
+                  <td colSpan={8} className="px-3 py-6 text-center text-slate-500">
                     {students.length === 0
                       ? 'Chưa có học sinh nào. Vui lòng nhập file Excel.'
                       : 'Không có học sinh nào khớp từ khóa tìm kiếm.'}
@@ -975,6 +1034,39 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
                           {isActive ? <CheckCircle2 size={13} /> : <XCircle size={13} />}
                           {isActive ? 'Hoạt động' : 'Ngừng'}
                         </span>
+                      </td>
+                      <td className="px-3 py-4 text-center sm:px-6">
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={st.thi ?? false}
+                          onClick={() => handleInlineExamToggle(st)}
+                          disabled={readOnly || inlineSavingStudentId === st.id}
+                          className={`inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-xs font-semibold transition ${
+                            st.thi
+                              ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                              : 'border-slate-200 bg-slate-100 text-slate-600'
+                          } ${
+                            readOnly || inlineSavingStudentId === st.id
+                              ? 'cursor-not-allowed opacity-60'
+                              : 'hover:brightness-95'
+                          }`}
+                          title={st.thi ? 'Click to switch to Not Taking Exam' : 'Click to switch to Taking Exam'}
+                        >
+                          <span
+                            className={`relative h-4 w-8 rounded-full transition ${
+                              st.thi ? 'bg-emerald-500' : 'bg-slate-400'
+                            }`}
+                          >
+                            <span
+                              className={`absolute top-0.5 h-3 w-3 rounded-full bg-white shadow transition ${
+                                st.thi ? 'left-4' : 'left-0.5'
+                              }`}
+                            />
+                          </span>
+                          <span>{st.thi ? 'Taking Exam' : 'Not Taking Exam'}</span>
+                          {inlineSavingStudentId === st.id && <Loader2 size={12} className="animate-spin" />}
+                        </button>
                       </td>
                       <td className="px-3 py-4 text-center sm:px-6">
                         {!readOnly ? (
@@ -1066,6 +1158,19 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
                   <option value="Active">Hoạt động</option>
                   <option value="Inactive">Ngừng hoạt động</option>
                 </select>
+              </div>
+
+              <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
+                <label className="inline-flex items-center gap-2 text-sm font-medium text-gray-700">
+                  <input
+                    type="checkbox"
+                    checked={addForm.thi}
+                    onChange={(event) => setAddForm((prev) => ({ ...prev, thi: event.target.checked }))}
+                    disabled={isAddSubmitting}
+                    className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                  />
+                  Student takes exam
+                </label>
               </div>
 
               <div>
@@ -1238,6 +1343,20 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
                   <option value="Active">Hoạt động</option>
                   <option value="Inactive">Ngừng hoạt động</option>
                 </select>
+              </div>
+
+              <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
+                <label className="inline-flex items-center gap-2 text-sm font-medium text-gray-700">
+                  <input
+                    type="checkbox"
+                    name="thi"
+                    checked={editForm.thi}
+                    onChange={handleEditFieldChange}
+                    disabled={isEditSubmitting}
+                    className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                  />
+                  Student takes exam
+                </label>
               </div>
 
               <div>

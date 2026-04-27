@@ -27,6 +27,16 @@ export interface ScoreResponse {
   gradedByName?: string;
 }
 
+export interface AutoGradingTaskResultRequest {
+  taskId: string;
+  taskName: string;
+  score: number;
+  maxScore: number;
+  isPassed: boolean;
+  details?: string[];
+  errors?: string[];
+}
+
 export interface CreateScoreRequest {
   studentId: string;
   assignmentId: string;
@@ -34,6 +44,7 @@ export interface CreateScoreRequest {
   scoreValue?: number;
   feedback?: string;
   autoGradingErrors?: string[];
+  autoGradingTaskResults?: AutoGradingTaskResultRequest[];
 }
 
 export interface BulkScoreRequest {
@@ -47,6 +58,7 @@ export interface StudentScoreItem {
   scoreValue?: number;
   feedback?: string;
   autoGradingErrors?: string[];
+  autoGradingTaskResults?: AutoGradingTaskResultRequest[];
 }
 
 export interface StudentScoreReportResponse {
