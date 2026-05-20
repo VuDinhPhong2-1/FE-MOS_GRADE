@@ -11,6 +11,45 @@ interface TestProjectOption {
   displayName: string;
 }
 
+const normalizeProjectCode = (project: {
+  code: string;
+  endpoint?: string;
+  fileType?: string;
+  displayName?: string;
+}): string => {
+  const rawCode = project.code.trim().toLowerCase();
+  const endpoint = (project.endpoint || '').trim().toLowerCase();
+  const displayName = (project.displayName || '').trim().toLowerCase();
+  const normalizedFileType = (project.fileType || '').trim().toLowerCase();
+
+  const directMatch = rawCode.match(/^project(\d{1,2})-(excel|word)$/);
+  if (directMatch) {
+    return `project${directMatch[1].padStart(2, '0')}-${directMatch[2]}`;
+  }
+
+  const legacyCodeMatch = rawCode.match(/^project(\d{1,2})$/);
+  const endpointMatch = endpoint.match(/project(\d{1,2})$/);
+  const projectNumber = legacyCodeMatch?.[1] || endpointMatch?.[1];
+  if (!projectNumber) {
+    return project.code;
+  }
+
+  let fileType: 'excel' | 'word' | null = null;
+  if (normalizedFileType === 'word' || normalizedFileType === 'excel') {
+    fileType = normalizedFileType;
+  } else if (rawCode.includes('word') || endpoint.includes('/word/') || displayName.includes('word')) {
+    fileType = 'word';
+  } else if (rawCode.includes('excel') || endpoint.includes('/excel/') || displayName.includes('excel')) {
+    fileType = 'excel';
+  }
+
+  if (!fileType) {
+    return `project${projectNumber.padStart(2, '0')}`;
+  }
+
+  return `project${projectNumber.padStart(2, '0')}-${fileType}`;
+};
+
 const severityMeta: Record<BugSeverity, { label: string; badgeClass: string }> = {
   low: {
     label: 'Low',
@@ -67,7 +106,7 @@ const GradingView = () => {
         }
 
         const mapped = projects.map((project) => ({
-          code: project.code,
+          code: normalizeProjectCode(project),
           displayName: project.displayName,
         }));
 
@@ -154,15 +193,22 @@ const GradingView = () => {
     }
   }, [autoBugTitle, isBugTitleDirty]);
 
-  const isValidExcelFile = (file: File): boolean => {
+  const isValidGradingFile = (file: File): boolean => {
     const fileName = file.name.toLowerCase();
-    return fileName.endsWith('.xls') || fileName.endsWith('.xlsx') || fileName.endsWith('.xlsm');
+    // Support both Excel and Word files
+    return (
+      fileName.endsWith('.xls') ||
+      fileName.endsWith('.xlsx') ||
+      fileName.endsWith('.xlsm') ||
+      fileName.endsWith('.docx') ||
+      fileName.endsWith('.txt')
+    );
   };
 
   const setSelectedFile = (file: File | null) => {
     if (!file) return;
-    if (!isValidExcelFile(file)) {
-      alert('File phai co dinh dang .xls, .xlsx hoac .xlsm');
+    if (!isValidGradingFile(file)) {
+      alert('File phai co dinh dang .xls, .xlsx, .xlsm, .docx hoac .txt');
       return;
     }
     setStudentFile(file);
@@ -294,9 +340,9 @@ const GradingView = () => {
 
   return (
     <div className="mx-auto max-w-4xl p-4">
-      <h1 className="mb-2 text-2xl font-bold text-gray-800">Kiểm thử chấm điểm Excel</h1>
+      <h1 className="mb-2 text-2xl font-bold text-gray-800">Kiểm thử chấm điểm (Excel & Word)</h1>
       <p className="mb-6 text-sm text-slate-600">
-        Trang này để test nhanh lượng chấm điểm. Bạn có thể lưu bug note theo từng project để theo dõi.
+        Trang này để test nhanh lượng chấm điểm Excel và Word. Bạn có thể lưu bug note theo từng project để theo dõi.
       </p>
 
       {!result ? (
@@ -338,7 +384,7 @@ const GradingView = () => {
             >
               <input
                 type="file"
-                accept=".xls,.xlsx,.xlsm"
+                accept=".xls,.xlsx,.xlsm,.docx,.dotx,.txt"
                 onChange={(e) => {
                   setSelectedFile(e.target.files?.[0] || null);
                   e.target.value = '';
@@ -348,8 +394,8 @@ const GradingView = () => {
               />
               <label htmlFor="student-upload" className="cursor-pointer text-center">
                 <FileSpreadsheet className="mx-auto mb-2 h-12 w-12 text-green-600" />
-                <span className="text-sm font-medium text-gray-700">File bai lam hoc sinh</span>
-                <p className="mt-1 text-xs text-gray-500">Keo tha file vao day hoac bam de chon</p>
+                <span className="text-sm font-medium text-gray-700">File bai lam hoc sinh (Excel hoac Word)</span>
+                <p className="mt-1 text-xs text-gray-500">Keo tha file .xlsx, .xls, .xlsm, .docx hoac .txt vao day</p>
                 {studentFile && <p className="mt-1 text-xs font-semibold text-green-600">{studentFile.name}</p>}
               </label>
             </div>
