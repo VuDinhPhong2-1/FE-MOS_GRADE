@@ -1,4 +1,4 @@
-// src/components/GradingModal.optimized.tsx
+﻿// src/components/GradingModal.optimized.tsx
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { X, Plus, Save, Loader2, ArrowLeft, XCircle, CheckCircle, Upload, Search, Check, Pencil, Trash2 } from 'lucide-react';
 import * as XLSX from 'xlsx';
@@ -86,6 +86,11 @@ const PRACTICE_OPTIONS = [
 ] as const;
 
 type PracticeCode = typeof PRACTICE_OPTIONS[number]['code'];
+const SUBJECT_OPTIONS = [
+    { code: 'excel', label: 'Excel' },
+    { code: 'word', label: 'Word' },
+] as const;
+type SubjectCode = typeof SUBJECT_OPTIONS[number]['code'];
 const QUICK_SELECT_PRACTICE_OPTIONS = [
     { code: 'practice01', label: 'Practice 01' },
     { code: 'practice02', label: 'Practice 02' },
@@ -93,7 +98,8 @@ const QUICK_SELECT_PRACTICE_OPTIONS = [
     { code: 'exam_review', label: 'Ôn thi' },
 ] as const;
 
-const EXAM_REVIEW_PROJECT_NUMBERS = [2, 4, 5, 6, 8, 9, 10, 12, 14, 16, 18, 20, 22];
+const EXAM_REVIEW_PROJECT_NUMBERS_EXCEL = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24];
+const EXAM_REVIEW_PROJECT_NUMBERS_WORD  = [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23];
 
 const normalizeVietnameseText = (value?: string): string =>
     (value || '')
@@ -119,6 +125,15 @@ const extractProjectNumberFromEndpoint = (endpoint?: string): number | null => {
     }
 
     return null;
+};
+
+const getAcceptedSubmissionFileTypes = (endpoint?: string): string => {
+    const normalized = (endpoint || '').trim().replace(/\\/g, '/').toLowerCase();
+    if (normalized.includes('word/')) {
+        return normalized.includes('project07') ? '.docx,.txt' : '.docx';
+    }
+
+    return '.xls,.xlsx,.xlsm';
 };
 
 const resolvePracticeCodeByProjectNumber = (projectNumber: number): Exclude<PracticeCode, 'exam_review'> | null => {
@@ -263,6 +278,42 @@ const buildBulkAssignmentDrafts = (
     });
 };
 
+const resolveEndpointsBySubjectAndPractice = (
+    allEndpoints: GradingEndpointInfo[],
+    subjectCode: SubjectCode,
+    practiceCode: PracticeCode
+): GradingEndpointInfo[] => {
+    const subjectEndpoints = allEndpoints.filter((endpoint) => {
+        const endpointSubject = (endpoint.subject || 'excel').toLowerCase();
+        if (subjectCode === 'excel') {
+            return endpointSubject === 'excel' || !endpoint.subject;
+        }
+
+        return endpointSubject === subjectCode;
+    });
+
+    if (practiceCode === 'exam_review') {
+        // Chọn danh sách project theo môn: Excel = chẵn, Word = lẻ
+        const examReviewNumbers =
+            subjectCode === 'word'
+                ? EXAM_REVIEW_PROJECT_NUMBERS_WORD
+                : EXAM_REVIEW_PROJECT_NUMBERS_EXCEL;
+
+        return subjectEndpoints.filter((endpoint) => {
+            const match = endpoint.endpoint.match(/project(\d{1,2})$/i);
+            if (!match) return false;
+
+            const projectNumber = Number.parseInt(match[1], 10);
+            return examReviewNumbers.includes(projectNumber);
+        });
+    }
+
+    return subjectEndpoints.filter(
+        (endpoint) => (endpoint.practiceCode || '').toLowerCase() === practiceCode
+    );
+};
+
+
 const GradingModal: React.FC<GradingModalProps> = ({
     isOpen,
     onClose,
@@ -321,6 +372,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
     const isSavingScoresRef = useRef(false);
 
     // TAO BAI TAP MOI
+    const [newAssignmentSubject, setNewAssignmentSubject] = useState<SubjectCode>('excel');
     const [newAssignmentPracticeCode, setNewAssignmentPracticeCode] = useState<PracticeCode>('practice01');
     const [bulkAssignmentDrafts, setBulkAssignmentDrafts] = useState<BulkAssignmentDraft[]>([]);
     const [bulkAssignmentDescription, setBulkAssignmentDescription] = useState('');
@@ -393,30 +445,9 @@ const GradingModal: React.FC<GradingModalProps> = ({
             manageSelectedAssignmentIds.includes(assignment.id)
         );
     }, [manageableActiveAssignments, manageSelectedAssignmentIds]);
-    const excelGradingEndpoints = useMemo(
-        () =>
-            gradingEndpoints.filter(
-                (endpoint) => (endpoint.subject || '').toLowerCase() === 'excel' || !endpoint.subject
-            ),
-        [gradingEndpoints]
-    );
     const newAssignmentPracticeEndpoints = useMemo(
-        () => {
-            if (newAssignmentPracticeCode === 'exam_review') {
-                return excelGradingEndpoints.filter((endpoint) => {
-                    const match = endpoint.endpoint.match(/project(\d{1,2})$/i);
-                    if (match) {
-                        const projectNum = parseInt(match[1], 10);
-                        return EXAM_REVIEW_PROJECT_NUMBERS.includes(projectNum);
-                    }
-                    return false;
-                });
-            }
-            return excelGradingEndpoints.filter(
-                (endpoint) => (endpoint.practiceCode || '').toLowerCase() === newAssignmentPracticeCode
-            );
-        },
-        [excelGradingEndpoints, newAssignmentPracticeCode]
+        () => resolveEndpointsBySubjectAndPractice(gradingEndpoints, newAssignmentSubject, newAssignmentPracticeCode),
+        [gradingEndpoints, newAssignmentSubject, newAssignmentPracticeCode]
     );
     const selectedBulkAssignmentCount = useMemo(
         () => bulkAssignmentDrafts.filter((draft) => draft.selected).length,
@@ -549,6 +580,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
         rowRefs.current.clear();
         setEditingAssignment(null);
         setAssignmentSubmitLoading(false);
+        setNewAssignmentSubject('excel');
         setNewAssignmentPracticeCode('practice01');
         setAssignmentEditForm({
             name: '',
@@ -637,6 +669,16 @@ const GradingModal: React.FC<GradingModalProps> = ({
                 messages.push(fullMessage);
             });
 
+            (task.fixActions || []).forEach((rawAction) => {
+                const message = normalizeErrorText(rawAction || '');
+                if (!message) return;
+                const fullMessage = label ? `${label}: Hướng dẫn sửa: ${message}` : `Hướng dẫn sửa: ${message}`;
+                const key = toDedupKey(fullMessage);
+                if (seen.has(key)) return;
+                seen.add(key);
+                messages.push(fullMessage);
+            });
+
             // Fallback cho cac task fail nhung khong co errors[] tu backend.
             if ((!task.errors || task.errors.length === 0) && task.isPassed === false) {
                 const detailFallback = normalizeErrorText(task.details?.[0] || '');
@@ -672,6 +714,9 @@ const GradingModal: React.FC<GradingModalProps> = ({
             const errors = (task.errors || [])
                 .map((item) => (item || '').trim())
                 .filter((item) => item.length > 0);
+            const fixActions = (task.fixActions || [])
+                .map((item) => (item || '').trim())
+                .filter((item) => item.length > 0);
 
             return {
                 taskId,
@@ -681,6 +726,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                 isPassed: Boolean(task.isPassed),
                 details,
                 errors,
+                fixActions,
             };
         });
     };
@@ -692,7 +738,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
         return (
             <details className="mt-1 text-left">
                 <summary className="cursor-pointer text-[11px] text-amber-700 hover:text-amber-800">
-                    Xem loi cham ({safeErrors.length})
+                    Xem lỗi chấm / hướng dẫn sửa ({safeErrors.length})
                 </summary>
                 <ul className="mt-1 max-h-28 overflow-auto rounded border border-amber-200 bg-amber-50 p-2 text-[11px] text-amber-900 list-disc list-inside">
                     {safeErrors.map((item, idx) => (
@@ -2090,12 +2136,15 @@ const GradingModal: React.FC<GradingModalProps> = ({
         }
     };
 
-    const handleCreateBulkAssignments = async () => {
+    const createBulkAssignmentsFromDrafts = async (
+        drafts: BulkAssignmentDraft[],
+        options?: { closeOnSuccess?: boolean; practiceLabel?: string }
+    ) => {
         if (isCreatingAssignment) {
             return;
         }
 
-        const selectedDrafts = bulkAssignmentDrafts.filter((draft) => draft.selected);
+        const selectedDrafts = drafts.filter((draft) => draft.selected);
         if (selectedDrafts.length === 0) {
             alert('Vui lòng chọn ít nhất 1 project để tạo bài tập.');
             return;
@@ -2138,23 +2187,49 @@ const GradingModal: React.FC<GradingModalProps> = ({
                 setAssignments((prev) => [...createdAssignments, ...prev]);
             }
 
+            const practiceSuffix = options?.practiceLabel ? ` cho ${options.practiceLabel}` : '';
             if (failedAssignments.length === 0) {
-                alert(`Tạo thành công ${createdAssignments.length} bài tập.`);
-                setChooseMode(null);
+                alert(`Tạo thành công ${createdAssignments.length} bài tập${practiceSuffix}.`);
+                if (options?.closeOnSuccess) {
+                    setChooseMode(null);
+                }
                 return;
             }
 
             if (createdAssignments.length > 0) {
                 alert(
-                    `Đã tạo ${createdAssignments.length}/${selectedDrafts.length} bài tập.\nLỗi:\n${failedAssignments.join('\n')}`
+                    `Đã tạo ${createdAssignments.length}/${selectedDrafts.length} bài tập${practiceSuffix}.\nLỗi:\n${failedAssignments.join('\n')}`
                 );
                 return;
             }
 
-            alert(`Không thể tạo bài tập.\n${failedAssignments.join('\n')}`);
+            alert(`Không thể tạo bài tập${practiceSuffix}.\n${failedAssignments.join('\n')}`);
         } finally {
             setIsCreatingAssignment(false);
         }
+    };
+
+    const handleCreateBulkAssignments = async () => {
+        await createBulkAssignmentsFromDrafts(bulkAssignmentDrafts, { closeOnSuccess: true });
+    };
+
+    const handleQuickCreateByPractice = async (practiceCode: PracticeCode) => {
+        const practice = PRACTICE_OPTIONS.find((item) => item.code === practiceCode);
+        const practiceEndpoints = resolveEndpointsBySubjectAndPractice(gradingEndpoints, newAssignmentSubject, practiceCode);
+        const quickDrafts = buildBulkAssignmentDrafts(practiceEndpoints, [], practiceCode)
+            .map((draft) => ({ ...draft, selected: true }));
+
+        if (quickDrafts.length === 0) {
+            alert(
+                `Không có project ${practice?.label || practiceCode} cho môn ${newAssignmentSubject.toUpperCase()}.`
+            );
+            return;
+        }
+
+        await createBulkAssignmentsFromDrafts(quickDrafts, {
+            closeOnSuccess: true,
+            practiceLabel: `${practice?.label || practiceCode} (${newAssignmentSubject.toUpperCase()})`,
+        });
     };
 
     const handleOpenEditAssignment = (assignment: Assignment) => {
@@ -2406,11 +2481,28 @@ const GradingModal: React.FC<GradingModalProps> = ({
             </button>
 
             <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                <h3 className="font-semibold mb-4 text-lg">Tạo nhanh bài tập theo Practice</h3>
+                <h3 className="font-semibold mb-4 text-lg">Tạo nhanh bài tập theo môn và phần</h3>
 
                 <div className="mb-3">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Chọn Practice *
+                        Chọn môn *
+                    </label>
+                    <select
+                        value={newAssignmentSubject}
+                        onChange={(e) => setNewAssignmentSubject(e.target.value as SubjectCode)}
+                        className="w-full border border-gray-300 rounded-md px-3 py-2"
+                    >
+                        {SUBJECT_OPTIONS.map((subject) => (
+                            <option key={subject.code} value={subject.code}>
+                                {subject.label}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
+                <div className="mb-3">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Chọn phần *
                     </label>
                     <select
                         value={newAssignmentPracticeCode}
@@ -2424,8 +2516,44 @@ const GradingModal: React.FC<GradingModalProps> = ({
                         ))}
                     </select>
                     <p className="text-xs text-slate-600 mt-1">
-                        Hệ thống sẽ lấy danh sách project của practice này và điền sẵn tên theo project.
+                        Hệ thống sẽ lấy danh sách project của môn và phần đã chọn, rồi điền sẵn tên theo project.
                     </p>
+                    {newAssignmentPracticeCode === 'exam_review' && (
+                        <p className="text-xs text-indigo-700 mt-1">
+                            Ôn thi dùng nhóm project: 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24.
+                        </p>
+                    )}
+                </div>
+
+                <div className="mb-4 rounded-md border border-indigo-200 bg-indigo-50 p-3">
+                    <p className="text-xs font-semibold text-indigo-900">
+                        Tạo nhanh từng phần ({newAssignmentSubject.toUpperCase()})
+                    </p>
+                    <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                        {PRACTICE_OPTIONS.map((practice) => {
+                            const practiceEndpoints = resolveEndpointsBySubjectAndPractice(
+                                gradingEndpoints,
+                                newAssignmentSubject,
+                                practice.code
+                            );
+                            const hasProjects = practiceEndpoints.length > 0;
+
+                            return (
+                                <button
+                                    key={`quick-create-${practice.code}`}
+                                    type="button"
+                                    onClick={() => void handleQuickCreateByPractice(practice.code)}
+                                    disabled={isCreatingAssignment || !hasProjects}
+                                    className="rounded-md border border-indigo-300 bg-white px-3 py-2 text-left text-xs font-medium text-indigo-800 hover:bg-indigo-100 disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                    <div>{practice.label}</div>
+                                    <div className="mt-1 text-[11px] text-indigo-600">
+                                        {hasProjects ? `${practiceEndpoints.length} project` : 'Chưa có project'}
+                                    </div>
+                                </button>
+                            );
+                        })}
+                    </div>
                 </div>
 
                 <div className="mb-3">
@@ -2615,7 +2743,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                             <input
                                                 id={`single-file-${student.id}`}
                                                 type="file"
-                                                accept=".xls,.xlsx,.xlsm"
+                                                accept={getAcceptedSubmissionFileTypes(selectedAssignmentData?.gradingApiEndpoint)}
                                                 onChange={(e) => handleStudentFileChange(student.id, e)}
                                                 disabled={state?.isGrading}
                                                 className="hidden"
@@ -2787,7 +2915,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                     <input
                         id="bulk-single-assignment-upload"
                         type="file"
-                        accept=".xls,.xlsx,.xlsm"
+                        accept={getAcceptedSubmissionFileTypes(assignments.find((a) => a.id === selectedAssignment)?.gradingApiEndpoint)}
                         multiple
                         onChange={handleBulkStudentFilesChange}
                         className="hidden"
@@ -3257,7 +3385,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                                                 <input
                                                                     id={`multi-file-${assignment.id}-${student.id}`}
                                                                     type="file"
-                                                                    accept=".xls,.xlsx,.xlsm"
+                                                                    accept={getAcceptedSubmissionFileTypes(assignment.gradingApiEndpoint)}
                                                                     onChange={(e) =>
                                                                         handleMultiStudentFileChange(assignment.id, student.id, e)
                                                                     }

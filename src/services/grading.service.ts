@@ -14,6 +14,7 @@ interface GradingTestProject {
   code: string;
   endpoint: string;
   displayName: string;
+  fileType?: string;
 }
 
 const jsonHeaders = { 'Content-Type': 'application/json' };
@@ -48,7 +49,27 @@ const buildGradingUrl = (gradingEndpoint: string): string => {
   return `${API_BASE_URL}/grading/${normalized}`;
 };
 
-const normalizeProjectCode = (projectCode: string): string => {
+const inferLegacyFileType = (projectCode: string, studentFile?: File): 'excel' | 'word' => {
+  const normalizedCode = projectCode.trim().toLowerCase();
+  if (normalizedCode.includes('-word') || normalizedCode.startsWith('word/')) {
+    return 'word';
+  }
+  if (normalizedCode.includes('-excel') || normalizedCode.startsWith('excel/')) {
+    return 'excel';
+  }
+
+  const fileName = (studentFile?.name || '').toLowerCase();
+  if (fileName.endsWith('.docx') || fileName.endsWith('.doc') || fileName.endsWith('.txt')) {
+    return 'word';
+  }
+
+  return 'excel';
+};
+
+const normalizeProjectCode = (
+  projectCode: string,
+  studentFile?: File
+): { projectNumber: string; fileType: 'excel' | 'word' } => {
   const raw = projectCode.trim();
   if (!raw) {
     throw new Error('Mã project đang trống');
@@ -65,11 +86,26 @@ const normalizeProjectCode = (projectCode: string): string => {
     normalized = normalized.slice('grading/'.length);
   }
 
+  // Handle both old format (project05) and new format (project05-excel, project05-word)
+  let match = normalized.match(/^project(\d{1,2})-(excel|word)$/);
+  if (match) {
+    const projectNumber = Number.parseInt(match[1], 10);
+    if (!Number.isFinite(projectNumber) || projectNumber < 1) {
+      throw new Error('Mã project không hợp lệ');
+    }
+    const fileType: 'excel' | 'word' = match[2] === 'word' ? 'word' : 'excel';
+    return {
+      projectNumber: `project${projectNumber.toString().padStart(2, '0')}`,
+      fileType,
+    };
+  }
+
+  // Fallback to old format for backward compatibility
   if (normalized.startsWith('excel/')) {
     normalized = normalized.slice('excel/'.length);
   }
 
-  const match = normalized.match(/^project(\d{1,2})$/);
+  match = normalized.match(/^project(\d{1,2})$/);
   if (!match) {
     throw new Error('Mã project không hợp lệ');
   }
@@ -79,7 +115,11 @@ const normalizeProjectCode = (projectCode: string): string => {
     throw new Error('Mã project không hợp lệ');
   }
 
-  return `project${projectNumber.toString().padStart(2, '0')}`;
+  return {
+    projectNumber: `project${projectNumber.toString().padStart(2, '0')}`,
+    // Old format `project05` is ambiguous, infer subject from selection/file.
+    fileType: inferLegacyFileType(raw, studentFile),
+  };
 };
 
 const parseErrorMessage = async (response: Response): Promise<string> => {
@@ -148,12 +188,17 @@ export const gradingService = {
     studentFile: File,
     getAccessToken: (forceRefresh?: boolean) => Promise<string | null>
   ): Promise<GradingResult> {
-    const normalizedProjectCode = normalizeProjectCode(projectCode);
+    const { projectNumber, fileType } = normalizeProjectCode(projectCode, studentFile);
     const formData = new FormData();
     formData.append('studentFile', studentFile);
 
+    // Route all test grading through grading-test endpoints.
+    const endpoint = fileType === 'word'
+      ? `${API_BASE_URL}/grading-test/word/${projectNumber}`
+      : `${API_BASE_URL}/grading-test/excel/${projectNumber}`;
+
     const response = await authFetch(
-      `${API_BASE_URL}/grading-test/excel/${normalizedProjectCode}`,
+      endpoint,
       {
         method: 'POST',
         body: formData,
@@ -238,4 +283,3 @@ export const gradingService = {
     }
   },
 };
-
