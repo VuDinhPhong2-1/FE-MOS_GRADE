@@ -35,6 +35,7 @@ export interface AutoGradingTaskResultRequest {
   isPassed: boolean;
   details?: string[];
   errors?: string[];
+  fixActions?: string[];
 }
 
 export interface CreateScoreRequest {

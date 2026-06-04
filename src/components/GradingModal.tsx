@@ -127,6 +127,15 @@ const extractProjectNumberFromEndpoint = (endpoint?: string): number | null => {
     return null;
 };
 
+const getAcceptedSubmissionFileTypes = (endpoint?: string): string => {
+    const normalized = (endpoint || '').trim().replace(/\\/g, '/').toLowerCase();
+    if (normalized.includes('word/')) {
+        return normalized.includes('project07') ? '.docx,.txt' : '.docx';
+    }
+
+    return '.xls,.xlsx,.xlsm';
+};
+
 const resolvePracticeCodeByProjectNumber = (projectNumber: number): Exclude<PracticeCode, 'exam_review'> | null => {
     if (projectNumber >= 1 && projectNumber <= 8) return 'practice01';
     if (projectNumber >= 9 && projectNumber <= 16) return 'practice02';
@@ -660,6 +669,16 @@ const GradingModal: React.FC<GradingModalProps> = ({
                 messages.push(fullMessage);
             });
 
+            (task.fixActions || []).forEach((rawAction) => {
+                const message = normalizeErrorText(rawAction || '');
+                if (!message) return;
+                const fullMessage = label ? `${label}: Hướng dẫn sửa: ${message}` : `Hướng dẫn sửa: ${message}`;
+                const key = toDedupKey(fullMessage);
+                if (seen.has(key)) return;
+                seen.add(key);
+                messages.push(fullMessage);
+            });
+
             // Fallback cho cac task fail nhung khong co errors[] tu backend.
             if ((!task.errors || task.errors.length === 0) && task.isPassed === false) {
                 const detailFallback = normalizeErrorText(task.details?.[0] || '');
@@ -695,6 +714,9 @@ const GradingModal: React.FC<GradingModalProps> = ({
             const errors = (task.errors || [])
                 .map((item) => (item || '').trim())
                 .filter((item) => item.length > 0);
+            const fixActions = (task.fixActions || [])
+                .map((item) => (item || '').trim())
+                .filter((item) => item.length > 0);
 
             return {
                 taskId,
@@ -704,6 +726,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                 isPassed: Boolean(task.isPassed),
                 details,
                 errors,
+                fixActions,
             };
         });
     };
@@ -715,7 +738,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
         return (
             <details className="mt-1 text-left">
                 <summary className="cursor-pointer text-[11px] text-amber-700 hover:text-amber-800">
-                    Xem loi cham ({safeErrors.length})
+                    Xem lỗi chấm / hướng dẫn sửa ({safeErrors.length})
                 </summary>
                 <ul className="mt-1 max-h-28 overflow-auto rounded border border-amber-200 bg-amber-50 p-2 text-[11px] text-amber-900 list-disc list-inside">
                     {safeErrors.map((item, idx) => (
@@ -2720,7 +2743,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                             <input
                                                 id={`single-file-${student.id}`}
                                                 type="file"
-                                                accept=".xls,.xlsx,.xlsm"
+                                                accept={getAcceptedSubmissionFileTypes(selectedAssignmentData?.gradingApiEndpoint)}
                                                 onChange={(e) => handleStudentFileChange(student.id, e)}
                                                 disabled={state?.isGrading}
                                                 className="hidden"
@@ -2892,7 +2915,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                     <input
                         id="bulk-single-assignment-upload"
                         type="file"
-                        accept=".xls,.xlsx,.xlsm"
+                        accept={getAcceptedSubmissionFileTypes(assignments.find((a) => a.id === selectedAssignment)?.gradingApiEndpoint)}
                         multiple
                         onChange={handleBulkStudentFilesChange}
                         className="hidden"
@@ -3362,7 +3385,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                                                 <input
                                                                     id={`multi-file-${assignment.id}-${student.id}`}
                                                                     type="file"
-                                                                    accept=".xls,.xlsx,.xlsm"
+                                                                    accept={getAcceptedSubmissionFileTypes(assignment.gradingApiEndpoint)}
                                                                     onChange={(e) =>
                                                                         handleMultiStudentFileChange(assignment.id, student.id, e)
                                                                     }

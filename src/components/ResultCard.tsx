@@ -94,6 +94,16 @@ const ResultCard: React.FC<Props> = ({ result }) => {
                     </ul>
                   </div>
                 )}
+                {(task.fixActions || []).length > 0 && (
+                  <div className="mb-2">
+                    <p className="font-semibold text-amber-700 mb-1">Hướng dẫn sửa:</p>
+                    <ul className="list-disc pl-5 space-y-1 text-amber-700">
+                      {(task.fixActions || []).map((action, idx) => (
+                        <li key={idx}>{action}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
                 {task.details.length > 0 && (
                   <div>
                     <p className="font-semibold text-green-600 mb-1">Chi tiết đúng:</p>

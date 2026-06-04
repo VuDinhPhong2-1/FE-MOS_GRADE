@@ -9,14 +9,15 @@ import { useAuth } from '../context/AuthContext';
 interface TestProjectOption {
   code: string;
   displayName: string;
+  fileType: 'excel' | 'word';
 }
 
-const normalizeProjectCode = (project: {
+const normalizeProjectOption = (project: {
   code: string;
   endpoint?: string;
   fileType?: string;
   displayName?: string;
-}): string => {
+}): TestProjectOption => {
   const rawCode = project.code.trim().toLowerCase();
   const endpoint = (project.endpoint || '').trim().toLowerCase();
   const displayName = (project.displayName || '').trim().toLowerCase();
@@ -24,14 +25,24 @@ const normalizeProjectCode = (project: {
 
   const directMatch = rawCode.match(/^project(\d{1,2})-(excel|word)$/);
   if (directMatch) {
-    return `project${directMatch[1].padStart(2, '0')}-${directMatch[2]}`;
+    const fileType = directMatch[2] as 'excel' | 'word';
+    return {
+      code: `project${directMatch[1].padStart(2, '0')}-${fileType}`,
+      displayName: project.displayName || `Project ${directMatch[1].padStart(2, '0')} ${fileType.toUpperCase()}`,
+      fileType,
+    };
   }
 
   const legacyCodeMatch = rawCode.match(/^project(\d{1,2})$/);
   const endpointMatch = endpoint.match(/project(\d{1,2})$/);
   const projectNumber = legacyCodeMatch?.[1] || endpointMatch?.[1];
   if (!projectNumber) {
-    return project.code;
+    const fallbackFileType: 'excel' | 'word' = normalizedFileType === 'word' ? 'word' : 'excel';
+    return {
+      code: project.code,
+      displayName: project.displayName || project.code,
+      fileType: fallbackFileType,
+    };
   }
 
   let fileType: 'excel' | 'word' | null = null;
@@ -44,10 +55,14 @@ const normalizeProjectCode = (project: {
   }
 
   if (!fileType) {
-    return `project${projectNumber.padStart(2, '0')}`;
+    fileType = 'excel';
   }
 
-  return `project${projectNumber.padStart(2, '0')}-${fileType}`;
+  return {
+    code: `project${projectNumber.padStart(2, '0')}-${fileType}`,
+    displayName: project.displayName || `Project ${projectNumber.padStart(2, '0')} ${fileType.toUpperCase()}`,
+    fileType,
+  };
 };
 
 const severityMeta: Record<BugSeverity, { label: string; badgeClass: string }> = {
@@ -105,14 +120,12 @@ const GradingView = () => {
           return;
         }
 
-        const mapped = projects.map((project) => ({
-          code: normalizeProjectCode(project),
-          displayName: project.displayName,
-        }));
+        const mapped = projects.map((project) => normalizeProjectOption(project));
+        const defaultProject = mapped.find((project) => project.fileType === 'excel') || mapped[0];
 
         setProjectOptions(mapped);
-        if (mapped.length > 0) {
-          setProjectCode(mapped[0].code);
+        if (defaultProject) {
+          setProjectCode(defaultProject.code);
         }
       } catch (err: unknown) {
         if (!active) {
@@ -167,6 +180,16 @@ const GradingView = () => {
     };
   }, [getAccessToken]);
 
+  const excelProjectOptions = useMemo(
+    () => projectOptions.filter((project) => project.fileType === 'excel'),
+    [projectOptions]
+  );
+
+  const wordProjectOptions = useMemo(
+    () => projectOptions.filter((project) => project.fileType === 'word'),
+    [projectOptions]
+  );
+
   const selectedProjectDisplayName = useMemo(
     () => projectOptions.find((project) => project.code === projectCode)?.displayName || projectCode,
     [projectCode, projectOptions]
@@ -205,6 +228,13 @@ const GradingView = () => {
     );
   };
 
+  const handleProjectChange = (nextProjectCode: string) => {
+    setProjectCode(nextProjectCode);
+    setError(null);
+    setBugActionMessage(null);
+    setResult(null);
+  };
+
   const setSelectedFile = (file: File | null) => {
     if (!file) return;
     if (!isValidGradingFile(file)) {
@@ -213,6 +243,7 @@ const GradingView = () => {
     }
     setStudentFile(file);
     setError(null);
+    setResult(null);
   };
 
   const handleGrade = async () => {
@@ -235,15 +266,6 @@ const GradingView = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleReset = () => {
-    setResult(null);
-    setStudentFile(null);
-    setError(null);
-    setIsDragOver(false);
-    setIsBugTitleDirty(false);
-    setBugDescription('');
   };
 
   const buildBugNoteClipboardText = (note: GradingTestBugNote): string => {
@@ -345,26 +367,50 @@ const GradingView = () => {
         Trang này để test nhanh lượng chấm điểm Excel và Word. Bạn có thể lưu bug note theo từng project để theo dõi.
       </p>
 
-      {!result ? (
-        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-md">
-          <div className="mb-4">
-            <label className="mb-1 block text-sm font-medium text-gray-700">Chon project test</label>
+      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-md">
+        <div className="mb-4 grid gap-4 md:grid-cols-2">
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">Chọn bài Excel</label>
             <select
-              value={projectCode}
-              onChange={(e) => setProjectCode(e.target.value)}
+              value={excelProjectOptions.some((project) => project.code === projectCode) ? projectCode : ''}
+              onChange={(e) => handleProjectChange(e.target.value)}
               className="w-full rounded-md border border-gray-300 bg-gray-50 p-2"
-              disabled={loadingProjects || projectOptions.length === 0}
+              disabled={loadingProjects || excelProjectOptions.length === 0}
             >
-              {projectOptions.map((project) => (
+              <option value="" disabled>
+                {excelProjectOptions.length === 0 ? 'Không có bài Excel' : 'Chọn bài Excel'}
+              </option>
+              {excelProjectOptions.map((project) => (
                 <option key={project.code} value={project.code}>
                   {project.displayName}
                 </option>
               ))}
             </select>
-            {projectLoadError && <p className="mt-2 text-xs text-red-600">{projectLoadError}</p>}
           </div>
 
-          <div className="mb-6">
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">Chọn bài Word</label>
+            <select
+              value={wordProjectOptions.some((project) => project.code === projectCode) ? projectCode : ''}
+              onChange={(e) => handleProjectChange(e.target.value)}
+              className="w-full rounded-md border border-gray-300 bg-gray-50 p-2"
+              disabled={loadingProjects || wordProjectOptions.length === 0}
+            >
+              <option value="" disabled>
+                {wordProjectOptions.length === 0 ? 'Không có bài Word' : 'Chọn bài Word'}
+              </option>
+              {wordProjectOptions.map((project) => (
+                <option key={project.code} value={project.code}>
+                  {project.displayName}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {projectLoadError && <p className="text-xs text-red-600 md:col-span-2">{projectLoadError}</p>}
+        </div>
+
+        <div className="mb-6">
             <div
               className={`flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 transition ${
                 isDragOver ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-gray-50 hover:bg-gray-100'
@@ -401,27 +447,20 @@ const GradingView = () => {
             </div>
           </div>
 
-          {error && <div className="mb-4 rounded-md bg-red-100 p-3 text-sm text-red-700">{error}</div>}
+        {error && <div className="mb-4 rounded-md bg-red-100 p-3 text-sm text-red-700">{error}</div>}
 
-          <button
-            onClick={handleGrade}
-            disabled={loading || loadingProjects || projectOptions.length === 0}
-            className="flex w-full items-center justify-center gap-2 rounded-md bg-blue-600 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:bg-gray-400"
-          >
-            {loading ? <RefreshCw className="animate-spin" /> : <Upload size={20} />}
-            {loading ? 'Đang chấm điểm...' : 'Bắt đầu chấm'}
-          </button>
-        </div>
-      ) : (
-        <div>
-          <div className="mb-4 flex justify-end">
-            <button
-              onClick={handleReset}
-              className="flex items-center gap-2 font-medium text-blue-600 hover:text-blue-800"
-            >
-              <RefreshCw size={16} /> Chấm bài khác
-            </button>
-          </div>
+        <button
+          onClick={handleGrade}
+          disabled={loading || loadingProjects || projectOptions.length === 0}
+          className="flex w-full items-center justify-center gap-2 rounded-md bg-blue-600 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:bg-gray-400"
+        >
+          {loading ? <RefreshCw className="animate-spin" /> : <Upload size={20} />}
+          {loading ? 'Đang chấm điểm...' : 'Bắt đầu chấm'}
+        </button>
+      </div>
+
+      {result && (
+        <div className="mt-6">
           <ResultCard result={result} />
         </div>
       )}

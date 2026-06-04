@@ -11,6 +11,7 @@ export interface TaskResult {
     isPassed: boolean;
     details: string[];
     errors: string[];
+    fixActions?: string[];
 }
 
 /**
