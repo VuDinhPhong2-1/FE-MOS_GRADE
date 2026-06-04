@@ -1,6 +1,6 @@
 ﻿import { useState, type ChangeEvent, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Lock, Mail, User, ShieldCheck } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Lock, Mail, User, ShieldCheck } from 'lucide-react';
 import { GoogleLogin, type CredentialResponse } from '@react-oauth/google';
 import { useAuth } from '../context/AuthContext';
 import type { LoginFormData, LoginResponse, RegisterFormData } from '../types/auth.types';
@@ -17,9 +17,16 @@ export default function AuthPage() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
 
   const { login } = useAuth();
   const navigate = useNavigate();
+  const isAuthBusy = isSubmitting || isGoogleSubmitting;
+  const inputGroupClass =
+    'flex min-h-12 items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 shadow-sm transition focus-within:border-blue-400 focus-within:bg-blue-50/30 focus-within:shadow-[0_0_0_3px_rgba(37,99,235,0.12)]';
+  const inputClass =
+    'min-w-0 flex-1 border-0 bg-transparent px-0 py-3 text-sm text-slate-900 shadow-none outline-none placeholder:text-slate-400 focus:border-0 focus:shadow-none disabled:cursor-not-allowed disabled:text-slate-500';
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>): void => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -67,7 +74,11 @@ export default function AuthPage() {
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
+    if (isSubmitting) return;
+
     setError('');
+    setIsSubmitting(true);
+    let didNavigate = false;
 
     const endpoint = isLogin ? `${AUTH_API_BASE_URL}/login` : `${AUTH_API_BASE_URL}/register`;
 
@@ -89,6 +100,7 @@ export default function AuthPage() {
       if (isLogin) {
         const data: LoginResponse = await response.json();
         handleAuthSuccess(data);
+        didNavigate = true;
       } else {
         await response.json().catch(() => null);
         notify.success('Đăng ký thành công! Vui lòng đăng nhập.');
@@ -97,12 +109,20 @@ export default function AuthPage() {
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Có lỗi xảy ra');
+    } finally {
+      if (!didNavigate) {
+        setIsSubmitting(false);
+      }
     }
   };
 
   const handleGoogleLoginSuccess = async (credentialResponse: CredentialResponse) => {
+    if (isGoogleSubmitting) return;
+
+    let didNavigate = false;
     try {
       setError('');
+      setIsGoogleSubmitting(true);
       const idToken = credentialResponse.credential;
       if (!idToken) {
         throw new Error('Không lấy được Google idToken');
@@ -120,8 +140,13 @@ export default function AuthPage() {
 
       const data: LoginResponse = await response.json();
       handleAuthSuccess(data);
+      didNavigate = true;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Đăng nhập Google thất bại');
+    } finally {
+      if (!didNavigate) {
+        setIsGoogleSubmitting(false);
+      }
     }
   };
 
@@ -157,14 +182,15 @@ export default function AuthPage() {
             {!isLogin && (
               <label className="block">
                 <span className="mb-1 block text-sm font-medium text-slate-700">Thư điện tử</span>
-                <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2">
-                  <Mail size={18} className="text-slate-400" />
+                <div className={inputGroupClass}>
+                  <Mail size={18} className="shrink-0 text-slate-400" />
                   <input
                     type="email"
                     name="email"
                     placeholder="you@example.com"
                     required
-                    className="w-full border-none p-0 shadow-none"
+                    disabled={isAuthBusy}
+                    className={inputClass}
                     onChange={handleChange}
                     value={formData.email}
                   />
@@ -174,14 +200,15 @@ export default function AuthPage() {
 
             <label className="block">
               <span className="mb-1 block text-sm font-medium text-slate-700">Tên đăng nhập</span>
-              <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2">
-                <User size={18} className="text-slate-400" />
+              <div className={inputGroupClass}>
+                <User size={18} className="shrink-0 text-slate-400" />
                 <input
                   type="text"
                   name="username"
                   placeholder="Nhập tên đăng nhập"
                   required
-                  className="w-full border-none p-0 shadow-none"
+                  disabled={isAuthBusy}
+                  className={inputClass}
                   onChange={handleChange}
                   value={formData.username}
                 />
@@ -190,21 +217,23 @@ export default function AuthPage() {
 
             <label className="block">
               <span className="mb-1 block text-sm font-medium text-slate-700">Mật khẩu</span>
-              <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2">
-                <Lock size={18} className="text-slate-400" />
+              <div className={inputGroupClass}>
+                <Lock size={18} className="shrink-0 text-slate-400" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   name="password"
                   placeholder="Nhập mật khẩu"
                   required
-                  className="w-full border-none p-0 shadow-none"
+                  disabled={isAuthBusy}
+                  className={inputClass}
                   onChange={handleChange}
                   value={formData.password}
                 />
                 <button
                   type="button"
+                  disabled={isAuthBusy}
                   onClick={() => setShowPassword((prev) => !prev)}
-                  className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
                   aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
                 >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -212,8 +241,13 @@ export default function AuthPage() {
               </div>
             </label>
 
-            <button type="submit" className="app-btn-primary w-full px-4 py-2.5">
-              {isLogin ? 'Đăng nhập' : 'Đăng ký'}
+            <button
+              type="submit"
+              disabled={isAuthBusy}
+              className="app-btn-primary inline-flex w-full items-center justify-center gap-2 px-4 py-2.5 disabled:translate-y-0 disabled:cursor-not-allowed disabled:shadow-none disabled:hover:translate-y-0"
+            >
+              {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : null}
+              {isSubmitting ? (isLogin ? 'Đang đăng nhập...' : 'Đang đăng ký...') : isLogin ? 'Đăng nhập' : 'Đăng ký'}
             </button>
 
             {isLogin && hasGoogleClientId && (
@@ -227,8 +261,16 @@ export default function AuthPage() {
                   </div>
                 </div>
 
-                <div className="flex justify-center rounded-xl border border-slate-200 bg-slate-50 py-2">
-                  <GoogleLogin onSuccess={handleGoogleLoginSuccess} onError={() => setError('Đăng nhập Google thất bại')} useOneTap={false} />
+                <div className="relative flex justify-center rounded-xl border border-slate-200 bg-slate-50 py-2">
+                  {isGoogleSubmitting && (
+                    <div className="absolute inset-0 z-10 flex items-center justify-center gap-2 rounded-xl bg-white/85 text-sm font-medium text-slate-700">
+                      <Loader2 size={16} className="animate-spin text-blue-600" />
+                      Đang đăng nhập Google...
+                    </div>
+                  )}
+                  <div className={isAuthBusy ? 'pointer-events-none opacity-60' : undefined}>
+                    <GoogleLogin onSuccess={handleGoogleLoginSuccess} onError={() => setError('Đăng nhập Google thất bại')} useOneTap={false} />
+                  </div>
                 </div>
               </>
             )}
@@ -244,7 +286,8 @@ export default function AuthPage() {
             {isLogin ? 'Chưa có tài khoản?' : 'Đã có tài khoản?'}
             <button
               type="button"
-              className="ml-1 font-semibold text-blue-600 hover:underline"
+              disabled={isAuthBusy}
+              className="ml-1 font-semibold text-blue-600 hover:underline disabled:cursor-not-allowed disabled:text-slate-400 disabled:no-underline"
               onClick={() => {
                 setIsLogin(!isLogin);
                 setError('');
