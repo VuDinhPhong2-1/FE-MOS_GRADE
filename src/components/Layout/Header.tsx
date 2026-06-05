@@ -11,6 +11,7 @@ interface HeaderProps {
 const Header = ({ onToggleSidebar, fullName = 'Giáo viên' }: HeaderProps) => {
   const { user } = useAuth();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [previewAvatar, setPreviewAvatar] = useState<string | null>(null);
   const displayName = user?.fullName?.trim() || user?.username || fullName;
 
   return (
@@ -41,8 +42,17 @@ const Header = ({ onToggleSidebar, fullName = 'Giáo viên' }: HeaderProps) => {
             className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-800 shadow-sm hover:bg-slate-50"
             aria-label="Chỉnh sửa thông tin tài khoản"
           >
-            <div className="grid h-7 w-7 place-items-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-sm font-bold text-white">
-              {(displayName || 'GV').trim().charAt(0).toUpperCase()}
+            <div
+              className="relative h-7 w-7 flex-shrink-0 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-sm font-bold text-white overflow-hidden bg-center bg-cover"
+              style={
+                ((previewAvatar && previewAvatar.trim()) || user?.avatar)
+                  ? { backgroundImage: `url(${(previewAvatar && previewAvatar.trim()) || user?.avatar})` }
+                  : undefined
+              }
+            >
+              {!((previewAvatar && previewAvatar.trim()) || user?.avatar) && (
+                <div className="grid h-full w-full place-items-center text-white">{(displayName || 'GV').trim().charAt(0).toUpperCase()}</div>
+              )}
             </div>
             <span className="hidden sm:inline">Sửa tài khoản</span>
             <Settings2 size={14} />
@@ -50,7 +60,14 @@ const Header = ({ onToggleSidebar, fullName = 'Giáo viên' }: HeaderProps) => {
         </div>
       </header>
 
-      <ProfileModal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
+      <ProfileModal
+        isOpen={isProfileOpen}
+        onClose={() => {
+          setIsProfileOpen(false);
+          setPreviewAvatar(null);
+        }}
+        onAvatarPreview={(url) => setPreviewAvatar(url || null)}
+      />
     </>
   );
 };

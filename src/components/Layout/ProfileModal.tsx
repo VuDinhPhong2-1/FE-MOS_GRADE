@@ -7,6 +7,7 @@ import { notify } from '../../utils/notify';
 interface ProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onAvatarPreview?: (url: string) => void;
 }
 
 interface ProfileFormState {
@@ -15,7 +16,7 @@ interface ProfileFormState {
   avatar: string;
 }
 
-const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
+const ProfileModal = ({ isOpen, onClose, onAvatarPreview }: ProfileModalProps) => {
   const { user, getAccessToken, updateUser } = useAuth();
   const [form, setForm] = useState<ProfileFormState>({
     fullName: '',
@@ -26,12 +27,18 @@ const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
 
   useEffect(() => {
     if (!isOpen || !user) return;
-    setForm({
+    const initial = {
       fullName: user.fullName || '',
       phoneNumber: user.phoneNumber || '',
       avatar: user.avatar || '',
-    });
-  }, [isOpen, user]);
+    };
+    setForm(initial);
+    if (onAvatarPreview) onAvatarPreview(initial.avatar || '');
+    // clear preview when modal closes
+    return () => {
+      if (onAvatarPreview) onAvatarPreview('');
+    };
+  }, [isOpen, user, onAvatarPreview]);
 
   if (!isOpen || !user) return null;
 
@@ -148,7 +155,11 @@ const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
               id="profile-avatar"
               type="text"
               value={form.avatar}
-              onChange={(event) => setForm((prev) => ({ ...prev, avatar: event.target.value }))}
+              onChange={(event) => {
+                const next = event.target.value;
+                setForm((prev) => ({ ...prev, avatar: next }));
+                if (onAvatarPreview) onAvatarPreview(next || '');
+              }}
               placeholder="https://..."
               className="w-full px-3 py-2"
               maxLength={500}

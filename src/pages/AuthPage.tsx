@@ -200,7 +200,7 @@ export default function AuthPage() {
 
             <label className="block">
               <span className="mb-1 block text-sm font-medium text-slate-700">Tên đăng nhập</span>
-              <div className={inputGroupClass}>
+              <div className={`${inputGroupClass} no-border`}>
                 <User size={18} className="shrink-0 text-slate-400" />
                 <input
                   type="text"
@@ -217,7 +217,7 @@ export default function AuthPage() {
 
             <label className="block">
               <span className="mb-1 block text-sm font-medium text-slate-700">Mật khẩu</span>
-              <div className={inputGroupClass}>
+              <div className={`${inputGroupClass} no-border`}>
                 <Lock size={18} className="shrink-0 text-slate-400" />
                 <input
                   type={showPassword ? 'text' : 'password'}
