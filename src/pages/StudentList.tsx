@@ -885,7 +885,7 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
               <input
                 type="file"
                 onChange={handleFileUpload}
-                accept=".xlsx, .xls"
+                accept=".xlsx, .xls, .txt"
                 className="hidden"
                 id="import-excel"
               />

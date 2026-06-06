@@ -57,67 +57,68 @@ const ResultCard: React.FC<Props> = ({ result }) => {
         {result.taskResults.map((task, index) => {
           const taskKey = `${task.taskId}-${index}`;
           return (
-          <div key={taskKey} className="bg-white">
-            <div
-              className="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition"
-              onClick={() => toggleTask(taskKey)}
-            >
-              <div className="flex items-center gap-3">
-                {task.isPassed ? (
-                  <CheckCircle className="text-green-500 w-5 h-5" />
-                ) : (
-                  <XCircle className="text-red-500 w-5 h-5" />
-                )}
-                <div>
-                  <p className="font-medium text-gray-800">
-                    {task.taskId}: {task.taskName}
-                  </p>
+            <div key={taskKey} className="bg-white">
+              <div
+                className="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition"
+                onClick={() => toggleTask(taskKey)}
+              >
+                <div className="flex items-center gap-3">
+                  {task.isPassed ? (
+                    <CheckCircle className="text-green-500 w-5 h-5" />
+                  ) : (
+                    <XCircle className="text-red-500 w-5 h-5" />
+                  )}
+                  <div>
+                    <p className="font-medium text-gray-800">
+                      {task.taskId}: {task.taskName}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <span className={clsx('font-bold', task.score === task.maxScore ? 'text-green-600' : 'text-red-600')}>
+                    {task.score}/{task.maxScore}
+                  </span>
+                  {expandedTasks.includes(taskKey) ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                 </div>
               </div>
-              <div className="flex items-center gap-4">
-                <span className={clsx('font-bold', task.score === task.maxScore ? 'text-green-600' : 'text-red-600')}>
-                  {task.score}/{task.maxScore}
-                </span>
-                {expandedTasks.includes(taskKey) ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-              </div>
-            </div>
 
-            {expandedTasks.includes(taskKey) && (
-              <div className="px-12 pb-4 pt-0 text-sm">
-                {task.errors.length > 0 && (
-                  <div className="mb-2">
-                    <p className="font-semibold text-red-600 mb-1">Lỗi sai:</p>
-                    <ul className="list-disc pl-5 space-y-1 text-red-500">
-                      {task.errors.map((err, idx) => (
-                        <li key={idx}>{err.replace('❌ ', '')}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                {(task.fixActions || []).length > 0 && (
-                  <div className="mb-2">
-                    <p className="font-semibold text-amber-700 mb-1">Hướng dẫn sửa:</p>
-                    <ul className="list-disc pl-5 space-y-1 text-amber-700">
-                      {(task.fixActions || []).map((action, idx) => (
-                        <li key={idx}>{action}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                {task.details.length > 0 && (
-                  <div>
-                    <p className="font-semibold text-green-600 mb-1">Chi tiết đúng:</p>
-                    <ul className="list-disc pl-5 space-y-1 text-green-500">
-                      {task.details.map((dt, idx) => (
-                        <li key={idx}>{dt.replace('✓ ', '')}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        )})}
+              {expandedTasks.includes(taskKey) && (
+                <div className="px-12 pb-4 pt-0 text-sm">
+                  {task.errors.length > 0 && (
+                    <div className="mb-2">
+                      <p className="font-semibold text-red-600 mb-1">Lỗi sai:</p>
+                      <ul className="list-disc pl-5 space-y-1 text-red-500">
+                        {task.errors.map((err, idx) => (
+                          <li key={idx}>{err.replace('âŒ ', '')}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {(task.fixActions || []).length > 0 && (
+                    <div className="mb-2">
+                      <p className="font-semibold text-amber-700 mb-1">Hướng dẫn sửa:</p>
+                      <ul className="list-disc pl-5 space-y-1 text-amber-700">
+                        {(task.fixActions || []).map((action, idx) => (
+                          <li key={idx}>{action}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {task.details.length > 0 && (
+                    <div>
+                      <p className="font-semibold text-green-600 mb-1">Chi tiết đúng:</p>
+                      <ul className="list-disc pl-5 space-y-1 text-green-500">
+                        {task.details.map((dt, idx) => (
+                          <li key={idx}>{dt.replace('âœ“ ', '')}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

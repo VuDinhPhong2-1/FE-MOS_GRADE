@@ -8,6 +8,7 @@ import type { Student } from '../types/student.types';
 import type { GradingResult, StudentGradingState } from '../types/grading.types';
 import type { AutoGradingTaskResultRequest, ScoreResponse } from '../types/score.types';
 import { assignmentService } from '../services/assignment.service';
+import { notify } from '../utils/notify';
 import { scoreService } from '../services/score.service';
 import { gradingService } from '../services/grading.service';
 import "./GradingModal.css";
@@ -129,11 +130,22 @@ const extractProjectNumberFromEndpoint = (endpoint?: string): number | null => {
 
 const getAcceptedSubmissionFileTypes = (endpoint?: string): string => {
     const normalized = (endpoint || '').trim().replace(/\\/g, '/').toLowerCase();
+
+    // If endpoint explicitly targets Word grading, prefer Word-only files.
     if (normalized.includes('word/')) {
         return normalized.includes('project07') ? '.docx,.txt' : '.docx';
     }
 
-    return '.xls,.xlsx,.xlsm';
+    // If endpoint explicitly targets Excel grading, prefer Excel files.
+    if (normalized.includes('excel/')) {
+        return '.xls,.xlsx,.xlsm';
+    }
+
+    // Fallback: allow Excel, Word and plain-text so users can still
+    // choose .docx or .txt when the endpoint/assignment metadata is missing
+    // or not normalized correctly. Server-side validation still enforces
+    // accepted types.
+    return '.xls,.xlsx,.xlsm,.docx,.txt';
 };
 
 const resolvePracticeCodeByProjectNumber = (projectNumber: number): Exclude<PracticeCode, 'exam_review'> | null => {
@@ -609,17 +621,31 @@ const GradingModal: React.FC<GradingModalProps> = ({
         setStudentGradingStates(initialStates);
     };
 
-    const isValidExcelFileName = (fileName: string): boolean => {
-        const validExtensions = ['.xls', '.xlsx', '.xlsm'];
+    const isValidSubmissionFileName = (fileName: string): boolean => {
         const normalized = fileName.toLowerCase();
-        return validExtensions.some((ext) => normalized.endsWith(ext));
+
+        // Determine accepted types from selected assignment's grading endpoint
+        const selectedAssignmentData = assignments.find((a) => a.id === selectedAssignment);
+        const acceptedList = getAcceptedSubmissionFileTypes(selectedAssignmentData?.gradingApiEndpoint || undefined)
+            .split(',')
+            .map((s) => s.trim().toLowerCase())
+            .filter(Boolean);
+
+        if (acceptedList.length > 0) {
+            return acceptedList.some((ext) => normalized.endsWith(ext));
+        }
+
+        // Fallback to Excel-only if something unexpected
+        return ['.xls', '.xlsx', '.xlsm'].some((ext) => normalized.endsWith(ext));
     };
 
     const validateExcelFile = (file: File, showAlert = true): boolean => {
-        const isValid = isValidExcelFileName(file.name);
+        const isValid = isValidSubmissionFileName(file.name);
         if (!isValid) {
             if (showAlert) {
-                alert('File phai co dinh dang .xls, .xlsx hoac .xlsm');
+                const selectedAssignmentData = assignments.find((a) => a.id === selectedAssignment);
+                const accepted = getAcceptedSubmissionFileTypes(selectedAssignmentData?.gradingApiEndpoint || undefined);
+                alert(`File phải có định dạng: ${accepted}`);
             }
         }
         return isValid;
@@ -736,16 +762,47 @@ const GradingModal: React.FC<GradingModalProps> = ({
         if (safeErrors.length === 0) return null;
 
         return (
-            <details className="mt-1 text-left">
-                <summary className="cursor-pointer text-[11px] text-amber-700 hover:text-amber-800">
+            <div className="mt-1 text-left">
+                <button
+                    type="button"
+                    className="cursor-pointer text-[11px] text-amber-700 hover:text-amber-800"
+                    onClick={() => {
+                        try {
+                            type Block = { message: string; guides: string[] };
+                            const blocks: Block[] = [];
+
+                            safeErrors.forEach((raw) => {
+                                const text = (raw || '').trim();
+                                if (!text) return;
+
+                                const isGuide = /hướng\s*dẫn\s*sửa[:\-]?/i.test(text);
+                                if (isGuide) {
+                                    const guideText = text.replace(/hướng\s*dẫn\s*sửa[:\-]?\s*/i, '').trim();
+                                    if (blocks.length === 0) {
+                                        blocks.push({ message: 'Lỗi', guides: [guideText] });
+                                    } else {
+                                        blocks[blocks.length - 1].guides.push(guideText);
+                                    }
+                                } else {
+                                    blocks.push({ message: text, guides: [] });
+                                }
+                            });
+
+                            const messagePart = blocks.map((b) => b.message).join('\n\n') || (safeErrors[0] ?? 'Lỗi');
+                            const guidePart = blocks
+                                .map((b) => (b.guides.length > 0 ? b.guides.join('\n') : ''))
+                                .filter(Boolean)
+                                .join('\n\n') || undefined;
+
+                            notify.custom({ message: messagePart, type: 'error', guide: guidePart, title: 'Lỗi chấm tự động' });
+                        } catch (e) {
+                            // ignore
+                        }
+                    }}
+                >
                     Xem lỗi chấm / hướng dẫn sửa ({safeErrors.length})
-                </summary>
-                <ul className="mt-1 max-h-28 overflow-auto rounded border border-amber-200 bg-amber-50 p-2 text-[11px] text-amber-900 list-disc list-inside">
-                    {safeErrors.map((item, idx) => (
-                        <li key={`${idx}-${item}`}>{item}</li>
-                    ))}
-                </ul>
-            </details>
+                </button>
+            </div>
         );
     };
 

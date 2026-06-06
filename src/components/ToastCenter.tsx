@@ -42,6 +42,9 @@ const ToastCenter = () => {
       if (!detail?.message) return;
 
       const nextType: NotifyType = detail.type ?? 'info';
+
+      // Ignore error toasts that list grading task errors — not necessary in UI.
+      if (nextType === 'error') return;
       const toast: ToastItem = {
         id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
         message: detail.message,

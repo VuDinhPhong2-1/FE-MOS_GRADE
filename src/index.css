@@ -1,4 +1,9 @@
-@import "tailwindcss";
+@import "tailwindcss" source(none);
+@source "../src/{App,main}.tsx";
+@source "../src/context/AuthContext.tsx";
+@source "../src/pages/{AuthPage,ClassGradingPage,Classlist,ClassScoreboardPage,Dashboard,GradingView,PermissionManagement,SchoolList,StudentList,TeacherSchedule}.tsx";
+@source "../src/components/{ClassAnalyticsPanel,ErrorModal,GradingModal,ResultCard,ToastCenter,ViewAllScoresModal}.tsx";
+@source "../src/components/Layout/{Header,Layout,ProfileModal,Sidebar}.tsx";
 
 :root {
   --bg-page: #f3f6fb;

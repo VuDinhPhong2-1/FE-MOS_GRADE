@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import App from './App';
 import ToastCenter from './components/ToastCenter';
+import ErrorModal from './components/ErrorModal';
 import { installAlertInterceptor } from './utils/notify';
 import './index.css';
 
@@ -29,6 +30,7 @@ createRoot(document.getElementById('root')!).render(
       <BrowserRouter>
         <App />
         <ToastCenter />
+        <ErrorModal />
       </BrowserRouter>
     </GoogleOAuthProvider>
   </StrictMode>

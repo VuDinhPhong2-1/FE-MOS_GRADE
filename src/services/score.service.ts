@@ -20,7 +20,10 @@ export const scoreService = {
       getAccessToken
     );
 
-    if (!response.ok) throw new Error('Không thể lấy điểm theo bài tập');
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      throw new Error(errorData?.message || 'Không thể lấy điểm theo bài tập');
+    }
     return response.json();
   },
 
@@ -112,7 +115,10 @@ export const scoreService = {
       getAccessToken
     );
 
-    if (!response.ok) throw new Error('Không thể lấy danh sách điểm theo lớp');
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      throw new Error(errorData?.message || 'Không thể lấy danh sách điểm theo lớp');
+    }
     return response.json();
   },
 };
