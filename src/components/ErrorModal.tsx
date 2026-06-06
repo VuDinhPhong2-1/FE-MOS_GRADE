@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
-import { X, AlertOctagon, CheckCircle2 } from 'lucide-react';
+import { X, AlertOctagon, AlertTriangle, Lightbulb } from 'lucide-react';
 import { notifyEventName, type NotifyPayload } from '../utils/notify';
+import { splitIssueHeadingAndError } from '../utils/gradingIssues';
+import { extractGradingGuideSection, stripGradingGuideSection } from '../utils/gradingText';
 
 const ErrorModal: React.FC = () => {
   const [open, setOpen] = useState(false);
@@ -23,15 +25,27 @@ const ErrorModal: React.FC = () => {
 
   if (!open || !payload) return null;
 
+  const issues = (payload.issues || [])
+    .map((issue) => ({
+      ...issue,
+      error: stripGradingGuideSection(issue.error || ''),
+      fixAction: ((issue.fixAction || '').trim() || extractGradingGuideSection(issue.error || '')),
+    }))
+    .filter((issue) => issue.error.length > 0);
+
   const messageBlocks = (payload.message || '')
     .split(/\n\s*\n/)
-    .map((s) => s.trim())
+    .map((s) => stripGradingGuideSection(s))
     .filter(Boolean);
 
-  const guideBlocks = (payload.guide || '')
+  const explicitGuideBlocks = (payload.guide || '')
     .split(/\n\s*\n/)
-    .map((s) => s.trim())
-    .filter(Boolean);
+    .map((s) => s.trim());
+
+  const guideBlocks = ((payload.message || '')
+    .split(/\n\s*\n/)
+    .map((s, idx) => explicitGuideBlocks[idx] || extractGradingGuideSection(s)))
+    .filter((_, idx) => Boolean(messageBlocks[idx]));
 
   return (
     <div className="fixed inset-0 z-[11000] flex items-center justify-center">
@@ -56,34 +70,91 @@ const ErrorModal: React.FC = () => {
               </button>
             </div>
 
-            <div className="mt-3 text-sm">
-              {messageBlocks.map((m, idx) => (
-                <div key={idx} className="mb-3">
-                  <div className="whitespace-pre-wrap text-rose-900">{m}</div>
-                  {guideBlocks[idx] && (
-                    <div className="mt-2 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
-                      <div className="flex items-start gap-3">
-                        <div className="flex-shrink-0 rounded-full bg-emerald-50 p-2 text-emerald-700">
-                          <CheckCircle2 size={18} />
-                        </div>
-                        <div className="min-w-0">
-                          <div className="font-medium text-emerald-900">Hướng dẫn:</div>
-                          <div className="mt-1 whitespace-pre-wrap text-emerald-900">{guideBlocks[idx]}</div>
+            <div className="mt-3 space-y-3 text-sm">
+              {issues.length > 0
+                ? issues.map((issue, idx) => (
+                  (() => {
+                    const { question, error } = splitIssueHeadingAndError(issue.error);
+
+                    return (
+                      <div
+                        key={`${issue.taskId || idx}-${issue.error}`}
+                        className="rounded-lg border border-orange-100 bg-orange-50/40 p-3"
+                      >
+                        <div className="flex items-start gap-2">
+                          <AlertTriangle size={18} className="mt-0.5 shrink-0 text-orange-600" />
+                          <div className="min-w-0 flex-1 space-y-1">
+                            {question && (
+                              <div className="whitespace-pre-wrap font-semibold text-sky-700">
+                                {question}
+                              </div>
+                            )}
+                            <div className="whitespace-pre-wrap font-medium text-orange-600">
+                              {error}
+                            </div>
+
+                            {issue.fixAction && (
+                              <div className="flex items-start gap-2 pt-1 text-emerald-700">
+                                <Lightbulb size={17} className="mt-0.5 shrink-0" />
+                                <span className="whitespace-pre-wrap font-medium">
+                                  Hướng dẫn sửa: {issue.fixAction}
+                                </span>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )}
-                </div>
-              ))}
+                    );
+                  })()
+                ))
+                : messageBlocks.map((m, idx) => (
+                  (() => {
+                    const { question, error } = splitIssueHeadingAndError(m);
+
+                    return (
+                      <div
+                        key={idx}
+                        className="rounded-lg border border-orange-100 bg-orange-50/40 p-3"
+                      >
+                        <div className="flex items-start gap-2">
+                          <AlertTriangle size={18} className="mt-0.5 shrink-0 text-orange-600" />
+                          <div className="min-w-0 flex-1 space-y-1">
+                            {question && (
+                              <div className="whitespace-pre-wrap font-semibold text-sky-700">
+                                {question}
+                              </div>
+                            )}
+                            <div className="whitespace-pre-wrap font-medium text-orange-600">
+                              {error}
+                            </div>
+
+                            {guideBlocks[idx] && (
+                              <div className="flex items-start gap-2 pt-1 text-emerald-700">
+                                <Lightbulb size={17} className="mt-0.5 shrink-0" />
+                                <span className="whitespace-pre-wrap font-medium">
+                                  Hướng dẫn sửa: {guideBlocks[idx]}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()
+                ))}
             </div>
 
             <div className="mt-4 flex justify-end gap-2">
               <button
                 type="button"
                 onClick={() => {
-                  const combined = messageBlocks
-                    .map((m, i) => m + (guideBlocks[i] ? '\n\nHướng dẫn:\n' + guideBlocks[i] : ''))
-                    .join('\n\n');
+                  const combined = issues.length > 0
+                    ? issues
+                      .map((issue) => issue.error + (issue.fixAction ? '\n\nHướng dẫn:\n' + issue.fixAction : ''))
+                      .join('\n\n')
+                    : messageBlocks
+                      .map((m, i) => m + (guideBlocks[i] ? '\n\nHướng dẫn:\n' + guideBlocks[i] : ''))
+                      .join('\n\n');
                   navigator.clipboard?.writeText(`${payload.title ?? 'Lỗi'}\n\n${combined}`);
                 }}
                 className="rounded bg-slate-100 px-3 py-1 text-sm text-slate-700 hover:bg-slate-200"

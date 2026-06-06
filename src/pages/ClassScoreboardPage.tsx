@@ -129,7 +129,7 @@ const ClassScoreboardPage = () => {
     return classInfo.ownerId === userId || Boolean(classInfo.managerTeacherIds?.includes(userId));
   }, [classInfo, user]);
 
-  const classDisplayName = locationState?.className || classInfo?.name || classId || 'Lop hoc';
+  const classDisplayName = locationState?.className || classInfo?.name || classId || 'Lớp học';
 
   if (isLoading) {
     return (
@@ -170,7 +170,7 @@ const ClassScoreboardPage = () => {
           Quay lại
         </button>
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          ạn chỉ có quyền xem lớp này, không thể xem bảng điểm.
+          Bạn chỉ có quyền xem lớp này, không thể xem bảng điểm.
         </div>
       </div>
     );
@@ -188,8 +188,8 @@ const ClassScoreboardPage = () => {
           Quay lại danh sách học sinh
         </button>
         <div className="text-sm text-slate-600">
-          Lop: <span className="font-semibold text-slate-800">{classDisplayName}</span> | Tong {students.length} hoc
-          sinh | {assignments.length} bai tap
+          Lớp: <span className="font-semibold text-slate-800">{classDisplayName}</span> | Tổng {students.length} học
+          sinh | {assignments.length} bài tập
         </div>
       </div>
 
@@ -219,6 +219,7 @@ const ClassScoreboardPage = () => {
           assignmentName: s.assignmentName,
           scoreValue: typeof s.scoreValue === 'number' ? s.scoreValue : null,
           autoGradingErrors: s.autoGradingErrors || [],
+          autoGradingTaskResults: s.autoGradingTaskResults || [],
         }))}
       />
     </div>

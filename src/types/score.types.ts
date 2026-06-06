@@ -7,6 +7,7 @@ export interface Score {
   scoreValue?: number;
   feedback?: string;
   autoGradingErrors?: string[];
+  autoGradingTaskResults?: AutoGradingTaskResultRequest[];
   gradedAt?: string;
   gradedBy?: string;
 }
@@ -22,6 +23,7 @@ export interface ScoreResponse {
   scoreValue?: number;
   feedback?: string;
   autoGradingErrors?: string[];
+  autoGradingTaskResults?: AutoGradingTaskResultRequest[];
   gradedAt?: string;
   gradedBy?: string;
   gradedByName?: string;
@@ -77,5 +79,6 @@ export interface ScoreDetailResponse {
   maxScore: number;
   feedback?: string;
   autoGradingErrors?: string[];
+  autoGradingTaskResults?: AutoGradingTaskResultRequest[];
   gradedAt?: string;
 }

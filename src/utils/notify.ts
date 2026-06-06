@@ -1,9 +1,19 @@
 export type NotifyType = 'success' | 'error' | 'warning' | 'info';
 
+export interface NotifyIssue {
+  taskId?: string;
+  taskName?: string;
+  error: string;
+  fixAction?: string;
+}
+
 export interface NotifyPayload {
   message: string;
   type?: NotifyType;
   durationMs?: number;
+  title?: string;
+  guide?: string;
+  issues?: NotifyIssue[];
 }
 
 const NOTIFY_EVENT_NAME = 'mos-grader:notify';

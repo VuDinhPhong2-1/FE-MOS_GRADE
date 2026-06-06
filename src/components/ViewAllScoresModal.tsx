@@ -7,6 +7,14 @@ import { exportToExcel, exportToPdf } from '../utils/exportUtils';
 import type { ExcelCellComment } from '../utils/exportUtils';
 import { useAuth } from '../context/AuthContext';
 import studentService from '../services/student.service';
+import { notify, type NotifyIssue } from '../utils/notify';
+import { extractGradingGuideSection, stripGradingGuideSection } from '../utils/gradingText';
+import {
+  getNotifyIssuesFromTaskResults,
+  normalizeIssueText,
+  toIssueDedupKey,
+} from '../utils/gradingIssues';
+import type { AutoGradingTaskResultRequest } from '../types/score.types';
 
 type CompetencyLevel = '' | 'A' | 'B' | 'C' | 'D';
 type AssignmentColumnDisplayMode = 'full' | 'hidden';
@@ -27,6 +35,7 @@ interface DisplayStudentRow {
   notes: string;
   calculatedScores: Record<string, number>;
   errorsByAssignment: Record<string, string[]>;
+  issuesByAssignment: Record<string, NotifyIssue[]>;
   totalScore: number;
   otthPercentage: number;
   examReviewPercentage: number;
@@ -50,6 +59,7 @@ interface ViewAllScoresModalProps {
     assignmentName?: string;
     scoreValue: number | null;
     autoGradingErrors?: string[];
+    autoGradingTaskResults?: AutoGradingTaskResultRequest[];
   }[];
 }
 
@@ -75,12 +85,6 @@ const getPercentagePillClass = (percentage: number): string => {
   if (percentage > 0) return 'border-amber-200 bg-amber-50 text-amber-700';
   return 'border-slate-200 bg-slate-100 text-slate-500';
 };
-
-const normalizeErrorText = (value: string): string => value.replace(/\s+/g, ' ').trim();
-const toDedupKey = (value: string): string =>
-  normalizeErrorText(value)
-    .toLowerCase()
-    .replace(/[.:;!?]+$/g, '');
 
 const normalizeClassification = (value?: string): CompetencyLevel => {
   const normalized = (value || '').trim().toUpperCase();
@@ -385,11 +389,16 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
   );
 
   const scoreLookup = useMemo(() => {
-    const map = new Map<string, { scoreValue: number | null; autoGradingErrors?: string[] }>();
+    const map = new Map<string, {
+      scoreValue: number | null;
+      autoGradingErrors?: string[];
+      autoGradingTaskResults?: AutoGradingTaskResultRequest[];
+    }>();
     scores.forEach((score) => {
       map.set(`${score.studentId}::${score.assignmentId}`, {
         scoreValue: score.scoreValue,
         autoGradingErrors: score.autoGradingErrors || [],
+        autoGradingTaskResults: score.autoGradingTaskResults || [],
       });
     });
     return map;
@@ -505,6 +514,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
       };
       const calculatedScores: Record<string, number> = {};
       const errorsByAssignment: Record<string, string[]> = {};
+      const issuesByAssignment: Record<string, NotifyIssue[]> = {};
 
       assignments.forEach((assignment) => {
         const key = `${student.id}::${assignment.id}`;
@@ -554,15 +564,35 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 
         const assignmentErrors: string[] = [];
         const seenErrors = new Set<string>();
+        const taskResultIssues = getNotifyIssuesFromTaskResults(scoreObj?.autoGradingTaskResults);
+        const legacyIssues: NotifyIssue[] = [];
+
         (scoreObj?.autoGradingErrors || []).forEach((rawError) => {
-          const errorText = normalizeErrorText(rawError || '');
+          const errorText = normalizeIssueText(stripGradingGuideSection(rawError || ''));
           if (!errorText) return;
-          const dedupKey = toDedupKey(errorText);
+          const dedupKey = toIssueDedupKey(errorText);
+          if (seenErrors.has(dedupKey)) return;
+          seenErrors.add(dedupKey);
+          assignmentErrors.push(errorText);
+          legacyIssues.push({
+            error: errorText,
+            fixAction: extractGradingGuideSection(rawError || '') || undefined,
+          });
+        });
+
+        taskResultIssues.forEach((issue) => {
+          const errorText = normalizeIssueText(stripGradingGuideSection(issue.error || ''));
+          if (!errorText) return;
+          const dedupKey = toIssueDedupKey(errorText);
           if (seenErrors.has(dedupKey)) return;
           seenErrors.add(dedupKey);
           assignmentErrors.push(errorText);
         });
+
+        const assignmentIssues = taskResultIssues.length > 0 ? taskResultIssues : legacyIssues;
+
         errorsByAssignment[assignment.id] = assignmentErrors;
+        issuesByAssignment[assignment.id] = assignmentIssues;
       });
 
       const mapValue = classificationByStudentId[student.id];
@@ -610,6 +640,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
         notes,
         calculatedScores,
         errorsByAssignment,
+        issuesByAssignment,
         totalScore,
         otthPercentage,
         examReviewPercentage,
@@ -1325,6 +1356,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 
                       {displayedAssignments.map((assignment) => {
                         const assignmentErrors = row.errorsByAssignment[assignment.id] || [];
+                        const assignmentIssues = row.issuesByAssignment[assignment.id] || [];
                         const score = row.calculatedScores[assignment.id] || 0;
                         const maxScore = assignment.maxScore || 0;
 
@@ -1340,7 +1372,27 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
                             </div>
                             {assignmentErrors.length > 0 && (
                               <details className="mt-1 text-left text-xs text-amber-800">
-                                <summary className="inline-flex cursor-pointer items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 font-semibold text-amber-700 hover:bg-amber-100">
+                                <summary
+                                  className="inline-flex cursor-pointer items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 font-semibold text-amber-700 hover:bg-amber-100"
+                                  onClick={() => {
+                                    try {
+                                      const safeErrors = (assignmentErrors || []).map((s) => (s || '').trim()).filter(Boolean);
+                                      const issues: NotifyIssue[] = assignmentIssues.length > 0
+                                        ? assignmentIssues
+                                        : safeErrors.map((err) => ({ error: err }));
+                                      const messagePart = issues.length > 0 ? issues.map((issue) => issue.error).join('\n\n') : safeErrors.join('\n\n');
+
+                                      notify.custom({
+                                        message: messagePart || 'Lỗi chấm tự động',
+                                        type: 'error',
+                                        issues,
+                                        title: 'Lỗi chấm tự động',
+                                      });
+                                    } catch (e) {
+                                      // ignore
+                                    }
+                                  }}
+                                >
                                   {assignmentErrors.length} lỗi
                                 </summary>
                                 <ul className="mt-1 max-h-24 list-inside list-disc overflow-auto rounded border border-amber-200 bg-amber-50 p-2 text-[11px]">
@@ -1527,3 +1579,4 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 };
 
 export default ViewAllScoresModal;
+

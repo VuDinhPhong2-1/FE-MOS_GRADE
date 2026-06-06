@@ -8,9 +8,11 @@ import type { Student } from '../types/student.types';
 import type { GradingResult, StudentGradingState } from '../types/grading.types';
 import type { AutoGradingTaskResultRequest, ScoreResponse } from '../types/score.types';
 import { assignmentService } from '../services/assignment.service';
-import { notify } from '../utils/notify';
+import { notify, type NotifyIssue } from '../utils/notify';
 import { scoreService } from '../services/score.service';
 import { gradingService } from '../services/grading.service';
+import { stripGradingGuideSection } from '../utils/gradingText';
+import { getNotifyIssuesFromTaskResults } from '../utils/gradingIssues';
 import "./GradingModal.css";
 
 interface GradingModalProps {
@@ -664,61 +666,12 @@ const GradingModal: React.FC<GradingModalProps> = ({
         return Number(Math.max(0, backendScore).toFixed(2));
     };
 
-    const normalizeErrorText = (value: string): string => value.replace(/\s+/g, ' ').trim();
-    const toDedupKey = (value: string): string =>
-        normalizeErrorText(value)
-            .toLowerCase()
-            .replace(/[.:;!?]+$/g, '');
+    const getGradingIssues = (result: GradingResult | null): NotifyIssue[] => {
+        return getNotifyIssuesFromTaskResults(result?.taskResults);
+    };
 
     const extractAutoGradingErrors = (result: GradingResult | null): string[] => {
-        if (!result?.taskResults?.length) return [];
-
-        const messages: string[] = [];
-        const seen = new Set<string>();
-        result.taskResults.forEach((task, index) => {
-            const taskName = normalizeErrorText(task.taskName || '');
-            const taskId = normalizeErrorText(task.taskId || '');
-            const matchedQuestion =
-                taskId.match(/(?:^|[^0-9])T(\d+)(?:[^0-9]|$)/i)?.[1] ||
-                taskId.match(/(\d+)/)?.[1] ||
-                '';
-            const questionLabel = matchedQuestion ? `Cau ${matchedQuestion}` : `Cau ${index + 1}`;
-            const label = taskName ? `${questionLabel} - ${taskName}` : questionLabel;
-
-            (task.errors || []).forEach((rawError) => {
-                const message = normalizeErrorText(rawError || '');
-                if (!message) return;
-                const fullMessage = label ? `${label}: ${message}` : message;
-                const key = toDedupKey(fullMessage);
-                if (seen.has(key)) return;
-                seen.add(key);
-                messages.push(fullMessage);
-            });
-
-            (task.fixActions || []).forEach((rawAction) => {
-                const message = normalizeErrorText(rawAction || '');
-                if (!message) return;
-                const fullMessage = label ? `${label}: Hướng dẫn sửa: ${message}` : `Hướng dẫn sửa: ${message}`;
-                const key = toDedupKey(fullMessage);
-                if (seen.has(key)) return;
-                seen.add(key);
-                messages.push(fullMessage);
-            });
-
-            // Fallback cho cac task fail nhung khong co errors[] tu backend.
-            if ((!task.errors || task.errors.length === 0) && task.isPassed === false) {
-                const detailFallback = normalizeErrorText(task.details?.[0] || '');
-                if (detailFallback) {
-                    const fullMessage = `${label}: ${detailFallback}`;
-                    const key = toDedupKey(fullMessage);
-                    if (!seen.has(key)) {
-                        seen.add(key);
-                        messages.push(fullMessage);
-                    }
-                }
-            }
-        });
-        return messages;
+        return getGradingIssues(result).map((issue) => stripGradingGuideSection(issue.error));
     };
 
     const mapTaskResultsForScorePayload = (
@@ -757,9 +710,11 @@ const GradingModal: React.FC<GradingModalProps> = ({
         });
     };
 
-    const renderAutoErrorDropdown = (errors: string[] | undefined) => {
+    const renderAutoErrorDropdown = (errors: string[] | undefined, gradingResult?: GradingResult | null) => {
         const safeErrors = (errors || []).filter((item) => item && item.trim().length > 0);
-        if (safeErrors.length === 0) return null;
+        const issues = getGradingIssues(gradingResult || null);
+        const issueCount = issues.length || safeErrors.length;
+        if (issueCount === 0) return null;
 
         return (
             <div className="mt-1 text-left">
@@ -768,39 +723,22 @@ const GradingModal: React.FC<GradingModalProps> = ({
                     className="cursor-pointer text-[11px] text-amber-700 hover:text-amber-800"
                     onClick={() => {
                         try {
-                            type Block = { message: string; guides: string[] };
-                            const blocks: Block[] = [];
+                            const messagePart = issues.length > 0
+                                ? issues.map((issue) => issue.error).join('\n\n')
+                                : safeErrors.join('\n\n');
 
-                            safeErrors.forEach((raw) => {
-                                const text = (raw || '').trim();
-                                if (!text) return;
-
-                                const isGuide = /hướng\s*dẫn\s*sửa[:\-]?/i.test(text);
-                                if (isGuide) {
-                                    const guideText = text.replace(/hướng\s*dẫn\s*sửa[:\-]?\s*/i, '').trim();
-                                    if (blocks.length === 0) {
-                                        blocks.push({ message: 'Lỗi', guides: [guideText] });
-                                    } else {
-                                        blocks[blocks.length - 1].guides.push(guideText);
-                                    }
-                                } else {
-                                    blocks.push({ message: text, guides: [] });
-                                }
+                            notify.custom({
+                                message: messagePart || 'Lỗi chấm tự động',
+                                type: 'error',
+                                issues,
+                                title: 'Lỗi chấm tự động',
                             });
-
-                            const messagePart = blocks.map((b) => b.message).join('\n\n') || (safeErrors[0] ?? 'Lỗi');
-                            const guidePart = blocks
-                                .map((b) => (b.guides.length > 0 ? b.guides.join('\n') : ''))
-                                .filter(Boolean)
-                                .join('\n\n') || undefined;
-
-                            notify.custom({ message: messagePart, type: 'error', guide: guidePart, title: 'Lỗi chấm tự động' });
                         } catch (e) {
                             // ignore
                         }
                     }}
                 >
-                    Xem lỗi chấm / hướng dẫn sửa ({safeErrors.length})
+                    Xem lỗi chấm ({issueCount})
                 </button>
             </div>
         );
@@ -2833,7 +2771,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                                     {undoingSingleStudentId === student.id ? 'Đang hoàn tác...' : 'Hoàn tác file vừa chọn'}
                                                 </button>
                                             )}
-                                            {renderAutoErrorDropdown(autoErrors)}
+                                            {renderAutoErrorDropdown(autoErrors, state?.gradingResult || null)}
                                         </div>
                                     </td>
                                     <td className="px-4 py-3 text-center">
@@ -3484,7 +3422,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                                                         Hoàn tác
                                                                     </button>
                                                                 )}
-                                                                {renderAutoErrorDropdown(cellErrors)}
+                                                                {renderAutoErrorDropdown(cellErrors, autoState?.gradingResult || null)}
                                                             </div>
                                                         )}
                                                     </td>
@@ -3834,4 +3772,6 @@ const GradingModal: React.FC<GradingModalProps> = ({
 };
 
 export default GradingModal;
+
+
 
