@@ -48,6 +48,16 @@ Frontend URL:
 
 - `http://localhost:5173`
 
+Run with LAN host:
+
+```powershell
+npm run dev:lan
+```
+
+Frontend LAN URL example:
+
+- `http://192.168.20.198:5173`
+
 Backend should normally run at:
 
 - `https://localhost:7223`
@@ -57,6 +67,8 @@ Backend should normally run at:
 ```powershell
 npm run dev:be-local
 npm run dev:be-deploy
+npm run dev:be-local:lan
+npm run dev:be-deploy:lan
 ```
 
 Build variants:

@@ -8,11 +8,9 @@ import type { ExcelCellComment } from '../utils/exportUtils';
 import { useAuth } from '../context/AuthContext';
 import studentService from '../services/student.service';
 import { notify, type NotifyIssue } from '../utils/notify';
-import { extractGradingGuideSection, stripGradingGuideSection } from '../utils/gradingText';
 import {
   getNotifyIssuesFromTaskResults,
   normalizeIssueText,
-  toIssueDedupKey,
 } from '../utils/gradingIssues';
 import type { AutoGradingTaskResultRequest } from '../types/score.types';
 
@@ -562,37 +560,11 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
           }
         }
 
-        const assignmentErrors: string[] = [];
-        const seenErrors = new Set<string>();
         const taskResultIssues = getNotifyIssuesFromTaskResults(scoreObj?.autoGradingTaskResults);
-        const legacyIssues: NotifyIssue[] = [];
-
-        (scoreObj?.autoGradingErrors || []).forEach((rawError) => {
-          const errorText = normalizeIssueText(stripGradingGuideSection(rawError || ''));
-          if (!errorText) return;
-          const dedupKey = toIssueDedupKey(errorText);
-          if (seenErrors.has(dedupKey)) return;
-          seenErrors.add(dedupKey);
-          assignmentErrors.push(errorText);
-          legacyIssues.push({
-            error: errorText,
-            fixAction: extractGradingGuideSection(rawError || '') || undefined,
-          });
-        });
-
-        taskResultIssues.forEach((issue) => {
-          const errorText = normalizeIssueText(stripGradingGuideSection(issue.error || ''));
-          if (!errorText) return;
-          const dedupKey = toIssueDedupKey(errorText);
-          if (seenErrors.has(dedupKey)) return;
-          seenErrors.add(dedupKey);
-          assignmentErrors.push(errorText);
-        });
-
-        const assignmentIssues = taskResultIssues.length > 0 ? taskResultIssues : legacyIssues;
+        const assignmentErrors = taskResultIssues.map((issue) => normalizeIssueText(issue.message || ''));
 
         errorsByAssignment[assignment.id] = assignmentErrors;
-        issuesByAssignment[assignment.id] = assignmentIssues;
+        issuesByAssignment[assignment.id] = taskResultIssues;
       });
 
       const mapValue = classificationByStudentId[student.id];
@@ -1376,16 +1348,10 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
                                   className="inline-flex cursor-pointer items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 font-semibold text-amber-700 hover:bg-amber-100"
                                   onClick={() => {
                                     try {
-                                      const safeErrors = (assignmentErrors || []).map((s) => (s || '').trim()).filter(Boolean);
-                                      const issues: NotifyIssue[] = assignmentIssues.length > 0
-                                        ? assignmentIssues
-                                        : safeErrors.map((err) => ({ error: err }));
-                                      const messagePart = issues.length > 0 ? issues.map((issue) => issue.error).join('\n\n') : safeErrors.join('\n\n');
-
                                       notify.custom({
-                                        message: messagePart || 'Lỗi chấm tự động',
+                                        message: 'Lỗi chấm tự động',
                                         type: 'error',
-                                        issues,
+                                        issues: assignmentIssues,
                                         title: 'Lỗi chấm tự động',
                                       });
                                     } catch (e) {

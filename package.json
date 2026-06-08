@@ -5,8 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:lan": "vite --host 0.0.0.0",
     "dev:be-local": "vite --mode be-local",
+    "dev:be-local:lan": "vite --mode be-local --host 0.0.0.0",
     "dev:be-deploy": "vite --mode be-deploy",
+    "dev:be-deploy:lan": "vite --mode be-deploy --host 0.0.0.0",
     "build": "tsc -b && vite build",
     "build:be-local": "tsc -b && vite build --mode be-local",
     "build:be-deploy": "tsc -b && vite build --mode be-deploy",

@@ -1,4 +1,10 @@
 // src/types/score.types.ts
+export interface TaskDisplayIssue {
+  heading: string;
+  message: string;
+  fixAction: string;
+}
+
 export interface Score {
   id: string;
   studentId: string;
@@ -38,6 +44,7 @@ export interface AutoGradingTaskResultRequest {
   details?: string[];
   errors?: string[];
   fixActions?: string[];
+  displayIssues: TaskDisplayIssue[];
 }
 
 export interface CreateScoreRequest {

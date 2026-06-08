@@ -1,83 +1,61 @@
-// src/types/grading.types.ts
+export interface TaskDisplayIssue {
+  heading: string;
+  message: string;
+  fixAction: string;
+}
 
-/**
- * Kết quả chi tiết của từng task trong bài chấm
- */
 export interface TaskResult {
-    taskId: string;
-    taskName: string;
-    score: number;
-    maxScore: number;
-    isPassed: boolean;
-    details: string[];
-    errors: string[];
-    fixActions?: string[];
+  taskId: string;
+  taskName: string;
+  score: number;
+  maxScore: number;
+  isPassed: boolean;
+  details: string[];
+  errors: string[];
+  fixActions?: string[];
+  displayIssues: TaskDisplayIssue[];
 }
 
-/**
- * Kết quả chấm điểm tự động từ backend
- */
 export interface GradingResult {
-    projectId: string;
-    projectName: string;
-    totalScore: number;
-    maxScore: number;
-    percentage: number;
-    taskResults: TaskResult[];
-    gradedAt: string;
-    status: string;
+  projectId: string;
+  projectName: string;
+  totalScore: number;
+  maxScore: number;
+  percentage: number;
+  taskResults: TaskResult[];
+  gradedAt: string;
+  status: string;
 }
 
-/**
- * Trạng thái chấm điểm cho từng học sinh
- * Bao gồm cả chấm tự động và thủ công
- */
 export interface StudentGradingState {
-    studentId: string;
-    
-    // ✅ FILE BÀI LÀM
-    studentFile: File | null;
-    
-    // ✅ TRẠNG THÁI CHẤM ĐIỂM TỰ ĐỘNG
-    isGrading: boolean;
-    gradingResult: GradingResult | null;
-    error: string | null;
-    
-    // ✅ ĐIỂM VÀ NHẬN XÉT THỦ CÔNG
-    manualScore: number | null;
-    manualComment: string;
-    autoGradingErrors: string[];
-    
-    // ✅ LỊCH SỬ CHẤM LẠI (optional - nếu cần)
-    regradeHistory?: RegradeHistoryItem[];
+  studentId: string;
+  studentFile: File | null;
+  isGrading: boolean;
+  gradingResult: GradingResult | null;
+  error: string | null;
+  manualScore: number | null;
+  manualComment: string;
+  autoGradingErrors: string[];
+  regradeHistory?: RegradeHistoryItem[];
 }
 
-/**
- * Một mục trong lịch sử chấm lại
- */
 export interface RegradeHistoryItem {
-    submissionId: string;
-    score: number;
-    gradedAt: string;
-    fileName: string;
-    gradingResult: GradingResult;
+  submissionId: string;
+  score: number;
+  gradedAt: string;
+  fileName: string;
+  gradingResult: GradingResult;
 }
 
-/**
- * Request body khi gửi file lên backend để chấm điểm
- */
 export interface GradeSubmissionRequest {
-    studentId: string;
-    assignmentId: string;
-    studentFile: File;
-    answerFile: File;
+  studentId: string;
+  assignmentId: string;
+  studentFile: File;
+  answerFile: File;
 }
 
-/**
- * Response từ backend sau khi chấm điểm
- */
 export interface GradeSubmissionResponse {
-    success: boolean;
-    message: string;
-    data: GradingResult;
+  success: boolean;
+  message: string;
+  data: GradingResult;
 }

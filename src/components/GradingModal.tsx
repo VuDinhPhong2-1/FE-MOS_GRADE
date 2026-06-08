@@ -11,7 +11,6 @@ import { assignmentService } from '../services/assignment.service';
 import { notify, type NotifyIssue } from '../utils/notify';
 import { scoreService } from '../services/score.service';
 import { gradingService } from '../services/grading.service';
-import { stripGradingGuideSection } from '../utils/gradingText';
 import { getNotifyIssuesFromTaskResults } from '../utils/gradingIssues';
 import "./GradingModal.css";
 
@@ -36,6 +35,7 @@ interface MultiScoreCellValue {
     scoreValue: number | null;
     feedback: string;
     autoGradingErrors: string[];
+    autoGradingTaskResults: AutoGradingTaskResultRequest[];
 }
 
 interface PersistedScoreSnapshot {
@@ -43,6 +43,7 @@ interface PersistedScoreSnapshot {
     scoreValue: number | null;
     feedback: string;
     autoGradingErrors: string[];
+    autoGradingTaskResults: AutoGradingTaskResultRequest[];
 }
 
 interface SingleUndoSnapshot {
@@ -671,7 +672,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
     };
 
     const extractAutoGradingErrors = (result: GradingResult | null): string[] => {
-        return getGradingIssues(result).map((issue) => stripGradingGuideSection(issue.error));
+        return getGradingIssues(result).map((issue) => issue.message);
     };
 
     const mapTaskResultsForScorePayload = (
@@ -696,6 +697,13 @@ const GradingModal: React.FC<GradingModalProps> = ({
             const fixActions = (task.fixActions || [])
                 .map((item) => (item || '').trim())
                 .filter((item) => item.length > 0);
+            const displayIssues = (task.displayIssues || [])
+                .map((item) => ({
+                    heading: (item.heading || '').trim(),
+                    message: (item.message || '').trim(),
+                    fixAction: (item.fixAction || '').trim(),
+                }))
+                .filter((item) => item.heading.length > 0 && item.message.length > 0);
 
             return {
                 taskId,
@@ -706,14 +714,34 @@ const GradingModal: React.FC<GradingModalProps> = ({
                 details,
                 errors,
                 fixActions,
+                displayIssues,
             };
         });
     };
 
-    const renderAutoErrorDropdown = (errors: string[] | undefined, gradingResult?: GradingResult | null) => {
-        const safeErrors = (errors || []).filter((item) => item && item.trim().length > 0);
-        const issues = getGradingIssues(gradingResult || null);
-        const issueCount = issues.length || safeErrors.length;
+    const renderAutoErrorDropdown = (
+        errors: string[] | undefined,
+        gradingResult?: GradingResult | null,
+        persistedTaskResults?: AutoGradingTaskResultRequest[]
+    ) => {
+        const issues = gradingResult
+            ? getGradingIssues(gradingResult)
+            : (() => {
+                const taskResultIssues = getNotifyIssuesFromTaskResults(persistedTaskResults);
+                if (taskResultIssues.length > 0) {
+                    return taskResultIssues;
+                }
+
+                return (errors || [])
+                    .map((message) => (message || '').trim())
+                    .filter((message) => message.length > 0)
+                    .map((message) => ({
+                        heading: 'Lỗi chấm tự động',
+                        message,
+                        fixAction: '',
+                    }));
+            })();
+        const issueCount = issues.length;
         if (issueCount === 0) return null;
 
         return (
@@ -723,12 +751,8 @@ const GradingModal: React.FC<GradingModalProps> = ({
                     className="cursor-pointer text-[11px] text-amber-700 hover:text-amber-800"
                     onClick={() => {
                         try {
-                            const messagePart = issues.length > 0
-                                ? issues.map((issue) => issue.error).join('\n\n')
-                                : safeErrors.join('\n\n');
-
                             notify.custom({
-                                message: messagePart || 'Lỗi chấm tự động',
+                                message: 'Lỗi chấm tự động',
                                 type: 'error',
                                 issues,
                                 title: 'Lỗi chấm tự động',
@@ -798,6 +822,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                     scoreValue: typeof item.scoreValue === 'number' ? item.scoreValue : null,
                     feedback: item.feedback || '',
                     autoGradingErrors: item.autoGradingErrors || [],
+                    autoGradingTaskResults: item.autoGradingTaskResults || [],
                 });
             });
             setSinglePersistedScores(nextPersistedScores);
@@ -847,7 +872,12 @@ const GradingModal: React.FC<GradingModalProps> = ({
                 const rowMap = new Map<string, MultiScoreCellValue>();
                 const persistedRowMap = new Map<string, PersistedScoreSnapshot>();
                 gradingStudents.forEach((student) => {
-                    rowMap.set(student.id, { scoreValue: null, feedback: '', autoGradingErrors: [] });
+                    rowMap.set(student.id, {
+                        scoreValue: null,
+                        feedback: '',
+                        autoGradingErrors: [],
+                        autoGradingTaskResults: [],
+                    });
                 });
                 nextMap.set(assignmentId, rowMap);
                 nextPersistedMap.set(assignmentId, persistedRowMap);
@@ -862,12 +892,14 @@ const GradingModal: React.FC<GradingModalProps> = ({
                         scoreValue: typeof item.scoreValue === 'number' ? item.scoreValue : null,
                         feedback: item.feedback || '',
                         autoGradingErrors: item.autoGradingErrors || [],
+                        autoGradingTaskResults: item.autoGradingTaskResults || [],
                     });
                     persistedRowMap.set(item.studentId, {
                         scoreId: item.id,
                         scoreValue: typeof item.scoreValue === 'number' ? item.scoreValue : null,
                         feedback: item.feedback || '',
                         autoGradingErrors: item.autoGradingErrors || [],
+                        autoGradingTaskResults: item.autoGradingTaskResults || [],
                     });
                 });
             });
@@ -1049,6 +1081,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                         scoreValue: previousPersistedScore.scoreValue,
                         feedback: previousPersistedScore.feedback,
                         autoGradingErrors: [...(previousPersistedScore.autoGradingErrors || [])],
+                        autoGradingTaskResults: [...(previousPersistedScore.autoGradingTaskResults || [])],
                     }
                     : null,
             });
@@ -1247,6 +1280,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                     scoreValue: previousPersisted.scoreValue,
                                     feedback: previousPersisted.feedback,
                                     autoGradingErrors: previousPersisted.autoGradingErrors || [],
+                                    autoGradingTaskResults: previousPersisted.autoGradingTaskResults || [],
                                 },
                             ],
                         },
@@ -1265,6 +1299,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                         : null,
                                 feedback: restoredScore.feedback || '',
                                 autoGradingErrors: restoredScore.autoGradingErrors || [],
+                                autoGradingTaskResults: restoredScore.autoGradingTaskResults || [],
                             });
                             return next;
                         });
@@ -1374,6 +1409,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                             scoreValue: typeof savedScore.scoreValue === 'number' ? savedScore.scoreValue : null,
                             feedback: savedScore.feedback || '',
                             autoGradingErrors: savedScore.autoGradingErrors || [],
+                            autoGradingTaskResults: savedScore.autoGradingTaskResults || [],
                         });
                         return next;
                     });
@@ -1431,6 +1467,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                     scoreValue: currentScoreState?.scoreValue ?? null,
                     feedback: currentScoreState?.feedback || '',
                     autoGradingErrors: [...(currentScoreState?.autoGradingErrors || [])],
+                    autoGradingTaskResults: [...(currentScoreState?.autoGradingTaskResults || [])],
                 },
             });
             return next;
@@ -1462,10 +1499,12 @@ const GradingModal: React.FC<GradingModalProps> = ({
                 scoreValue: null,
                 feedback: '',
                 autoGradingErrors: [],
+                autoGradingTaskResults: [],
             };
             rowMap.set(studentId, {
                 ...current,
                 autoGradingErrors: [],
+                autoGradingTaskResults: [],
             });
             next.set(assignmentId, rowMap);
             return next;
@@ -1521,7 +1560,8 @@ const GradingModal: React.FC<GradingModalProps> = ({
             });
 
             const autoErrors = extractAutoGradingErrors(result);
-            handleMultiScoreChange(assignmentId, studentId, scaledAutoScore, autoErrors);
+            const autoTaskResults = mapTaskResultsForScorePayload(result);
+            handleMultiScoreChange(assignmentId, studentId, scaledAutoScore, autoErrors, autoTaskResults);
         } catch (error: unknown) {
             const errorMessage = error instanceof Error ? error.message : 'Lỗi không xác định';
             setMultiAutoStates((prev) => {
@@ -1781,6 +1821,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                 scoreValue: snapshot.previousScoreState.scoreValue,
                 feedback: snapshot.previousScoreState.feedback,
                 autoGradingErrors: [...(snapshot.previousScoreState.autoGradingErrors || [])],
+                autoGradingTaskResults: [...(snapshot.previousScoreState.autoGradingTaskResults || [])],
             });
             next.set(assignmentId, rowMap);
             return next;
@@ -1797,7 +1838,8 @@ const GradingModal: React.FC<GradingModalProps> = ({
         assignmentId: string,
         studentId: string,
         value: number | null,
-        autoErrors?: string[]
+        autoErrors?: string[],
+        autoTaskResults?: AutoGradingTaskResultRequest[]
     ) => {
         setMultiScores((prev) => {
             const next = new Map(prev);
@@ -1806,11 +1848,13 @@ const GradingModal: React.FC<GradingModalProps> = ({
                 scoreValue: null,
                 feedback: '',
                 autoGradingErrors: [],
+                autoGradingTaskResults: [],
             };
             rowMap.set(studentId, {
                 ...current,
                 scoreValue: value,
                 autoGradingErrors: autoErrors ?? current.autoGradingErrors ?? [],
+                autoGradingTaskResults: autoTaskResults ?? current.autoGradingTaskResults ?? [],
             });
             next.set(assignmentId, rowMap);
             return next;
@@ -1922,7 +1966,11 @@ const GradingModal: React.FC<GradingModalProps> = ({
                 const currentErrors = current.autoGradingErrors || [];
                 const persistedErrors = persisted.autoGradingErrors || [];
                 if (currentErrors.length !== persistedErrors.length) return true;
-                return !currentErrors.every((err, idx) => err === persistedErrors[idx]);
+                if (!currentErrors.every((err, idx) => err === persistedErrors[idx])) return true;
+
+                const currentTaskResults = current.autoGradingTaskResults || [];
+                const persistedTaskResults = persisted.autoGradingTaskResults || [];
+                return JSON.stringify(currentTaskResults) !== JSON.stringify(persistedTaskResults);
             };
 
             for (const assignmentId of multiAssignmentIds) {
@@ -1944,7 +1992,10 @@ const GradingModal: React.FC<GradingModalProps> = ({
                             scoreValue: item.scoreValue!,
                             feedback: item.feedback,
                             autoGradingErrors: item.autoGradingErrors || [],
-                            autoGradingTaskResults: mapTaskResultsForScorePayload(autoState?.gradingResult || null),
+                            autoGradingTaskResults:
+                                autoState?.gradingResult
+                                    ? mapTaskResultsForScorePayload(autoState.gradingResult)
+                                    : item.autoGradingTaskResults || [],
                         };
                     });
 
@@ -2699,6 +2750,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                         {gradingStudents.map((student, index) => {
                             const state = studentGradingStates.get(student.id);
                             const autoErrors = state?.autoGradingErrors || extractAutoGradingErrors(state?.gradingResult || null);
+                            const persistedScore = singlePersistedScores.get(student.id);
                             const canUndoSingle =
                                 singleUndoSnapshots.has(student.id) ||
                                 Boolean(
@@ -2771,7 +2823,11 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                                     {undoingSingleStudentId === student.id ? 'Đang hoàn tác...' : 'Hoàn tác file vừa chọn'}
                                                 </button>
                                             )}
-                                            {renderAutoErrorDropdown(autoErrors, state?.gradingResult || null)}
+                                            {renderAutoErrorDropdown(
+                                                autoErrors,
+                                                state?.gradingResult || null,
+                                                persistedScore?.autoGradingTaskResults || []
+                                            )}
                                         </div>
                                     </td>
                                     <td className="px-4 py-3 text-center">
@@ -3422,7 +3478,11 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                                                         Hoàn tác
                                                                     </button>
                                                                 )}
-                                                                {renderAutoErrorDropdown(cellErrors, autoState?.gradingResult || null)}
+                                                                {renderAutoErrorDropdown(
+                                                                    cellErrors,
+                                                                    autoState?.gradingResult || null,
+                                                                    current?.autoGradingTaskResults || []
+                                                                )}
                                                             </div>
                                                         )}
                                                     </td>

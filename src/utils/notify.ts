@@ -1,10 +1,9 @@
 export type NotifyType = 'success' | 'error' | 'warning' | 'info';
 
 export interface NotifyIssue {
-  taskId?: string;
-  taskName?: string;
-  error: string;
-  fixAction?: string;
+  heading: string;
+  message: string;
+  fixAction: string;
 }
 
 export interface NotifyPayload {
@@ -99,4 +98,3 @@ export const installAlertInterceptor = () => {
 };
 
 export const notifyEventName = NOTIFY_EVENT_NAME;
-
