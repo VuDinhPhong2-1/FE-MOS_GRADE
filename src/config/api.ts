@@ -1,5 +1,6 @@
 const defaultLocalOrigin = 'https://localhost:7223';
 const defaultLocalAgentOrigin = 'http://localhost:5286';
+const defaultLocalAgentApiKey = 'DEV_LOCAL_AGENT_KEY_CHANGE_ME';
 
 type ApiTarget = 'local' | 'deploy';
 
@@ -60,4 +61,5 @@ export const LOCAL_AGENT_BASE_URL = normalizeOriginUrl(
   import.meta.env.VITE_LOCAL_AGENT_BASE_URL as string | undefined,
   defaultLocalAgentOrigin
 );
-export const LOCAL_AGENT_API_KEY = (import.meta.env.VITE_LOCAL_AGENT_API_KEY as string | undefined)?.trim() || '';
+export const LOCAL_AGENT_API_KEY =
+  (import.meta.env.VITE_LOCAL_AGENT_API_KEY as string | undefined)?.trim() || defaultLocalAgentApiKey;
