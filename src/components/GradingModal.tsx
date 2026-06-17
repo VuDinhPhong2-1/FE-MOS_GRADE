@@ -757,7 +757,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                 issues,
                                 title: 'Lỗi chấm tự động',
                             });
-                        } catch (e) {
+                        } catch {
                             // ignore
                         }
                     }}

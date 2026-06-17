@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <title>PLAN MỤC 3-5: THI MOS THEO CA NHIỀU PROJECT VỚI LOCAL AGENT</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 1.8cm;
+    }
+    body {
+      font-family: "Times New Roman", serif;
+      font-size: 12pt;
+      line-height: 1.45;
+      color: #111827;
+    }
+    h1, h2, h3 {
+      color: #0f172a;
+      margin-top: 18pt;
+      margin-bottom: 8pt;
+    }
+    h1 {
+      font-size: 18pt;
+      text-align: center;
+      margin-top: 0;
+    }
+    h2 {
+      font-size: 14pt;
+      border-bottom: 1px solid #cbd5e1;
+      padding-bottom: 3pt;
+    }
+    h3 {
+      font-size: 12.5pt;
+    }
+    p {
+      margin: 0 0 8pt 0;
+    }
+    ul {
+      margin: 0 0 10pt 18pt;
+    }
+    li {
+      margin-bottom: 4pt;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 10pt 0 14pt 0;
+      table-layout: fixed;
+    }
+    th, td {
+      border: 1px solid #94a3b8;
+      padding: 6pt 7pt;
+      vertical-align: top;
+      word-wrap: break-word;
+    }
+    th {
+      background: #e2e8f0;
+      font-weight: bold;
+      text-align: left;
+    }
+    .note {
+      background: #f8fafc;
+      border-left: 4px solid #64748b;
+      padding: 8pt 10pt;
+      margin: 8pt 0 14pt 0;
+    }
+    .small {
+      font-size: 11pt;
+    }
+  </style>
+</head>
+<body>
+  <h1>PLAN MỤC 3-5: THI MOS THEO CA NHIỀU PROJECT VỚI LOCAL AGENT</h1>
+  <p><strong>Bản bổ sung:</strong> giữ nguyên tên kỹ thuật tiếng Anh để dev triển khai, đồng thời thêm giải thích tiếng Việt cho model, trường dữ liệu, API endpoint và thư mục/chức năng liên quan.</p>
+
+  <div class="note small">
+    <strong>Ghi chú đọc tài liệu:</strong> Tên kỹ thuật bằng tiếng Anh được giữ nguyên để dev triển khai đúng theo code/API; phần tiếng Việt bên cạnh dùng để giải thích nghiệp vụ và ngữ nghĩa.
+  </div>
+
+  <h2>1. Tóm tắt</h2>
+  <p>Nâng plan từ mô hình <strong>1 publication = 1 project</strong> sang <strong>1 publication = 1 ca thi gồm nhiều project theo thứ tự</strong>, ví dụ Project 01 -&gt; Project 02 -&gt; Project 03.</p>
+  <p><strong>Local Agent (ứng dụng chạy trên máy học sinh)</strong> cần bổ sung API chuyển bài. Sau khi học sinh làm xong một project, hệ thống tự <strong>submit (nộp bài)</strong> và chấm ngay project hiện tại, sau đó copy/mở project kế tiếp trong cùng session.</p>
+
+  <h2>2. Mô hình dữ liệu</h2>
+
+  <h3>2.1 ExamPublication (cấu hình phát hành ca thi)</h3>
+  <p><strong>ExamPublication (cấu hình phát hành ca thi)</strong> là bản ghi phát hành đề/ca thi cho học sinh. Trước đây mỗi publication chỉ gắn với một project, nay một publication chứa danh sách nhiều project theo đúng thứ tự làm bài.</p>
+  
+  <table>
+    <thead>
+      <tr><th>Tên tiếng Anh</th><th>Tên/ý nghĩa tiếng Việt</th><th>Mục đích sử dụng</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>ExamPublication</td><td>Cấu hình phát hành ca thi</td><td>Lưu cấu hình của ca thi được giáo viên phát hành.</td></tr><tr><td>projectSequence</td><td>Danh sách project theo thứ tự</td><td>Quy định học sinh phải làm Project 01, rồi Project 02, rồi Project 03...</td></tr><tr><td>order</td><td>Thứ tự project</td><td>Số thứ tự của project trong ca thi.</td></tr><tr><td>projectCode</td><td>Mã project</td><td>Mã định danh project, ví dụ WORD_P01 hoặc EXCEL_P02.</td></tr><tr><td>subject</td><td>Môn/ứng dụng thi</td><td>Cho biết project thuộc Word, Excel, PowerPoint...</td></tr><tr><td>templateFileName</td><td>Tên file mẫu</td><td>Tên file gốc mà Agent sẽ copy để học sinh làm bài.</td></tr><tr><td>gradingApiEndpoint</td><td>Đường dẫn API chấm điểm</td><td>Endpoint dùng để gửi file bài làm lên hệ thống chấm.</td></tr><tr><td>taskSnapshot</td><td>Bản sao danh sách task</td><td>Lưu danh sách yêu cầu của project tại thời điểm phát hành để tránh bị thay đổi về sau.</td></tr><tr><td>modeRules</td><td>Quy tắc theo chế độ</td><td>Quy định khác nhau giữa Training và Testing, ví dụ hiển thị feedback hay không.</td></tr>
+    </tbody>
+  </table>
+
+
+  <h3>2.2 ExamSession (phiên làm bài của học sinh)</h3>
+  <p><strong>ExamSession (phiên làm bài/phiên thi)</strong> là phiên làm bài cấp ca thi. Một session có thể gồm nhiều project con và lưu tiến độ hiện tại của học sinh.</p>
+  
+  <table>
+    <thead>
+      <tr><th>Tên tiếng Anh</th><th>Tên/ý nghĩa tiếng Việt</th><th>Mục đích sử dụng</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>ExamSession</td><td>Phiên làm bài/phiên thi</td><td>Đại diện cho toàn bộ ca thi của một học sinh.</td></tr><tr><td>currentProjectIndex</td><td>Vị trí project hiện tại</td><td>Cho biết học sinh đang ở project số mấy trong projectSequence.</td></tr><tr><td>currentProjectStatus</td><td>Trạng thái project hiện tại</td><td>Cho biết project hiện tại đang làm, đã nộp, đã chấm hay lỗi.</td></tr><tr><td>projectAttempts[]</td><td>Danh sách lần làm từng project</td><td>Lưu kết quả và file làm bài của từng project con.</td></tr><tr><td>completedProjectCount</td><td>Số project đã hoàn thành</td><td>Dùng để hiển thị tiến độ như Project 2/10.</td></tr><tr><td>aggregateScore</td><td>Điểm tổng toàn ca thi</td><td>Điểm tổng hợp sau khi hoàn tất tất cả project.</td></tr>
+    </tbody>
+  </table>
+
+
+  <h3>2.3 ExamSessionProjectAttempt (lần làm bài của một project)</h3>
+  <p><strong>ExamSessionProjectAttempt (lần làm bài của một project con)</strong> lưu thông tin chi tiết cho từng project con trong một session. Đây là nơi lưu <strong>working file (file đang làm)</strong>, điểm, feedback và số lần restart/nộp lại.</p>
+  
+  <table>
+    <thead>
+      <tr><th>Tên tiếng Anh</th><th>Tên/ý nghĩa tiếng Việt</th><th>Mục đích sử dụng</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>ExamSessionProjectAttempt</td><td>Lần làm bài của project</td><td>Bản ghi chi tiết cho một project trong ca thi.</td></tr><tr><td>projectCode</td><td>Mã project</td><td>Liên kết attempt với project cụ thể.</td></tr><tr><td>subject</td><td>Môn/ứng dụng thi</td><td>Xác định Word/Excel/PowerPoint để mở đúng phần mềm.</td></tr><tr><td>templateFileName</td><td>Tên file mẫu</td><td>File gốc để copy khi bắt đầu hoặc restart project.</td></tr><tr><td>workingFilePath</td><td>Đường dẫn file đang làm</td><td>File thực tế mà học sinh đang chỉnh sửa trong thư mục Exam.</td></tr><tr><td>status</td><td>Trạng thái</td><td>Chưa bắt đầu, đang làm, đã nộp, đã chấm, lỗi...</td></tr><tr><td>startedAt</td><td>Thời điểm bắt đầu</td><td>Ghi nhận khi học sinh bắt đầu project.</td></tr><tr><td>submittedAt</td><td>Thời điểm nộp</td><td>Ghi nhận khi project được submit (nộp bài).</td></tr><tr><td>score</td><td>Điểm project</td><td>Điểm riêng của project hiện tại.</td></tr><tr><td>feedback</td><td>Phản hồi/chấm lỗi</td><td>Chi tiết lỗi hoặc nhận xét theo từng task.</td></tr><tr><td>attemptNo</td><td>Số lần làm lại</td><td>Tăng khi học sinh restart hoặc làm lại project hiện tại.</td></tr>
+    </tbody>
+  </table>
+
+
+  <h2>3. API/backend cần bổ sung</h2>
+  <p>Các <strong>endpoint (đường dẫn API)</strong> bên dưới được chia theo nhóm người gọi: giáo viên, học sinh/FE, Local Agent và backend dành riêng cho Agent.</p>
+  
+  <table>
+    <thead>
+      <tr><th>Nhóm API</th><th>Endpoint</th><th>Giải thích tiếng Việt ngắn</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Teacher API</td><td>POST /api/exam-publications</td><td>Giáo viên tạo publication/ca thi gồm nhiều project theo thứ tự.</td></tr><tr><td>Student Public API</td><td>GET /api/public/exams/{token}/sessions/{sessionId}</td><td>FE học sinh lấy trạng thái session và project hiện tại.</td></tr><tr><td>Student Public API</td><td>POST /api/public/exams/{token}/sessions/{sessionId}/next-project</td><td>FE yêu cầu chuyển sang project kế tiếp.</td></tr><tr><td>Local Agent API</td><td>POST /start-exam</td><td>Agent bắt đầu ca thi và mở project đầu tiên.</td></tr><tr><td>Local Agent API</td><td>POST /submit-current-project</td><td>Agent nộp file của project hiện tại để chấm.</td></tr><tr><td>Local Agent API</td><td>POST /next-project</td><td>Agent submit project hiện tại, chờ chấm, rồi mở project kế tiếp.</td></tr><tr><td>Local Agent API</td><td>POST /restart-current-project</td><td>Agent reset/làm lại đúng project đang làm.</td></tr><tr><td>Local Agent API</td><td>GET /current-state</td><td>FE lấy trạng thái hiện tại từ Agent local.</td></tr><tr><td>Agent-facing Backend API</td><td>POST /api/agent/exam-sessions/{sessionId}/projects/{projectCode}/score-upload</td><td>Agent/backend chấm điểm gửi kết quả project lên backend.</td></tr><tr><td>Agent-facing Backend API</td><td>POST /api/agent/exam-sessions/{sessionId}/advance</td><td>Backend xác nhận và chuyển session sang project tiếp theo.</td></tr><tr><td>Agent-facing Backend API</td><td>GET /api/agent/exam-sessions/{sessionId}/current-project-bootstrap</td><td>Agent lấy dữ liệu khởi tạo project hiện tại hoặc kế tiếp.</td></tr>
+    </tbody>
+  </table>
+
+
+  <h2>4. Giải thích chi tiết endpoint</h2>
+  
+  <table>
+    <thead>
+      <tr><th>Endpoint</th><th>Tên tiếng Việt</th><th>Bên gọi</th><th>Bên xử lý</th><th>Giải thích chi tiết</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>POST /api/exam-publications</td><td>Tạo publication/ca thi nhiều project</td><td>FE giáo viên</td><td>Backend</td><td>Nhận danh sách projectSequence thay vì một project đơn. Backend lưu thứ tự project, taskSnapshot, modeRules và cấu hình file mẫu/chấm điểm.</td></tr><tr><td>GET /api/public/exams/{token}/sessions/{sessionId}</td><td>Lấy trạng thái phiên thi</td><td>FE học sinh</td><td>Backend public</td><td>Trả về project hiện tại, project kế tiếp, tiến độ Project x/y, trạng thái project hiện tại, task list và instruction panel cần hiển thị.</td></tr><tr><td>POST /api/public/exams/{token}/sessions/{sessionId}/next-project</td><td>Yêu cầu chuyển project</td><td>FE học sinh</td><td>Backend public hoặc Agent qua FE</td><td>Dùng khi học sinh bấm Project tiếp theo. Endpoint này không tự mở file; nó điều phối trạng thái và/hoặc yêu cầu Agent xử lý chuyển bài.</td></tr><tr><td>POST /start-exam</td><td>Bắt đầu ca thi trên máy local</td><td>FE học sinh</td><td>Local Agent</td><td>Agent lấy metadata project đầu tiên, copy file mẫu từ Desktop\MOS\Template sang Desktop\MOS\Exam, mở file bài làm và cập nhật current project context.</td></tr><tr><td>POST /submit-current-project</td><td>Nộp project hiện tại</td><td>FE học sinh hoặc Agent nội bộ</td><td>Local Agent</td><td>Agent lấy file đang làm, upload/chấm project hiện tại và cập nhật kết quả. Nếu lỗi upload/chấm thì không được chuyển project.</td></tr><tr><td>POST /next-project</td><td>Chuyển sang project kế tiếp</td><td>FE học sinh</td><td>Local Agent</td><td>Endpoint quan trọng nhất. Agent khóa chống bấm đúp, submit project hiện tại, chờ backend chấm xong, gọi advance, lấy bootstrap project mới, copy file mẫu mới và mở file mới.</td></tr><tr><td>POST /restart-current-project</td><td>Làm lại project hiện tại</td><td>FE học sinh</td><td>Local Agent</td><td>Chỉ reset project đang làm. Agent copy lại đúng file mẫu của project hiện tại, không ảnh hưởng điểm của project đã nộp trước đó.</td></tr><tr><td>GET /current-state</td><td>Lấy trạng thái Agent</td><td>FE học sinh</td><td>Local Agent</td><td>Trả project hiện tại, file đang mở, trạng thái xử lý, tiến độ, lỗi gần nhất nếu có. FE dùng để khóa/mở nút và đồng bộ instruction panel.</td></tr><tr><td>POST /api/agent/exam-sessions/{sessionId}/projects/{projectCode}/score-upload</td><td>Gửi điểm project</td><td>Local Agent hoặc service chấm</td><td>Backend agent API</td><td>Nhận điểm, feedback, trạng thái chấm và lưu vào projectAttempts[] của đúng projectCode.</td></tr><tr><td>POST /api/agent/exam-sessions/{sessionId}/advance</td><td>Chuyển session sang project kế tiếp</td><td>Local Agent</td><td>Backend agent API</td><td>Chỉ cho advance khi project hiện tại đã submit/chấm thành công. Backend tăng currentProjectIndex và trả metadata project tiếp theo hoặc trạng thái hoàn thành ca thi.</td></tr><tr><td>GET /api/agent/exam-sessions/{sessionId}/current-project-bootstrap</td><td>Lấy dữ liệu mở project</td><td>Local Agent</td><td>Backend agent API</td><td>Trả thông tin cần thiết để Agent mở project: projectCode, subject, templateFileName, taskSnapshot, modeRules và đường dẫn/cấu hình liên quan.</td></tr>
+    </tbody>
+  </table>
+
+
+  <h2>5. Hành vi nghiệp vụ</h2>
+  <h3>5.1 Bắt đầu ca thi</h3>
+  <ul><li>Học sinh vào link, chọn tên và tạo session.</li><li>Agent mở project đầu tiên trong projectSequence.</li><li>FE hiển thị project hiện tại, tổng số project và task list của project hiện tại.</li></ul>
+
+  <h3>5.2 Chuyển sang bài tiếp theo</h3>
+  <ul><li>Học sinh bấm Chuyển qua Project 02.</li><li>FE gọi Agent endpoint POST /next-project.</li><li>Agent submit project hiện tại, chờ backend chấm, sau đó mở project kế tiếp.</li><li>FE nạp lại task list và instruction panel của project mới.</li></ul>
+
+  <h3>5.3 Kết thúc ca thi</h3>
+  <ul><li>Khi hoàn tất project cuối cùng, next-project không còn khả dụng.</li><li>FE chuyển sang trạng thái Hoàn thành ca thi.</li><li>Backend tính aggregateScore từ toàn bộ projectAttempts[].</li></ul>
+
+  <h3>5.4 Restart project</h3>
+  <ul><li>Restart chỉ áp dụng cho project hiện tại.</li><li>Không làm mất điểm của project đã submit trước đó.</li><li>Nếu restart trước khi submit, chỉ reset file bài con đó.</li></ul>
+
+  <h2>6. FE và Agent</h2>
+  
+  <table>
+    <thead>
+      <tr><th>Khu vực</th><th>Chức năng cần thêm</th><th>Giải thích tiếng Việt</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>FE học sinh</td><td>Nút Project tiếp theo</td><td>Cho phép học sinh chuyển sang project kế tiếp sau khi làm xong project hiện tại.</td></tr><tr><td>FE học sinh</td><td>Progress Project 1/10</td><td>Hiển thị học sinh đang ở project số mấy trên tổng số project.</td></tr><tr><td>FE học sinh</td><td>Task list động</td><td>Task list và instruction panel phải đổi theo project hiện tại.</td></tr><tr><td>FE học sinh</td><td>Khóa thao tác khi chuyển bài</td><td>Tránh học sinh bấm nhiều lần trong lúc Agent đang submit/chấm/mở bài mới.</td></tr><tr><td>FE giáo viên</td><td>Chọn danh sách project theo thứ tự</td><td>Màn tạo publication cho phép kéo/thả hoặc chọn thứ tự project.</td></tr><tr><td>FE giáo viên</td><td>Monitor project hiện tại</td><td>Màn monitor cần hiển thị học sinh đang ở project số mấy, không chỉ started/submitted.</td></tr><tr><td>Local Agent</td><td>current project context</td><td>Agent lưu ngữ cảnh project hiện tại: projectCode, file path, status, sessionId.</td></tr><tr><td>Local Agent</td><td>Chống bấm đúp next-project</td><td>Không cho mở hai project kế tiếp cùng lúc.</td></tr><tr><td>Local Agent</td><td>Từ chối advance khi submit lỗi</td><td>Nếu upload/chấm thất bại thì giữ nguyên project hiện tại.</td></tr><tr><td>Local Agent</td><td>Luôn lấy file từ Template</td><td>Không tái sử dụng file đã làm từ project trước.</td></tr>
+    </tbody>
+  </table>
+
+
+  <h3>6.1 Tạo ca thi cho lớp (FE giáo viên)</h3>
+  <ul><li>Giáo viên đăng nhập vào FE admin, chọn menu Quản lý ca thi.</li><li>Nhấn nút Tạo ca thi, nhập tên ca thi và mô tả (nếu có).</li><li>Chọn danh sách project (projectSequence) và sắp xếp thứ tự làm bài.</li><li>Chọn lớp học hoặc danh sách học sinh tham gia.</li><li>Thiết lập ngày giờ thi, thời gian làm bài và các thông số khác (thời gian đóng ca, điểm mục tiêu...).</li><li>Xác nhận và lưu. FE sẽ gọi API tạo publication chứa projectSequence và gắn ca thi vào lớp.</li><li>Hệ thống hiển thị link dự thi để giáo viên gửi cho học sinh, và quản lý danh sách học sinh cùng trạng thái ca thi.</li><li>Giáo viên có thể chỉnh sửa hoặc hủy ca thi trước khi học sinh bắt đầu.</li><li>Tên học sinh được chọn trong FE tương ứng với StudentId, hệ thống sẽ lưu điểm theo StudentId thay vì chỉ theo tên.</li></ul>
+
+  <h2>7. Test plan</h2>
+  <ul><li>Publication nhiều project được tạo đúng thứ tự.</li><li>Start exam mở đúng project đầu tiên.</li><li>Next-project submit và chấm ngay project hiện tại trước khi mở project kế tiếp.</li><li>Nếu upload/chấm lỗi thì không được advance sang project mới.</li><li>Task list/instruction đổi đúng khi sang project tiếp theo.</li><li>Restart chỉ reset project hiện tại.</li><li>Hoàn tất project cuối thì session chuyển sang complete và tính điểm tổng đúng.</li><li>Agent không ghi đè file của project trước khi đã lưu kết quả.</li></ul>
+
+  <h2>8. Giả định và mặc định đã chốt</h2>
+  <ul><li>Một ca thi có thể gồm nhiều project nối tiếp.</li><li>Khi sang project tiếp theo, hệ thống tự lưu và chấm ngay project vừa xong.</li><li>File mẫu vẫn được phát sẵn thủ công tại Desktop\MOS\Template.</li><li>Agent cần bổ sung API next-project; plan trước còn thiếu phần này.</li></ul>
+
+  <h2>9. Từ điển thuật ngữ tiếng Anh - tiếng Việt</h2>
+  
+  <table>
+    <thead>
+      <tr><th>Thuật ngữ tiếng Anh</th><th>Nên hiểu là</th><th>Giải thích</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Publication</td><td>Đợt phát hành đề/ca thi</td><td>Cấu hình do giáo viên tạo để học sinh vào làm bài.</td></tr><tr><td>Session</td><td>Phiên làm bài</td><td>Một lượt làm bài của một học sinh trong một ca thi.</td></tr><tr><td>Project</td><td>Bài thi con</td><td>Một phần bài thi Word/Excel/PowerPoint trong ca thi.</td></tr><tr><td>Attempt</td><td>Lần làm bài</td><td>Một lần thực hiện hoặc nộp một project.</td></tr><tr><td>Local Agent</td><td>Ứng dụng chạy trên máy học sinh</td><td>Phần mềm local có nhiệm vụ mở file, copy template, submit file và chuyển bài.</td></tr><tr><td>Endpoint</td><td>Đường dẫn API/chức năng API</td><td>URL để FE, Agent hoặc service gọi backend thực hiện một chức năng.</td></tr><tr><td>Submit</td><td>Nộp bài</td><td>Gửi file đang làm lên hệ thống để chấm.</td></tr><tr><td>Grading</td><td>Chấm điểm</td><td>Xử lý file bài làm và tạo điểm/feedback.</td></tr><tr><td>Score Upload</td><td>Gửi kết quả chấm</td><td>Đẩy điểm và feedback của project về backend.</td></tr><tr><td>Advance</td><td>Chuyển bước/chuyển project</td><td>Cập nhật session sang project tiếp theo.</td></tr><tr><td>Bootstrap</td><td>Dữ liệu khởi tạo</td><td>Thông tin ban đầu để Agent mở đúng project/file/task.</td></tr><tr><td>Task Snapshot</td><td>Bản sao task tại lúc phát hành</td><td>Giữ task ổn định dù project gốc bị chỉnh sửa sau này.</td></tr><tr><td>Mode Rules</td><td>Quy tắc chế độ</td><td>Các quy tắc riêng cho Training/Testing.</td></tr><tr><td>Current Project Context</td><td>Ngữ cảnh project hiện tại</td><td>Thông tin Agent đang giữ để biết file nào/project nào đang làm.</td></tr><tr><td>Aggregate Score</td><td>Điểm tổng</td><td>Điểm tổng hợp của toàn bộ project trong session.</td></tr><tr><td>Template</td><td>File mẫu</td><td>File gốc chưa làm bài, dùng để copy ra file làm bài.</td></tr><tr><td>Working File</td><td>File đang làm</td><td>File học sinh đang chỉnh sửa trong thư mục Exam.</td></tr>
+    </tbody>
+  </table>
+
+</body>
+</html>

@@ -34,9 +34,12 @@ VITE_API_LOCAL_URL=https://localhost:7223
 VITE_API_DEPLOY_URL=https://be-mos-excel-grade.onrender.com
 VITE_API_BASE_URL=
 VITE_GOOGLE_CLIENT_ID=
+VITE_LOCAL_AGENT_BASE_URL=http://localhost:5055
+VITE_LOCAL_AGENT_API_KEY=DEV_LOCAL_AGENT_KEY_CHANGE_ME
 ```
 
 API origin selection is centralized in `src/config/api.ts`. Do not hardcode API origins in components or services.
+Local Agent config is also resolved from `src/config/api.ts` so FE code can call the localhost agent without embedding URLs or keys directly in components.
 
 ## Run locally
 
@@ -98,6 +101,7 @@ npm run build
 - API config: `src/config/api.ts`
 - Auth lifecycle: `src/context/AuthContext.tsx`
 - Authenticated fetch helper: `src/services/auth-fetch.ts`
+- Local Agent service: `src/services/local-agent.service.ts`
 - Grading services: `src/services/grading.service.ts`
 - Analytics services: `src/services/analytics.service.ts`
 - Main grading UI: `src/pages/GradingView.tsx`

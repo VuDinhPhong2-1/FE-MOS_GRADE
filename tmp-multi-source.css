@@ -1,7 +1,0 @@
-﻿@import "tailwindcss" source(none);
-@source "./src/App.tsx";
-@source "./src/main.tsx";
-@source "./src/pages";
-@source "./src/components";
-@source "./src/components/Layout";
-@source "./src/context";

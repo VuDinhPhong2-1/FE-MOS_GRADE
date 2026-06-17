@@ -12,11 +12,17 @@ dist
 dist-ssr
 *.local
 package-lock.json
+!package-lock.json
 
 # Environment variables
 .env
 .env.*
 !.env.example
+!.env.be-*.example
+
+# Local scratch/debug files
+tmp-*
+.git_init_backup_*/
 
 
 # Editor directories and files

@@ -1,4 +1,5 @@
 const defaultLocalOrigin = 'https://localhost:7223';
+const defaultLocalAgentOrigin = 'http://localhost:5055';
 
 type ApiTarget = 'local' | 'deploy';
 
@@ -42,7 +43,21 @@ const resolveBaseUrl = (): string => {
   return normalizeBaseUrl(defaultLocalOrigin);
 };
 
+const normalizeOriginUrl = (rawValue: string | undefined, fallback: string): string => {
+  const trimmed = rawValue?.trim();
+  if (!trimmed) {
+    return fallback;
+  }
+
+  return trimmed.replace(/\/+$/, '');
+};
+
 export const API_TARGET = normalizeTarget(import.meta.env.VITE_API_TARGET as string | undefined);
 export const API_BASE_URL = resolveBaseUrl();
 export const API_ORIGIN = API_BASE_URL.replace(/\/api$/, '');
 export const AUTH_API_BASE_URL = `${API_BASE_URL}/auth`;
+export const LOCAL_AGENT_BASE_URL = normalizeOriginUrl(
+  import.meta.env.VITE_LOCAL_AGENT_BASE_URL as string | undefined,
+  defaultLocalAgentOrigin
+);
+export const LOCAL_AGENT_API_KEY = (import.meta.env.VITE_LOCAL_AGENT_API_KEY as string | undefined)?.trim() || '';

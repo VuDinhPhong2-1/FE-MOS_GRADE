@@ -9,6 +9,7 @@ import SchoolList from './pages/SchoolList';
 import AuthPage from './pages/AuthPage';
 import TeacherSchedule from './pages/TeacherSchedule';
 import PermissionManagement from './pages/PermissionManagement';
+import PublicExamPage from './pages/PublicExamPage';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
 const ProtectedRoute: React.FC = () => {
@@ -47,6 +48,7 @@ function App() {
     <AuthProvider>
       <Routes>
         <Route path="/login" element={<AuthPage />} />
+        <Route path="/exam/:token" element={<PublicExamPage />} />
 
         <Route element={<ProtectedRoute />}>
           <Route element={<AppLayout />}>

@@ -1354,7 +1354,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
                                         issues: assignmentIssues,
                                         title: 'Lỗi chấm tự động',
                                       });
-                                    } catch (e) {
+                                    } catch {
                                       // ignore
                                     }
                                   }}
