@@ -31,10 +31,10 @@ Create `.env` from `.env.example` or set these values:
 ```env
 VITE_API_TARGET=local
 VITE_API_LOCAL_URL=https://localhost:7223
-VITE_API_DEPLOY_URL=https://be-mos-excel-grade.onrender.com
+VITE_API_DEPLOY_URL=https://api.mos-grader-app.info.vn
 VITE_API_BASE_URL=
 VITE_GOOGLE_CLIENT_ID=
-VITE_LOCAL_AGENT_BASE_URL=http://localhost:5055
+VITE_LOCAL_AGENT_BASE_URL=http://localhost:5286
 VITE_LOCAL_AGENT_API_KEY=DEV_LOCAL_AGENT_KEY_CHANGE_ME
 ```
 
@@ -64,6 +64,12 @@ Frontend LAN URL example:
 Backend should normally run at:
 
 - `https://localhost:7223`
+
+Production domains in the current deployment plan:
+
+- Frontend: `https://mos-grader-app.info.vn`
+- Backend: `https://api.mos-grader-app.info.vn`
+- Local Agent on each client PC: `http://localhost:5286`
 
 ## Backend target modes
 

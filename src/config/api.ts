@@ -1,5 +1,5 @@
 const defaultLocalOrigin = 'https://localhost:7223';
-const defaultLocalAgentOrigin = 'http://localhost:5055';
+const defaultLocalAgentOrigin = 'http://localhost:5286';
 
 type ApiTarget = 'local' | 'deploy';
 
