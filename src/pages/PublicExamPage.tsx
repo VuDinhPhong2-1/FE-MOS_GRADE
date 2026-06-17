@@ -13,6 +13,22 @@ const defaultAgentState: LocalAgentState = {
   isBusy: false,
   isCompleted: false,
   isCurrentProjectGraded: false,
+  workingFileExists: false,
+  hasRecoverableSession: false,
+  resumeMode: 'none',
+};
+
+const normalizeAgentState = (state: LocalAgentState | null): LocalAgentState | null => {
+  if (!state) {
+    return null;
+  }
+
+  return {
+    ...state,
+    workingFileExists: state.workingFileExists ?? Boolean(state.workingFilePath),
+    hasRecoverableSession: state.hasRecoverableSession ?? Boolean(state.sessionId && state.publicationToken),
+    resumeMode: state.resumeMode ?? 'none',
+  };
 };
 
 export function PublicExamPage() {
@@ -50,13 +66,14 @@ export function PublicExamPage() {
           return;
         }
 
+        const normalizedState = normalizeAgentState(currentAgentState);
         setPublication(nextPublication);
 
         const matchingStudentId =
-          currentAgentState.publicationToken === token &&
-          currentAgentState.studentId &&
-          nextPublication.students.some((student) => student.id === currentAgentState.studentId)
-            ? currentAgentState.studentId
+          normalizedState?.publicationToken === token &&
+          normalizedState.studentId &&
+          nextPublication.students.some((student) => student.id === normalizedState.studentId)
+            ? normalizedState.studentId
             : '';
 
         setSelectedStudentId((currentValue) => {
@@ -68,8 +85,8 @@ export function PublicExamPage() {
         });
 
         setAgentState(
-          currentAgentState.publicationToken === token && currentAgentState.sessionId
-            ? currentAgentState
+          normalizedState?.publicationToken === token && normalizedState.sessionId
+            ? normalizedState
             : null
         );
       } catch (err: unknown) {
@@ -98,22 +115,42 @@ export function PublicExamPage() {
     [publication, selectedStudentId]
   );
 
+  const agentStateMatchesToken = Boolean(agentState?.sessionId && agentState.publicationToken === token);
+  const agentStateMatchesSelectedStudent = Boolean(
+    agentStateMatchesToken &&
+      selectedStudent &&
+      agentState?.studentId &&
+      agentState.studentId === selectedStudent.id
+  );
+  const canResumeCurrentStudent = Boolean(
+    agentStateMatchesSelectedStudent &&
+      agentState?.hasRecoverableSession &&
+      !agentState?.isCompleted
+  );
+  const canContinueCurrentStudent = Boolean(
+    canResumeCurrentStudent &&
+      agentState?.workingFileExists &&
+      agentState.resumeMode !== 'missing_working_file'
+  );
+  const needsRecreateCurrentStudent = Boolean(
+    canResumeCurrentStudent && !agentState?.workingFileExists
+  );
+
   const displayStudentName = selectedStudent?.fullName || agentState?.studentName || '';
-  const hasStartedExam = Boolean(agentState?.sessionId && agentState.publicationToken === token);
 
   const runAgentAction = async (
     actionKey: string,
     action: () => Promise<LocalAgentState>,
-    successText: string
+    successText: string | ((state: LocalAgentState) => string)
   ) => {
     setLoadingAction(actionKey);
     setAgentError(null);
     setSuccessMessage(null);
 
     try {
-      const nextState = await action();
+      const nextState = normalizeAgentState(await action());
       setAgentState(nextState);
-      setSuccessMessage(successText);
+      setSuccessMessage(typeof successText === 'function' ? successText(nextState!) : successText);
     } catch (err: unknown) {
       setAgentError(err instanceof Error ? err.message : 'Không gọi được Local Agent.');
     } finally {
@@ -138,9 +175,33 @@ export function PublicExamPage() {
           studentId: selectedStudent.id,
           studentName: selectedStudent.fullName,
         }),
-      'Đã bắt đầu ca thi. Local Agent sẽ mở WPF App để tiếp tục làm bài.'
+      (nextState) =>
+        nextState.status === 'resume_required' || nextState.resumeMode === 'missing_working_file'
+          ? 'Đã tìm thấy ca thi đang làm dở. Chọn Tiếp tục hoặc Làm lại project hiện tại.'
+          : 'Đã bắt đầu ca thi. Local Agent sẽ mở WPF App để tiếp tục làm bài.'
     );
   };
+
+  const handleContinueExam = () =>
+    void runAgentAction(
+      'continue',
+      () => localAgentService.continueCurrentProject(),
+      'Đã mở lại bài đang làm dở trên máy local.'
+    );
+
+  const handleRestartCurrentProject = () =>
+    void runAgentAction(
+      'restart',
+      () => localAgentService.restartCurrentProject(),
+      'Đã làm lại project hiện tại từ template.'
+    );
+
+  const handleRecreateCurrentProject = () =>
+    void runAgentAction(
+      'recreate',
+      () => localAgentService.recreateCurrentProject(),
+      'Đã tạo lại working file cho project hiện tại.'
+    );
 
   return (
     <main className="min-h-screen px-4 py-8">
@@ -203,7 +264,7 @@ export function PublicExamPage() {
                     id="public-exam-student"
                     value={selectedStudentId}
                     onChange={(event) => setSelectedStudentId(event.target.value)}
-                    disabled={hasStartedExam}
+                    disabled={loadingAction !== null || canResumeCurrentStudent}
                     className="w-full rounded-xl border border-slate-300 bg-white px-3 py-3 text-sm"
                   >
                     <option value="">-- Chọn học sinh --</option>
@@ -228,7 +289,7 @@ export function PublicExamPage() {
                 )}
 
                 <div className="flex flex-wrap gap-3">
-                  {!hasStartedExam && (
+                  {!canResumeCurrentStudent && (
                     <button
                       type="button"
                       onClick={handleStartExam}
@@ -239,6 +300,33 @@ export function PublicExamPage() {
                       {loadingAction === 'start' ? 'Đang start exam...' : 'Start exam'}
                     </button>
                   )}
+
+                  {canResumeCurrentStudent && canContinueCurrentStudent && (
+                    <button
+                      type="button"
+                      onClick={handleContinueExam}
+                      disabled={loadingAction !== null}
+                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-400"
+                    >
+                      {loadingAction === 'continue' ? <RefreshCw size={16} className="animate-spin" /> : <Play size={16} />}
+                      {loadingAction === 'continue' ? 'Đang tiếp tục...' : 'Tiếp tục bài thi'}
+                    </button>
+                  )}
+
+                  {canResumeCurrentStudent && (
+                    <button
+                      type="button"
+                      onClick={needsRecreateCurrentStudent ? handleRecreateCurrentProject : handleRestartCurrentProject}
+                      disabled={loadingAction !== null}
+                      className="inline-flex items-center justify-center gap-2 rounded-xl border border-amber-300 bg-amber-50 px-5 py-3 text-sm font-semibold text-amber-800 hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <RefreshCw size={16} className={loadingAction === 'restart' || loadingAction === 'recreate' ? 'animate-spin' : ''} />
+                      {needsRecreateCurrentStudent
+                        ? (loadingAction === 'recreate' ? 'Đang tạo lại file...' : 'Tạo lại file project hiện tại')
+                        : (loadingAction === 'restart' ? 'Đang làm lại project...' : 'Làm lại project hiện tại')}
+                    </button>
+                  )}
+
                   <button
                     type="button"
                     onClick={handleRefreshAgentState}
@@ -250,20 +338,25 @@ export function PublicExamPage() {
                   </button>
                 </div>
 
-                {hasStartedExam && agentState && (
+                {canResumeCurrentStudent && agentState && (
                   <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm text-emerald-800">
-                    <p className="font-semibold">Ca thi đã được start trên máy local.</p>
-                    <p className="mt-2">WPF App sẽ tự đọc `current-state` để hiển thị thông tin và các nút điều khiển.</p>
+                    <p className="font-semibold">Đã tìm thấy ca thi đang làm dở trên máy local.</p>
                     <p className="mt-2">Student: {displayStudentName || '-'}</p>
                     <p>Session ID: {agentState.sessionId || '-'}</p>
                     <p>
                       Project hiện tại: {agentState.currentProjectNumber}/{agentState.totalProjectCount}
                     </p>
                     <p>Status: {agentState.status}</p>
+                    {agentState.workingFilePath && <p>Working file: {agentState.workingFilePath}</p>}
+                    {!agentState.workingFileExists && (
+                      <p className="mt-2 text-rose-700">
+                        Không tìm thấy file đang làm dở. Bạn có thể tạo lại file project hiện tại từ template.
+                      </p>
+                    )}
                   </div>
                 )}
 
-                {!selectedStudent && !hasStartedExam && (
+                {!selectedStudent && !canResumeCurrentStudent && (
                   <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-4 text-sm text-slate-600">
                     Chọn đúng tên của bạn rồi bấm Start exam để mở bài thi trên Local Agent.
                   </div>

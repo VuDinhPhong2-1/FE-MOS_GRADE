@@ -62,6 +62,18 @@ export const localAgentService = {
     });
   },
 
+  continueCurrentProject(): Promise<LocalAgentState> {
+    return requestLocalAgent<LocalAgentState>("/continue-current-project", {
+      method: "POST",
+    });
+  },
+
+  recreateCurrentProject(): Promise<LocalAgentState> {
+    return requestLocalAgent<LocalAgentState>("/recreate-current-project", {
+      method: "POST",
+    });
+  },
+
   submitCurrentProject(
     request: SubmitCurrentProjectRequest = { confirmSaved: true }
   ): Promise<LocalAgentState> {

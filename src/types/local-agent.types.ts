@@ -22,6 +22,9 @@ export type LocalAgentState = {
   templateFileName?: string;
   gradingApiEndpoint?: string;
   workingFilePath?: string;
+  workingFileExists?: boolean;
+  hasRecoverableSession?: boolean;
+  resumeMode?: string;
 
   currentProjectNumber: number;
   totalProjectCount: number;
