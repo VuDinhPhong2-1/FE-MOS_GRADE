@@ -102,8 +102,8 @@ const QUICK_SELECT_PRACTICE_OPTIONS = [
     { code: 'exam_review', label: 'Ôn thi' },
 ] as const;
 
-const EXAM_REVIEW_PROJECT_NUMBERS_EXCEL = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24];
-const EXAM_REVIEW_PROJECT_NUMBERS_WORD  = [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23];
+const EXAM_REVIEW_PROJECT_NUMBERS_EXCEL = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22];
+const EXAM_REVIEW_PROJECT_NUMBERS_WORD  = [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 20, 22];
 
 const normalizeVietnameseText = (value?: string): string =>
     (value || '')
@@ -293,6 +293,20 @@ const buildBulkAssignmentDrafts = (
     });
 };
 
+const deriveExamTypeFromPractice = (practiceCode: PracticeCode): 'otth' | 'onthi' =>
+    practiceCode === 'exam_review' ? 'onthi' : 'otth';
+
+const deriveProjectCodeFromEndpoint = (endpoint: string): string | undefined => {
+    const projectNumber = extractProjectNumberFromEndpoint(endpoint);
+    const subjectMatch = endpoint.match(/^(excel|word|ppt|powerpoint)\//i);
+    if (!projectNumber || !subjectMatch) {
+        return undefined;
+    }
+
+    const subject = subjectMatch[1].toLowerCase() === 'powerpoint' ? 'ppt' : subjectMatch[1].toLowerCase();
+    return `${subject.toUpperCase()}_P${String(projectNumber).padStart(2, '0')}`;
+};
+
 const resolveEndpointsBySubjectAndPractice = (
     allEndpoints: GradingEndpointInfo[],
     subjectCode: SubjectCode,
@@ -397,6 +411,9 @@ const GradingModal: React.FC<GradingModalProps> = ({
         name: '',
         description: '',
         maxScore: 10,
+        subject: 'excel',
+        examType: 'otth',
+        projectCode: '',
         gradingType: 'auto',
         gradingApiEndpoint: '',
         isActive: true,
@@ -601,6 +618,9 @@ const GradingModal: React.FC<GradingModalProps> = ({
             name: '',
             description: '',
             maxScore: 10,
+            subject: 'excel',
+            examType: 'otth',
+            projectCode: '',
             gradingType: 'auto',
             gradingApiEndpoint: '',
             isActive: true,
@@ -2184,7 +2204,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
 
     const createBulkAssignmentsFromDrafts = async (
         drafts: BulkAssignmentDraft[],
-        options?: { closeOnSuccess?: boolean; practiceLabel?: string }
+        options?: { closeOnSuccess?: boolean; practiceLabel?: string; practiceCode?: PracticeCode }
     ) => {
         if (isCreatingAssignment) {
             return;
@@ -2207,6 +2227,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
             const createdAssignments: Assignment[] = [];
             const failedAssignments: string[] = [];
             const sharedDescription = bulkAssignmentDescription.trim();
+            const examType = deriveExamTypeFromPractice(options?.practiceCode ?? newAssignmentPracticeCode);
 
             for (const draft of selectedDrafts) {
                 try {
@@ -2215,6 +2236,9 @@ const GradingModal: React.FC<GradingModalProps> = ({
                             name: draft.name.trim(),
                             classId,
                             maxScore: draft.maxScore,
+                            subject: newAssignmentSubject,
+                            examType,
+                            projectCode: deriveProjectCodeFromEndpoint(draft.endpoint),
                             gradingType: 'auto',
                             gradingApiEndpoint: draft.endpoint,
                             description: sharedDescription || undefined,
@@ -2256,7 +2280,10 @@ const GradingModal: React.FC<GradingModalProps> = ({
     };
 
     const handleCreateBulkAssignments = async () => {
-        await createBulkAssignmentsFromDrafts(bulkAssignmentDrafts, { closeOnSuccess: true });
+        await createBulkAssignmentsFromDrafts(bulkAssignmentDrafts, {
+            closeOnSuccess: true,
+            practiceCode: newAssignmentPracticeCode,
+        });
     };
 
     const handleQuickCreateByPractice = async (practiceCode: PracticeCode) => {
@@ -2274,6 +2301,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
 
         await createBulkAssignmentsFromDrafts(quickDrafts, {
             closeOnSuccess: true,
+            practiceCode,
             practiceLabel: `${practice?.label || practiceCode} (${newAssignmentSubject.toUpperCase()})`,
         });
     };
@@ -2284,6 +2312,9 @@ const GradingModal: React.FC<GradingModalProps> = ({
             name: assignment.name,
             description: assignment.description || '',
             maxScore: assignment.maxScore,
+            subject: assignment.subject,
+            examType: assignment.examType,
+            projectCode: assignment.projectCode || '',
             gradingType: assignment.gradingType,
             gradingApiEndpoint: assignment.gradingApiEndpoint || '',
             isActive: assignment.isActive,
@@ -2307,6 +2338,9 @@ const GradingModal: React.FC<GradingModalProps> = ({
                 name: assignmentEditForm.name?.trim(),
                 description: assignmentEditForm.description || '',
                 maxScore: assignmentEditForm.maxScore,
+                subject: assignmentEditForm.subject,
+                examType: assignmentEditForm.examType,
+                projectCode: assignmentEditForm.projectCode,
                 gradingType: assignmentEditForm.gradingType,
                 gradingApiEndpoint:
                     assignmentEditForm.gradingType === 'auto'
@@ -2566,7 +2600,9 @@ const GradingModal: React.FC<GradingModalProps> = ({
                     </p>
                     {newAssignmentPracticeCode === 'exam_review' && (
                         <p className="text-xs text-indigo-700 mt-1">
-                            Ôn thi dùng nhóm project: 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24.
+                            {newAssignmentSubject === 'excel'
+                                ? 'Ôn thi Excel dùng nhóm project: 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22.'
+                                : 'Ôn thi Word dùng nhóm project: 1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23 và thêm 20, 22.'}
                         </p>
                     )}
                 </div>
@@ -3606,6 +3642,10 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                     {assignment.description && (
                                         <div className="text-xs text-gray-500">{assignment.description}</div>
                                     )}
+                                    <div className="text-[11px] text-slate-500">
+                                        {assignment.examType.toUpperCase()} • {assignment.subject.toUpperCase()}
+                                        {assignment.isLockedForPublication ? ' • Đã dùng để tạo lịch thi' : ''}
+                                    </div>
                                 </td>
                                 <td className="px-3 py-2 text-sm text-gray-700">{assignment.gradingType === 'auto' ? 'Tự động' : 'Thủ công'}</td>
                                 <td className="px-3 py-2 text-xs text-gray-600">{assignment.gradingApiEndpoint || '-'}</td>
@@ -3681,6 +3721,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                             : prev.gradingApiEndpoint,
                                 }))
                             }
+                            disabled={Boolean(editingAssignment.isLockedForPublication)}
                             className="rounded-md border border-gray-300 px-3 py-2 text-sm"
                         >
                             <option value="auto">Tự động</option>
@@ -3691,7 +3732,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                             onChange={(e) =>
                                 setAssignmentEditForm((prev) => ({ ...prev, gradingApiEndpoint: e.target.value }))
                             }
-                            disabled={assignmentEditForm.gradingType === 'manual'}
+                            disabled={assignmentEditForm.gradingType === 'manual' || Boolean(editingAssignment.isLockedForPublication)}
                             className="rounded-md border border-gray-300 px-3 py-2 text-sm disabled:bg-gray-100"
                         >
                             <option value="">-- Chọn đầu chấm điểm --</option>

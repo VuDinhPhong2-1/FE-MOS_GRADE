@@ -5,8 +5,12 @@ export interface Assignment {
   description?: string;
   classId: string;
   maxScore: number;
+  subject: 'excel' | 'word' | 'ppt';
+  examType: 'otth' | 'onthi' | 'gmetrix';
+  projectCode?: string;
   createdAt: string;
   isActive: boolean;
+  isLockedForPublication?: boolean;
   gradingType: 'auto' | 'manual';
   gradingApiEndpoint?: string;
   createdBy?: string;
@@ -26,6 +30,9 @@ export interface CreateAssignmentRequest {
   description?: string;
   classId: string;
   maxScore: number;
+  subject: 'excel' | 'word' | 'ppt';
+  examType: 'otth' | 'onthi' | 'gmetrix';
+  projectCode?: string;
   gradingType: 'auto' | 'manual';
   gradingApiEndpoint?: string;
 }
@@ -35,6 +42,9 @@ export interface UpdateAssignmentRequest {
   description?: string;
   maxScore?: number;
   isActive?: boolean;
+  subject?: 'excel' | 'word' | 'ppt';
+  examType?: 'otth' | 'onthi' | 'gmetrix';
+  projectCode?: string;
   gradingType?: 'auto' | 'manual';
   gradingApiEndpoint?: string;
 }
@@ -51,4 +61,17 @@ export interface GradingEndpointInfo {
   practiceTotalScore?: number;
   practiceProjectCount?: number;
   apiPath?: string;
+}
+
+export interface AssignmentTemplateResponse {
+  suggestedName: string;
+  description?: string;
+  subject: 'excel' | 'word' | 'ppt';
+  examType: 'otth' | 'onthi' | 'gmetrix';
+  projectCode: string;
+  gradingType: 'auto' | 'manual';
+  gradingApiEndpoint?: string;
+  maxScore: number;
+  practiceCode: string;
+  practiceName: string;
 }

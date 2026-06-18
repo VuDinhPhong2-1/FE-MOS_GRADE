@@ -3,11 +3,12 @@ import { Upload, FileSpreadsheet, RefreshCw, Bug, Copy, Trash2 } from 'lucide-re
 import { gradingService } from '../services/grading.service';
 import type { GradingResult } from '../types';
 import type { BugSeverity, CreateGradingTestBugNoteRequest, GradingTestBugNote } from '../types/grading-test-bug-note.types';
+import type { Assignment } from '../types/assignment.types';
 import type { Class } from '../types/class.types';
 import type { StudentResponse } from '../types/student.types';
-import type { ExamPublicationProjectRequest } from '../types/exam-publication.types';
 import ResultCard from '../components/ResultCard';
 import { useAuth } from '../context/AuthContext';
+import { assignmentService } from '../services/assignment.service';
 import { classService } from '../services/class.service';
 import studentService from '../services/student.service';
 import { examPublicationService } from '../services/exam-publication.service';
@@ -17,19 +18,6 @@ interface TestProjectOption {
   displayName: string;
   fileType: 'excel' | 'word';
 }
-
-type AvailableLocalAgentProject = {
-  code: string;
-  label: string;
-  subject: 'excel' | 'word';
-  gradingApiEndpoint: string;
-};
-
-const availableLocalAgentProjects: AvailableLocalAgentProject[] = [
-  { code: 'EXCEL_P01', label: 'Excel Project 01', subject: 'excel', gradingApiEndpoint: 'excel/project01' },
-  { code: 'EXCEL_P02', label: 'Excel Project 02', subject: 'excel', gradingApiEndpoint: 'excel/project02' },
-  { code: 'EXCEL_P03', label: 'Excel Project 03', subject: 'excel', gradingApiEndpoint: 'excel/project03' },
-];
 
 const buildStudentDisplayName = (student?: Pick<StudentResponse, 'middleName' | 'firstName' | 'fullName'> | null) =>
   student?.fullName?.trim() || `${student?.middleName || ''} ${student?.firstName || ''}`.trim();
@@ -135,9 +123,12 @@ const GradingView = () => {
   const [students, setStudents] = useState<StudentResponse[]>([]);
   const [loadingStudents, setLoadingStudents] = useState(false);
   const [studentLoadError, setStudentLoadError] = useState<string | null>(null);
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [loadingAssignments, setLoadingAssignments] = useState(false);
+  const [assignmentLoadError, setAssignmentLoadError] = useState<string | null>(null);
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
   const [selectWholeClass, setSelectWholeClass] = useState(true);
-  const [selectedProjects, setSelectedProjects] = useState<string[]>([availableLocalAgentProjects[0].code]);
+  const [selectedAssignmentIds, setSelectedAssignmentIds] = useState<string[]>([]);
   const [examName, setExamName] = useState('Ca thi MOS');
   const [isCreatingExamPublication, setIsCreatingExamPublication] = useState(false);
   const [createExamPublicationMessage, setCreateExamPublicationMessage] = useState<string | null>(null);
@@ -268,6 +259,48 @@ const GradingView = () => {
   }, [getAccessToken, selectedClassId]);
 
   useEffect(() => {
+    let active = true;
+
+    const loadAssignmentsByClass = async () => {
+      if (!selectedClassId) {
+        setAssignments([]);
+        setSelectedAssignmentIds([]);
+        setAssignmentLoadError(null);
+        return;
+      }
+
+      setLoadingAssignments(true);
+      setAssignmentLoadError(null);
+
+      try {
+        const nextAssignments = await assignmentService.getByClass(selectedClassId, getAccessToken);
+        if (!active) {
+          return;
+        }
+
+        setAssignments(nextAssignments);
+      } catch (err: unknown) {
+        if (!active) {
+          return;
+        }
+
+        setAssignments([]);
+        setSelectedAssignmentIds([]);
+        setAssignmentLoadError(err instanceof Error ? err.message : 'Không tải được danh sách bài tập.');
+      } finally {
+        if (active) {
+          setLoadingAssignments(false);
+        }
+      }
+    };
+
+    void loadAssignmentsByClass();
+    return () => {
+      active = false;
+    };
+  }, [getAccessToken, selectedClassId]);
+
+  useEffect(() => {
     if (selectWholeClass) {
       setSelectedStudentIds(students.map((student) => student.id));
       return;
@@ -335,31 +368,31 @@ const GradingView = () => {
   );
 
   const autoBugTitle = useMemo(() => selectedProjectDisplayName, [selectedProjectDisplayName]);
-  const selectedProjectSequence = useMemo(
+  const publishableAssignments = useMemo(
     () =>
-      selectedProjects.reduce<ExamPublicationProjectRequest[]>((items, projectCode, index) => {
-        const project = availableLocalAgentProjects.find((item) => item.code === projectCode);
-        if (!project) {
-          return items;
-        }
-
-        items.push({
-          order: index + 1,
-          projectCode: project.code,
-          subject: project.subject,
-          gradingApiEndpoint: project.gradingApiEndpoint,
-          modeRules: {
-            mode: 'Testing',
-            showFeedback: false,
-            allowRestart: true,
-            allowNextProject: true,
-          },
-        });
-
-        return items;
-      }, []),
-    [selectedProjects]
+      assignments.filter(
+        (assignment) =>
+          assignment.isActive &&
+          assignment.gradingType === 'auto' &&
+          Boolean(assignment.gradingApiEndpoint) &&
+          assignment.examType !== 'gmetrix'
+      ),
+    [assignments]
   );
+
+  const selectedPublicationAssignments = useMemo(
+    () =>
+      selectedAssignmentIds
+        .map((assignmentId) => publishableAssignments.find((assignment) => assignment.id === assignmentId) || null)
+        .filter((assignment): assignment is Assignment => assignment !== null),
+    [publishableAssignments, selectedAssignmentIds]
+  );
+
+  useEffect(() => {
+    setSelectedAssignmentIds((currentValue) =>
+      currentValue.filter((assignmentId) => publishableAssignments.some((assignment) => assignment.id === assignmentId))
+    );
+  }, [publishableAssignments]);
 
   useEffect(() => {
     setIsBugTitleDirty(false);
@@ -375,7 +408,7 @@ const GradingView = () => {
   useEffect(() => {
     setLocalAgentPublicationToken('');
     setCreateExamPublicationMessage(null);
-  }, [examName, selectedClassId, selectedStudentIds, selectedProjects]);
+  }, [examName, selectedClassId, selectedStudentIds, selectedAssignmentIds]);
 
   const isValidGradingFile = (file: File): boolean => {
     const fileName = file.name.toLowerCase();
@@ -407,18 +440,12 @@ const GradingView = () => {
     setResult(null);
   };
 
-  const handleToggleLocalAgentProject = (projectCode: string) => {
-    setSelectedProjects((currentValue) => {
-      if (currentValue.includes(projectCode)) {
-        if (currentValue.length === 1) {
-          return currentValue;
-        }
-
-        return currentValue.filter((item) => item !== projectCode);
-      }
-
-      return [...currentValue, projectCode];
-    });
+  const handleTogglePublicationAssignment = (assignmentId: string) => {
+    setSelectedAssignmentIds((currentValue) =>
+      currentValue.includes(assignmentId)
+        ? currentValue.filter((item) => item !== assignmentId)
+        : [...currentValue, assignmentId]
+    );
   };
 
   const handleToggleWholeClass = (checked: boolean) => {
@@ -457,8 +484,8 @@ const GradingView = () => {
       return;
     }
 
-    if (selectedProjectSequence.length === 0) {
-      setCreateExamPublicationMessage('Vui lòng chọn ít nhất một project.');
+    if (selectedAssignmentIds.length === 0) {
+      setCreateExamPublicationMessage('Vui lòng chọn ít nhất một assignment.');
       return;
     }
 
@@ -472,7 +499,7 @@ const GradingView = () => {
           classId: selectedClassId,
           studentIds: selectedStudentIds,
           mode: 'Testing',
-          projectSequence: selectedProjectSequence,
+          assignmentIds: selectedAssignmentIds,
         },
         getAccessToken
       );
@@ -794,14 +821,14 @@ const GradingView = () => {
           </div>
 
           <div className="md:col-span-2">
-            <label className="mb-2 block text-sm font-medium text-slate-700">Project</label>
+            <label className="mb-2 block text-sm font-medium text-slate-700">Assignment dùng để tạo lịch thi</label>
             <div className="grid gap-3 sm:grid-cols-3">
-              {availableLocalAgentProjects.map((project) => {
-                const checked = selectedProjects.includes(project.code);
+              {publishableAssignments.map((assignment) => {
+                const checked = selectedAssignmentIds.includes(assignment.id);
 
                 return (
                   <label
-                    key={project.code}
+                    key={assignment.id}
                     className={`flex cursor-pointer items-start gap-3 rounded-md border px-3 py-2 text-sm transition ${
                       checked ? 'border-sky-300 bg-sky-50 text-sky-900' : 'border-slate-200 bg-white text-slate-700'
                     }`}
@@ -809,16 +836,22 @@ const GradingView = () => {
                     <input
                       type="checkbox"
                       checked={checked}
-                      onChange={() => handleToggleLocalAgentProject(project.code)}
+                      onChange={() => handleTogglePublicationAssignment(assignment.id)}
                       className="mt-0.5 h-4 w-4 rounded border-slate-300 text-sky-600"
                     />
                     <span>
-                      {project.label}
-                      <span className="block text-xs text-slate-500">{project.gradingApiEndpoint}</span>
+                      {assignment.name}
+                      <span className="block text-xs text-slate-500">
+                        {assignment.examType.toUpperCase()} • {assignment.subject.toUpperCase()} •{' '}
+                        {assignment.gradingApiEndpoint}
+                      </span>
                     </span>
                   </label>
                 );
               })}
+              {!loadingAssignments && publishableAssignments.length === 0 && (
+                <p className="text-sm text-slate-500">Lớp này chưa có assignment auto hợp lệ để tạo lịch thi.</p>
+              )}
             </div>
           </div>
 
@@ -830,9 +863,10 @@ const GradingView = () => {
                 isCreatingExamPublication ||
                 loadingClasses ||
                 loadingStudents ||
+                loadingAssignments ||
                 !selectedClassId ||
                 selectedStudentIds.length === 0 ||
-                selectedProjectSequence.length === 0
+                selectedAssignmentIds.length === 0
               }
               className="inline-flex items-center justify-center gap-2 rounded-md bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-slate-400"
             >
@@ -842,6 +876,7 @@ const GradingView = () => {
 
             {classLoadError && <p className="text-xs text-rose-600">{classLoadError}</p>}
             {studentLoadError && <p className="text-xs text-rose-600">{studentLoadError}</p>}
+            {assignmentLoadError && <p className="text-xs text-rose-600">{assignmentLoadError}</p>}
             {createExamPublicationMessage && <p className="text-xs text-slate-600">{createExamPublicationMessage}</p>}
             {localAgentPublicationToken && (
               <div className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
@@ -856,7 +891,7 @@ const GradingView = () => {
                   <strong>Số học sinh:</strong> {selectedStudentIds.length}
                 </p>
                 <p>
-                  <strong>Số project:</strong> {selectedProjects.length}
+                  <strong>Số assignment:</strong> {selectedPublicationAssignments.length}
                 </p>
               </div>
             )}

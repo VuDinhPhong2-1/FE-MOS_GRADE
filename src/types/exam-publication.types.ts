@@ -16,8 +16,9 @@ export type CreateExamPublicationRequest = {
   name: string;
   classId: string;
   studentIds: string[];
+  assignmentIds?: string[];
   mode: 'Training' | 'Testing';
-  projectSequence: ExamPublicationProjectRequest[];
+  projectSequence?: ExamPublicationProjectRequest[];
 };
 
 export type ExamPublicationResponse = {

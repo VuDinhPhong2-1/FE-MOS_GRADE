@@ -1,5 +1,6 @@
 ﻿import type {
   Assignment,
+  AssignmentTemplateResponse,
   AssignmentWithStats,
   CreateAssignmentRequest,
   GradingEndpointInfo,
@@ -298,5 +299,31 @@ export const assignmentService = {
     } catch {
       return fallbackGradingEndpoints;
     }
+  },
+
+  async getTemplates(
+    classId: string,
+    subject: 'excel' | 'word' | 'ppt',
+    examType: 'otth' | 'onthi' | 'gmetrix',
+    getAccessToken: (forceRefresh?: boolean) => Promise<string | null>
+  ): Promise<AssignmentTemplateResponse[]> {
+    const query = new URLSearchParams({
+      classId,
+      subject,
+      examType,
+    });
+
+    const response = await authFetch(
+      `${API_BASE_URL}/assignment/templates?${query.toString()}`,
+      { method: 'GET', headers: jsonHeaders },
+      getAccessToken
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      throw new Error(errorData?.message || 'Không thể lấy mẫu bài tập.');
+    }
+
+    return (await response.json()) as AssignmentTemplateResponse[];
   },
 };
