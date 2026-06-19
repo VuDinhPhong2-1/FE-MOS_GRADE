@@ -1,0 +1,2 @@
+/*
+  Permissions-Policy: local-network-access=(self), private-network-access=(self)
