@@ -4,6 +4,10 @@ export type ExamPublicationProjectRequest = {
   subject: 'excel' | 'word';
   gradingApiEndpoint: string;
   templateFileName?: string;
+  instructionsFileName?: string;
+  instructionsText?: string;
+  helpFileName?: string;
+  helpText?: string;
   modeRules?: {
     mode?: 'Training' | 'Testing';
     showFeedback?: boolean;

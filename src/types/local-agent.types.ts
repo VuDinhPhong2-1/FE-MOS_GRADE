@@ -20,6 +20,10 @@ export type LocalAgentState = {
   projectCode?: string;
   subject?: string;
   templateFileName?: string;
+  instructionsFileName?: string;
+  instructionsText?: string;
+  helpFileName?: string;
+  helpText?: string;
   gradingApiEndpoint?: string;
   workingFilePath?: string;
   workingFileExists?: boolean;

@@ -11,6 +11,8 @@ export interface Assignment {
   createdAt: string;
   isActive: boolean;
   isLockedForPublication?: boolean;
+  isPublishable?: boolean;
+  publishBlockReason?: string;
   gradingType: 'auto' | 'manual';
   gradingApiEndpoint?: string;
   createdBy?: string;

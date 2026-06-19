@@ -3646,14 +3646,26 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                         {assignment.examType.toUpperCase()} • {assignment.subject.toUpperCase()}
                                         {assignment.isLockedForPublication ? ' • Đã dùng để tạo lịch thi' : ''}
                                     </div>
+                                    {assignment.isPublishable === false && (
+                                        <div className="text-[11px] text-amber-700">
+                                            {assignment.publishBlockReason || 'Chưa đủ điều kiện để tạo lịch thi.'}
+                                        </div>
+                                    )}
                                 </td>
                                 <td className="px-3 py-2 text-sm text-gray-700">{assignment.gradingType === 'auto' ? 'Tự động' : 'Thủ công'}</td>
                                 <td className="px-3 py-2 text-xs text-gray-600">{assignment.gradingApiEndpoint || '-'}</td>
                                 <td className="px-3 py-2 text-sm text-center text-gray-700">{assignment.maxScore}</td>
                                 <td className="px-3 py-2 text-center">
-                                    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${assignment.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                        {assignment.isActive ? 'Đang dùng' : 'Đã ẩn'}
-                                    </span>
+                                    <div className="flex flex-col items-center gap-1">
+                                        <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${assignment.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                            {assignment.isActive ? 'Đang dùng' : 'Đã ẩn'}
+                                        </span>
+                                        {assignment.isPublishable === false && (
+                                            <span className="inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
+                                                Không publish được
+                                            </span>
+                                        )}
+                                    </div>
                                 </td>
                                 <td className="px-3 py-2 text-center">
                                     <div className="inline-flex gap-2">

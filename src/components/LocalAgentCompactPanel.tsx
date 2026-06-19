@@ -89,6 +89,24 @@ export function LocalAgentCompactPanel({
 
           <div className="mt-3 min-h-0 rounded-lg border border-slate-200 bg-white">
             <div className="border-b border-slate-200 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Project instructions
+            </div>
+            <div className="max-h-48 overflow-y-auto whitespace-pre-wrap px-3 py-2 text-sm text-slate-700">
+              {state.instructionsText?.trim() || 'Chưa có file đề bài cho project hiện tại.'}
+            </div>
+          </div>
+
+          <div className="mt-3 min-h-0 rounded-lg border border-slate-200 bg-white">
+            <div className="border-b border-slate-200 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Help
+            </div>
+            <div className="max-h-40 overflow-y-auto whitespace-pre-wrap px-3 py-2 text-sm text-slate-700">
+              {state.helpText?.trim() || 'Chưa có file help cho project hiện tại.'}
+            </div>
+          </div>
+
+          <div className="mt-3 min-h-0 rounded-lg border border-slate-200 bg-white">
+            <div className="border-b border-slate-200 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
               Task list
             </div>
             <div className="max-h-56 overflow-y-auto px-3 py-2">

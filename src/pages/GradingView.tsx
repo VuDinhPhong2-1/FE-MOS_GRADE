@@ -369,14 +369,12 @@ const GradingView = () => {
 
   const autoBugTitle = useMemo(() => selectedProjectDisplayName, [selectedProjectDisplayName]);
   const publishableAssignments = useMemo(
-    () =>
-      assignments.filter(
-        (assignment) =>
-          assignment.isActive &&
-          assignment.gradingType === 'auto' &&
-          Boolean(assignment.gradingApiEndpoint) &&
-          assignment.examType !== 'gmetrix'
-      ),
+    () => assignments.filter((assignment) => assignment.isActive && assignment.isPublishable),
+    [assignments]
+  );
+
+  const visiblePublicationAssignments = useMemo(
+    () => assignments.filter((assignment) => assignment.isActive),
     [assignments]
   );
 
@@ -823,21 +821,27 @@ const GradingView = () => {
           <div className="md:col-span-2">
             <label className="mb-2 block text-sm font-medium text-slate-700">Assignment dùng để tạo lịch thi</label>
             <div className="grid gap-3 sm:grid-cols-3">
-              {publishableAssignments.map((assignment) => {
+              {visiblePublicationAssignments.map((assignment) => {
                 const checked = selectedAssignmentIds.includes(assignment.id);
+                const isDisabled = !assignment.isPublishable;
 
                 return (
                   <label
                     key={assignment.id}
-                    className={`flex cursor-pointer items-start gap-3 rounded-md border px-3 py-2 text-sm transition ${
-                      checked ? 'border-sky-300 bg-sky-50 text-sky-900' : 'border-slate-200 bg-white text-slate-700'
+                    className={`flex items-start gap-3 rounded-md border px-3 py-2 text-sm transition ${
+                      isDisabled
+                        ? 'cursor-not-allowed border-amber-200 bg-amber-50 text-amber-900'
+                        : checked
+                          ? 'cursor-pointer border-sky-300 bg-sky-50 text-sky-900'
+                          : 'cursor-pointer border-slate-200 bg-white text-slate-700'
                     }`}
                   >
                     <input
                       type="checkbox"
                       checked={checked}
                       onChange={() => handleTogglePublicationAssignment(assignment.id)}
-                      className="mt-0.5 h-4 w-4 rounded border-slate-300 text-sky-600"
+                      disabled={isDisabled}
+                      className="mt-0.5 h-4 w-4 rounded border-slate-300 text-sky-600 disabled:cursor-not-allowed"
                     />
                     <span>
                       {assignment.name}
@@ -845,12 +849,20 @@ const GradingView = () => {
                         {assignment.examType.toUpperCase()} • {assignment.subject.toUpperCase()} •{' '}
                         {assignment.gradingApiEndpoint}
                       </span>
+                      {assignment.isLockedForPublication && (
+                        <span className="block text-xs text-slate-500">Đã dùng để tạo lịch thi trước đó.</span>
+                      )}
+                      {isDisabled && (
+                        <span className="block text-xs text-amber-700">
+                          {assignment.publishBlockReason || 'Assignment này chưa đủ điều kiện để tạo lịch thi.'}
+                        </span>
+                      )}
                     </span>
                   </label>
                 );
               })}
-              {!loadingAssignments && publishableAssignments.length === 0 && (
-                <p className="text-sm text-slate-500">Lớp này chưa có assignment auto hợp lệ để tạo lịch thi.</p>
+              {!loadingAssignments && visiblePublicationAssignments.length === 0 && (
+                <p className="text-sm text-slate-500">Lớp này chưa có assignment đang hoạt động để tạo lịch thi.</p>
               )}
             </div>
           </div>
