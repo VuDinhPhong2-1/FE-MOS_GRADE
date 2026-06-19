@@ -17,10 +17,22 @@ async function requestLocalAgent<T>(
 
   headers.set("X-Local-Agent-Key", LOCAL_AGENT_API_KEY);
 
-  const response = await fetch(`${LOCAL_AGENT_BASE_URL}${path}`, {
-    ...options,
-    headers,
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(`${LOCAL_AGENT_BASE_URL}${path}`, {
+      ...options,
+      headers,
+    });
+  } catch (error) {
+    if (error instanceof TypeError) {
+      throw new Error(
+        "Khong ket noi duoc Local Agent tren may nay. Hay mo/chay lai agent va cap nhat package moi neu dang dung ban cu khong cho phep domain thi hien tai."
+      );
+    }
+
+    throw error;
+  }
 
   const text = await response.text();
   let body: unknown = null;
