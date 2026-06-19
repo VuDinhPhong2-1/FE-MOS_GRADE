@@ -5,6 +5,23 @@ import type {
   SubmitCurrentProjectRequest,
 } from "../types/local-agent.types";
 
+type LocalAgentRequestInit = RequestInit & {
+  targetAddressSpace?: "local";
+};
+
+function isLoopbackLocalAgentUrl(url: string): boolean {
+  try {
+    const parsedUrl = new URL(url);
+    return (
+      parsedUrl.hostname === "localhost" ||
+      parsedUrl.hostname === "127.0.0.1" ||
+      parsedUrl.hostname === "[::1]"
+    );
+  } catch {
+    return false;
+  }
+}
+
 async function requestLocalAgent<T>(
   path: string,
   options: RequestInit = {}
@@ -18,16 +35,23 @@ async function requestLocalAgent<T>(
   headers.set("X-Local-Agent-Key", LOCAL_AGENT_API_KEY);
 
   let response: Response;
+  const requestUrl = `${LOCAL_AGENT_BASE_URL}${path}`;
+  const requestOptions: LocalAgentRequestInit = {
+    ...options,
+    headers,
+    mode: "cors",
+  };
+
+  if (isLoopbackLocalAgentUrl(requestUrl)) {
+    requestOptions.targetAddressSpace = "local";
+  }
 
   try {
-    response = await fetch(`${LOCAL_AGENT_BASE_URL}${path}`, {
-      ...options,
-      headers,
-    });
+    response = await fetch(requestUrl, requestOptions);
   } catch (error) {
     if (error instanceof TypeError) {
       throw new Error(
-        "Khong ket noi duoc Local Agent tren may nay. Hay mo/chay lai agent va cap nhat package moi neu dang dung ban cu khong cho phep domain thi hien tai."
+        "Khong ket noi duoc Local Agent tren may nay. Hay mo/chay lai agent, cap nhat package moi va cho phep trinh duyet truy cap localhost neu Chrome hoi quyen."
       );
     }
 
