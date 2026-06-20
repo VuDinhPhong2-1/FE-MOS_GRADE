@@ -48,7 +48,7 @@ export function PublicExamPage() {
     const loadPublication = async () => {
       if (!token) {
         setPublication(null);
-        setError('Thiếu publication token.');
+        setError('Thieu publication token.');
         setLoading(false);
         return;
       }
@@ -69,19 +69,12 @@ export function PublicExamPage() {
         const normalizedState = normalizeAgentState(currentAgentState);
         setPublication(nextPublication);
 
-        const matchingStudentId =
-          normalizedState?.publicationToken === token &&
-          normalizedState.studentId &&
-          nextPublication.students.some((student) => student.id === normalizedState.studentId)
-            ? normalizedState.studentId
-            : '';
-
         setSelectedStudentId((currentValue) => {
           if (nextPublication.students.some((student) => student.id === currentValue)) {
             return currentValue;
           }
 
-          return matchingStudentId;
+          return '';
         });
 
         setAgentState(
@@ -95,7 +88,7 @@ export function PublicExamPage() {
         }
 
         setPublication(null);
-        setError(err instanceof Error ? err.message : 'Không thể tải thông tin ca thi.');
+        setError(err instanceof Error ? err.message : 'Khong the tai thong tin ca thi.');
       } finally {
         if (active) {
           setLoading(false);
@@ -152,18 +145,18 @@ export function PublicExamPage() {
       setAgentState(nextState);
       setSuccessMessage(typeof successText === 'function' ? successText(nextState!) : successText);
     } catch (err: unknown) {
-      setAgentError(err instanceof Error ? err.message : 'Không gọi được Local Agent.');
+      setAgentError(err instanceof Error ? err.message : 'Khong goi duoc Local Agent.');
     } finally {
       setLoadingAction(null);
     }
   };
 
   const handleRefreshAgentState = () =>
-    void runAgentAction('refresh', () => localAgentService.getCurrentState(), 'Đã làm mới trạng thái.');
+    void runAgentAction('refresh', () => localAgentService.getCurrentState(), 'Da lam moi trang thai.');
 
   const handleStartExam = () => {
     if (!token || !selectedStudent) {
-      setAgentError('Vui lòng chọn đúng tên của bạn trước khi bắt đầu thi.');
+      setAgentError('Vui long chon dung ten cua ban truoc khi bat dau thi.');
       return;
     }
 
@@ -175,10 +168,25 @@ export function PublicExamPage() {
           studentId: selectedStudent.id,
           studentName: selectedStudent.fullName,
         }),
-      (nextState) =>
-        nextState.status === 'resume_required' || nextState.resumeMode === 'missing_working_file'
-          ? 'Đã tìm thấy ca thi đang làm dở. Chọn Tiếp tục hoặc Làm lại project hiện tại.'
-          : 'Đã bắt đầu ca thi. Local Agent sẽ mở WPF App để tiếp tục làm bài.'
+      'Da bat dau ca thi moi. Local Agent se mo WPF App de tiep tuc lam bai.'
+    );
+  };
+
+  const handleLoadSavedState = () => {
+    if (!token || !selectedStudent) {
+      setAgentError('Vui long chon dung ten cua ban truoc khi tim bai cu.');
+      return;
+    }
+
+    void runAgentAction(
+      'load-saved-state',
+      () =>
+        localAgentService.loadSavedState({
+          publicationToken: token,
+          studentId: selectedStudent.id,
+          studentName: selectedStudent.fullName,
+        }),
+      'Da nap bai cu tren may nay. Ban co the tiep tuc hoac lam lai project hien tai.'
     );
   };
 
@@ -186,21 +194,21 @@ export function PublicExamPage() {
     void runAgentAction(
       'continue',
       () => localAgentService.continueCurrentProject(),
-      'Đã mở lại bài đang làm dở trên máy local.'
+      'Da mo lai bai dang lam do tren may local.'
     );
 
   const handleRestartCurrentProject = () =>
     void runAgentAction(
       'restart',
       () => localAgentService.restartCurrentProject(),
-      'Đã làm lại project hiện tại từ template.'
+      'Da lam lai project hien tai tu template.'
     );
 
   const handleRecreateCurrentProject = () =>
     void runAgentAction(
       'recreate',
       () => localAgentService.recreateCurrentProject(),
-      'Đã tạo lại working file cho project hiện tại.'
+      'Da tao lai working file cho project hien tai.'
     );
 
   return (
@@ -208,20 +216,22 @@ export function PublicExamPage() {
       <div className="mx-auto max-w-3xl">
         <div className="mb-6 text-center">
           <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">Ca thi MOS</h1>
-          <p className="mt-2 text-sm text-slate-600">Chọn đúng tên của bạn rồi bắt đầu thi trên Local Agent.</p>
+          <p className="mt-2 text-sm text-slate-600">
+            Chon dung ten cua ban roi bat dau thi tren Local Agent.
+          </p>
         </div>
 
         <section className="app-card overflow-hidden">
           <div className="bg-gradient-to-r from-sky-600 via-cyan-600 to-emerald-500 px-6 py-5 text-white">
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/80">Public Exam</p>
-            <h2 className="mt-2 text-2xl font-bold">{publication?.name || 'Đang tải ca thi...'}</h2>
+            <h2 className="mt-2 text-2xl font-bold">{publication?.name || 'Dang tai ca thi...'}</h2>
           </div>
 
           <div className="space-y-5 px-6 py-6">
             {loading && (
               <div className="flex items-center gap-3 rounded-xl border border-sky-100 bg-sky-50 px-4 py-3 text-sm text-sky-800">
                 <RefreshCw size={16} className="animate-spin" />
-                Đang tải thông tin ca thi...
+                Dang tai thong tin ca thi...
               </div>
             )}
 
@@ -235,17 +245,17 @@ export function PublicExamPage() {
               <>
                 <div className="grid gap-3 md:grid-cols-3">
                   <div className="app-card-soft px-4 py-3">
-                    <p className="text-xs uppercase tracking-wide text-slate-500">Số học sinh</p>
+                    <p className="text-xs uppercase tracking-wide text-slate-500">So hoc sinh</p>
                     <p className="mt-1 text-xl font-bold text-slate-900">{publication.students.length}</p>
                   </div>
                   <div className="app-card-soft px-4 py-3">
-                    <p className="text-xs uppercase tracking-wide text-slate-500">Số project</p>
+                    <p className="text-xs uppercase tracking-wide text-slate-500">So project</p>
                     <p className="mt-1 text-xl font-bold text-slate-900">{publication.projectCount}</p>
                   </div>
                   <div className="app-card-soft px-4 py-3">
-                    <p className="text-xs uppercase tracking-wide text-slate-500">Thời lượng</p>
+                    <p className="text-xs uppercase tracking-wide text-slate-500">Thoi luong</p>
                     <p className="mt-1 text-xl font-bold text-slate-900">
-                      {publication.durationMinutes ? `${publication.durationMinutes} phút` : 'Không giới hạn'}
+                      {publication.durationMinutes ? `${publication.durationMinutes} phut` : 'Khong gioi han'}
                     </p>
                   </div>
                 </div>
@@ -258,16 +268,16 @@ export function PublicExamPage() {
 
                 <div>
                   <label htmlFor="public-exam-student" className="mb-2 block text-sm font-medium text-slate-800">
-                    Chọn tên của bạn
+                    Chon ten cua ban
                   </label>
                   <select
                     id="public-exam-student"
                     value={selectedStudentId}
                     onChange={(event) => setSelectedStudentId(event.target.value)}
-                    disabled={loadingAction !== null || canResumeCurrentStudent}
+                    disabled={loadingAction !== null}
                     className="w-full rounded-xl border border-slate-300 bg-white px-3 py-3 text-sm"
                   >
-                    <option value="">-- Chọn học sinh --</option>
+                    <option value="">-- Chon hoc sinh --</option>
                     {publication.students.map((student) => (
                       <option key={student.id} value={student.id}>
                         {student.fullName}
@@ -289,15 +299,27 @@ export function PublicExamPage() {
                 )}
 
                 <div className="flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={handleStartExam}
+                    disabled={!selectedStudent || loadingAction !== null}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-sky-600 px-5 py-3 text-sm font-semibold text-white hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-slate-400"
+                  >
+                    {loadingAction === 'start' ? <RefreshCw size={16} className="animate-spin" /> : <Play size={16} />}
+                    {loadingAction === 'start' ? 'Dang start exam...' : 'Start exam'}
+                  </button>
+
                   {!canResumeCurrentStudent && (
                     <button
                       type="button"
-                      onClick={handleStartExam}
+                      onClick={handleLoadSavedState}
                       disabled={!selectedStudent || loadingAction !== null}
-                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-sky-600 px-5 py-3 text-sm font-semibold text-white hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-slate-400"
+                      className="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 px-5 py-3 text-sm font-semibold text-emerald-800 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      {loadingAction === 'start' ? <RefreshCw size={16} className="animate-spin" /> : <Play size={16} />}
-                      {loadingAction === 'start' ? 'Đang start exam...' : 'Start exam'}
+                      <RefreshCw size={16} className={loadingAction === 'load-saved-state' ? 'animate-spin' : ''} />
+                      {loadingAction === 'load-saved-state'
+                        ? 'Dang tai bai cu...'
+                        : 'Dung lai bai cu tren may nay'}
                     </button>
                   )}
 
@@ -309,7 +331,7 @@ export function PublicExamPage() {
                       className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-400"
                     >
                       {loadingAction === 'continue' ? <RefreshCw size={16} className="animate-spin" /> : <Play size={16} />}
-                      {loadingAction === 'continue' ? 'Đang tiếp tục...' : 'Tiếp tục bài thi'}
+                      {loadingAction === 'continue' ? 'Dang tiep tuc...' : 'Tiep tuc bai thi'}
                     </button>
                   )}
 
@@ -322,8 +344,8 @@ export function PublicExamPage() {
                     >
                       <RefreshCw size={16} className={loadingAction === 'restart' || loadingAction === 'recreate' ? 'animate-spin' : ''} />
                       {needsRecreateCurrentStudent
-                        ? (loadingAction === 'recreate' ? 'Đang tạo lại file...' : 'Tạo lại file project hiện tại')
-                        : (loadingAction === 'restart' ? 'Đang làm lại project...' : 'Làm lại project hiện tại')}
+                        ? (loadingAction === 'recreate' ? 'Dang tao lai file...' : 'Tao lai file project hien tai')
+                        : (loadingAction === 'restart' ? 'Dang lam lai project...' : 'Lam lai project hien tai')}
                     </button>
                   )}
 
@@ -340,25 +362,25 @@ export function PublicExamPage() {
 
                 {canResumeCurrentStudent && agentState && (
                   <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm text-emerald-800">
-                    <p className="font-semibold">Đã tìm thấy ca thi đang làm dở trên máy local.</p>
+                    <p className="font-semibold">Da tim thay bai cu tren may local.</p>
                     <p className="mt-2">Student: {displayStudentName || '-'}</p>
                     <p>Session ID: {agentState.sessionId || '-'}</p>
                     <p>
-                      Project hiện tại: {agentState.currentProjectNumber}/{agentState.totalProjectCount}
+                      Project hien tai: {agentState.currentProjectNumber}/{agentState.totalProjectCount}
                     </p>
                     <p>Status: {agentState.status}</p>
                     {agentState.workingFilePath && <p>Working file: {agentState.workingFilePath}</p>}
                     {!agentState.workingFileExists && (
                       <p className="mt-2 text-rose-700">
-                        Không tìm thấy file đang làm dở. Bạn có thể tạo lại file project hiện tại từ template.
+                        Khong tim thay file dang lam do. Ban co the tao lai file project hien tai tu template.
                       </p>
                     )}
                   </div>
                 )}
 
-                {!selectedStudent && !canResumeCurrentStudent && (
+                {!selectedStudent && (
                   <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-4 text-sm text-slate-600">
-                    Chọn đúng tên của bạn rồi bấm Start exam để mở bài thi trên Local Agent.
+                    Chon dung ten cua ban roi bam Start exam de mo bai thi tren Local Agent.
                   </div>
                 )}
               </>
@@ -367,9 +389,9 @@ export function PublicExamPage() {
         </section>
 
         <p className="mt-4 text-center text-xs text-slate-500">
-          Nếu mở nhầm liên kết, quay lại trang{' '}
+          Neu mo nham lien ket, quay lai trang{' '}
           <Link to="/login" className="font-semibold text-sky-700 hover:text-sky-800">
-            đăng nhập
+            dang nhap
           </Link>
           .
         </p>

@@ -50,6 +50,12 @@ export type StartExamAgentRequest = {
   studentName: string;
 };
 
+export type LoadSavedStateAgentRequest = {
+  publicationToken: string;
+  studentId?: string;
+  studentName?: string;
+};
+
 export type SubmitCurrentProjectRequest = {
   confirmSaved: boolean;
   forceSubmit?: boolean;

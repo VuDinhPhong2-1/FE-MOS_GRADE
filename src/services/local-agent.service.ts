@@ -1,5 +1,6 @@
 import { LOCAL_AGENT_API_KEY, LOCAL_AGENT_BASE_URL } from "../config/api";
 import type {
+  LoadSavedStateAgentRequest,
   LocalAgentState,
   StartExamAgentRequest,
   SubmitCurrentProjectRequest,
@@ -72,6 +73,13 @@ export const localAgentService = {
 
   startExam(request: StartExamAgentRequest): Promise<LocalAgentState> {
     return requestLocalAgent<LocalAgentState>("/start-exam", {
+      method: "POST",
+      body: JSON.stringify(request),
+    });
+  },
+
+  loadSavedState(request: LoadSavedStateAgentRequest): Promise<LocalAgentState> {
+    return requestLocalAgent<LocalAgentState>("/load-saved-state", {
       method: "POST",
       body: JSON.stringify(request),
     });
