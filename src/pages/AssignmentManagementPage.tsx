@@ -807,103 +807,112 @@ const AssignmentManagementPage = () => {
             </div>
           </div>
 
-          <div className="divide-y divide-slate-100">
-            {isLoadingAssignments ? (
-              <div className="flex items-center justify-center gap-2 px-6 py-12 text-sm text-slate-500">
-                <Loader2 className="h-5 w-5 animate-spin" />
-                Đang tải bài tập...
-              </div>
-            ) : filteredAssignments.length === 0 ? (
-              <div className="px-6 py-12 text-center">
-                <BookOpenCheck className="mx-auto h-12 w-12 text-slate-300" />
-                <h3 className="mt-3 text-base font-semibold text-slate-800">Chưa có bài tập</h3>
-                <p className="mt-1 text-sm text-slate-500">
-                  Tạo bài tập mới bằng form bên phải để giáo viên có thể quản lý và chấm điểm.
-                </p>
-              </div>
-            ) : (
-              filteredAssignments.map((assignment) => (
-                <div key={assignment.id} className="p-6">
-                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="truncate text-base font-bold text-slate-900">{assignment.name}</h3>
+          {isLoadingAssignments ? (
+            <div className="flex items-center justify-center gap-2 px-6 py-12 text-sm text-slate-500">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              Đang tải bài tập...
+            </div>
+          ) : filteredAssignments.length === 0 ? (
+            <div className="px-6 py-12 text-center">
+              <BookOpenCheck className="mx-auto h-12 w-12 text-slate-300" />
+              <h3 className="mt-3 text-base font-semibold text-slate-800">Chưa có bài tập</h3>
+              <p className="mt-1 text-sm text-slate-500">
+                Tạo bài tập mới bằng form bên phải để giáo viên có thể quản lý và chấm điểm.
+              </p>
+            </div>
+          ) : (
+            <div className="max-h-[440px] overflow-auto">
+              <table className="min-w-full table-fixed divide-y divide-slate-100 text-sm">
+                <thead className="sticky top-0 z-10 bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  <tr>
+                    <th className="w-[28%] px-4 py-3">Bài tập</th>
+                    <th className="w-[11%] px-4 py-3">Môn</th>
+                    <th className="w-[14%] px-4 py-3">Loại</th>
+                    <th className="w-[10%] px-4 py-3">Điểm</th>
+                    <th className="w-[16%] px-4 py-3">Project</th>
+                    <th className="w-[11%] px-4 py-3">Trạng thái</th>
+                    <th className="w-[10%] px-4 py-3 text-right">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 bg-white">
+                  {filteredAssignments.map((assignment) => (
+                    <tr key={assignment.id} className="h-[56px] align-middle hover:bg-slate-50">
+                      <td className="px-4 py-2">
+                        <div className="truncate font-semibold text-slate-900" title={assignment.name}>
+                          {assignment.name}
+                        </div>
+                        {assignment.description && (
+                          <div className="truncate text-xs text-slate-500" title={assignment.description}>
+                            {assignment.description}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-4 py-2 text-slate-700">{subjectLabels[assignment.subject]}</td>
+                      <td className="px-4 py-2">
+                        <div className="truncate text-slate-700" title={examTypeLabels[assignment.examType]}>
+                          {examTypeLabels[assignment.examType]}
+                        </div>
+                        <div className="text-xs text-slate-500">{gradingTypeLabels[assignment.gradingType]}</div>
+                      </td>
+                      <td className="px-4 py-2 font-semibold text-slate-800">{assignment.maxScore}</td>
+                      <td className="px-4 py-2">
+                        <div
+                          className="truncate font-medium text-slate-800"
+                          title={assignment.projectCode || getProjectCodeFromEndpoint(assignment.gradingApiEndpoint) || '—'}
+                        >
+                          {assignment.projectCode || getProjectCodeFromEndpoint(assignment.gradingApiEndpoint) || '—'}
+                        </div>
+                        <div className="truncate text-xs text-slate-500" title={assignment.gradingApiEndpoint || 'Không dùng'}>
+                          {assignment.gradingApiEndpoint || 'Không dùng'}
+                        </div>
+                      </td>
+                      <td className="px-4 py-2">
                         <span
-                          className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
                             assignment.isActive
                               ? 'bg-emerald-50 text-emerald-700'
                               : 'bg-slate-100 text-slate-600'
                           }`}
                         >
-                          {assignment.isActive ? 'Đang hoạt động' : 'Đã lưu trữ'}
+                          {assignment.isActive ? 'Hoạt động' : 'Lưu trữ'}
                         </span>
-                        <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
-                          {subjectLabels[assignment.subject]}
-                        </span>
-                        <span className="rounded-full bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-700">
-                          {gradingTypeLabels[assignment.gradingType]}
-                        </span>
-                      </div>
-
-                      {assignment.description && (
-                        <p className="mt-2 text-sm text-slate-600">{assignment.description}</p>
-                      )}
-
-                      <div className="mt-3 grid gap-2 text-sm text-slate-500 md:grid-cols-2">
-                        <div>
-                          Điểm tối đa: <strong className="text-slate-800">{assignment.maxScore}</strong>
+                      </td>
+                      <td className="px-4 py-2">
+                        <div className="flex justify-end gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => startEdit(assignment)}
+                            className="rounded-lg border border-slate-200 p-2 text-slate-600 transition hover:bg-slate-100"
+                            title="Sửa"
+                          >
+                            <Edit3 className="h-4 w-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void handleToggleActive(assignment)}
+                            disabled={actionAssignmentId === assignment.id}
+                            className="rounded-lg border border-amber-200 p-2 text-amber-700 transition hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-60"
+                            title={assignment.isActive ? 'Lưu trữ' : 'Khôi phục'}
+                          >
+                            {assignment.isActive ? <Archive className="h-4 w-4" /> : <RotateCcw className="h-4 w-4" />}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void handleDelete(assignment)}
+                            disabled={actionAssignmentId === assignment.id}
+                            className="rounded-lg border border-rose-200 p-2 text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+                            title="Xóa"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
                         </div>
-                        <div>
-                          Loại bài: <strong className="text-slate-800">{examTypeLabels[assignment.examType]}</strong>
-                        </div>
-                        <div>
-                          Project:{' '}
-                          <strong className="text-slate-800">
-                            {assignment.projectCode || getProjectCodeFromEndpoint(assignment.gradingApiEndpoint) || '—'}
-                          </strong>
-                        </div>
-                        <div className="truncate">
-                          Endpoint:{' '}
-                          <strong className="text-slate-800">
-                            {assignment.gradingApiEndpoint || 'Không dùng'}
-                          </strong>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        onClick={() => startEdit(assignment)}
-                        className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-                      >
-                        <Edit3 className="h-4 w-4" />
-                        Sửa
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => void handleToggleActive(assignment)}
-                        disabled={actionAssignmentId === assignment.id}
-                        className="inline-flex items-center gap-2 rounded-xl border border-amber-200 px-3 py-2 text-sm font-semibold text-amber-700 transition hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {assignment.isActive ? <Archive className="h-4 w-4" /> : <RotateCcw className="h-4 w-4" />}
-                        {assignment.isActive ? 'Lưu trữ' : 'Khôi phục'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => void handleDelete(assignment)}
-                        disabled={actionAssignmentId === assignment.id}
-                        className="inline-flex items-center gap-2 rounded-xl border border-rose-200 px-3 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        Xóa
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
         <form onSubmit={handleSubmit} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
