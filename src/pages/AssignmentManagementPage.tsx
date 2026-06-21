@@ -639,7 +639,7 @@ const AssignmentManagementPage = () => {
         )}
       </div>
 
-      <section className="rounded-3xl border border-blue-100 bg-white p-6 shadow-sm">
+      <section className="mt-8 rounded-3xl border border-blue-100 bg-white p-6 shadow-sm">
         <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
           <div>
             <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-sm font-semibold text-blue-700">
