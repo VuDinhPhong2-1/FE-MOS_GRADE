@@ -3,24 +3,14 @@ import { Upload, FileSpreadsheet, RefreshCw, Bug, Copy, Trash2 } from 'lucide-re
 import { gradingService } from '../services/grading.service';
 import type { GradingResult } from '../types';
 import type { BugSeverity, CreateGradingTestBugNoteRequest, GradingTestBugNote } from '../types/grading-test-bug-note.types';
-import type { Assignment } from '../types/assignment.types';
-import type { Class } from '../types/class.types';
-import type { StudentResponse } from '../types/student.types';
 import ResultCard from '../components/ResultCard';
 import { useAuth } from '../context/AuthContext';
-import { assignmentService } from '../services/assignment.service';
-import { classService } from '../services/class.service';
-import studentService from '../services/student.service';
-import { examPublicationService } from '../services/exam-publication.service';
 
 interface TestProjectOption {
   code: string;
   displayName: string;
   fileType: 'excel' | 'word';
 }
-
-const buildStudentDisplayName = (student?: Pick<StudentResponse, 'middleName' | 'firstName' | 'fullName'> | null) =>
-  student?.fullName?.trim() || `${student?.middleName || ''} ${student?.firstName || ''}`.trim();
 
 const normalizeProjectOption = (project: {
   code: string;
@@ -116,24 +106,6 @@ const GradingView = () => {
   const [bugActionMessage, setBugActionMessage] = useState<string | null>(null);
   const [copiedNoteId, setCopiedNoteId] = useState<string | null>(null);
   const [isBugTitleDirty, setIsBugTitleDirty] = useState(false);
-  const [classes, setClasses] = useState<Class[]>([]);
-  const [loadingClasses, setLoadingClasses] = useState(true);
-  const [classLoadError, setClassLoadError] = useState<string | null>(null);
-  const [selectedClassId, setSelectedClassId] = useState('');
-  const [students, setStudents] = useState<StudentResponse[]>([]);
-  const [loadingStudents, setLoadingStudents] = useState(false);
-  const [studentLoadError, setStudentLoadError] = useState<string | null>(null);
-  const [assignments, setAssignments] = useState<Assignment[]>([]);
-  const [loadingAssignments, setLoadingAssignments] = useState(false);
-  const [assignmentLoadError, setAssignmentLoadError] = useState<string | null>(null);
-  const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
-  const [selectWholeClass, setSelectWholeClass] = useState(true);
-  const [selectedAssignmentIds, setSelectedAssignmentIds] = useState<string[]>([]);
-  const [examName, setExamName] = useState('Ca thi MOS');
-  const [allowExamHelp, setAllowExamHelp] = useState(false);
-  const [isCreatingExamPublication, setIsCreatingExamPublication] = useState(false);
-  const [createExamPublicationMessage, setCreateExamPublicationMessage] = useState<string | null>(null);
-  const [localAgentPublicationToken, setLocalAgentPublicationToken] = useState('');
 
   useEffect(() => {
     let active = true;
@@ -174,143 +146,6 @@ const GradingView = () => {
       active = false;
     };
   }, [getAccessToken]);
-
-  useEffect(() => {
-    let active = true;
-
-    const loadClasses = async () => {
-      setLoadingClasses(true);
-      setClassLoadError(null);
-
-      try {
-        const nextClasses = await classService.getAllClasses(getAccessToken);
-        if (!active) {
-          return;
-        }
-
-        setClasses(nextClasses);
-        setSelectedClassId((currentValue) => {
-          if (currentValue && nextClasses.some((item) => item.id === currentValue)) {
-            return currentValue;
-          }
-
-          return nextClasses[0]?.id || '';
-        });
-      } catch (err: unknown) {
-        if (!active) {
-          return;
-        }
-
-        setClasses([]);
-        setSelectedClassId('');
-        setClassLoadError(err instanceof Error ? err.message : 'Không tải được danh sách lớp.');
-      } finally {
-        if (active) {
-          setLoadingClasses(false);
-        }
-      }
-    };
-
-    void loadClasses();
-    return () => {
-      active = false;
-    };
-  }, [getAccessToken]);
-
-  useEffect(() => {
-    let active = true;
-
-    const loadStudentsByClass = async () => {
-      if (!selectedClassId) {
-        setStudents([]);
-        setSelectedStudentIds([]);
-        setStudentLoadError(null);
-        return;
-      }
-
-      setLoadingStudents(true);
-      setStudentLoadError(null);
-
-      try {
-        const nextStudents = await studentService.getStudentsByClassId(selectedClassId, getAccessToken);
-        if (!active) {
-          return;
-        }
-
-        setStudents(nextStudents);
-      } catch (err: unknown) {
-        if (!active) {
-          return;
-        }
-
-        setStudents([]);
-        setSelectedStudentIds([]);
-        setStudentLoadError(err instanceof Error ? err.message : 'Không tải được danh sách học sinh.');
-      } finally {
-        if (active) {
-          setLoadingStudents(false);
-        }
-      }
-    };
-
-    void loadStudentsByClass();
-    return () => {
-      active = false;
-    };
-  }, [getAccessToken, selectedClassId]);
-
-  useEffect(() => {
-    let active = true;
-
-    const loadAssignmentsByClass = async () => {
-      if (!selectedClassId) {
-        setAssignments([]);
-        setSelectedAssignmentIds([]);
-        setAssignmentLoadError(null);
-        return;
-      }
-
-      setLoadingAssignments(true);
-      setAssignmentLoadError(null);
-
-      try {
-        const nextAssignments = await assignmentService.getByClass(selectedClassId, getAccessToken);
-        if (!active) {
-          return;
-        }
-
-        setAssignments(nextAssignments);
-      } catch (err: unknown) {
-        if (!active) {
-          return;
-        }
-
-        setAssignments([]);
-        setSelectedAssignmentIds([]);
-        setAssignmentLoadError(err instanceof Error ? err.message : 'Không tải được danh sách bài tập.');
-      } finally {
-        if (active) {
-          setLoadingAssignments(false);
-        }
-      }
-    };
-
-    void loadAssignmentsByClass();
-    return () => {
-      active = false;
-    };
-  }, [getAccessToken, selectedClassId]);
-
-  useEffect(() => {
-    if (selectWholeClass) {
-      setSelectedStudentIds(students.map((student) => student.id));
-      return;
-    }
-
-    setSelectedStudentIds((currentValue) =>
-      currentValue.filter((studentId) => students.some((student) => student.id === studentId))
-    );
-  }, [students, selectWholeClass]);
 
   useEffect(() => {
     let active = true;
@@ -369,29 +204,6 @@ const GradingView = () => {
   );
 
   const autoBugTitle = useMemo(() => selectedProjectDisplayName, [selectedProjectDisplayName]);
-  const publishableAssignments = useMemo(
-    () => assignments.filter((assignment) => assignment.isActive && assignment.isPublishable),
-    [assignments]
-  );
-
-  const visiblePublicationAssignments = useMemo(
-    () => assignments.filter((assignment) => assignment.isActive),
-    [assignments]
-  );
-
-  const selectedPublicationAssignments = useMemo(
-    () =>
-      selectedAssignmentIds
-        .map((assignmentId) => publishableAssignments.find((assignment) => assignment.id === assignmentId) || null)
-        .filter((assignment): assignment is Assignment => assignment !== null),
-    [publishableAssignments, selectedAssignmentIds]
-  );
-
-  useEffect(() => {
-    setSelectedAssignmentIds((currentValue) =>
-      currentValue.filter((assignmentId) => publishableAssignments.some((assignment) => assignment.id === assignmentId))
-    );
-  }, [publishableAssignments]);
 
   useEffect(() => {
     setIsBugTitleDirty(false);
@@ -403,11 +215,6 @@ const GradingView = () => {
       setBugTitle(autoBugTitle);
     }
   }, [autoBugTitle, isBugTitleDirty]);
-
-  useEffect(() => {
-    setLocalAgentPublicationToken('');
-    setCreateExamPublicationMessage(null);
-  }, [examName, selectedClassId, selectedStudentIds, selectedAssignmentIds]);
 
   const isValidGradingFile = (file: File): boolean => {
     const fileName = file.name.toLowerCase();
@@ -437,85 +244,6 @@ const GradingView = () => {
     setStudentFile(file);
     setError(null);
     setResult(null);
-  };
-
-  const handleTogglePublicationAssignment = (assignmentId: string) => {
-    setSelectedAssignmentIds((currentValue) =>
-      currentValue.includes(assignmentId)
-        ? currentValue.filter((item) => item !== assignmentId)
-        : [...currentValue, assignmentId]
-    );
-  };
-
-  const handleToggleWholeClass = (checked: boolean) => {
-    setSelectWholeClass(checked);
-    if (checked) {
-      setSelectedStudentIds(students.map((student) => student.id));
-    }
-  };
-
-  const handleToggleStudent = (studentId: string) => {
-    setSelectedStudentIds((currentValue) => {
-      const nextValue = currentValue.includes(studentId)
-        ? currentValue.filter((item) => item !== studentId)
-        : [...currentValue, studentId];
-
-      setSelectWholeClass(students.length > 0 && nextValue.length === students.length);
-      return nextValue;
-    });
-  };
-
-  const handleCreateLocalAgentExam = async () => {
-    const trimmedExamName = examName.trim();
-
-    if (!trimmedExamName) {
-      setCreateExamPublicationMessage('Vui lòng nhập tên ca thi.');
-      return;
-    }
-
-    if (!selectedClassId) {
-      setCreateExamPublicationMessage('Vui lòng chọn lớp.');
-      return;
-    }
-
-    if (selectedStudentIds.length === 0) {
-      setCreateExamPublicationMessage('Vui lòng chọn ít nhất một học sinh.');
-      return;
-    }
-
-    if (selectedAssignmentIds.length === 0) {
-      setCreateExamPublicationMessage('Vui lòng chọn ít nhất một assignment.');
-      return;
-    }
-
-    setIsCreatingExamPublication(true);
-    setCreateExamPublicationMessage(null);
-
-    try {
-      const publication = await examPublicationService.createExamPublication(
-        {
-          name: trimmedExamName,
-          classId: selectedClassId,
-          studentIds: selectedStudentIds,
-          mode: 'Testing',
-          assignmentIds: selectedAssignmentIds,
-          modeRules: {
-            mode: 'Testing',
-            allowHelp: allowExamHelp,
-          },
-        },
-        getAccessToken
-      );
-
-      setLocalAgentPublicationToken(publication.publicationToken);
-      setCreateExamPublicationMessage('Đã tạo ca thi thành công.');
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Không thể tạo ca thi test.';
-      setLocalAgentPublicationToken('');
-      setCreateExamPublicationMessage(message);
-    } finally {
-      setIsCreatingExamPublication(false);
-    }
   };
 
   const handleGrade = async () => {
@@ -736,202 +464,6 @@ const GradingView = () => {
           <ResultCard result={result} />
         </div>
       )}
-
-      <section className="mt-6 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="mb-4">
-          <h2 className="text-lg font-semibold text-slate-800">Tạo ca thi</h2>
-          <p className="mt-1 text-sm text-slate-600">
-            Giáo viên tạo một publication cho cả lớp hoặc một nhóm học sinh, rồi gửi link thi cho học sinh tự mở.
-          </p>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2">
-          <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Tên ca thi</label>
-            <input
-              type="text"
-              value={examName}
-              onChange={(e) => setExamName(e.target.value)}
-              placeholder="Ví dụ: Ca thi MOS Excel"
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-            />
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Lớp thi</label>
-            <select
-              value={selectedClassId}
-              onChange={(e) => setSelectedClassId(e.target.value)}
-              disabled={loadingClasses || classes.length === 0}
-              className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm disabled:bg-slate-100"
-            >
-              <option value="" disabled>
-                {loadingClasses ? 'Đang tải lớp...' : classes.length === 0 ? 'Chưa có lớp' : 'Chọn lớp'}
-              </option>
-              {classes.map((classItem) => (
-                <option key={classItem.id} value={classItem.id}>
-                  {classItem.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="md:col-span-2">
-            <label className="mb-2 block text-sm font-medium text-slate-700">Danh sách học sinh trong lớp</label>
-            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-              <label className="mb-3 flex items-center gap-3 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-800">
-                <input
-                  type="checkbox"
-                  checked={selectWholeClass}
-                  onChange={(event) => handleToggleWholeClass(event.target.checked)}
-                  disabled={!selectedClassId || loadingStudents || students.length === 0}
-                  className="h-4 w-4 rounded border-slate-300 text-sky-600"
-                />
-                Chọn toàn bộ lớp
-              </label>
-
-              <div className="grid max-h-72 gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
-                {!selectedClassId && (
-                  <p className="text-sm text-slate-500">Chọn lớp trước để tải danh sách học sinh.</p>
-                )}
-                {selectedClassId && loadingStudents && <p className="text-sm text-slate-500">Đang tải học sinh...</p>}
-                {selectedClassId && !loadingStudents && students.length === 0 && (
-                  <p className="text-sm text-slate-500">Chưa có học sinh trong lớp này.</p>
-                )}
-                {students.map((student) => {
-                  const checked = selectedStudentIds.includes(student.id);
-
-                  return (
-                    <label
-                      key={student.id}
-                      className={`flex items-center gap-3 rounded-md border px-3 py-2 text-sm ${
-                        checked ? 'border-sky-300 bg-sky-50 text-sky-900' : 'border-slate-200 bg-white text-slate-700'
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={() => handleToggleStudent(student.id)}
-                        disabled={!selectedClassId || loadingStudents}
-                        className="h-4 w-4 rounded border-slate-300 text-sky-600"
-                      />
-                      <span>{buildStudentDisplayName(student) || student.id}</span>
-                    </label>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-
-          <div className="md:col-span-2">
-            <label className="mb-2 block text-sm font-medium text-slate-700">Assignment dùng để tạo lịch thi</label>
-            <div className="grid gap-3 sm:grid-cols-3">
-              {visiblePublicationAssignments.map((assignment) => {
-                const checked = selectedAssignmentIds.includes(assignment.id);
-                const isDisabled = !assignment.isPublishable;
-
-                return (
-                  <label
-                    key={assignment.id}
-                    className={`flex items-start gap-3 rounded-md border px-3 py-2 text-sm transition ${
-                      isDisabled
-                        ? 'cursor-not-allowed border-amber-200 bg-amber-50 text-amber-900'
-                        : checked
-                          ? 'cursor-pointer border-sky-300 bg-sky-50 text-sky-900'
-                          : 'cursor-pointer border-slate-200 bg-white text-slate-700'
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() => handleTogglePublicationAssignment(assignment.id)}
-                      disabled={isDisabled}
-                      className="mt-0.5 h-4 w-4 rounded border-slate-300 text-sky-600 disabled:cursor-not-allowed"
-                    />
-                    <span>
-                      {assignment.name}
-                      <span className="block text-xs text-slate-500">
-                        {assignment.examType.toUpperCase()} • {assignment.subject.toUpperCase()} •{' '}
-                        {assignment.gradingApiEndpoint}
-                      </span>
-                      {assignment.isLockedForPublication && (
-                        <span className="block text-xs text-slate-500">Đã dùng để tạo lịch thi trước đó.</span>
-                      )}
-                      {isDisabled && (
-                        <span className="block text-xs text-amber-700">
-                          {assignment.publishBlockReason || 'Assignment này chưa đủ điều kiện để tạo lịch thi.'}
-                        </span>
-                      )}
-                    </span>
-                  </label>
-                );
-              })}
-              {!loadingAssignments && visiblePublicationAssignments.length === 0 && (
-                <p className="text-sm text-slate-500">Lớp này chưa có assignment đang hoạt động để tạo lịch thi.</p>
-              )}
-            </div>
-          </div>
-
-          <div className="md:col-span-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
-            <label className="flex items-start gap-3 text-sm text-slate-700">
-              <input
-                type="checkbox"
-                checked={allowExamHelp}
-                onChange={(event) => setAllowExamHelp(event.target.checked)}
-                className="mt-0.5 h-4 w-4 rounded border-slate-300 text-sky-600"
-              />
-              <span>
-                Cho phép học sinh mở Help trong lúc thi
-                <span className="block text-xs text-slate-500">
-                  Mặc định tắt cho chế độ Testing. Khi bật, Local Agent sẽ nhận modeRules.allowHelp=true cho ca thi này.
-                </span>
-              </span>
-            </label>
-          </div>
-
-          <div className="md:col-span-2 flex flex-col gap-2">
-            <button
-              type="button"
-              onClick={() => void handleCreateLocalAgentExam()}
-              disabled={
-                isCreatingExamPublication ||
-                loadingClasses ||
-                loadingStudents ||
-                loadingAssignments ||
-                !selectedClassId ||
-                selectedStudentIds.length === 0 ||
-                selectedAssignmentIds.length === 0
-              }
-              className="inline-flex items-center justify-center gap-2 rounded-md bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-slate-400"
-            >
-              {isCreatingExamPublication ? <RefreshCw size={16} className="animate-spin" /> : null}
-              {isCreatingExamPublication ? 'Đang tạo ca thi...' : 'Tạo ca thi'}
-            </button>
-
-            {classLoadError && <p className="text-xs text-rose-600">{classLoadError}</p>}
-            {studentLoadError && <p className="text-xs text-rose-600">{studentLoadError}</p>}
-            {assignmentLoadError && <p className="text-xs text-rose-600">{assignmentLoadError}</p>}
-            {createExamPublicationMessage && <p className="text-xs text-slate-600">{createExamPublicationMessage}</p>}
-            {localAgentPublicationToken && (
-              <div className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-                <p className="font-semibold">Đã tạo ca thi</p>
-                <p>
-                  <strong>Publication token:</strong> {localAgentPublicationToken}
-                </p>
-                <p>
-                  <strong>Link thi:</strong> <code>{`${window.location.origin}/exam/${localAgentPublicationToken}`}</code>
-                </p>
-                <p>
-                  <strong>Số học sinh:</strong> {selectedStudentIds.length}
-                </p>
-                <p>
-                  <strong>Số assignment:</strong> {selectedPublicationAssignments.length}
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
 
       <section className="mt-6 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2">

@@ -15,6 +15,8 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { assignmentService } from '../services/assignment.service';
 import { classService } from '../services/class.service';
+import { examPublicationService } from '../services/exam-publication.service';
+import studentService from '../services/student.service';
 import type {
   Assignment,
   CreateAssignmentRequest,
@@ -22,6 +24,7 @@ import type {
   UpdateAssignmentRequest,
 } from '../types/assignment.types';
 import type { Class } from '../types/class.types';
+import type { StudentResponse } from '../types/student.types';
 
 type SubjectCode = 'excel' | 'word' | 'ppt';
 type ExamTypeCode = 'otth' | 'onthi' | 'gmetrix';
@@ -96,6 +99,15 @@ const buildDefaultNameFromEndpoint = (endpoint?: GradingEndpointInfo) => {
   return endpoint.displayName || endpoint.endpoint;
 };
 
+const buildStudentDisplayName = (student?: Pick<StudentResponse, 'middleName' | 'firstName' | 'fullName'> | null) =>
+  student?.fullName?.trim() || `${student?.middleName || ''} ${student?.firstName || ''}`.trim();
+
+const isAssignmentPublishableForExam = (assignment: Assignment) =>
+  assignment.isActive &&
+  assignment.isPublishable &&
+  Boolean(assignment.gradingApiEndpoint?.trim()) &&
+  (assignment.subject === 'excel' || assignment.subject === 'word');
+
 const AssignmentManagementPage = () => {
   const { getAccessToken } = useAuth();
 
@@ -103,20 +115,31 @@ const AssignmentManagementPage = () => {
   const [selectedClassId, setSelectedClassId] = useState('');
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [gradingEndpoints, setGradingEndpoints] = useState<GradingEndpointInfo[]>([]);
+  const [students, setStudents] = useState<StudentResponse[]>([]);
   const [includeInactive, setIncludeInactive] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState('');
 
   const [isLoadingClasses, setIsLoadingClasses] = useState(true);
   const [isLoadingAssignments, setIsLoadingAssignments] = useState(false);
   const [isLoadingEndpoints, setIsLoadingEndpoints] = useState(true);
+  const [isLoadingStudents, setIsLoadingStudents] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCreatingExamPublication, setIsCreatingExamPublication] = useState(false);
   const [actionAssignmentId, setActionAssignmentId] = useState<string | null>(null);
 
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [studentLoadError, setStudentLoadError] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const [createExamPublicationMessage, setCreateExamPublicationMessage] = useState<string | null>(null);
+  const [localAgentPublicationToken, setLocalAgentPublicationToken] = useState('');
 
   const [form, setForm] = useState<AssignmentFormState>(emptyForm);
   const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null);
+  const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
+  const [selectWholeClass, setSelectWholeClass] = useState(true);
+  const [selectedExamAssignmentIds, setSelectedExamAssignmentIds] = useState<string[]>([]);
+  const [examName, setExamName] = useState('Ca thi MOS');
+  const [allowExamHelp, setAllowExamHelp] = useState(false);
 
   const selectedClass = useMemo(
     () => classes.find((item) => item.id === selectedClassId) || null,
@@ -130,6 +153,16 @@ const AssignmentManagementPage = () => {
       return !subject || subject === currentSubject;
     });
   }, [form.subject, gradingEndpoints]);
+
+  const publishableExamAssignments = useMemo(() => assignments.filter(isAssignmentPublishableForExam), [assignments]);
+
+  const selectedExamAssignments = useMemo(
+    () =>
+      selectedExamAssignmentIds
+        .map((assignmentId) => publishableExamAssignments.find((assignment) => assignment.id === assignmentId) || null)
+        .filter((assignment): assignment is Assignment => assignment !== null),
+    [publishableExamAssignments, selectedExamAssignmentIds]
+  );
 
   const filteredAssignments = useMemo(() => {
     const keyword = normalizeText(searchKeyword.trim());
@@ -182,6 +215,28 @@ const AssignmentManagementPage = () => {
     }
   };
 
+  const loadStudents = async (classId: string) => {
+    if (!classId) {
+      setStudents([]);
+      setSelectedStudentIds([]);
+      return;
+    }
+
+    setIsLoadingStudents(true);
+    setStudentLoadError(null);
+
+    try {
+      const data = await studentService.getStudentsByClassId(classId, getAccessToken);
+      setStudents(data);
+    } catch (error) {
+      setStudents([]);
+      setSelectedStudentIds([]);
+      setStudentLoadError(error instanceof Error ? error.message : 'Không tải được danh sách học sinh.');
+    } finally {
+      setIsLoadingStudents(false);
+    }
+  };
+
   const loadAssignments = async (classId: string) => {
     if (!classId) {
       setAssignments([]);
@@ -225,11 +280,36 @@ const AssignmentManagementPage = () => {
 
   useEffect(() => {
     void loadAssignments(selectedClassId);
+    void loadStudents(selectedClassId);
     setEditingAssignment(null);
     setForm(emptyForm);
     setActionMessage(null);
+    setCreateExamPublicationMessage(null);
+    setLocalAgentPublicationToken('');
+    setSelectedExamAssignmentIds([]);
+    setSelectWholeClass(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedClassId, includeInactive]);
+
+  useEffect(() => {
+    if (selectWholeClass) {
+      setSelectedStudentIds(students.map((student) => student.id));
+      return;
+    }
+
+    setSelectedStudentIds((current) => current.filter((studentId) => students.some((student) => student.id === studentId)));
+  }, [selectWholeClass, students]);
+
+  useEffect(() => {
+    setSelectedExamAssignmentIds((current) =>
+      current.filter((assignmentId) => publishableExamAssignments.some((assignment) => assignment.id === assignmentId))
+    );
+  }, [publishableExamAssignments]);
+
+  useEffect(() => {
+    setCreateExamPublicationMessage(null);
+    setLocalAgentPublicationToken('');
+  }, [examName, selectedClassId, selectedStudentIds, selectedExamAssignmentIds, allowExamHelp]);
 
   const updateForm = <K extends keyof AssignmentFormState>(key: K, value: AssignmentFormState[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -355,6 +435,82 @@ const AssignmentManagementPage = () => {
     }
   };
 
+  const handleToggleExamAssignment = (assignmentId: string) => {
+    setSelectedExamAssignmentIds((current) =>
+      current.includes(assignmentId) ? current.filter((item) => item !== assignmentId) : [...current, assignmentId]
+    );
+  };
+
+  const handleToggleWholeClass = (checked: boolean) => {
+    setSelectWholeClass(checked);
+    if (checked) {
+      setSelectedStudentIds(students.map((student) => student.id));
+    }
+  };
+
+  const handleToggleStudent = (studentId: string) => {
+    setSelectedStudentIds((current) => {
+      const nextValue = current.includes(studentId)
+        ? current.filter((item) => item !== studentId)
+        : [...current, studentId];
+
+      setSelectWholeClass(students.length > 0 && nextValue.length === students.length);
+      return nextValue;
+    });
+  };
+
+  const handleCreateLocalAgentExam = async () => {
+    const trimmedExamName = examName.trim();
+
+    if (!trimmedExamName) {
+      setCreateExamPublicationMessage('Vui lòng nhập tên ca thi.');
+      return;
+    }
+
+    if (!selectedClassId) {
+      setCreateExamPublicationMessage('Vui lòng chọn lớp.');
+      return;
+    }
+
+    if (selectedStudentIds.length === 0) {
+      setCreateExamPublicationMessage('Vui lòng chọn ít nhất một học sinh.');
+      return;
+    }
+
+    if (selectedExamAssignmentIds.length === 0) {
+      setCreateExamPublicationMessage('Vui lòng chọn ít nhất một bài tập.');
+      return;
+    }
+
+    setIsCreatingExamPublication(true);
+    setCreateExamPublicationMessage(null);
+
+    try {
+      const publication = await examPublicationService.createExamPublication(
+        {
+          name: trimmedExamName,
+          classId: selectedClassId,
+          studentIds: selectedStudentIds,
+          mode: 'Testing',
+          assignmentIds: selectedExamAssignmentIds,
+          modeRules: {
+            mode: 'Testing',
+            allowHelp: allowExamHelp,
+          },
+        },
+        getAccessToken
+      );
+
+      setLocalAgentPublicationToken(publication.publicationToken);
+      setCreateExamPublicationMessage('Đã tạo ca thi thành công.');
+    } catch (error) {
+      setLocalAgentPublicationToken('');
+      setCreateExamPublicationMessage(error instanceof Error ? error.message : 'Không thể tạo ca thi test.');
+    } finally {
+      setIsCreatingExamPublication(false);
+    }
+  };
+
   const handleDelete = async (assignment: Assignment) => {
     const confirmed = window.confirm(
       `Xóa bài tập "${assignment.name}"? Thao tác này phụ thuộc vào chính sách xóa hiện tại của backend.`
@@ -403,13 +559,14 @@ const AssignmentManagementPage = () => {
               void loadClasses();
               void loadGradingEndpoints();
               void loadAssignments(selectedClassId);
+              void loadStudents(selectedClassId);
             }}
             className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-            disabled={isLoadingClasses || isLoadingAssignments || isLoadingEndpoints}
+            disabled={isLoadingClasses || isLoadingAssignments || isLoadingEndpoints || isLoadingStudents}
           >
             <RefreshCw
               className={`h-4 w-4 ${
-                isLoadingClasses || isLoadingAssignments || isLoadingEndpoints ? 'animate-spin' : ''
+                isLoadingClasses || isLoadingAssignments || isLoadingEndpoints || isLoadingStudents ? 'animate-spin' : ''
               }`}
             />
             Tải lại
@@ -474,7 +631,170 @@ const AssignmentManagementPage = () => {
             {loadError}
           </div>
         )}
+
+        {studentLoadError && (
+          <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+            {studentLoadError}
+          </div>
+        )}
       </div>
+
+      <section className="rounded-3xl border border-blue-100 bg-white p-6 shadow-sm">
+        <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-sm font-semibold text-blue-700">
+              <BookOpenCheck className="h-4 w-4" />
+              Tạo ca thi
+            </div>
+            <h2 className="mt-3 text-lg font-bold text-slate-900">Tạo ca thi từ bài tập của lớp</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Chọn học sinh và bài tập đã publish để tạo token cho Local Agent / trang thi.
+            </p>
+          </div>
+          <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
+            Đã chọn <strong className="text-slate-900">{selectedStudentIds.length}</strong> học sinh •{' '}
+            <strong className="text-slate-900">{selectedExamAssignments.length}</strong> bài tập
+          </div>
+        </div>
+
+        <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+          <div className="space-y-4">
+            <label className="block">
+              <span className="text-sm font-semibold text-slate-700">Tên ca thi</span>
+              <input
+                value={examName}
+                onChange={(event) => setExamName(event.target.value)}
+                className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                placeholder="Ví dụ: Ca thi MOS lớp A"
+              />
+            </label>
+
+            <div>
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-sm font-semibold text-slate-700">Học sinh</span>
+                <label className="inline-flex items-center gap-2 text-sm text-slate-600">
+                  <input
+                    type="checkbox"
+                    checked={selectWholeClass}
+                    onChange={(event) => handleToggleWholeClass(event.target.checked)}
+                    className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    disabled={isLoadingStudents || students.length === 0}
+                  />
+                  Cả lớp
+                </label>
+              </div>
+
+              <div className="mt-2 max-h-56 overflow-auto rounded-2xl border border-slate-200 p-3">
+                {isLoadingStudents ? (
+                  <div className="flex items-center gap-2 text-sm text-slate-500">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Đang tải học sinh...
+                  </div>
+                ) : students.length === 0 ? (
+                  <p className="text-sm text-slate-500">Lớp này chưa có học sinh.</p>
+                ) : (
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {students.map((student) => (
+                      <label key={student.id} className="flex items-center gap-2 rounded-xl px-2 py-1.5 text-sm hover:bg-slate-50">
+                        <input
+                          type="checkbox"
+                          checked={selectedStudentIds.includes(student.id)}
+                          onChange={() => handleToggleStudent(student.id)}
+                          className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="truncate">{buildStudentDisplayName(student) || student.id}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <span className="text-sm font-semibold text-slate-700">Bài tập đưa vào ca thi</span>
+              <div className="mt-2 max-h-56 overflow-auto rounded-2xl border border-slate-200 p-3">
+                {isLoadingAssignments ? (
+                  <div className="flex items-center gap-2 text-sm text-slate-500">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Đang tải bài tập...
+                  </div>
+                ) : publishableExamAssignments.length === 0 ? (
+                  <p className="text-sm text-slate-500">
+                    Lớp này chưa có bài tập đang hoạt động, đã publish và có endpoint chấm điểm.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {publishableExamAssignments.map((assignment) => (
+                      <label key={assignment.id} className="flex items-start gap-2 rounded-xl px-2 py-1.5 text-sm hover:bg-slate-50">
+                        <input
+                          type="checkbox"
+                          checked={selectedExamAssignmentIds.includes(assignment.id)}
+                          onChange={() => handleToggleExamAssignment(assignment.id)}
+                          className="mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span>
+                          <span className="block font-semibold text-slate-800">{assignment.name}</span>
+                          <span className="block text-xs text-slate-500">
+                            {assignment.projectCode || getProjectCodeFromEndpoint(assignment.gradingApiEndpoint) || '—'} •{' '}
+                            {assignment.gradingApiEndpoint}
+                          </span>
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <label className="inline-flex items-center gap-2 text-sm text-slate-600">
+              <input
+                type="checkbox"
+                checked={allowExamHelp}
+                onChange={(event) => setAllowExamHelp(event.target.checked)}
+                className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+              />
+              Cho phép xem trợ giúp trong ca thi
+            </label>
+
+            <button
+              type="button"
+              onClick={() => void handleCreateLocalAgentExam()}
+              disabled={
+                isCreatingExamPublication ||
+                !selectedClassId ||
+                selectedStudentIds.length === 0 ||
+                selectedExamAssignmentIds.length === 0
+              }
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isCreatingExamPublication ? <Loader2 className="h-4 w-4 animate-spin" /> : <ClipboardList className="h-4 w-4" />}
+              Tạo ca thi
+            </button>
+
+            {createExamPublicationMessage && (
+              <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+                {createExamPublicationMessage}
+              </div>
+            )}
+
+            {localAgentPublicationToken && (
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                <p>
+                  <strong>Token:</strong> {localAgentPublicationToken}
+                </p>
+                <p className="mt-1">
+                  <strong>Link thi:</strong>{' '}
+                  <a className="font-semibold underline" href={`/exam/${localAgentPublicationToken}`} target="_blank" rel="noreferrer">
+                    /exam/{localAgentPublicationToken}
+                  </a>
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
         <div className="rounded-3xl border border-slate-200 bg-white shadow-sm">
