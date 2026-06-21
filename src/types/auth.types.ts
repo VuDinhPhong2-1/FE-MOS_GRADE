@@ -7,6 +7,11 @@
   fullName?: string;
   phoneNumber?: string;
   avatar?: string;
+  teacherApprovalStatus?: 'Pending' | 'Approved' | 'Rejected' | string;
+  teacherApprovalRequestedAt?: string;
+  teacherApprovalReviewedAt?: string;
+  teacherApprovalReviewedBy?: string;
+  teacherApprovalNote?: string;
 }
 
 export interface AuthContextType {
@@ -39,6 +44,11 @@ export interface LoginResponse {
   fullName?: string;
   phoneNumber?: string;
   avatar?: string;
+  teacherApprovalStatus?: 'Pending' | 'Approved' | 'Rejected' | string;
+  teacherApprovalRequestedAt?: string;
+  teacherApprovalReviewedAt?: string;
+  teacherApprovalReviewedBy?: string;
+  teacherApprovalNote?: string;
 }
 
 export interface RegisterResponse {
@@ -48,6 +58,8 @@ export interface RegisterResponse {
   email?: string;
   role?: string;
   permissions?: string[];
+  teacherApprovalStatus?: 'Pending' | 'Approved' | 'Rejected' | string;
+  teacherApprovalRequestedAt?: string;
 }
 
 export interface UpdateProfileRequest {
@@ -66,6 +78,11 @@ export interface ProfileResponse {
   phoneNumber?: string;
   avatar?: string;
   isActive?: boolean;
+  teacherApprovalStatus?: 'Pending' | 'Approved' | 'Rejected' | string;
+  teacherApprovalRequestedAt?: string;
+  teacherApprovalReviewedAt?: string;
+  teacherApprovalReviewedBy?: string;
+  teacherApprovalNote?: string;
 }
 
 export interface TeacherSummary {
@@ -76,6 +93,11 @@ export interface TeacherSummary {
   role?: string;
   permissions?: string[];
   isActive?: boolean;
+  teacherApprovalStatus?: 'Pending' | 'Approved' | 'Rejected' | string;
+  teacherApprovalRequestedAt?: string;
+  teacherApprovalReviewedAt?: string;
+  teacherApprovalReviewedBy?: string;
+  teacherApprovalNote?: string;
 }
 
 export interface PermissionCatalogResponse {
@@ -85,4 +107,17 @@ export interface PermissionCatalogResponse {
 
 export interface UpdateTeacherPermissionsRequest {
   permissions: string[];
+}
+
+export interface TeacherApprovalRequest extends TeacherSummary {
+  teacherApprovalStatus?: 'Pending' | 'Approved' | 'Rejected' | string;
+  teacherApprovalRequestedAt?: string;
+  teacherApprovalReviewedAt?: string;
+  teacherApprovalReviewedBy?: string;
+  teacherApprovalNote?: string;
+}
+
+export interface TeacherApprovalDecisionRequest {
+  decision: 'approve' | 'reject';
+  note?: string;
 }

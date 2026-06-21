@@ -1,6 +1,7 @@
 ﻿import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { CalendarClock, ClipboardList, FlaskConical, GraduationCap, LayoutDashboard, ShieldCheck } from 'lucide-react';
 import Layout from './components/Layout/Layout';
+import type { SidebarNavItem } from './components/Layout/Sidebar';
 import GradingView from './pages/GradingView';
 import AssignmentManagementPage from './pages/AssignmentManagementPage';
 import ClassGradingPage from './pages/ClassGradingPage';
@@ -11,7 +12,13 @@ import AuthPage from './pages/AuthPage';
 import TeacherSchedule from './pages/TeacherSchedule';
 import PermissionManagement from './pages/PermissionManagement';
 import PublicExamPage from './pages/PublicExamPage';
+import AccountStatusPage from './pages/AccountStatusPage';
 import { AuthProvider, useAuth } from './context/AuthContext';
+
+const isPendingOrRejectedTeacher = (user: ReturnType<typeof useAuth>['user']) =>
+  user?.role === 'PendingTeacher' ||
+  user?.teacherApprovalStatus === 'Pending' ||
+  user?.teacherApprovalStatus === 'Rejected';
 
 const ProtectedRoute: React.FC = () => {
   const { user, loading } = useAuth();
@@ -23,27 +30,48 @@ const ProtectedRoute: React.FC = () => {
   return user ? <Outlet /> : <Navigate to="/login" replace />;
 };
 
+const ApprovedTeacherRoute: React.FC = () => {
+  const { user } = useAuth();
+
+  if (isPendingOrRejectedTeacher(user)) {
+    return <Navigate to="/account-status" replace />;
+  }
+
+  return <Outlet />;
+};
+
 const AppLayout: React.FC = () => {
   const { user } = useAuth();
 
-  const navItems = [
+  if (isPendingOrRejectedTeacher(user)) {
+    return <Navigate to="/account-status" replace />;
+  }
+
+  const canUseTeacherFeatures = user?.role === 'Teacher' || user?.role === 'Admin';
+
+  const navItems: SidebarNavItem[] = [
     { id: 'dashboard', label: 'Trang chủ', icon: LayoutDashboard, path: '/dashboard' },
-    { id: 'schools', label: 'Quản lý trường', icon: GraduationCap, path: '/schools' },
-    { id: 'schedule', label: 'Lịch dạy', icon: CalendarClock, path: '/schedule' },
-    {
-      id: 'assignments',
-      label: 'Quản lý bài tập',
-      icon: ClipboardList,
-      path: '/assignments',
-      children: [
-        { id: 'assignments-filters', label: 'Lớp & bộ lọc', path: '/assignments/filters' },
-        { id: 'assignments-list', label: 'Danh sách bài tập', path: '/assignments/list' },
-        { id: 'assignments-form', label: 'Tạo bài tập', path: '/assignments/form' },
-        { id: 'assignments-exam', label: 'Tạo ca thi', path: '/assignments/exam' },
-      ],
-    },
-    { id: 'grading-test', label: 'Test chấm điểm', icon: FlaskConical, path: '/grading' },
   ];
+
+  if (canUseTeacherFeatures) {
+    navItems.push(
+      { id: 'schools', label: 'Quản lý trường', icon: GraduationCap, path: '/schools' },
+      { id: 'schedule', label: 'Lịch dạy', icon: CalendarClock, path: '/schedule' },
+      {
+        id: 'assignments',
+        label: 'Quản lý bài tập',
+        icon: ClipboardList,
+        path: '/assignments',
+        children: [
+          { id: 'assignments-filters', label: 'Lớp & bộ lọc', path: '/assignments/filters' },
+          { id: 'assignments-list', label: 'Danh sách bài tập', path: '/assignments/list' },
+          { id: 'assignments-form', label: 'Tạo bài tập', path: '/assignments/form' },
+          { id: 'assignments-exam', label: 'Tạo ca thi', path: '/assignments/exam' },
+        ],
+      },
+      { id: 'grading-test', label: 'Test chấm điểm', icon: FlaskConical, path: '/grading' }
+    );
+  }
 
   if (user?.role === 'Admin') {
     navItems.push({ id: 'permissions', label: 'Phân quyền', icon: ShieldCheck, path: '/permissions' });
@@ -64,7 +92,9 @@ function App() {
         <Route path="/exam/:token" element={<PublicExamPage />} />
 
         <Route element={<ProtectedRoute />}>
-          <Route element={<AppLayout />}>
+          <Route path="/account-status" element={<AccountStatusPage />} />
+          <Route element={<ApprovedTeacherRoute />}>
+            <Route element={<AppLayout />}>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/schools" element={<SchoolList />} />
@@ -78,6 +108,7 @@ function App() {
             <Route path="/grading" element={<GradingView />} />
             <Route path="/grading/class/:classId" element={<ClassGradingPage />} />
             <Route path="/scores/class/:classId" element={<ClassScoreboardPage />} />
+            </Route>
           </Route>
         </Route>
 

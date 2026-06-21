@@ -49,6 +49,14 @@ export default function AuthPage() {
     return 'Có lỗi xảy ra';
   };
 
+  const getPostLoginPath = (data: LoginResponse) => {
+    if (data.role === 'PendingTeacher' || data.teacherApprovalStatus === 'Pending' || data.teacherApprovalStatus === 'Rejected') {
+      return '/account-status';
+    }
+
+    return '/dashboard';
+  };
+
   const handleAuthSuccess = (data: LoginResponse) => {
     if (!data.accessToken || !data.refreshToken) {
       throw new Error('Máy chủ không trả về token');
@@ -64,12 +72,17 @@ export default function AuthPage() {
         phoneNumber: data.phoneNumber,
         avatar: data.avatar,
         permissions: data.permissions,
+        teacherApprovalStatus: data.teacherApprovalStatus,
+        teacherApprovalRequestedAt: data.teacherApprovalRequestedAt,
+        teacherApprovalReviewedAt: data.teacherApprovalReviewedAt,
+        teacherApprovalReviewedBy: data.teacherApprovalReviewedBy,
+        teacherApprovalNote: data.teacherApprovalNote,
       },
       data.accessToken,
       data.refreshToken
     );
 
-    navigate('/dashboard');
+    navigate(getPostLoginPath(data));
   };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
@@ -103,7 +116,7 @@ export default function AuthPage() {
         didNavigate = true;
       } else {
         await response.json().catch(() => null);
-        notify.success('Đăng ký thành công! Vui lòng đăng nhập.');
+        notify.success('Tài khoản đã tạo, đang chờ Admin duyệt quyền giáo viên.');
         setIsLogin(true);
         setFormData({ username: '', password: '', email: '' });
       }

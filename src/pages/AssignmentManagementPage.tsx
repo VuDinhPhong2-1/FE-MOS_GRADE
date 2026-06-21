@@ -153,6 +153,11 @@ const AssignmentManagementPage = ({ section = 'all' }: AssignmentManagementPageP
   const [isAssignmentListPanelOpen, setIsAssignmentListPanelOpen] = useState(true);
   const [isAssignmentFormPanelOpen, setIsAssignmentFormPanelOpen] = useState(false);
 
+  // Derived state to determine if any loading state is active. This avoids
+  // repeating the same boolean OR expression throughout the JSX. When any
+  // of the individual loading flags are true, this value will be true.
+  const isAnyLoading = isLoadingClasses || isLoadingAssignments || isLoadingEndpoints || isLoadingStudents;
+
   const showFiltersPanel = section === 'all' || section === 'filters';
   const showExamPanel = section === 'all' || section === 'exam';
   const showAssignmentListPanel = section === 'all' || section === 'list';
@@ -287,6 +292,18 @@ const AssignmentManagementPage = ({ section = 'all' }: AssignmentManagementPageP
     } finally {
       setIsLoadingEndpoints(false);
     }
+  };
+
+  /**
+   * Load the class list, grading endpoints, assignments and students again.
+   * This helper consolidates multiple refresh calls into a single function,
+   * improving readability of the JSX and avoiding inline anonymous functions.
+   */
+  const handleReloadData = () => {
+    void loadClasses();
+    void loadGradingEndpoints();
+    void loadAssignments(selectedClassId);
+    void loadStudents(selectedClassId);
   };
 
   useEffect(() => {
@@ -589,19 +606,12 @@ const AssignmentManagementPage = ({ section = 'all' }: AssignmentManagementPageP
 
           <button
             type="button"
-            onClick={() => {
-              void loadClasses();
-              void loadGradingEndpoints();
-              void loadAssignments(selectedClassId);
-              void loadStudents(selectedClassId);
-            }}
+            onClick={handleReloadData}
             className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-            disabled={isLoadingClasses || isLoadingAssignments || isLoadingEndpoints || isLoadingStudents}
+            disabled={isAnyLoading}
           >
             <RefreshCw
-              className={`h-4 w-4 ${
-                isLoadingClasses || isLoadingAssignments || isLoadingEndpoints || isLoadingStudents ? 'animate-spin' : ''
-              }`}
+              className={`h-4 w-4 ${isAnyLoading ? 'animate-spin' : ''}`}
             />
             Tải lại
           </button>
