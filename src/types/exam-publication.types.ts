@@ -13,6 +13,7 @@ export type ExamPublicationProjectRequest = {
     showFeedback?: boolean;
     allowRestart?: boolean;
     allowNextProject?: boolean;
+    allowHelp?: boolean;
   };
 };
 
@@ -23,6 +24,13 @@ export type CreateExamPublicationRequest = {
   assignmentIds?: string[];
   mode: 'Training' | 'Testing';
   projectSequence?: ExamPublicationProjectRequest[];
+  modeRules?: {
+    mode?: 'Training' | 'Testing';
+    showFeedback?: boolean;
+    allowRestart?: boolean;
+    allowNextProject?: boolean;
+    allowHelp?: boolean;
+  };
 };
 
 export type ExamPublicationResponse = {

@@ -130,6 +130,7 @@ const GradingView = () => {
   const [selectWholeClass, setSelectWholeClass] = useState(true);
   const [selectedAssignmentIds, setSelectedAssignmentIds] = useState<string[]>([]);
   const [examName, setExamName] = useState('Ca thi MOS');
+  const [allowExamHelp, setAllowExamHelp] = useState(false);
   const [isCreatingExamPublication, setIsCreatingExamPublication] = useState(false);
   const [createExamPublicationMessage, setCreateExamPublicationMessage] = useState<string | null>(null);
   const [localAgentPublicationToken, setLocalAgentPublicationToken] = useState('');
@@ -498,6 +499,10 @@ const GradingView = () => {
           studentIds: selectedStudentIds,
           mode: 'Testing',
           assignmentIds: selectedAssignmentIds,
+          modeRules: {
+            mode: 'Testing',
+            allowHelp: allowExamHelp,
+          },
         },
         getAccessToken
       );
@@ -865,6 +870,23 @@ const GradingView = () => {
                 <p className="text-sm text-slate-500">Lớp này chưa có assignment đang hoạt động để tạo lịch thi.</p>
               )}
             </div>
+          </div>
+
+          <div className="md:col-span-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
+            <label className="flex items-start gap-3 text-sm text-slate-700">
+              <input
+                type="checkbox"
+                checked={allowExamHelp}
+                onChange={(event) => setAllowExamHelp(event.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-slate-300 text-sky-600"
+              />
+              <span>
+                Cho phép học sinh mở Help trong lúc thi
+                <span className="block text-xs text-slate-500">
+                  Mặc định tắt cho chế độ Testing. Khi bật, Local Agent sẽ nhận modeRules.allowHelp=true cho ca thi này.
+                </span>
+              </span>
+            </label>
           </div>
 
           <div className="md:col-span-2 flex flex-col gap-2">
