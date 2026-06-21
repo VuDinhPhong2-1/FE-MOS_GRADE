@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import {
   Archive,
   BookOpenCheck,
+  ChevronDown,
   ClipboardList,
   Edit3,
   Loader2,
@@ -140,6 +141,11 @@ const AssignmentManagementPage = () => {
   const [selectedExamAssignmentIds, setSelectedExamAssignmentIds] = useState<string[]>([]);
   const [examName, setExamName] = useState('Ca thi MOS');
   const [allowExamHelp, setAllowExamHelp] = useState(false);
+
+  const [isClassPanelOpen, setIsClassPanelOpen] = useState(true);
+  const [isExamPanelOpen, setIsExamPanelOpen] = useState(false);
+  const [isAssignmentListPanelOpen, setIsAssignmentListPanelOpen] = useState(true);
+  const [isAssignmentFormPanelOpen, setIsAssignmentFormPanelOpen] = useState(false);
 
   const selectedClass = useMemo(
     () => classes.find((item) => item.id === selectedClassId) || null,
@@ -336,6 +342,7 @@ const AssignmentManagementPage = () => {
   const startEdit = (assignment: Assignment) => {
     setEditingAssignment(assignment);
     setActionMessage(null);
+    setIsAssignmentFormPanelOpen(true);
     setForm({
       name: assignment.name || '',
       description: assignment.description || '',
@@ -538,9 +545,24 @@ const AssignmentManagementPage = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+    <div className="space-y-5">
+      <details
+        open={isClassPanelOpen}
+        onToggle={(event) => setIsClassPanelOpen(event.currentTarget.open)}
+        className="group rounded-3xl border border-slate-200 bg-white shadow-sm"
+      >
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-4">
+          <div>
+            <h2 className="text-lg font-bold text-slate-900">Lớp & bộ lọc</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Chọn lớp, tìm kiếm bài tập và bật/tắt bài đã lưu trữ.
+            </p>
+          </div>
+          <ChevronDown className="h-5 w-5 text-slate-500 transition group-open:rotate-180" />
+        </summary>
+
+        <div className="border-t border-slate-100 px-6 pb-6 pt-5">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-sm font-semibold text-blue-700">
               <ClipboardList className="h-4 w-4" />
@@ -637,10 +659,31 @@ const AssignmentManagementPage = () => {
             {studentLoadError}
           </div>
         )}
-      </div>
+        </div>
+      </details>
 
-      <section className="mt-8 rounded-3xl border border-blue-100 bg-white p-6 shadow-sm">
-        <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+      <details
+        open={isExamPanelOpen}
+        onToggle={(event) => setIsExamPanelOpen(event.currentTarget.open)}
+        className="group rounded-3xl border border-blue-100 bg-white shadow-sm"
+      >
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-4">
+          <div>
+            <h2 className="text-lg font-bold text-slate-900">Tạo ca thi</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Mở khi cần chọn học sinh, bài tập và tạo token thi cho lớp.
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="hidden rounded-full bg-blue-50 px-3 py-1 text-sm font-semibold text-blue-700 sm:inline">
+              {selectedStudentIds.length} học sinh • {selectedExamAssignments.length} bài tập
+            </span>
+            <ChevronDown className="h-5 w-5 text-slate-500 transition group-open:rotate-180" />
+          </div>
+        </summary>
+
+        <div className="border-t border-blue-50 px-6 pb-6 pt-5">
+          <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
           <div>
             <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-sm font-semibold text-blue-700">
               <BookOpenCheck className="h-4 w-4" />
@@ -794,11 +837,32 @@ const AssignmentManagementPage = () => {
             )}
           </div>
         </div>
-      </section>
+        </div>
+      </details>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
-        <div className="rounded-3xl border border-slate-200 bg-white shadow-sm">
-          <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_420px]">
+        <details
+          open={isAssignmentListPanelOpen}
+          onToggle={(event) => setIsAssignmentListPanelOpen(event.currentTarget.open)}
+          className="group rounded-3xl border border-slate-200 bg-white shadow-sm"
+        >
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-4">
+            <div>
+              <h2 className="text-lg font-bold text-slate-900">Danh sách bài tập</h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Xem, sửa, lưu trữ hoặc xóa bài tập của lớp đang chọn.
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="hidden rounded-full bg-slate-50 px-3 py-1 text-sm font-semibold text-slate-700 sm:inline">
+                {filteredAssignments.length} bài tập
+              </span>
+              <ChevronDown className="h-5 w-5 text-slate-500 transition group-open:rotate-180" />
+            </div>
+          </summary>
+
+          <div className="border-t border-slate-100">
+            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
             <div>
               <h2 className="text-lg font-bold text-slate-900">Danh sách bài tập</h2>
               <p className="text-sm text-slate-500">
@@ -913,10 +977,28 @@ const AssignmentManagementPage = () => {
               </table>
             </div>
           )}
-        </div>
+          </div>
+        </details>
 
-        <form onSubmit={handleSubmit} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="flex items-start justify-between gap-4">
+        <details
+          open={isAssignmentFormPanelOpen}
+          onToggle={(event) => setIsAssignmentFormPanelOpen(event.currentTarget.open)}
+          className="group rounded-3xl border border-slate-200 bg-white shadow-sm"
+        >
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-4">
+            <div>
+              <h2 className="text-lg font-bold text-slate-900">
+                {editingAssignment ? 'Chỉnh sửa bài tập' : 'Tạo / chỉnh sửa bài tập'}
+              </h2>
+              <p className="mt-1 text-sm text-slate-500">
+                {editingAssignment ? 'Đang sửa bài tập đã chọn.' : 'Mở khi cần tạo bài tập mới cho lớp.'}
+              </p>
+            </div>
+            <ChevronDown className="h-5 w-5 text-slate-500 transition group-open:rotate-180" />
+          </summary>
+
+          <form onSubmit={handleSubmit} className="border-t border-slate-100 p-6">
+            <div className="flex items-start justify-between gap-4">
             <div>
               <h2 className="text-lg font-bold text-slate-900">
                 {editingAssignment ? 'Chỉnh sửa bài tập' : 'Tạo bài tập mới'}
@@ -1078,7 +1160,8 @@ const AssignmentManagementPage = () => {
               </button>
             </div>
           </div>
-        </form>
+          </form>
+        </details>
       </div>
     </div>
   );
