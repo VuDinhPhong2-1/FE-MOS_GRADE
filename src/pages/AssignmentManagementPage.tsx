@@ -109,7 +109,13 @@ const isAssignmentPublishableForExam = (assignment: Assignment) =>
   Boolean(assignment.gradingApiEndpoint?.trim()) &&
   (assignment.subject === 'excel' || assignment.subject === 'word');
 
-const AssignmentManagementPage = () => {
+type AssignmentManagementSection = 'filters' | 'exam' | 'list' | 'form' | 'all';
+
+interface AssignmentManagementPageProps {
+  section?: AssignmentManagementSection;
+}
+
+const AssignmentManagementPage = ({ section = 'all' }: AssignmentManagementPageProps) => {
   const { getAccessToken } = useAuth();
 
   const [classes, setClasses] = useState<Class[]>([]);
@@ -146,6 +152,11 @@ const AssignmentManagementPage = () => {
   const [isExamPanelOpen, setIsExamPanelOpen] = useState(false);
   const [isAssignmentListPanelOpen, setIsAssignmentListPanelOpen] = useState(true);
   const [isAssignmentFormPanelOpen, setIsAssignmentFormPanelOpen] = useState(false);
+
+  const showFiltersPanel = section === 'all' || section === 'filters';
+  const showExamPanel = section === 'all' || section === 'exam';
+  const showAssignmentListPanel = section === 'all' || section === 'list';
+  const showAssignmentFormPanel = section === 'all' || section === 'form';
 
   const selectedClass = useMemo(
     () => classes.find((item) => item.id === selectedClassId) || null,
@@ -546,8 +557,9 @@ const AssignmentManagementPage = () => {
 
   return (
     <div className="space-y-5">
+      {showFiltersPanel && (
       <details
-        open={isClassPanelOpen}
+        open={section === 'filters' || isClassPanelOpen}
         onToggle={(event) => setIsClassPanelOpen(event.currentTarget.open)}
         className="group rounded-3xl border border-slate-200 bg-white shadow-sm"
       >
@@ -661,9 +673,11 @@ const AssignmentManagementPage = () => {
         )}
         </div>
       </details>
+      )}
 
+      {showExamPanel && (
       <details
-        open={isExamPanelOpen}
+        open={section === 'exam' || isExamPanelOpen}
         onToggle={(event) => setIsExamPanelOpen(event.currentTarget.open)}
         className="group rounded-3xl border border-blue-100 bg-white shadow-sm"
       >
@@ -839,10 +853,12 @@ const AssignmentManagementPage = () => {
         </div>
         </div>
       </details>
+      )}
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_420px]">
+        {showAssignmentListPanel && (
         <details
-          open={isAssignmentListPanelOpen}
+          open={section === 'list' || isAssignmentListPanelOpen}
           onToggle={(event) => setIsAssignmentListPanelOpen(event.currentTarget.open)}
           className="group rounded-3xl border border-slate-200 bg-white shadow-sm"
         >
@@ -979,9 +995,11 @@ const AssignmentManagementPage = () => {
           )}
           </div>
         </details>
+        )}
 
+        {showAssignmentFormPanel && (
         <details
-          open={isAssignmentFormPanelOpen}
+          open={section === 'form' || isAssignmentFormPanelOpen}
           onToggle={(event) => setIsAssignmentFormPanelOpen(event.currentTarget.open)}
           className="group rounded-3xl border border-slate-200 bg-white shadow-sm"
         >
@@ -1162,6 +1180,7 @@ const AssignmentManagementPage = () => {
           </div>
           </form>
         </details>
+        )}
       </div>
     </div>
   );

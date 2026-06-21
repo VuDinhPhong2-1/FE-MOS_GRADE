@@ -1,7 +1,19 @@
 ﻿import { clsx } from 'clsx';
-import { LogOut, type LucideIcon } from 'lucide-react';
+import { ChevronDown, LogOut, type LucideIcon } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+
+export interface SidebarNavItem {
+  id: string;
+  label: string;
+  icon: LucideIcon;
+  path: string;
+  children?: Array<{
+    id: string;
+    label: string;
+    path: string;
+  }>;
+}
 
 interface NavItemProps {
   label: string;
@@ -28,9 +40,55 @@ const NavItem = ({ label, icon: Icon, path, onClick }: NavItemProps) => (
   </NavLink>
 );
 
+interface NavDropdownProps {
+  item: SidebarNavItem;
+  onNavigate?: () => void;
+}
+
+const NavDropdown = ({ item, onNavigate }: NavDropdownProps) => (
+  <div className="mx-2">
+    <NavLink
+      to={item.path}
+      onClick={onNavigate}
+      className={({ isActive }) =>
+        clsx(
+          'flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all',
+          isActive
+            ? 'bg-white/24 !text-white shadow-[0_6px_16px_rgba(15,23,42,0.24)]'
+            : '!text-slate-100 hover:bg-white/14 hover:!text-white'
+        )
+      }
+    >
+      <item.icon size={18} />
+      <span className="min-w-0 flex-1 truncate">{item.label}</span>
+      <ChevronDown size={16} className="text-slate-100/80" />
+    </NavLink>
+
+    <div className="mt-1 space-y-1 pl-8">
+      {item.children?.map((child) => (
+        <NavLink
+          key={child.id}
+          to={child.path}
+          onClick={onNavigate}
+          className={({ isActive }) =>
+            clsx(
+              'block rounded-lg px-3 py-2 text-sm transition-all',
+              isActive
+                ? 'bg-white/18 font-semibold !text-white'
+                : '!text-slate-200/90 hover:bg-white/10 hover:!text-white'
+            )
+          }
+        >
+          {child.label}
+        </NavLink>
+      ))}
+    </div>
+  </div>
+);
+
 interface SidebarProps {
   isOpen: boolean;
-  navItems: Array<{ id: string; label: string; icon: LucideIcon; path: string }>;
+  navItems: SidebarNavItem[];
   onNavigate?: () => void;
 }
 
@@ -64,15 +122,19 @@ const Sidebar = ({ isOpen, navItems, onNavigate }: SidebarProps) => {
       </div>
 
       <nav className="mt-4 flex-1 space-y-1">
-        {navItems.map((item) => (
-          <NavItem
-            key={item.id}
-            label={item.label}
-            icon={item.icon}
-            path={item.path}
-            onClick={onNavigate}
-          />
-        ))}
+        {navItems.map((item) =>
+          item.children?.length ? (
+            <NavDropdown key={item.id} item={item} onNavigate={onNavigate} />
+          ) : (
+            <NavItem
+              key={item.id}
+              label={item.label}
+              icon={item.icon}
+              path={item.path}
+              onClick={onNavigate}
+            />
+          )
+        )}
       </nav>
 
       <div className="border-t border-white/10 p-4">

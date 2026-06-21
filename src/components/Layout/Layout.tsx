@@ -1,12 +1,11 @@
 ﻿import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
-import type { LucideIcon } from 'lucide-react';
 import Header from './Header';
-import Sidebar from './Sidebar';
+import Sidebar, { type SidebarNavItem } from './Sidebar';
 
 interface LayoutProps {
   children: ReactNode;
-  navItems: Array<{ id: string; label: string; icon: LucideIcon; path: string }>;
+  navItems: SidebarNavItem[];
   userName?: string;
 }
 
