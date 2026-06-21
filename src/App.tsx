@@ -1,7 +1,8 @@
 ﻿import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
-import { CalendarClock, FlaskConical, GraduationCap, LayoutDashboard, ShieldCheck } from 'lucide-react';
+import { CalendarClock, ClipboardList, FlaskConical, GraduationCap, LayoutDashboard, ShieldCheck } from 'lucide-react';
 import Layout from './components/Layout/Layout';
 import GradingView from './pages/GradingView';
+import AssignmentManagementPage from './pages/AssignmentManagementPage';
 import ClassGradingPage from './pages/ClassGradingPage';
 import ClassScoreboardPage from './pages/ClassScoreboardPage';
 import Dashboard from './pages/Dashboard';
@@ -29,6 +30,7 @@ const AppLayout: React.FC = () => {
     { id: 'dashboard', label: 'Trang chủ', icon: LayoutDashboard, path: '/dashboard' },
     { id: 'schools', label: 'Quản lý trường', icon: GraduationCap, path: '/schools' },
     { id: 'schedule', label: 'Lịch dạy', icon: CalendarClock, path: '/schedule' },
+    { id: 'assignments', label: 'Quản lý bài tập', icon: ClipboardList, path: '/assignments' },
     { id: 'grading-test', label: 'Test chấm điểm', icon: FlaskConical, path: '/grading' },
   ];
 
@@ -56,6 +58,7 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/schools" element={<SchoolList />} />
             <Route path="/schedule" element={<TeacherSchedule />} />
+            <Route path="/assignments" element={<AssignmentManagementPage />} />
             <Route path="/permissions" element={<PermissionManagement />} />
             <Route path="/grading" element={<GradingView />} />
             <Route path="/grading/class/:classId" element={<ClassGradingPage />} />
