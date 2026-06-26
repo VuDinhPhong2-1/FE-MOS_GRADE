@@ -962,6 +962,49 @@ const AssignmentManagementPage = ({ section = 'all' }: AssignmentManagementPageP
           </div>
         </div>
 
+        <section className="mt-5 rounded-2xl border border-blue-200 bg-blue-50/70 p-4">
+          <div className="grid gap-4 lg:grid-cols-[1fr_280px] lg:items-end">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-semibold text-blue-700">
+                <ClipboardList className="h-4 w-4" />
+                Lớp tạo ca thi
+              </div>
+              <h3 className="mt-3 text-base font-bold text-slate-950">
+                {selectedClass ? selectedClass.name : 'Chưa chọn lớp'}
+              </h3>
+              <p className="mt-1 text-sm text-slate-600">
+                Học sinh và bài tập đưa vào ca thi sẽ lấy từ lớp đang chọn ở đây.
+              </p>
+            </div>
+
+            <label className="block">
+              <span className="text-sm font-semibold text-blue-900">Chọn lớp</span>
+              <select
+                value={selectedClassId}
+                onChange={(event) => setSelectedClassId(event.target.value)}
+                className="mt-2 w-full rounded-xl border border-blue-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                disabled={isLoadingClasses || isCreatingExamPublication}
+              >
+                {classes.length === 0 ? (
+                  <option value="">Không có lớp</option>
+                ) : (
+                  classes.map((classItem) => (
+                    <option key={classItem.id} value={classItem.id}>
+                      {classItem.name}
+                    </option>
+                  ))
+                )}
+              </select>
+            </label>
+          </div>
+
+          {!selectedClassId && (
+            <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
+              Chọn lớp trước khi tạo ca thi.
+            </div>
+          )}
+        </section>
+
         <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
           <div className="space-y-4">
             <label className="block">
@@ -1134,6 +1177,49 @@ const AssignmentManagementPage = ({ section = 'all' }: AssignmentManagementPageP
               </p>
             </div>
           </div>
+
+          <section className="mx-6 mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <div className="grid gap-4 lg:grid-cols-[1fr_280px] lg:items-end">
+              <div>
+                <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-700">
+                  <BookOpenCheck className="h-4 w-4" />
+                  Lớp đang xem
+                </div>
+                <h3 className="mt-3 text-base font-bold text-slate-950">
+                  {selectedClass ? selectedClass.name : 'Chưa chọn lớp'}
+                </h3>
+                <p className="mt-1 text-sm text-slate-600">
+                  Danh sách bên dưới chỉ hiển thị bài tập của lớp đang chọn.
+                </p>
+              </div>
+
+              <label className="block">
+                <span className="text-sm font-semibold text-slate-700">Chọn lớp</span>
+                <select
+                  value={selectedClassId}
+                  onChange={(event) => setSelectedClassId(event.target.value)}
+                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                  disabled={isLoadingClasses || isLoadingAssignments}
+                >
+                  {classes.length === 0 ? (
+                    <option value="">Không có lớp</option>
+                  ) : (
+                    classes.map((classItem) => (
+                      <option key={classItem.id} value={classItem.id}>
+                        {classItem.name}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </label>
+            </div>
+
+            {!selectedClassId && (
+              <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
+                Chọn lớp để xem danh sách bài tập.
+              </div>
+            )}
+          </section>
 
           {isLoadingAssignments ? (
             <div className="flex items-center justify-center gap-2 px-6 py-12 text-sm text-slate-500">
