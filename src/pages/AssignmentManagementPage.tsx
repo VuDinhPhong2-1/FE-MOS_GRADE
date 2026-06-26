@@ -1288,6 +1288,49 @@ const AssignmentManagementPage = ({ section = 'all' }: AssignmentManagementPageP
             )}
           </div>
 
+          <section className="mt-5 rounded-2xl border border-blue-200 bg-blue-50/70 p-4">
+            <div className="grid gap-4 lg:grid-cols-[1fr_280px] lg:items-end">
+              <div>
+                <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-semibold text-blue-700">
+                  <ClipboardList className="h-4 w-4" />
+                  Lớp nhận bài tập
+                </div>
+                <h3 className="mt-3 text-base font-bold text-slate-950">
+                  {selectedClass ? selectedClass.name : 'Chưa chọn lớp'}
+                </h3>
+                <p className="mt-1 text-sm text-slate-600">
+                  Tất cả bài tạo nhanh và bài tạo thủ công bên dưới sẽ được lưu vào lớp đang chọn ở đây.
+                </p>
+              </div>
+
+              <label className="block">
+                <span className="text-sm font-semibold text-blue-900">Chọn lớp</span>
+                <select
+                  value={selectedClassId}
+                  onChange={(event) => setSelectedClassId(event.target.value)}
+                  className="mt-2 w-full rounded-xl border border-blue-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                  disabled={isLoadingClasses || isSubmitting || isQuickCreatingAssignments}
+                >
+                  {classes.length === 0 ? (
+                    <option value="">Không có lớp</option>
+                  ) : (
+                    classes.map((classItem) => (
+                      <option key={classItem.id} value={classItem.id}>
+                        {classItem.name}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </label>
+            </div>
+
+            {!selectedClassId && (
+              <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
+                Chọn lớp trước khi tạo bài tập.
+              </div>
+            )}
+          </section>
+
           {!editingAssignment && (
             <section className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4">
               <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
