@@ -42,6 +42,14 @@ interface AssignmentFormState {
   gradingApiEndpoint: string;
 }
 
+interface QuickAssignmentDraft {
+  endpoint: string;
+  displayName: string;
+  maxScore: number;
+  name: string;
+  selected: boolean;
+}
+
 const emptyForm: AssignmentFormState = {
   name: '',
   description: '',
@@ -70,6 +78,24 @@ const gradingTypeLabels: Record<GradingTypeCode, string> = {
   manual: 'Thủ công',
 };
 
+const quickPracticeOptions = [
+  { code: 'practice01', label: 'Practice 01' },
+  { code: 'practice02', label: 'Practice 02' },
+  { code: 'practice03', label: 'Practice 03' },
+  { code: 'exam_review', label: 'Tạo bài ôn thi' },
+] as const;
+
+type QuickPracticeCode = typeof quickPracticeOptions[number]['code'];
+type QuickSubjectCode = Extract<SubjectCode, 'excel' | 'word'>;
+
+const quickSubjectOptions: Array<{ code: QuickSubjectCode; label: string }> = [
+  { code: 'excel', label: 'Excel' },
+  { code: 'word', label: 'Word' },
+];
+
+const examReviewProjectNumbersExcel = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22];
+const examReviewProjectNumbersWord = [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 20, 22];
+
 const normalizeText = (value: string) =>
   value
     .normalize('NFD')
@@ -95,9 +121,90 @@ const getProjectCodeFromEndpoint = (endpoint?: string) => {
   return match ? `project${match[1].padStart(2, '0')}` : '';
 };
 
+const getProjectNumberFromEndpoint = (endpoint?: string) => {
+  const match = endpoint?.trim().replace(/\\/g, '/').match(/project(\d{1,3})$/i);
+  return match ? Number.parseInt(match[1], 10) : null;
+};
+
+const getProjectCodeForSubject = (endpoint: string) => {
+  const projectNumber = getProjectNumberFromEndpoint(endpoint);
+  const subjectMatch = endpoint.match(/^(excel|word|ppt|powerpoint)\//i);
+
+  if (!projectNumber || !subjectMatch) {
+    return getProjectCodeFromEndpoint(endpoint) || undefined;
+  }
+
+  const subject = subjectMatch[1].toLowerCase() === 'powerpoint' ? 'ppt' : subjectMatch[1].toLowerCase();
+  return `${subject.toUpperCase()}_P${String(projectNumber).padStart(2, '0')}`;
+};
+
 const buildDefaultNameFromEndpoint = (endpoint?: GradingEndpointInfo) => {
   if (!endpoint) return '';
   return endpoint.displayName || endpoint.endpoint;
+};
+
+const resolveQuickExamType = (practiceCode: QuickPracticeCode): ExamTypeCode =>
+  practiceCode === 'exam_review' ? 'onthi' : 'otth';
+
+const resolveQuickEndpoints = (
+  endpoints: GradingEndpointInfo[],
+  subjectCode: QuickSubjectCode,
+  practiceCode: QuickPracticeCode
+) => {
+  const subjectEndpoints = endpoints.filter((endpoint) => {
+    const endpointSubject = (endpoint.subject || endpoint.endpoint.split('/')[0] || '').toLowerCase();
+
+    if (subjectCode === 'excel') {
+      return endpointSubject === 'excel' || !endpoint.subject;
+    }
+
+    return endpointSubject === subjectCode;
+  });
+
+  if (practiceCode === 'exam_review') {
+    const projectNumbers = subjectCode === 'word' ? examReviewProjectNumbersWord : examReviewProjectNumbersExcel;
+    return subjectEndpoints.filter((endpoint) => {
+      const projectNumber = getProjectNumberFromEndpoint(endpoint.endpoint);
+      return projectNumber !== null && projectNumbers.includes(projectNumber);
+    });
+  }
+
+  return subjectEndpoints.filter((endpoint) => (endpoint.practiceCode || '').toLowerCase() === practiceCode);
+};
+
+const buildQuickAssignmentDrafts = (
+  endpoints: GradingEndpointInfo[],
+  previousDrafts: QuickAssignmentDraft[],
+  practiceCode: QuickPracticeCode
+): QuickAssignmentDraft[] => {
+  const previousByEndpoint = new Map(previousDrafts.map((draft) => [draft.endpoint, draft]));
+
+  return endpoints.map((endpoint) => {
+    const previous = previousByEndpoint.get(endpoint.endpoint);
+    const previousName = previous?.name.trim() || '';
+    const defaultName =
+      practiceCode === 'exam_review'
+        ? `${endpoint.displayName} - Ôn thi`
+        : endpoint.displayName;
+    const legacyExamReviewPrefixName = `Ôn thi - ${endpoint.displayName}`;
+    const shouldResetExamReviewName =
+      practiceCode === 'exam_review' &&
+      (
+        previousName === '' ||
+        previousName === endpoint.displayName ||
+        previousName === legacyExamReviewPrefixName ||
+        previousName === `On thi - ${endpoint.displayName}` ||
+        previousName === `${endpoint.displayName} - On thi`
+      );
+
+    return {
+      endpoint: endpoint.endpoint,
+      displayName: endpoint.displayName || endpoint.endpoint,
+      maxScore: endpoint.maxScore || 100,
+      name: previous && !shouldResetExamReviewName ? previous.name : defaultName,
+      selected: previous ? previous.selected : true,
+    };
+  });
 };
 
 const buildStudentDisplayName = (student?: Pick<StudentResponse, 'middleName' | 'firstName' | 'fullName'> | null) =>
@@ -142,6 +249,11 @@ const AssignmentManagementPage = ({ section = 'all' }: AssignmentManagementPageP
 
   const [form, setForm] = useState<AssignmentFormState>(emptyForm);
   const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null);
+  const [quickSubject, setQuickSubject] = useState<QuickSubjectCode>('excel');
+  const [quickPracticeCode, setQuickPracticeCode] = useState<QuickPracticeCode>('practice01');
+  const [quickAssignmentDrafts, setQuickAssignmentDrafts] = useState<QuickAssignmentDraft[]>([]);
+  const [quickAssignmentDescription, setQuickAssignmentDescription] = useState('');
+  const [isQuickCreatingAssignments, setIsQuickCreatingAssignments] = useState(false);
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
   const [selectWholeClass, setSelectWholeClass] = useState(true);
   const [selectedExamAssignmentIds, setSelectedExamAssignmentIds] = useState<string[]>([]);
@@ -175,6 +287,16 @@ const AssignmentManagementPage = ({ section = 'all' }: AssignmentManagementPageP
       return !subject || subject === currentSubject;
     });
   }, [form.subject, gradingEndpoints]);
+
+  const quickPracticeEndpoints = useMemo(
+    () => resolveQuickEndpoints(gradingEndpoints, quickSubject, quickPracticeCode),
+    [gradingEndpoints, quickSubject, quickPracticeCode]
+  );
+
+  const selectedQuickAssignmentCount = useMemo(
+    () => quickAssignmentDrafts.filter((draft) => draft.selected).length,
+    [quickAssignmentDrafts]
+  );
 
   const publishableExamAssignments = useMemo(() => assignments.filter(isAssignmentPublishableForExam), [assignments]);
 
@@ -341,6 +463,12 @@ const AssignmentManagementPage = ({ section = 'all' }: AssignmentManagementPageP
   }, [publishableExamAssignments]);
 
   useEffect(() => {
+    setQuickAssignmentDrafts((previousDrafts) =>
+      buildQuickAssignmentDrafts(quickPracticeEndpoints, previousDrafts, quickPracticeCode)
+    );
+  }, [quickPracticeEndpoints, quickPracticeCode]);
+
+  useEffect(() => {
     setCreateExamPublicationMessage(null);
     setLocalAgentPublicationToken('');
   }, [examName, selectedClassId, selectedStudentIds, selectedExamAssignmentIds, allowExamHelp]);
@@ -365,6 +493,116 @@ const AssignmentManagementPage = ({ section = 'all' }: AssignmentManagementPageP
     setEditingAssignment(null);
     setForm(emptyForm);
     setActionMessage(null);
+  };
+
+  const handleToggleQuickAssignment = (endpoint: string) => {
+    setQuickAssignmentDrafts((previousDrafts) =>
+      previousDrafts.map((draft) =>
+        draft.endpoint === endpoint ? { ...draft, selected: !draft.selected } : draft
+      )
+    );
+  };
+
+  const handleQuickAssignmentNameChange = (endpoint: string, name: string) => {
+    setQuickAssignmentDrafts((previousDrafts) =>
+      previousDrafts.map((draft) => (draft.endpoint === endpoint ? { ...draft, name } : draft))
+    );
+  };
+
+  const selectAllQuickAssignments = () => {
+    setQuickAssignmentDrafts((previousDrafts) => previousDrafts.map((draft) => ({ ...draft, selected: true })));
+  };
+
+  const clearQuickAssignments = () => {
+    setQuickAssignmentDrafts((previousDrafts) => previousDrafts.map((draft) => ({ ...draft, selected: false })));
+  };
+
+  const resetQuickAssignmentNames = () => {
+    setQuickAssignmentDrafts((previousDrafts) =>
+      buildQuickAssignmentDrafts(quickPracticeEndpoints, previousDrafts.map((draft) => ({ ...draft, name: '' })), quickPracticeCode)
+    );
+  };
+
+  const createAssignmentsFromQuickDrafts = async (drafts: QuickAssignmentDraft[], practiceCode: QuickPracticeCode) => {
+    if (!selectedClassId) {
+      setActionMessage('Vui long chon lop truoc khi tao nhanh bai tap.');
+      return;
+    }
+
+    const selectedDrafts = drafts.filter((draft) => draft.selected);
+    if (selectedDrafts.length === 0) {
+      setActionMessage('Vui long chon it nhat 1 project de tao nhanh.');
+      return;
+    }
+
+    const invalidDraft = selectedDrafts.find((draft) => !draft.name.trim());
+    if (invalidDraft) {
+      setActionMessage(`Ten bai tap cho ${invalidDraft.displayName} khong duoc de trong.`);
+      return;
+    }
+
+    setIsQuickCreatingAssignments(true);
+    setActionMessage(null);
+
+    try {
+      const failedAssignments: string[] = [];
+      const examType = resolveQuickExamType(practiceCode);
+      const sharedDescription = quickAssignmentDescription.trim();
+
+      for (const draft of selectedDrafts) {
+        try {
+          await assignmentService.create(
+            {
+              name: draft.name.trim(),
+              description: sharedDescription || undefined,
+              classId: selectedClassId,
+              maxScore: draft.maxScore,
+              subject: quickSubject,
+              examType,
+              projectCode: getProjectCodeForSubject(draft.endpoint),
+              gradingType: 'auto',
+              gradingApiEndpoint: draft.endpoint,
+            },
+            getAccessToken
+          );
+        } catch (error) {
+          failedAssignments.push(`${draft.displayName}: ${error instanceof Error ? error.message : 'Khong the tao bai tap.'}`);
+        }
+      }
+
+      await loadAssignments(selectedClassId);
+
+      const createdCount = selectedDrafts.length - failedAssignments.length;
+      if (failedAssignments.length === 0) {
+        setActionMessage(`Da tao nhanh ${createdCount} bai tap.`);
+        return;
+      }
+
+      setActionMessage(
+        createdCount > 0
+          ? `Da tao ${createdCount}/${selectedDrafts.length} bai. Loi: ${failedAssignments.join(' | ')}`
+          : `Khong the tao nhanh bai tap. ${failedAssignments.join(' | ')}`
+      );
+    } finally {
+      setIsQuickCreatingAssignments(false);
+    }
+  };
+
+  const handleCreateSelectedQuickAssignments = async () => {
+    await createAssignmentsFromQuickDrafts(quickAssignmentDrafts, quickPracticeCode);
+  };
+
+  const handleQuickCreateByPractice = async (practiceCode: QuickPracticeCode) => {
+    const endpoints = resolveQuickEndpoints(gradingEndpoints, quickSubject, practiceCode);
+    const drafts = buildQuickAssignmentDrafts(endpoints, [], practiceCode).map((draft) => ({ ...draft, selected: true }));
+    const practice = quickPracticeOptions.find((item) => item.code === practiceCode);
+
+    if (drafts.length === 0) {
+      setActionMessage(`Khong co project ${practice?.label || practiceCode} cho mon ${quickSubject.toUpperCase()}.`);
+      return;
+    }
+
+    await createAssignmentsFromQuickDrafts(drafts, practiceCode);
   };
 
   const startEdit = (assignment: Assignment) => {
@@ -1049,6 +1287,198 @@ const AssignmentManagementPage = ({ section = 'all' }: AssignmentManagementPageP
               </button>
             )}
           </div>
+
+          {!editingAssignment && (
+            <section className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                <div>
+                  <h3 className="text-base font-bold text-emerald-950">Tạo nhanh bài tập</h3>
+                  <p className="mt-1 text-sm text-emerald-700">
+                    Chọn môn và phần, hệ thống sẽ điền sẵn danh sách project để tạo hàng loạt.
+                  </p>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2 lg:min-w-[360px]">
+                  <label className="block">
+                    <span className="text-xs font-semibold text-emerald-900">Môn</span>
+                    <select
+                      value={quickSubject}
+                      onChange={(event) => setQuickSubject(event.target.value as QuickSubjectCode)}
+                      className="mt-1 w-full rounded-xl border border-emerald-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+                      disabled={isQuickCreatingAssignments}
+                    >
+                      {quickSubjectOptions.map((subject) => (
+                        <option key={subject.code} value={subject.code}>
+                          {subject.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="block">
+                    <span className="text-xs font-semibold text-emerald-900">Phần</span>
+                    <select
+                      value={quickPracticeCode}
+                      onChange={(event) => setQuickPracticeCode(event.target.value as QuickPracticeCode)}
+                      className="mt-1 w-full rounded-xl border border-emerald-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+                      disabled={isQuickCreatingAssignments}
+                    >
+                      {quickPracticeOptions.map((practice) => (
+                        <option key={practice.code} value={practice.code}>
+                          {practice.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+              </div>
+
+              {quickPracticeCode === 'exam_review' && (
+                <p className="mt-3 rounded-xl border border-indigo-200 bg-white px-3 py-2 text-xs text-indigo-700">
+                  {quickSubject === 'excel'
+                    ? 'Ôn thi Excel dùng project chẵn: 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22.'
+                    : 'Ôn thi Word dùng project lẻ: 1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23 và thêm 20, 22.'}
+                </p>
+              )}
+
+              <div className="mt-4 rounded-xl border border-emerald-200 bg-white p-3">
+                <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-emerald-950">Tạo nhanh từng phần ({quickSubject.toUpperCase()})</p>
+                    <p className="mt-1 text-xs text-slate-500">Bấm một phần để tạo ngay toàn bộ project trong phần đó.</p>
+                  </div>
+                  <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                    {quickPracticeOptions.map((practice) => {
+                      const endpointCount = resolveQuickEndpoints(gradingEndpoints, quickSubject, practice.code).length;
+                      const hasProjects = endpointCount > 0;
+
+                      return (
+                        <button
+                          key={`quick-create-${practice.code}`}
+                          type="button"
+                          onClick={() => void handleQuickCreateByPractice(practice.code)}
+                          disabled={isQuickCreatingAssignments || !selectedClassId || !hasProjects}
+                          className="rounded-xl border border-emerald-200 px-3 py-2 text-left text-xs font-semibold text-emerald-800 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          <span className="block">{practice.label}</span>
+                          <span className="mt-1 block text-[11px] font-medium text-emerald-600">
+                            {hasProjects ? `${endpointCount} project` : 'Chưa có project'}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              <label className="mt-4 block">
+                <span className="text-sm font-semibold text-emerald-900">Mô tả dùng chung</span>
+                <textarea
+                  value={quickAssignmentDescription}
+                  onChange={(event) => setQuickAssignmentDescription(event.target.value)}
+                  rows={2}
+                  className="mt-2 w-full resize-none rounded-xl border border-emerald-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+                  placeholder="Nội dung này sẽ áp dụng cho tất cả bài được tạo nhanh."
+                  disabled={isQuickCreatingAssignments}
+                />
+              </label>
+
+              <div className="mt-4 rounded-xl border border-emerald-200 bg-white">
+                <div className="flex flex-col gap-3 border-b border-emerald-100 p-3 lg:flex-row lg:items-center lg:justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-emerald-950">Danh sách project sẽ tạo</p>
+                    <p className="mt-1 text-xs text-slate-500">Có thể bỏ chọn project không cần tạo hoặc đổi tên từng bài.</p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={selectAllQuickAssignments}
+                      disabled={isQuickCreatingAssignments || quickAssignmentDrafts.length === 0}
+                      className="rounded-lg border border-emerald-200 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:opacity-50"
+                    >
+                      Chọn tất cả
+                    </button>
+                    <button
+                      type="button"
+                      onClick={clearQuickAssignments}
+                      disabled={isQuickCreatingAssignments || quickAssignmentDrafts.length === 0}
+                      className="rounded-lg border border-emerald-200 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:opacity-50"
+                    >
+                      Bỏ chọn
+                    </button>
+                    <button
+                      type="button"
+                      onClick={resetQuickAssignmentNames}
+                      disabled={isQuickCreatingAssignments || quickAssignmentDrafts.length === 0}
+                      className="rounded-lg border border-emerald-200 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:opacity-50"
+                    >
+                      Reset tên
+                    </button>
+                  </div>
+                </div>
+
+                {quickAssignmentDrafts.length === 0 ? (
+                  <div className="px-3 py-4 text-sm text-amber-700">
+                    Phần này chưa có project khả dụng để tạo nhanh.
+                  </div>
+                ) : (
+                  <div className="max-h-72 overflow-auto">
+                    <table className="min-w-full divide-y divide-emerald-100">
+                      <thead className="sticky top-0 bg-emerald-50">
+                        <tr>
+                          <th className="w-16 px-3 py-2 text-left text-xs font-semibold uppercase text-emerald-800">Chọn</th>
+                          <th className="px-3 py-2 text-left text-xs font-semibold uppercase text-emerald-800">Project</th>
+                          <th className="px-3 py-2 text-left text-xs font-semibold uppercase text-emerald-800">Tên bài tập</th>
+                          <th className="w-28 px-3 py-2 text-right text-xs font-semibold uppercase text-emerald-800">Điểm</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-emerald-50">
+                        {quickAssignmentDrafts.map((draft) => (
+                          <tr key={draft.endpoint}>
+                            <td className="px-3 py-2">
+                              <input
+                                type="checkbox"
+                                checked={draft.selected}
+                                onChange={() => handleToggleQuickAssignment(draft.endpoint)}
+                                disabled={isQuickCreatingAssignments}
+                                className="h-4 w-4 rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500"
+                              />
+                            </td>
+                            <td className="px-3 py-2 text-sm text-slate-700">
+                              <div className="font-semibold">{draft.displayName}</div>
+                              <div className="text-xs text-slate-500">{draft.endpoint}</div>
+                            </td>
+                            <td className="px-3 py-2">
+                              <input
+                                type="text"
+                                value={draft.name}
+                                onChange={(event) => handleQuickAssignmentNameChange(draft.endpoint, event.target.value)}
+                                disabled={isQuickCreatingAssignments}
+                                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+                                placeholder="Nhập tên bài tập"
+                              />
+                            </td>
+                            <td className="px-3 py-2 text-right text-sm text-slate-700">{draft.maxScore}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                <div className="border-t border-emerald-100 p-3">
+                  <button
+                    type="button"
+                    onClick={() => void handleCreateSelectedQuickAssignments()}
+                    disabled={isQuickCreatingAssignments || !selectedClassId || selectedQuickAssignmentCount === 0}
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {isQuickCreatingAssignments ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                    {isQuickCreatingAssignments ? 'Đang tạo nhanh...' : `Tạo nhanh ${selectedQuickAssignmentCount} bài đã chọn`}
+                  </button>
+                </div>
+              </div>
+            </section>
+          )}
 
           <div className="mt-5 space-y-4">
             <label className="block">
