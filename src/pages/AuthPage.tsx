@@ -50,7 +50,13 @@ export default function AuthPage() {
   };
 
   const getPostLoginPath = (data: LoginResponse) => {
-    if (data.role === 'PendingTeacher' || data.teacherApprovalStatus === 'Pending' || data.teacherApprovalStatus === 'Rejected') {
+    if (
+      data.role === 'PendingTeacher' ||
+      (
+        data.role === 'Teacher' &&
+        (data.teacherApprovalStatus === 'Pending' || data.teacherApprovalStatus === 'Rejected')
+      )
+    ) {
       return '/account-status';
     }
 

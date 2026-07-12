@@ -17,8 +17,10 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 
 const isPendingOrRejectedTeacher = (user: ReturnType<typeof useAuth>['user']) =>
   user?.role === 'PendingTeacher' ||
-  user?.teacherApprovalStatus === 'Pending' ||
-  user?.teacherApprovalStatus === 'Rejected';
+  (
+    user?.role === 'Teacher' &&
+    (user?.teacherApprovalStatus === 'Pending' || user?.teacherApprovalStatus === 'Rejected')
+  );
 
 const ProtectedRoute: React.FC = () => {
   const { user, loading } = useAuth();
