@@ -65,9 +65,6 @@ const AppLayout: React.FC = () => {
         icon: ClipboardList,
         path: '/assignments',
         children: [
-          { id: 'assignments-filters', label: 'Lớp & bộ lọc', path: '/assignments/filters' },
-          { id: 'assignments-list', label: 'Danh sách bài tập', path: '/assignments/list' },
-          { id: 'assignments-form', label: 'Tạo bài tập', path: '/assignments/form' },
           { id: 'assignments-exam', label: 'Tạo ca thi', path: '/assignments/exam' },
         ],
       },
@@ -101,10 +98,10 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/schools" element={<SchoolList />} />
             <Route path="/schedule" element={<TeacherSchedule />} />
-            <Route path="/assignments" element={<Navigate to="/assignments/list" replace />} />
-            <Route path="/assignments/filters" element={<AssignmentManagementPage section="filters" />} />
-            <Route path="/assignments/list" element={<AssignmentManagementPage section="list" />} />
-            <Route path="/assignments/form" element={<AssignmentManagementPage section="form" />} />
+            <Route path="/assignments" element={<Navigate to="/assignments/exam" replace />} />
+            <Route path="/assignments/filters" element={<Navigate to="/assignments/exam" replace />} />
+            <Route path="/assignments/list" element={<Navigate to="/assignments/exam" replace />} />
+            <Route path="/assignments/form" element={<Navigate to="/assignments/exam" replace />} />
             <Route path="/assignments/exam" element={<AssignmentManagementPage section="exam" />} />
             <Route path="/permissions" element={<PermissionManagement />} />
             <Route path="/grading" element={<GradingView />} />
