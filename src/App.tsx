@@ -2,7 +2,6 @@
 import {
   CalendarClock,
   ClipboardList,
-  FileCog,
   FlaskConical,
   GraduationCap,
   LayoutDashboard,
@@ -20,7 +19,6 @@ import AuthPage from './pages/AuthPage';
 import TeacherSchedule from './pages/TeacherSchedule';
 import PermissionManagement from './pages/PermissionManagement';
 import PublicExamPage from './pages/PublicExamPage';
-import GradingConfigAdminPage from './pages/GradingConfigAdminPage';
 import AccountStatusPage from './pages/AccountStatusPage';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
@@ -83,8 +81,7 @@ const AppLayout: React.FC = () => {
 
   if (user?.role === 'Admin') {
     navItems.push(
-      { id: 'permissions', label: 'Phân quyền', icon: ShieldCheck, path: '/permissions' },
-      { id: 'grading-configs', label: 'Cấu hình chấm', icon: FileCog, path: '/admin/grading-configs' }
+      { id: 'permissions', label: 'Phân quyền', icon: ShieldCheck, path: '/permissions' }
     );
   }
 
@@ -116,7 +113,6 @@ function App() {
             <Route path="/assignments/form" element={<Navigate to="/assignments/exam" replace />} />
             <Route path="/assignments/exam" element={<AssignmentManagementPage section="exam" />} />
             <Route path="/permissions" element={<PermissionManagement />} />
-            <Route path="/admin/grading-configs" element={<GradingConfigAdminPage />} />
             <Route path="/grading" element={<GradingView />} />
             <Route path="/grading/class/:classId" element={<ClassGradingPage />} />
             <Route path="/scores/class/:classId" element={<ClassScoreboardPage />} />
