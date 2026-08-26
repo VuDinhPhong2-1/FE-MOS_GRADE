@@ -2,6 +2,7 @@ export * from './school.types'
 export * from './auth.types'
 export * from './class.types'
 export * from './student.types'
+export * from './grading-config.types'
 export interface TaskResult {
   taskId: string;
   taskName: string;

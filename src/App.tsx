@@ -1,5 +1,13 @@
 ﻿import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
-import { CalendarClock, ClipboardList, FlaskConical, GraduationCap, LayoutDashboard, ShieldCheck } from 'lucide-react';
+import {
+  CalendarClock,
+  ClipboardList,
+  FileCog,
+  FlaskConical,
+  GraduationCap,
+  LayoutDashboard,
+  ShieldCheck,
+} from 'lucide-react';
 import Layout from './components/Layout/Layout';
 import type { SidebarNavItem } from './components/Layout/Sidebar';
 import GradingView from './pages/GradingView';
@@ -12,6 +20,7 @@ import AuthPage from './pages/AuthPage';
 import TeacherSchedule from './pages/TeacherSchedule';
 import PermissionManagement from './pages/PermissionManagement';
 import PublicExamPage from './pages/PublicExamPage';
+import GradingConfigAdminPage from './pages/GradingConfigAdminPage';
 import AccountStatusPage from './pages/AccountStatusPage';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
@@ -73,7 +82,10 @@ const AppLayout: React.FC = () => {
   }
 
   if (user?.role === 'Admin') {
-    navItems.push({ id: 'permissions', label: 'Phân quyền', icon: ShieldCheck, path: '/permissions' });
+    navItems.push(
+      { id: 'permissions', label: 'Phân quyền', icon: ShieldCheck, path: '/permissions' },
+      { id: 'grading-configs', label: 'Cấu hình chấm', icon: FileCog, path: '/admin/grading-configs' }
+    );
   }
 
   return (
@@ -104,6 +116,7 @@ function App() {
             <Route path="/assignments/form" element={<Navigate to="/assignments/exam" replace />} />
             <Route path="/assignments/exam" element={<AssignmentManagementPage section="exam" />} />
             <Route path="/permissions" element={<PermissionManagement />} />
+            <Route path="/admin/grading-configs" element={<GradingConfigAdminPage />} />
             <Route path="/grading" element={<GradingView />} />
             <Route path="/grading/class/:classId" element={<ClassGradingPage />} />
             <Route path="/scores/class/:classId" element={<ClassScoreboardPage />} />
