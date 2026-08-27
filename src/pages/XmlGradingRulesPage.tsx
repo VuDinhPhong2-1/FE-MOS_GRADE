@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   AlertTriangle,
   CheckCircle2,
@@ -80,6 +80,15 @@ const XmlGradingRulesPage = () => {
   const [expandedTasks, setExpandedTasks] = useState<Record<string, boolean>>({});
   const [activeTab, setActiveTab] = useState<'editor' | 'validation' | 'test'>('editor');
   const [showAdvanced, setShowAdvanced] = useState<Record<string, boolean>>({});
+  const [saveError, setSaveError] = useState('');
+  const selectedRef = useRef(selected);
+  const saveScrollYRef = useRef(0);
+
+  // Luôn giữ snapshot mới nhất để thao tác Save không dùng state cũ
+  // trong trường hợp người dùng vừa nhập Condition rồi click Save ngay.
+  useEffect(() => {
+    selectedRef.current = selected;
+  }, [selected]);
 
   const canUsePage = user?.role === 'Admin';
 
@@ -90,38 +99,106 @@ const XmlGradingRulesPage = () => {
         subject: subjectFilter.trim() || undefined,
         isActive: activeFilter === 'all' ? undefined : activeFilter === 'true',
       });
+
       setRuleSets(data);
-      if (selected.id) {
-        const refreshed = data.find((item) => item.id === selected.id);
-        if (refreshed) setSelected(refreshed);
+
+      // Dùng ref thay vì selected.id từ closure cũ.
+      // Tránh việc request reload sau Save lấy lại state cũ và làm UI nhảy/ghi đè.
+      const currentId = selectedRef.current.id;
+      if (currentId) {
+        const refreshed = data.find((item) => item.id === currentId);
+        if (refreshed) {
+          selectedRef.current = refreshed;
+          setSelected(refreshed);
+        }
       }
     } catch (error) {
       notify.error(error instanceof Error ? error.message : 'Không tải được danh sách XML rules.');
     } finally {
       setLoading(false);
     }
-  }, [activeFilter, getAccessToken, selected.id, subjectFilter]);
+  }, [activeFilter, getAccessToken, subjectFilter]);
 
   useEffect(() => { void loadRuleSets(); }, [loadRuleSets]);
 
   const replaceSelected = (next: GradingRuleSet) => {
+    selectedRef.current = next;
     setSelected(next);
     setValidation(null);
-    setRuleSets((items) => next.id ? items.map((item) => item.id === next.id ? next : item) : items);
+    setRuleSets((items) => {
+      if (!next.id) return items;
+      const exists = items.some((item) => item.id === next.id);
+      return exists
+        ? items.map((item) => item.id === next.id ? next : item)
+        : [next, ...items];
+    });
+  };
+
+  // Update state theo kiểu functional + cập nhật ref ngay lập tức.
+  // Đây là phần quan trọng để tránh mất ký tự/field khi người dùng
+  // vừa nhập Condition rồi bấm Save ngay.
+  const updateSelected = (updater: (current: GradingRuleSet) => GradingRuleSet) => {
+    const next = updater(selectedRef.current);
+    selectedRef.current = next;
+    setSelected(next);
+    setValidation(null);
+    setRuleSets((items) =>
+      next.id ? items.map((item) => item.id === next.id ? next : item) : items
+    );
   };
 
   const saveRuleSet = async () => {
+    // Giữ nguyên vị trí scroll: Save không được kéo người dùng về input
+    // hoặc nhảy đến Condition vừa sửa.
+    saveScrollYRef.current = window.scrollY;
+    setSaveError('');
+
+    const current = selectedRef.current;
+
+    // Không tự thêm validation HTML/required ở đây.
+    // Backend/service hiện tại vẫn là nguồn xác thực chính.
+    // Điều này tránh browser tự focus + scroll về một input Condition.
+
     setSaving(true);
+
     try {
-      const payload = { ...selected, projects: selected.projects.map((p) => ({ ...p, tasks: p.tasks.map((t) => ({ ...t, conditions: t.conditions.map(prepareCondition) })) })) };
-      const saved = selected.id
-        ? await xmlGradingRulesService.update(selected.id, payload, getAccessToken)
+      // Chuẩn hóa từ snapshot mới nhất, không lấy selected từ closure cũ.
+      const payload = {
+        ...current,
+        projects: current.projects.map((project) => ({
+          ...project,
+          tasks: project.tasks.map((task) => ({
+            ...task,
+            conditions: task.conditions.map(prepareCondition),
+          })),
+        })),
+      };
+
+      const saved = current.id
+        ? await xmlGradingRulesService.update(current.id, payload, getAccessToken)
         : await xmlGradingRulesService.create(payload, getAccessToken);
+
       replaceSelected(saved);
+      selectedRef.current = saved;
+
+      // Reload danh sách ở background; selectedRef đã trỏ tới saved
+      // nên request reload không thể quay lại state cũ.
       await loadRuleSets();
       notify.success('Đã lưu ruleset XML.');
+
+      // Sau khi save thành công vẫn giữ nguyên vị trí người dùng đang làm việc.
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: saveScrollYRef.current, behavior: 'auto' });
+      });
     } catch (error) {
-      notify.error(error instanceof Error ? error.message : 'Lưu ruleset thất bại.');
+      const message = error instanceof Error ? error.message : 'Lưu ruleset thất bại.';
+      setSaveError(message);
+      notify.error(message);
+
+      // API lỗi không được làm UI nhảy xuống Condition.
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: saveScrollYRef.current, behavior: 'auto' });
+      });
     } finally {
       setSaving(false);
     }
@@ -161,9 +238,60 @@ const XmlGradingRulesPage = () => {
     }
   };
 
-  const mutateProject = (index: number, patch: Partial<ProjectXmlRule>) => replaceSelected({ ...selected, projects: selected.projects.map((p, i) => i === index ? { ...p, ...patch } : p) });
-  const mutateTask = (pi: number, ti: number, patch: Partial<TaskXmlRule>) => mutateProject(pi, { tasks: selected.projects[pi].tasks.map((t, i) => i === ti ? { ...t, ...patch } : t) });
-  const mutateCondition = (pi: number, ti: number, ci: number, patch: Partial<XmlGradingCondition>) => mutateTask(pi, ti, { conditions: selected.projects[pi].tasks[ti].conditions.map((c, i) => i === ci ? { ...c, ...patch } : c) });
+  const mutateProject = (index: number, patch: Partial<ProjectXmlRule>) => {
+    updateSelected((current) => ({
+      ...current,
+      projects: current.projects.map((project, i) =>
+        i === index ? { ...project, ...patch } : project
+      ),
+    }));
+  };
+
+  const mutateTask = (pi: number, ti: number, patch: Partial<TaskXmlRule>) => {
+    updateSelected((current) => ({
+      ...current,
+      projects: current.projects.map((project, projectIndex) =>
+        projectIndex !== pi
+          ? project
+          : {
+              ...project,
+              tasks: project.tasks.map((task, taskIndex) =>
+                taskIndex === ti ? { ...task, ...patch } : task
+              ),
+            }
+      ),
+    }));
+  };
+
+  const mutateCondition = (
+    pi: number,
+    ti: number,
+    ci: number,
+    patch: Partial<XmlGradingCondition>
+  ) => {
+    updateSelected((current) => ({
+      ...current,
+      projects: current.projects.map((project, projectIndex) =>
+        projectIndex !== pi
+          ? project
+          : {
+              ...project,
+              tasks: project.tasks.map((task, taskIndex) =>
+                taskIndex !== ti
+                  ? task
+                  : {
+                      ...task,
+                      conditions: task.conditions.map((condition, conditionIndex) =>
+                        conditionIndex === ci
+                          ? { ...condition, ...patch }
+                          : condition
+                      ),
+                    }
+              ),
+            }
+      ),
+    }));
+  };
 
   if (!canUsePage) {
     return <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-amber-800">Chỉ tài khoản Admin được quản lý XML grading rules.</div>;
@@ -494,19 +622,6 @@ const XmlGradingRulesPage = () => {
               </div>
 
               <div className="flex items-center gap-2">
-                <button
-                  onClick={validateRuleSet}
-                  className="inline-flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3.5 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100"
-                >
-                  <CheckCircle2 size={16} /> Validate
-                </button>
-                <button
-                  onClick={saveRuleSet}
-                  disabled={saving}
-                  className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  <Save size={16} /> {saving ? 'Đang lưu...' : 'Lưu'}
-                </button>
                 {selected.id && (
                   <button
                     onClick={() => deleteRuleSet(selected.id)}
@@ -1177,11 +1292,69 @@ const XmlGradingRulesPage = () => {
             </section>
           )}
 
+          {saveError && (
+            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700 shadow-sm">
+              <div className="flex items-start gap-2">
+                <XCircle size={15} className="mt-0.5 shrink-0" />
+                <div className="min-w-0">
+                  <p className="font-bold">Không thể lưu ruleset</p>
+                  <p className="mt-0.5">{saveError}</p>
+                </div>
+                <button
+                  onClick={() => setSaveError('')}
+                  className="ml-auto shrink-0 text-red-400 hover:text-red-700"
+                  title="Đóng"
+                >
+                  <XCircle size={15} />
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="flex items-center gap-2 rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-xs text-amber-800">
             <AlertTriangle size={15} className="shrink-0" />
             <span>
               Hãy chạy <strong>Validate</strong> đầy đủ trước khi bật <strong>Active</strong>.
             </span>
+          </div>
+
+          {/* Sticky action bar: Save ngay tại vị trí đang nhập, không cần cuộn về đầu trang. */}
+          <div className="sticky bottom-3 z-30 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white/95 px-4 py-3 shadow-lg shadow-slate-900/10 backdrop-blur">
+            <div className="flex min-w-0 items-center gap-2 text-xs text-slate-500">
+              <span className={cx(
+                'h-2 w-2 shrink-0 rounded-full',
+                saving ? 'animate-pulse bg-blue-500' : saveError ? 'bg-red-500' : 'bg-emerald-500'
+              )} />
+              <span className="truncate">
+                {saving
+                  ? 'Đang lưu thay đổi...'
+                  : saveError
+                    ? 'Có lỗi cần kiểm tra'
+                    : selected.id
+                      ? 'Đã tải ruleset · sẵn sàng lưu'
+                      : 'Ruleset mới · chưa lưu'}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={validateRuleSet}
+                disabled={saving}
+                className="inline-flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 disabled:opacity-50"
+              >
+                <CheckCircle2 size={15} /> Validate
+              </button>
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={saveRuleSet}
+                disabled={saving}
+                className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <Save size={15} className={cx(saving && 'animate-pulse')} />
+                {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
+              </button>
+            </div>
           </div>
         </main>
       </div>
