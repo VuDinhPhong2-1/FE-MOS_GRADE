@@ -76,6 +76,10 @@ const XmlGradingRulesPage = () => {
 
   // State quản lý xem JSON thô hoặc Giao diện trực quan
   const [viewRawJson, setViewRawJson] = useState(false);
+  const [expandedProjects, setExpandedProjects] = useState<Record<number, boolean>>({});
+  const [expandedTasks, setExpandedTasks] = useState<Record<string, boolean>>({});
+  const [activeTab, setActiveTab] = useState<'editor' | 'validation' | 'test'>('editor');
+  const [showAdvanced, setShowAdvanced] = useState<Record<string, boolean>>({});
 
   const canUsePage = user?.role === 'Admin';
 
@@ -333,171 +337,852 @@ const XmlGradingRulesPage = () => {
     );
   };
 
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Chấm điểm mới bằng XML Rules</h1>
-          <p className="text-sm text-slate-500">Quản lý bộ luật → bài project → câu/task → điều kiện chấm</p>
-        </div>
-        <div className="flex gap-2">
-          <button onClick={() => setSelected(emptyRuleSet())} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"><Plus size={16} /> Tạo mới</button>
-        </div>
-      </div>
 
-      <div className="grid gap-6 xl:grid-cols-[360px_1fr]">
-        <aside className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="mb-3 flex gap-2">
-            <input value={subjectFilter} onChange={(e) => setSubjectFilter(e.target.value)} placeholder="Môn: excel/word" className="w-full rounded-lg border px-3 py-2 text-sm" />
-            <select value={activeFilter} onChange={(e) => setActiveFilter(e.target.value as 'all' | 'true' | 'false')} className="rounded-lg border px-2 text-sm">
-              <option value="all">Tất cả</option>
+  const toggleProject = (index: number) =>
+    setExpandedProjects((prev) => ({ ...prev, [index]: !(prev[index] ?? true) }));
+
+  const toggleTask = (key: string) =>
+    setExpandedTasks((prev) => ({ ...prev, [key]: !(prev[key] ?? false) }));
+
+  const toggleAdvanced = (key: string) =>
+    setShowAdvanced((prev) => ({ ...prev, [key]: !prev[key] }));
+
+  const projectCount = selected.projects.length;
+  const taskCount = selected.projects.reduce((sum, project) => sum + project.tasks.length, 0);
+  const conditionCount = selected.projects.reduce(
+    (sum, project) => sum + project.tasks.reduce((taskSum, task) => taskSum + task.conditions.length, 0),
+    0
+  );
+  const selectedMaxScore = selected.projects.reduce((sum, project) => sum + Number(project.maxScore || 0), 0);
+
+  const statusBadge = selected.isActive
+    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+    : 'border-slate-200 bg-slate-100 text-slate-600';
+
+  const inputClass =
+    'mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100';
+
+  const iconButtonClass =
+    'inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-800';
+
+  return (
+    <div className="min-h-full space-y-5 bg-slate-50/60 pb-8">
+      {/* Page header */}
+      <header className="sticky top-0 z-20 -mx-4 border-b border-slate-200 bg-white/95 px-4 py-4 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <div className="rounded-xl bg-blue-50 p-2 text-blue-600">
+                <FileCode2 size={20} />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold tracking-tight text-slate-900">XML Grading Rules</h1>
+                <p className="text-xs text-slate-500">
+                  Quản lý ruleset → project → task → điều kiện chấm
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className={cx('rounded-full border px-3 py-1.5 text-xs font-semibold', statusBadge)}>
+              <span className="mr-1.5">●</span>
+              {selected.isActive ? 'ACTIVE' : 'INACTIVE'}
+            </span>
+            <button
+              onClick={() => setSelected(emptyRuleSet())}
+              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+            >
+              <Plus size={16} /> Tạo ruleset
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <div className="grid gap-5 xl:grid-cols-[280px_minmax(0,1fr)]">
+        {/* Sidebar */}
+        <aside className="h-fit rounded-2xl border border-slate-200 bg-white p-3 shadow-sm xl:sticky xl:top-24">
+          <div className="mb-3 flex items-center justify-between px-2">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Rulesets</p>
+              <p className="text-sm font-semibold text-slate-800">{ruleSets.length} bộ luật</p>
+            </div>
+            <button onClick={loadRuleSets} className={iconButtonClass} title="Làm mới">
+              <RefreshCw size={15} className={cx(loading && 'animate-spin')} />
+            </button>
+          </div>
+
+          <div className="mb-3 space-y-2">
+            <input
+              value={subjectFilter}
+              onChange={(e) => setSubjectFilter(e.target.value)}
+              placeholder="Tìm theo môn..."
+              className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            />
+            <select
+              value={activeFilter}
+              onChange={(e) => setActiveFilter(e.target.value as 'all' | 'true' | 'false')}
+              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-500"
+            >
+              <option value="all">Tất cả trạng thái</option>
               <option value="true">Đang bật</option>
               <option value="false">Đang tắt</option>
             </select>
-            <button onClick={loadRuleSets} className="rounded-lg border px-3"><RefreshCw size={16} className={cx(loading && 'animate-spin')} /></button>
           </div>
-          <div className="space-y-2">
-            {ruleSets.map((item) => (
-              <button key={item.id} onClick={() => replaceSelected(item)} className={cx('w-full rounded-lg border p-3 text-left text-sm hover:bg-slate-50', selected.id === item.id && 'border-blue-500 bg-blue-50')}>
-                <div className="font-semibold text-slate-900">{item.subject} / {item.version}</div>
-                <div className="text-xs text-slate-500">{item.projects.length} project • {item.isActive ? 'Đang bật' : 'Đang tắt'}</div>
-              </button>
-            ))}
-            {!loading && ruleSets.length === 0 && <p className="py-6 text-center text-sm text-slate-500">Chưa có ruleset.</p>}
+
+          <div className="max-h-[calc(100vh-280px)] space-y-1 overflow-y-auto pr-1">
+            {ruleSets.map((item) => {
+              const isSelected = selected.id === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => replaceSelected(item)}
+                  className={cx(
+                    'w-full rounded-xl border p-3 text-left transition',
+                    isSelected
+                      ? 'border-blue-200 bg-blue-50 shadow-sm'
+                      : 'border-transparent hover:border-slate-200 hover:bg-slate-50'
+                  )}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-bold text-slate-900">
+                        {item.subject} · {item.version}
+                      </div>
+                      <div className="mt-1 text-xs text-slate-500">
+                        {item.projects.length} project · {item.projects.reduce((n, p) => n + p.tasks.length, 0)} task
+                      </div>
+                    </div>
+                    <span
+                      className={cx(
+                        'mt-0.5 h-2 w-2 shrink-0 rounded-full',
+                        item.isActive ? 'bg-emerald-500' : 'bg-slate-300'
+                      )}
+                    />
+                  </div>
+                </button>
+              );
+            })}
+
+            {!loading && ruleSets.length === 0 && (
+              <div className="rounded-xl border border-dashed border-slate-200 px-4 py-8 text-center">
+                <FileCode2 className="mx-auto mb-2 text-slate-300" size={24} />
+                <p className="text-sm font-medium text-slate-500">Chưa có ruleset</p>
+                <p className="mt-1 text-xs text-slate-400">Tạo ruleset đầu tiên để bắt đầu.</p>
+              </div>
+            )}
           </div>
         </aside>
 
-        <main className="space-y-4">
-          <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="grid gap-3 md:grid-cols-4">
-              <label className="text-sm">Môn / loại file (subject)
-                <input value={selected.subject} onChange={(e) => replaceSelected({ ...selected, subject: e.target.value })} placeholder="excel" className="w-full rounded-lg border px-3 py-2 text-sm mt-1" />
-              </label>
-              <label className="text-sm">Phiên bản bộ luật (version)
-                <input value={selected.version} onChange={(e) => replaceSelected({ ...selected, version: e.target.value })} placeholder="v1" className="w-full rounded-lg border px-3 py-2 text-sm mt-1" />
-              </label>
-              <label className="flex items-center gap-2 pt-7 text-sm"><input type="checkbox" checked={selected.isActive} onChange={(e) => replaceSelected({ ...selected, isActive: e.target.checked })} /> Kích hoạt</label>
-              <div className="flex items-end gap-2">
-                <button onClick={saveRuleSet} disabled={saving} className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"><Save size={16} /> Lưu</button>
-                {selected.id && <button onClick={() => deleteRuleSet(selected.id)} className="rounded-lg border border-red-200 px-3 py-2 text-red-600"><Trash2 size={16} /></button>}
+        {/* Main */}
+        <main className="min-w-0 space-y-4">
+          {/* Ruleset overview */}
+          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <div className="mb-1 flex flex-wrap items-center gap-2">
+                  <h2 className="text-lg font-bold text-slate-900">
+                    {selected.subject || 'Chưa đặt tên'} · {selected.version || 'v1'}
+                  </h2>
+                  <span className={cx('rounded-full border px-2.5 py-1 text-[11px] font-bold', statusBadge)}>
+                    {selected.isActive ? 'Đang hoạt động' : 'Đang tắt'}
+                  </span>
+                </div>
+                <p className="text-sm text-slate-500">
+                  {selected.id ? `ID: ${selected.id}` : 'Ruleset mới chưa được lưu'}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={validateRuleSet}
+                  className="inline-flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3.5 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100"
+                >
+                  <CheckCircle2 size={16} /> Validate
+                </button>
+                <button
+                  onClick={saveRuleSet}
+                  disabled={saving}
+                  className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <Save size={16} /> {saving ? 'Đang lưu...' : 'Lưu'}
+                </button>
+                {selected.id && (
+                  <button
+                    onClick={() => deleteRuleSet(selected.id)}
+                    title="Xóa ruleset"
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-red-200 text-red-600 transition hover:bg-red-50"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                )}
               </div>
             </div>
-          </section>
 
-          <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="font-semibold">Danh sách bài Project</h2>
-              <button onClick={() => replaceSelected({ ...selected, projects: [...selected.projects, emptyProject()] })} className="rounded border px-3 py-1 text-sm">Thêm project</button>
-            </div>
-            <div className="space-y-4">
-              {selected.projects.map((project, pi) => (
-                <div key={pi} className="rounded-xl border border-slate-200 p-4">
-                  <div className="grid gap-3 md:grid-cols-[1fr_1fr_120px_auto]">
-                    <label className="text-xs font-medium text-slate-600">Mã project (projectCode)
-                      <input value={project.projectCode} onChange={(e) => mutateProject(pi, { projectCode: e.target.value })} className="w-full rounded-lg border px-2 py-1 text-sm mt-1" />
-                    </label>
-                    <label className="text-xs font-medium text-slate-600">Tên project (projectName)
-                      <input value={project.projectName} onChange={(e) => mutateProject(pi, { projectName: e.target.value })} className="w-full rounded-lg border px-2 py-1 text-sm mt-1" />
-                    </label>
-                    <label className="text-xs font-medium text-slate-600">Điểm tối đa
-                      <input type="number" value={project.maxScore} onChange={(e) => mutateProject(pi, { maxScore: Number(e.target.value) })} className="w-full rounded-lg border px-2 py-1 text-sm mt-1" />
-                    </label>
-                    <button onClick={() => replaceSelected({ ...selected, projects: selected.projects.filter((_, i) => i !== pi) })} title="Xóa project" className="self-end rounded-lg border border-red-200 px-3 py-2 text-red-600"><Trash2 size={16} /></button>
-                  </div>
-
-                  <div className="mt-3 space-y-3 pl-4">
-                    <div className="flex justify-between">
-                      <h3 className="text-sm font-semibold text-slate-700">Các câu / nhiệm vụ chấm (Tasks)</h3>
-                      <button onClick={() => mutateProject(pi, { tasks: [...project.tasks, emptyTask()] })} className="rounded border px-3 py-1 text-sm">Thêm câu</button>
-                    </div>
-                    {project.tasks.map((task, ti) => (
-                      <div key={ti} className="rounded-lg border bg-slate-50 p-3">
-                        <div className="grid gap-2 md:grid-cols-[1fr_1fr_100px_auto]">
-                          <label className="text-xs font-medium text-slate-600">Mã câu (taskId)
-                            <input value={task.taskId} onChange={(e) => mutateTask(pi, ti, { taskId: e.target.value })} className="w-full rounded-lg border px-2 py-1 text-sm mt-1" />
-                          </label>
-                          <label className="text-xs font-medium text-slate-600">Tên câu / nhiệm vụ (taskName)
-                            <input value={task.taskName} onChange={(e) => mutateTask(pi, ti, { taskName: e.target.value })} className="w-full rounded-lg border px-2 py-1 text-sm mt-1" />
-                          </label>
-                          <label className="text-xs font-medium text-slate-600">Điểm tối đa
-                            <input type="number" value={task.maxScore} onChange={(e) => mutateTask(pi, ti, { maxScore: Number(e.target.value) })} className="w-full rounded-lg border px-2 py-1 text-sm mt-1" />
-                          </label>
-                          <button onClick={() => mutateProject(pi, { tasks: project.tasks.filter((_, i) => i !== ti) })} title="Xóa câu/task" className="self-end pb-2 text-red-600">Xóa</button>
-                        </div>
-
-                        <div className="mt-3 space-y-3 pl-3">
-                          <div className="flex justify-between">
-                            <span className="text-sm font-medium">Điều kiện chấm điểm (Conditions)</span>
-                            <button onClick={() => mutateTask(pi, ti, { conditions: [...task.conditions, emptyCondition()] })} className="rounded border px-3 py-1 text-sm">Thêm điều kiện</button>
-                          </div>
-                          {task.conditions.map((condition, ci) => (
-                            <div key={ci} className="rounded-lg border bg-white p-3">
-                              <div className="grid gap-2 md:grid-cols-[1fr_90px_1fr_170px_140px_auto]">
-                                <label className="text-xs font-medium text-slate-600">Mã điều kiện (conditionId)
-                                  <input value={condition.conditionId} onChange={(e) => mutateCondition(pi, ti, ci, { conditionId: e.target.value })} className="w-full rounded-lg border px-2 py-1 text-sm mt-1" />
-                                </label>
-                                <label className="text-xs font-medium text-slate-600">Điểm
-                                  <input type="number" value={condition.score} onChange={(e) => mutateCondition(pi, ti, ci, { score: Number(e.target.value) })} className="w-full rounded-lg border px-2 py-1 text-sm mt-1" />
-                                </label>
-                                <label className="text-xs font-medium text-slate-600">File XML cần kiểm tra (sourceFile)
-                                  <input value={condition.sourceFile} onChange={(e) => mutateCondition(pi, ti, ci, { sourceFile: e.target.value })} className="w-full rounded-lg border px-2 py-1 text-sm mt-1" />
-                                </label>
-                                <label className="text-xs font-medium text-slate-600">Cách so khớp (compareMode)
-                                  <select value={condition.compareMode} onChange={(e) => mutateCondition(pi, ti, ci, { compareMode: e.target.value as XmlCompareMode })} className="w-full rounded-lg border px-2 py-1 text-sm mt-1">
-                                    {compareModes.map((m) => <option key={m} value={m}>{compareModesLabels[m]}</option>)}
-                                  </select>
-                                </label>
-                                <label className="text-xs font-medium text-slate-600">Quy tắc nhiều giá trị
-                                  <select value={condition.matchPolicy} onChange={(e) => mutateCondition(pi, ti, ci, { matchPolicy: e.target.value as XmlMatchPolicy })} className="w-full rounded-lg border px-2 py-1 text-sm mt-1">
-                                    {matchPolicies.map((m) => <option key={m} value={m}>{matchPoliciesLabels[m]}</option>)}
-                                  </select>
-                                </label>
-                                <button onClick={() => mutateTask(pi, ti, { conditions: task.conditions.filter((_, i) => i !== ci) })} title="Xóa điều kiện" className="self-end pb-2 text-red-600">Xóa</button>
-                              </div>
-                              <label className="mt-2 block text-xs font-medium text-slate-600">Giá trị cần tìm trong XML (expectedValues)
-                                <textarea value={expectedText(condition)} onChange={(e) => mutateCondition(pi, ti, ci, { expectedValues: e.target.value.split('\n') })} className="w-full rounded-lg border px-2 py-1 text-sm mt-1 font-mono" rows={3} />
-                              </label>
-                              <div className="mt-2 grid gap-2 md:grid-cols-3">
-                                <label className="text-xs font-medium text-slate-600">Thông báo khi đúng
-                                  <input value={condition.feedback?.successDetail || ''} onChange={(e) => mutateCondition(pi, ti, ci, { feedback: { ...(condition.feedback || {}), successDetail: e.target.value } })} placeholder="Thành công..." className="w-full rounded-lg border px-2 py-1 text-sm mt-1" />
-                                </label>
-                                <label className="text-xs font-medium text-slate-600">Thông báo khi sai
-                                  <input value={condition.feedback?.errorMessage || ''} onChange={(e) => mutateCondition(pi, ti, ci, { feedback: { ...(condition.feedback || {}), errorMessage: e.target.value } })} placeholder="Lỗi..." className="w-full rounded-lg border px-2 py-1 text-sm mt-1" />
-                                </label>
-                                <label className="text-xs font-medium text-slate-600">Gợi ý cách sửa
-                                  <input value={condition.feedback?.fixAction || ''} onChange={(e) => mutateCondition(pi, ti, ci, { feedback: { ...(condition.feedback || {}), fixAction: e.target.value } })} placeholder="Gợi ý..." className="w-full rounded-lg border px-2 py-1 text-sm mt-1" />
-                                </label>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+            {/* Stats */}
+            <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
+              {[
+                ['Projects', projectCount],
+                ['Tasks', taskCount],
+                ['Conditions', conditionCount],
+                ['Max score', selectedMaxScore],
+              ].map(([label, value]) => (
+                <div key={label} className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">{label}</p>
+                  <p className="mt-1 text-xl font-black text-slate-900">{value}</p>
                 </div>
+              ))}
+            </div>
+
+            {/* Tabs */}
+            <div className="mt-5 flex gap-1 border-b border-slate-200">
+              {[
+                ['editor', 'Rules editor'],
+                ['validation', 'Validation'],
+                ['test', 'Test XML'],
+              ].map(([key, label]) => (
+                <button
+                  key={key}
+                  onClick={() => setActiveTab(key as typeof activeTab)}
+                  className={cx(
+                    'border-b-2 px-3 py-2.5 text-sm font-semibold transition',
+                    activeTab === key
+                      ? 'border-blue-600 text-blue-700'
+                      : 'border-transparent text-slate-500 hover:text-slate-800'
+                  )}
+                >
+                  {label}
+                  {key === 'validation' && validation && (
+                    <span className={cx('ml-2 rounded-full px-1.5 py-0.5 text-[10px]', validation.isValid ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700')}>
+                      {validation.isValid ? 'OK' : `${validation.errors?.length || 0}`}
+                    </span>
+                  )}
+                </button>
               ))}
             </div>
           </section>
 
-          <section className="grid gap-4 lg:grid-cols-2">
-            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-              <button onClick={validateRuleSet} className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white"><CheckCircle2 size={16} /> Validate Ruleset</button>
-              {validation && <div className="mt-3 rounded-lg border p-3 text-sm"><div className={validation.isValid ? 'text-emerald-700' : 'text-red-700'}>{validation.isValid ? 'Hợp lệ' : 'Có lỗi'}</div><div className="mt-2 space-y-1">{(validation.errors || []).map((err, i) => <div key={i} className="text-xs text-red-600">• {err}</div>)}</div></div>}
-            </div>
+          {activeTab === 'editor' && (
+            <>
+              {/* Ruleset settings */}
+              <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="mb-4">
+                  <h3 className="text-sm font-bold text-slate-900">Thông tin ruleset</h3>
+                  <p className="mt-1 text-xs text-slate-500">Các thiết lập chung cho toàn bộ bộ luật.</p>
+                </div>
 
-            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-              <div className="mb-2 flex items-center gap-2 font-semibold"><FileCode2 size={18} /> Test chấm XML</div>
-              <select value={gradeProjectCode} onChange={(e) => setGradeProjectCode(e.target.value)} className="mb-2 w-full rounded-lg border px-3 py-2 text-sm"><option value="">Chọn project</option>
-                {selected.projects.map((p) => <option key={p.projectCode} value={p.projectCode}>{p.projectName || p.projectCode}</option>)}
-              </select>
-              <input type="file" accept=".xlsx,.xlsm,.docx" onChange={(e) => setGradeFile(e.target.files?.[0] || null)} className="mb-2 w-full text-sm" />
-              <button onClick={gradeWithXmlRules} className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white"><Upload size={16} /> Chấm thử</button>
+                <div className="grid gap-4 md:grid-cols-[1fr_1fr_auto]">
+                  <label className="text-xs font-semibold text-slate-600">
+                    Môn / loại file
+                    <input
+                      value={selected.subject}
+                      onChange={(e) => replaceSelected({ ...selected, subject: e.target.value })}
+                      placeholder="excel"
+                      className={inputClass}
+                    />
+                  </label>
+                  <label className="text-xs font-semibold text-slate-600">
+                    Phiên bản bộ luật
+                    <input
+                      value={selected.version}
+                      onChange={(e) => replaceSelected({ ...selected, version: e.target.value })}
+                      placeholder="v1"
+                      className={inputClass}
+                    />
+                  </label>
+                  <label className="flex items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 md:self-end">
+                    <input
+                      type="checkbox"
+                      checked={selected.isActive}
+                      onChange={(e) => replaceSelected({ ...selected, isActive: e.target.checked })}
+                      className="h-4 w-4 accent-blue-600"
+                    />
+                    Kích hoạt
+                  </label>
+                </div>
+              </section>
+
+              {/* Projects */}
+              <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900">Projects</h3>
+                    <p className="mt-1 text-xs text-slate-500">
+                      Mỗi project chứa các Task và điều kiện chấm tương ứng.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      const next = { ...selected, projects: [...selected.projects, emptyProject()] };
+                      replaceSelected(next);
+                      setExpandedProjects((prev) => ({ ...prev, [next.projects.length - 1]: true }));
+                    }}
+                    className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-100"
+                  >
+                    <Plus size={15} /> Thêm project
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  {selected.projects.map((project, pi) => {
+                    const projectExpanded = expandedProjects[pi] ?? true;
+                    return (
+                      <div key={pi} className="overflow-hidden rounded-2xl border border-slate-200">
+                        {/* Project header */}
+                        <div className="flex items-center gap-3 bg-slate-50 px-4 py-3">
+                          <button
+                            onClick={() => toggleProject(pi)}
+                            className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                          >
+                            <span className="text-slate-400">{projectExpanded ? '▼' : '▶'}</span>
+                            <div className="min-w-0">
+                              <div className="truncate text-sm font-bold text-slate-900">
+                                {project.projectName || 'Project chưa đặt tên'}
+                              </div>
+                              <div className="mt-0.5 text-xs text-slate-500">
+                                {project.projectCode || 'project22'} · {project.tasks.length} task · {project.maxScore} điểm
+                              </div>
+                            </div>
+                          </button>
+                          <button
+                            onClick={() =>
+                              replaceSelected({
+                                ...selected,
+                                projects: selected.projects.filter((_, i) => i !== pi),
+                              })
+                            }
+                            title="Xóa project"
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
+
+                        {projectExpanded && (
+                          <div className="space-y-4 p-4">
+                            {/* Project fields */}
+                            <div className="grid gap-3 md:grid-cols-[1fr_1.5fr_130px]">
+                              <label className="text-xs font-semibold text-slate-600">
+                                Mã project
+                                <input
+                                  value={project.projectCode}
+                                  onChange={(e) => mutateProject(pi, { projectCode: e.target.value })}
+                                  className={inputClass}
+                                />
+                              </label>
+                              <label className="text-xs font-semibold text-slate-600">
+                                Tên project
+                                <input
+                                  value={project.projectName}
+                                  onChange={(e) => mutateProject(pi, { projectName: e.target.value })}
+                                  className={inputClass}
+                                />
+                              </label>
+                              <label className="text-xs font-semibold text-slate-600">
+                                Điểm tối đa
+                                <input
+                                  type="number"
+                                  value={project.maxScore}
+                                  onChange={(e) => mutateProject(pi, { maxScore: Number(e.target.value) })}
+                                  className={inputClass}
+                                />
+                              </label>
+                            </div>
+
+                            {/* Tasks */}
+                            <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3">
+                              <div className="mb-3 flex items-center justify-between gap-2">
+                                <div>
+                                  <p className="text-sm font-bold text-slate-800">Tasks</p>
+                                  <p className="text-xs text-slate-500">{project.tasks.length} nhiệm vụ trong project</p>
+                                </div>
+                                <button
+                                  onClick={() => mutateProject(pi, { tasks: [...project.tasks, emptyTask()] })}
+                                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+                                >
+                                  <Plus size={14} /> Thêm Task
+                                </button>
+                              </div>
+
+                              <div className="space-y-2">
+                                {project.tasks.map((task, ti) => {
+                                  const taskKey = `${pi}-${ti}`;
+                                  const taskExpanded = expandedTasks[taskKey] ?? false;
+
+                                  return (
+                                    <div key={taskKey} className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+                                      <div className="flex items-center gap-2 px-3 py-3">
+                                        <button
+                                          onClick={() => toggleTask(taskKey)}
+                                          className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                                        >
+                                          <span className="text-xs text-slate-400">{taskExpanded ? '▼' : '▶'}</span>
+                                          <span className="rounded-md bg-slate-100 px-2 py-1 font-mono text-[11px] font-bold text-slate-600">
+                                            {task.taskId || `TASK-${ti + 1}`}
+                                          </span>
+                                          <span className="min-w-0 truncate text-sm font-semibold text-slate-800">
+                                            {task.taskName || 'Task chưa đặt tên'}
+                                          </span>
+                                          <span className="ml-auto shrink-0 text-xs font-semibold text-slate-400">
+                                            {task.conditions.length} điều kiện · {task.maxScore} điểm
+                                          </span>
+                                        </button>
+                                        <button
+                                          onClick={() =>
+                                            mutateProject(pi, {
+                                              tasks: project.tasks.filter((_, i) => i !== ti),
+                                            })
+                                          }
+                                          title="Xóa Task"
+                                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600"
+                                        >
+                                          <Trash2 size={14} />
+                                        </button>
+                                      </div>
+
+                                      {taskExpanded && (
+                                        <div className="border-t border-slate-100 p-4">
+                                          <div className="grid gap-3 md:grid-cols-[1fr_1.5fr_120px]">
+                                            <label className="text-xs font-semibold text-slate-600">
+                                              Mã Task
+                                              <input
+                                                value={task.taskId}
+                                                onChange={(e) => mutateTask(pi, ti, { taskId: e.target.value })}
+                                                className={inputClass}
+                                              />
+                                            </label>
+                                            <label className="text-xs font-semibold text-slate-600">
+                                              Tên nhiệm vụ
+                                              <input
+                                                value={task.taskName}
+                                                onChange={(e) => mutateTask(pi, ti, { taskName: e.target.value })}
+                                                className={inputClass}
+                                              />
+                                            </label>
+                                            <label className="text-xs font-semibold text-slate-600">
+                                              Điểm tối đa
+                                              <input
+                                                type="number"
+                                                value={task.maxScore}
+                                                onChange={(e) => mutateTask(pi, ti, { maxScore: Number(e.target.value) })}
+                                                className={inputClass}
+                                              />
+                                            </label>
+                                          </div>
+
+                                          <div className="mt-5">
+                                            <div className="mb-3 flex items-center justify-between gap-2">
+                                              <div>
+                                                <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Conditions</p>
+                                                <p className="mt-1 text-xs text-slate-400">
+                                                  {task.conditions.length} điều kiện chấm điểm
+                                                </p>
+                                              </div>
+                                              <button
+                                                onClick={() =>
+                                                  mutateTask(pi, ti, {
+                                                    conditions: [...task.conditions, emptyCondition()],
+                                                  })
+                                                }
+                                                className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800"
+                                              >
+                                                <Plus size={14} /> Thêm điều kiện
+                                              </button>
+                                            </div>
+
+                                            <div className="space-y-3">
+                                              {task.conditions.map((condition, ci) => {
+                                                const conditionKey = `${pi}-${ti}-${ci}`;
+                                                const advanced = showAdvanced[conditionKey] ?? false;
+
+                                                return (
+                                                  <div key={conditionKey} className="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+                                                    <div className="flex items-start justify-between gap-3">
+                                                      <div className="flex min-w-0 items-center gap-2">
+                                                        <span className="rounded-md bg-blue-50 px-2 py-1 font-mono text-[11px] font-bold text-blue-700">
+                                                          {condition.conditionId || `C${String(ci + 1).padStart(2, '0')}`}
+                                                        </span>
+                                                        <span className="text-xs text-slate-500">
+                                                          {condition.score} điểm
+                                                        </span>
+                                                      </div>
+                                                      <button
+                                                        onClick={() =>
+                                                          mutateTask(pi, ti, {
+                                                            conditions: task.conditions.filter((_, i) => i !== ci),
+                                                          })
+                                                        }
+                                                        title="Xóa điều kiện"
+                                                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600"
+                                                      >
+                                                        <Trash2 size={14} />
+                                                      </button>
+                                                    </div>
+
+                                                    <div className="mt-3 grid gap-3 md:grid-cols-[1fr_120px]">
+                                                      <label className="text-xs font-semibold text-slate-600">
+                                                        Mã điều kiện
+                                                        <input
+                                                          value={condition.conditionId}
+                                                          onChange={(e) => mutateCondition(pi, ti, ci, { conditionId: e.target.value })}
+                                                          className={inputClass}
+                                                        />
+                                                      </label>
+                                                      <label className="text-xs font-semibold text-slate-600">
+                                                        Điểm
+                                                        <input
+                                                          type="number"
+                                                          value={condition.score}
+                                                          onChange={(e) => mutateCondition(pi, ti, ci, { score: Number(e.target.value) })}
+                                                          className={inputClass}
+                                                        />
+                                                      </label>
+                                                    </div>
+
+                                                    <label className="mt-3 block text-xs font-semibold text-slate-600">
+                                                      File XML cần kiểm tra
+                                                      <input
+                                                        value={condition.sourceFile}
+                                                        onChange={(e) => mutateCondition(pi, ti, ci, { sourceFile: e.target.value })}
+                                                        placeholder="xl/worksheets/sheet1.xml"
+                                                        className={cx(inputClass, 'font-mono')}
+                                                      />
+                                                    </label>
+
+                                                    <label className="mt-3 block text-xs font-semibold text-slate-600">
+                                                      Giá trị cần tìm trong XML
+                                                      <textarea
+                                                        value={expectedText(condition)}
+                                                        onChange={(e) =>
+                                                          mutateCondition(pi, ti, ci, {
+                                                            expectedValues: e.target.value.split('\n'),
+                                                          })
+                                                        }
+                                                        rows={3}
+                                                        placeholder="Mỗi giá trị một dòng..."
+                                                        className={cx(inputClass, 'resize-y font-mono')}
+                                                      />
+                                                    </label>
+
+                                                    <div className="mt-3 grid gap-3 md:grid-cols-2">
+                                                      <label className="text-xs font-semibold text-slate-600">
+                                                        Cách so khớp
+                                                        <select
+                                                          value={condition.compareMode}
+                                                          onChange={(e) =>
+                                                            mutateCondition(pi, ti, ci, {
+                                                              compareMode: e.target.value as XmlCompareMode,
+                                                            })
+                                                          }
+                                                          className={inputClass}
+                                                        >
+                                                          {compareModes.map((m) => (
+                                                            <option key={m} value={m}>
+                                                              {compareModesLabels[m]}
+                                                            </option>
+                                                          ))}
+                                                        </select>
+                                                      </label>
+                                                      <label className="text-xs font-semibold text-slate-600">
+                                                        Quy tắc nhiều giá trị
+                                                        <select
+                                                          value={condition.matchPolicy}
+                                                          onChange={(e) =>
+                                                            mutateCondition(pi, ti, ci, {
+                                                              matchPolicy: e.target.value as XmlMatchPolicy,
+                                                            })
+                                                          }
+                                                          className={inputClass}
+                                                        >
+                                                          {matchPolicies.map((m) => (
+                                                            <option key={m} value={m}>
+                                                              {matchPoliciesLabels[m]}
+                                                            </option>
+                                                          ))}
+                                                        </select>
+                                                      </label>
+                                                    </div>
+
+                                                    <button
+                                                      onClick={() => toggleAdvanced(conditionKey)}
+                                                      className="mt-4 text-xs font-semibold text-blue-600 hover:text-blue-700"
+                                                    >
+                                                      {advanced ? '▲ Ẩn cài đặt nâng cao' : '▼ Cài đặt nâng cao'}
+                                                    </button>
+
+                                                    {advanced && (
+                                                      <div className="mt-3 rounded-xl border border-slate-200 bg-white p-3">
+                                                        <div className="grid gap-3 md:grid-cols-2">
+                                                          <label className="text-xs font-semibold text-slate-600">
+                                                            Thông báo khi đúng
+                                                            <input
+                                                              value={condition.feedback?.successDetail || ''}
+                                                              onChange={(e) =>
+                                                                mutateCondition(pi, ti, ci, {
+                                                                  feedback: {
+                                                                    ...(condition.feedback || {}),
+                                                                    successDetail: e.target.value,
+                                                                  },
+                                                                })
+                                                              }
+                                                              placeholder="Thành công..."
+                                                              className={inputClass}
+                                                            />
+                                                          </label>
+                                                          <label className="text-xs font-semibold text-slate-600">
+                                                            Thông báo khi sai
+                                                            <input
+                                                              value={condition.feedback?.errorMessage || ''}
+                                                              onChange={(e) =>
+                                                                mutateCondition(pi, ti, ci, {
+                                                                  feedback: {
+                                                                    ...(condition.feedback || {}),
+                                                                    errorMessage: e.target.value,
+                                                                  },
+                                                                })
+                                                              }
+                                                              placeholder="Lỗi..."
+                                                              className={inputClass}
+                                                            />
+                                                          </label>
+                                                        </div>
+                                                        <label className="mt-3 block text-xs font-semibold text-slate-600">
+                                                          Gợi ý cách sửa
+                                                          <input
+                                                            value={condition.feedback?.fixAction || ''}
+                                                            onChange={(e) =>
+                                                              mutateCondition(pi, ti, ci, {
+                                                                feedback: {
+                                                                  ...(condition.feedback || {}),
+                                                                  fixAction: e.target.value,
+                                                                },
+                                                              })
+                                                            }
+                                                            placeholder="Ví dụ: Kiểm tra lại định dạng ô..."
+                                                            className={inputClass}
+                                                          />
+                                                        </label>
+                                                        <label className="mt-3 flex items-center gap-2 text-xs font-medium text-slate-600">
+                                                          <input
+                                                            type="checkbox"
+                                                            checked={condition.stopTaskIfFailed}
+                                                            onChange={(e) =>
+                                                              mutateCondition(pi, ti, ci, {
+                                                                stopTaskIfFailed: e.target.checked,
+                                                              })
+                                                            }
+                                                            className="h-4 w-4 accent-blue-600"
+                                                          />
+                                                          Dừng Task nếu điều kiện thất bại
+                                                        </label>
+                                                      </div>
+                                                    )}
+                                                  </div>
+                                                );
+                                              })}
+
+                                              {task.conditions.length === 0 && (
+                                                <div className="rounded-xl border border-dashed border-slate-200 px-4 py-7 text-center">
+                                                  <p className="text-sm font-medium text-slate-500">Chưa có điều kiện</p>
+                                                  <p className="mt-1 text-xs text-slate-400">
+                                                    Thêm condition để ruleset có thể chấm Task này.
+                                                  </p>
+                                                </div>
+                                              )}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+
+                                {project.tasks.length === 0 && (
+                                  <div className="rounded-xl border border-dashed border-slate-200 px-4 py-8 text-center">
+                                    <p className="text-sm font-medium text-slate-500">Project chưa có Task</p>
+                                    <button
+                                      onClick={() => mutateProject(pi, { tasks: [emptyTask()] })}
+                                      className="mt-2 text-xs font-semibold text-blue-600 hover:underline"
+                                    >
+                                      + Thêm Task đầu tiên
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+
+                  {selected.projects.length === 0 && (
+                    <div className="rounded-2xl border border-dashed border-slate-300 px-6 py-12 text-center">
+                      <FileCode2 className="mx-auto mb-3 text-slate-300" size={34} />
+                      <p className="font-semibold text-slate-700">Chưa có Project</p>
+                      <p className="mt-1 text-sm text-slate-400">Tạo project đầu tiên để xây ruleset.</p>
+                      <button
+                        onClick={() => replaceSelected({ ...selected, projects: [emptyProject()] })}
+                        className="mt-4 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3.5 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                      >
+                        <Plus size={15} /> Thêm project
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </section>
+            </>
+          )}
+
+          {/* Validation tab */}
+          {activeTab === 'validation' && (
+            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">Validation</h3>
+                  <p className="mt-1 text-xs text-slate-500">
+                    Kiểm tra cấu trúc ruleset trước khi bật Active.
+                  </p>
+                </div>
+                <button
+                  onClick={validateRuleSet}
+                  className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-3.5 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+                >
+                  <CheckCircle2 size={16} /> Chạy Validate
+                </button>
+              </div>
+
+              {!validation && (
+                <div className="mt-5 rounded-xl border border-dashed border-slate-200 px-6 py-10 text-center">
+                  <CheckCircle2 className="mx-auto mb-2 text-slate-300" size={30} />
+                  <p className="text-sm font-medium text-slate-600">Chưa chạy validation</p>
+                  <p className="mt-1 text-xs text-slate-400">Nên Validate trước khi bật Active.</p>
+                </div>
+              )}
+
+              {validation && (
+                <div className="mt-5 space-y-3">
+                  <div
+                    className={cx(
+                      'flex items-center gap-3 rounded-xl border p-4',
+                      validation.isValid
+                        ? 'border-emerald-200 bg-emerald-50'
+                        : 'border-red-200 bg-red-50'
+                    )}
+                  >
+                    {validation.isValid ? (
+                      <CheckCircle2 className="text-emerald-600" size={22} />
+                    ) : (
+                      <XCircle className="text-red-600" size={22} />
+                    )}
+                    <div>
+                      <p className={cx('text-sm font-bold', validation.isValid ? 'text-emerald-800' : 'text-red-800')}>
+                        {validation.isValid ? 'Ruleset hợp lệ' : 'Ruleset có lỗi'}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {validation.errors?.length || 0} lỗi · {validation.warnings?.length || 0} cảnh báo
+                      </p>
+                    </div>
+                  </div>
+
+                  {(validation.errors || []).length > 0 && (
+                    <div className="rounded-xl border border-red-100 bg-white">
+                      <div className="border-b border-red-100 bg-red-50 px-4 py-3 text-xs font-bold text-red-800">
+                        Lỗi cần sửa
+                      </div>
+                      <div className="divide-y divide-slate-100">
+                        {(validation.errors || []).map((err, i) => (
+                          <div key={i} className="flex gap-3 px-4 py-3 text-xs text-red-700">
+                            <XCircle size={14} className="mt-0.5 shrink-0" />
+                            <span>{err}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {(validation.warnings || []).length > 0 && (
+                    <div className="rounded-xl border border-amber-100 bg-white">
+                      <div className="border-b border-amber-100 bg-amber-50 px-4 py-3 text-xs font-bold text-amber-800">
+                        Cảnh báo
+                      </div>
+                      <div className="divide-y divide-slate-100">
+                        {(validation.warnings || []).map((warning, i) => (
+                          <div key={i} className="flex gap-3 px-4 py-3 text-xs text-amber-700">
+                            <AlertTriangle size={14} className="mt-0.5 shrink-0" />
+                            <span>{warning}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </section>
+          )}
+
+          {/* Test tab */}
+          {activeTab === 'test' && (
+            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="mb-5 flex items-start justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <div className="rounded-lg bg-slate-100 p-2 text-slate-700">
+                      <FileCode2 size={18} />
+                    </div>
+                    <h3 className="text-sm font-bold text-slate-900">Test chấm XML</h3>
+                  </div>
+                  <p className="mt-1 text-xs text-slate-500">
+                    Chọn project và file Office để kiểm tra kết quả chấm trước khi đưa ruleset vào sử dụng.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-[1fr_1fr_auto] md:items-end">
+                <label className="text-xs font-semibold text-slate-600">
+                  Project
+                  <select
+                    value={gradeProjectCode}
+                    onChange={(e) => setGradeProjectCode(e.target.value)}
+                    className={inputClass}
+                  >
+                    <option value="">Chọn project</option>
+                    {selected.projects.map((p) => (
+                      <option key={p.projectCode} value={p.projectCode}>
+                        {p.projectName || p.projectCode}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="text-xs font-semibold text-slate-600">
+                  File bài làm
+                  <input
+                    type="file"
+                    accept=".xlsx,.xlsm,.docx"
+                    onChange={(e) => setGradeFile(e.target.files?.[0] || null)}
+                    className="mt-1 block w-full rounded-lg border border-dashed border-slate-300 bg-slate-50 px-3 py-2 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-white file:px-2 file:py-1 file:text-xs file:font-semibold"
+                  />
+                </label>
+
+                <button
+                  onClick={gradeWithXmlRules}
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+                >
+                  <Upload size={16} /> Chấm thử
+                </button>
+              </div>
 
               {renderGradeResult()}
-            </div>
-          </section>
+            </section>
+          )}
 
-          <p className="flex items-center gap-2 text-xs text-slate-500"><AlertTriangle size={14} /> CRUD cho phép build từng phần; hãy chạy Validate đầy đủ trước khi bật Active</p>
+          <div className="flex items-center gap-2 rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-xs text-amber-800">
+            <AlertTriangle size={15} className="shrink-0" />
+            <span>
+              Hãy chạy <strong>Validate</strong> đầy đủ trước khi bật <strong>Active</strong>.
+            </span>
+          </div>
         </main>
       </div>
     </div>
