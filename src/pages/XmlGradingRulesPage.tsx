@@ -167,12 +167,12 @@ const XmlGradingRulesPage = () => {
             <div className="mb-3 flex items-center justify-between"><h2 className="font-semibold">Danh sách bài Project</h2><button onClick={() => replaceSelected({ ...selected, projects: [...selected.projects, emptyProject()] })} className="rounded-lg border px-3 py-2 text-sm"><Plus size={14} className="inline" /> Thêm bài project</button></div>
             <div className="space-y-4">
               {selected.projects.map((project, pi) => (
-                <div key={`${project.projectCode}-${pi}`} className="rounded-xl border border-slate-200 p-4">
+                <div key={pi} className="rounded-xl border border-slate-200 p-4">
                   <div className="grid gap-3 md:grid-cols-[1fr_1fr_120px_auto]">
-                    <input value={project.projectCode} onChange={(e) => mutateProject(pi, { projectCode: e.target.value })} placeholder="Mã project, ví dụ project22" className="rounded-lg border px-3 py-2" />
-                    <input value={project.projectName} onChange={(e) => mutateProject(pi, { projectName: e.target.value })} placeholder="Tên project, ví dụ Excel Project 22" className="rounded-lg border px-3 py-2" />
-                    <input type="number" value={project.maxScore} onChange={(e) => mutateProject(pi, { maxScore: Number(e.target.value) })} className="rounded-lg border px-3 py-2" />
-                    <button onClick={() => replaceSelected({ ...selected, projects: selected.projects.filter((_, i) => i !== pi) })} className="rounded-lg border border-red-200 px-3 text-red-600"><Trash2 size={16} /></button>
+                    <label className="text-xs font-medium text-slate-600">Mã project (projectCode)<input value={project.projectCode} onChange={(e) => mutateProject(pi, { projectCode: e.target.value })} placeholder="Ví dụ project22" className="mt-1 w-full rounded-lg border px-3 py-2 text-sm font-normal text-slate-900" /></label>
+                    <label className="text-xs font-medium text-slate-600">Tên project (projectName)<input value={project.projectName} onChange={(e) => mutateProject(pi, { projectName: e.target.value })} placeholder="Ví dụ Excel Project 22" className="mt-1 w-full rounded-lg border px-3 py-2 text-sm font-normal text-slate-900" /></label>
+                    <label className="text-xs font-medium text-slate-600">Điểm tối đa<input type="number" value={project.maxScore} onChange={(e) => mutateProject(pi, { maxScore: Number(e.target.value) })} className="mt-1 w-full rounded-lg border px-3 py-2 text-sm font-normal text-slate-900" /></label>
+                    <button onClick={() => replaceSelected({ ...selected, projects: selected.projects.filter((_, i) => i !== pi) })} title="Xóa project" className="self-end rounded-lg border border-red-200 px-3 py-2 text-red-600"><Trash2 size={16} /></button>
                   </div>
                   <div className="mt-3 space-y-3 pl-4">
                     <div className="flex justify-between"><h3 className="text-sm font-semibold text-slate-700">Các câu / nhiệm vụ chấm (Tasks)</h3><button onClick={() => mutateProject(pi, { tasks: [...project.tasks, emptyTask()] })} className="text-sm text-blue-600">+ Thêm câu/task</button></div>
