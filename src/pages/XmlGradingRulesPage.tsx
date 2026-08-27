@@ -1,10 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
-  AlertCircle,
   AlertTriangle,
   CheckCircle2,
-  ChevronDown,
-  ChevronRight,
   Copy,
   Download,
   FileCode2,
@@ -67,8 +64,6 @@ const XmlGradingRulesPage = () => {
 
   // State quản lý xem JSON thô hoặc Giao diện trực quan
   const [viewRawJson, setViewRawJson] = useState(false);
-  // State đóng/mở danh sách project trong kết quả
-  const [expandedProjects, setExpandedProjects] = useState<Record<string, boolean>>({});
 
   const canUsePage = user?.role === 'Admin';
 
@@ -177,9 +172,6 @@ const XmlGradingRulesPage = () => {
     URL.revokeObjectURL(url);
   };
 
-  const toggleProjectExpand = (key: string) => {
-    setExpandedProjects((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
 
   // --- GIAO DIỆN HIỂN THỊ KẾT QUẢ CHẤM ĐIỂM CHI TIẾT ---
   const renderGradeResult = () => {
