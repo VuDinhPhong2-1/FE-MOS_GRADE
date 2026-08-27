@@ -1,8 +1,31 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, CheckCircle2, FileCode2, Plus, RefreshCw, Save, Trash2, Upload } from 'lucide-react';
+import { 
+  AlertCircle, 
+  AlertTriangle, 
+  CheckCircle2, 
+  ChevronDown, 
+  ChevronRight, 
+  Copy, 
+  Download, 
+  FileCode2, 
+  Plus, 
+  RefreshCw, 
+  Save, 
+  Trash2, 
+  Upload, 
+  XCircle 
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { xmlGradingRulesService } from '../services/xml-grading-rules.service';
-import type { GradingRuleSet, ProjectXmlRule, TaskXmlRule, XmlCompareMode, XmlGradingCondition, XmlMatchPolicy, XmlRuleValidationResult } from '../types/xml-grading-rules.types';
+import type { 
+  GradingRuleSet, 
+  ProjectXmlRule, 
+  TaskXmlRule, 
+  XmlCompareMode, 
+  XmlGradingCondition, 
+  XmlMatchPolicy, 
+  XmlRuleValidationResult 
+} from '../types/xml-grading-rules.types';
 import { notify } from '../utils/notify';
 
 const compareModes: XmlCompareMode[] = ['xmlContainsNormalized', 'xmlContains', 'xmlEquivalentWholeFile', 'exactStringContains'];
@@ -17,11 +40,12 @@ const emptyCondition = (): XmlGradingCondition => ({
 });
 
 const cx = (...items: Array<string | false | null | undefined>) => items.filter(Boolean).join(' ');
+
 const expectedText = (condition: XmlGradingCondition) => {
-  // Support both expectedValues (array) and legacy expectedValue
   const arr = (condition.expectedValues ?? (Array.isArray((condition as any).expectedValue) ? (condition as any).expectedValue : (condition as any).expectedValue ? [(condition as any).expectedValue] : []));
   return Array.isArray(arr) ? arr.join('\n') : '';
 };
+
 const prepareCondition = (condition: XmlGradingCondition): XmlGradingCondition => ({
   ...condition,
   expectedValue: (condition.expectedValues ?? []).map((value) => value.trim()).filter(Boolean),
@@ -40,9 +64,13 @@ const XmlGradingRulesPage = () => {
   const [gradeProjectCode, setGradeProjectCode] = useState('');
   const [gradeFile, setGradeFile] = useState<File | null>(null);
   const [gradeJson, setGradeJson] = useState('');
+  
+  // State quản lý xem JSON thô hoặc Giao diện trực quan
+  const [viewRawJson, setViewRawJson] = useState(false);
+  // State đóng/mở danh sách project trong kết quả
+  const [expandedProjects, setExpandedProjects] = useState<Record<string, boolean>>({});
 
   const canUsePage = user?.role === 'Admin';
-  const selectedProjectCodes = useMemo(() => selected.projects.map((project) => project.projectCode), [selected.projects]);
 
   const loadRuleSets = useCallback(async () => {
     setLoading(true);
@@ -149,70 +177,201 @@ const XmlGradingRulesPage = () => {
     URL.revokeObjectURL(url);
   };
 
+  const toggleProjectExpand = (key: string) => {
+    setExpandedProjects((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  // --- GIAO DIỆN HIỂN THỊ KẾT QUẢ CHẤM ĐIỂM CHI TIẾT ---
   const renderGradeResult = () => {
     if (!gradeJson) return null;
+
     let parsed: any = null;
     try {
       parsed = JSON.parse(gradeJson);
     } catch (e) {
-      // not JSON, fallback to raw
+      parsed = null;
+    }
+
+    if (!parsed) {
       return (
-        <div className="mt-3 rounded-lg border bg-slate-950 p-3 text-xs text-slate-100">
-          <div className="mb-2 flex items-center justify-between">
-            <div className="text-sm font-semibold">Kết quả chấm (Raw)</div>
+        <div className="mt-4 rounded-xl border border-slate-800 bg-slate-950 p-4 text-xs text-slate-100 shadow-inner">
+          <div className="mb-2 flex items-center justify-between border-b border-slate-800 pb-2">
+            <span className="font-mono text-sm font-semibold text-amber-400">Raw Text Result</span>
             <div className="flex gap-2">
-              <button onClick={copyJsonToClipboard} className="rounded border px-2 py-1 text-xs">Sao chép</button>
-              <button onClick={() => downloadJson('grade-result.txt')} className="rounded border px-2 py-1 text-xs">Tải</button>
+              <button onClick={copyJsonToClipboard} className="inline-flex items-center gap-1 rounded border border-slate-700 bg-slate-800 px-2 py-1 text-xs hover:bg-slate-700"><Copy size={12} /> Sao chép</button>
+              <button onClick={() => downloadJson('grade-result.txt')} className="inline-flex items-center gap-1 rounded border border-slate-700 bg-slate-800 px-2 py-1 text-xs hover:bg-slate-700"><Download size={12} /> Tải về</button>
             </div>
           </div>
-          <pre className="max-h-96 overflow-auto text-xs">{gradeJson}</pre>
+          <pre className="max-h-96 overflow-auto font-mono text-slate-300 leading-relaxed">{gradeJson}</pre>
         </div>
       );
     }
 
-    // If parsed JSON has common fields, show friendly layout
-    const totalScore = parsed.totalScore ?? parsed.score ?? parsed.summary?.totalScore;
-    const projects = parsed.projects ?? parsed.results ?? parsed.items ?? null;
+    // Trích xuất các trường dữ liệu điểm số từ JSON
+    const totalScore = parsed.totalScore ?? parsed.score ?? parsed.summary?.totalScore ?? 0;
+    const maxScore = parsed.maxScore ?? parsed.summary?.maxScore ?? 1000;
+    const percentage = parsed.percentage ?? (maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0);
+    const isPassed = (parsed.isPassed ?? (parsed.status === 'PASSED')) || percentage >= 70;
+    const projectsList = parsed.projects ?? parsed.results ?? parsed.items ?? (Array.isArray(parsed) ? parsed : []);
 
     return (
-      <div className="mt-3 rounded-lg border bg-white p-3 text-sm text-slate-800">
-        <div className="mb-2 flex items-center justify-between">
-          <div>
-            <div className="text-xs text-slate-500">Kết quả chấm</div>
-            {typeof totalScore !== 'undefined' && (
-              <div className="mt-1 text-2xl font-bold text-emerald-700">{totalScore}</div>
-            )}
+      <div className="mt-5 space-y-4 rounded-xl border border-slate-200 bg-slate-50/50 p-4 shadow-sm">
+        {/* Header & Công cụ */}
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
+          <div className="flex items-center gap-2">
+            <h3 className="text-base font-bold text-slate-800">Báo Cáo Kết Quả Chấm Điểm</h3>
+            <span className={cx("rounded-full px-2.5 py-0.5 text-xs font-semibold", isPassed ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800")}>
+              {isPassed ? "ĐẠT (PASSED)" : "KHÔNG ĐẠT (FAILED)"}
+            </span>
           </div>
-          <div className="flex gap-2">
-            <button onClick={copyJsonToClipboard} className="rounded border px-2 py-1 text-xs">Sao chép JSON</button>
-            <button onClick={() => downloadJson('grade-result.json')} className="rounded border px-2 py-1 text-xs">Tải JSON</button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setViewRawJson(!viewRawJson)}
+              className="rounded-lg border border-slate-300 bg-white px-3 py-1 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50"
+            >
+              {viewRawJson ? "Xem giao diện Đồ họa" : "Xem mã JSON thô"}
+            </button>
+            <button onClick={copyJsonToClipboard} title="Sao chép JSON" className="rounded-lg border border-slate-300 bg-white p-1.5 text-slate-600 shadow-sm hover:bg-slate-50">
+              <Copy size={14} />
+            </button>
+            <button onClick={() => downloadJson()} title="Tải xuống JSON" className="rounded-lg border border-slate-300 bg-white p-1.5 text-slate-600 shadow-sm hover:bg-slate-50">
+              <Download size={14} />
+            </button>
           </div>
         </div>
 
-        {Array.isArray(projects) && projects.length > 0 ? (
-          <div className="space-y-2">
-            {projects.map((p: any, idx: number) => (
-              <div key={idx} className="rounded-lg border p-2">
-                <div className="flex items-center justify-between">
-                  <div className="font-medium">{p.projectCode ?? p.code ?? p.name ?? `Project ${idx + 1}`}</div>
-                  <div className="text-sm text-slate-600">{p.score ?? p.totalScore ?? ''}</div>
-                </div>
-                {Array.isArray(p.tasks) && p.tasks.length > 0 && (
-                  <div className="mt-2 grid gap-2">
-                    {p.tasks.map((t: any, j: number) => (
-                      <div key={j} className="flex items-start justify-between text-sm">
-                        <div>{t.taskId ?? t.id ?? t.name ?? `Câu ${j + 1}`}</div>
-                        <div className="text-slate-600">{t.score ?? ''}</div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
+        {viewRawJson ? (
+          <div className="rounded-lg border border-slate-900 bg-slate-950 p-3 text-xs text-slate-100">
+            <pre className="max-h-96 overflow-auto font-mono">{JSON.stringify(parsed, null, 2)}</pre>
           </div>
         ) : (
-          // fallback: show pretty JSON with syntax preserved
-          <pre className="mt-2 max-h-72 overflow-auto rounded bg-slate-50 p-2 text-xs">{JSON.stringify(parsed, null, 2)}</pre>
+          <>
+            {/* Dashboard Điểm số tổng quan */}
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="rounded-xl border border-emerald-100 bg-emerald-50/60 p-3.5">
+                <div className="text-xs font-medium text-emerald-800">Tổng điểm đạt được</div>
+                <div className="mt-1 text-2xl font-black text-emerald-700">
+                  {totalScore} <span className="text-sm font-normal text-emerald-600">/ {maxScore}</span>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-blue-100 bg-blue-50/60 p-3.5">
+                <div className="text-xs font-medium text-blue-800">Tỷ lệ hoàn thành</div>
+                <div className="mt-1 flex items-baseline gap-2">
+                  <span className="text-2xl font-black text-blue-700">{percentage}%</span>
+                </div>
+                <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-blue-200">
+                  <div className="h-full bg-blue-600 transition-all duration-500" style={{ width: `${Math.min(percentage, 100)}%` }} />
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-sm">
+                <div className="text-xs font-medium text-slate-500">Thông tin bài thi</div>
+                <div className="mt-1 text-xs text-slate-700 space-y-1">
+                  <div>Môn: <strong className="uppercase font-semibold">{selected.subject}</strong></div>
+                  <div>Project: <strong className="font-semibold">{gradeProjectCode || selected.projects[0]?.projectCode || 'N/A'}</strong></div>
+                </div>
+              </div>
+            </div>
+
+            {/* Chi tiết từng Project và Task */}
+            <div className="space-y-3 pt-2">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">Chi tiết nhiệm vụ & Điều kiện chấm</h4>
+              {Array.isArray(projectsList) && projectsList.length > 0 ? (
+                projectsList.map((proj: any, pIdx: number) => {
+                  const projCode = proj.projectCode ?? proj.code ?? proj.name ?? `Project ${pIdx + 1}`;
+                  const isExpanded = expandedProjects[projCode] !== false; // mặc định mở
+
+                  return (
+                    <div key={pIdx} className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                      {/* Accordion Header */}
+                      <button
+                        onClick={() => toggleProjectExpand(projCode)}
+                        className="flex w-full items-center justify-between bg-slate-100/70 px-4 py-2.5 text-left transition hover:bg-slate-100"
+                      >
+                        <div className="flex items-center gap-2">
+                          {isExpanded ? <ChevronDown size={16} className="text-slate-500" /> : <ChevronRight size={16} className="text-slate-500" />}
+                          <span className="font-semibold text-slate-800 text-sm">{projCode}</span>
+                          {proj.projectName && <span className="text-xs text-slate-500">({proj.projectName})</span>}
+                        </div>
+                        <div className="text-xs font-bold text-slate-700">
+                          Điểm: <span className="text-emerald-700">{proj.score ?? proj.totalScore ?? 0}</span> / {proj.maxScore ?? '--'}
+                        </div>
+                      </button>
+
+                      {/* Accordion Content */}
+                      {isExpanded && (
+                        <div className="divide-y divide-slate-100 p-3">
+                          {Array.isArray(proj.tasks) && proj.tasks.length > 0 ? (
+                            proj.tasks.map((task: any, tIdx: number) => {
+                              const taskPassed = task.isPassed ?? (task.score > 0);
+                              return (
+                                <div key={tIdx} className="py-2.5 first:pt-0 last:pb-0">
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div className="flex items-start gap-2">
+                                      {taskPassed ? (
+                                        <CheckCircle2 className="mt-0.5 shrink-0 text-emerald-500" size={16} />
+                                      ) : (
+                                        <XCircle className="mt-0.5 shrink-0 text-rose-500" size={16} />
+                                      )}
+                                      <div>
+                                        <div className="text-sm font-medium text-slate-900">
+                                          {task.taskId ? `${task.taskId}: ` : ''}{task.taskName ?? task.name ?? `Câu ${tIdx + 1}`}
+                                        </div>
+                                        {task.errorMessage && (
+                                          <p className="mt-1 text-xs text-rose-600 bg-rose-50 p-1.5 rounded border border-rose-100">
+                                            {task.errorMessage}
+                                          </p>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <div className="shrink-0 text-right text-xs font-semibold">
+                                      <span className={taskPassed ? "text-emerald-700" : "text-rose-600"}>{task.score ?? 0}</span>
+                                      <span className="text-slate-400"> / {task.maxScore ?? 1} pt</span>
+                                    </div>
+                                  </div>
+
+                                  {/* Hiển thị chi tiết các Condition bên trong Task nếu có */}
+                                  {Array.isArray(task.conditions) && task.conditions.length > 0 && (
+                                    <div className="mt-2 ml-6 space-y-1.5 rounded-lg bg-slate-50 p-2.5 text-xs">
+                                      {task.conditions.map((cond: any, cIdx: number) => (
+                                        <div key={cIdx} className="flex flex-col gap-1 border-b border-slate-200/60 pb-1.5 last:border-0 last:pb-0">
+                                          <div className="flex items-center justify-between">
+                                            <span className="font-mono text-slate-600">{cond.conditionId || `Cond #${cIdx + 1}`} ({cond.sourceFile})</span>
+                                            <span className={cx("font-semibold", cond.isPassed ? "text-emerald-600" : "text-rose-500")}>
+                                              {cond.isPassed ? `+${cond.score} đ` : "0 đ"}
+                                            </span>
+                                          </div>
+                                          {!cond.isPassed && cond.feedback?.errorMessage && (
+                                            <div className="text-rose-600">{cond.feedback.errorMessage}</div>
+                                          )}
+                                          {!cond.isPassed && cond.feedback?.fixAction && (
+                                            <div className="text-amber-700 flex items-center gap-1">
+                                              <AlertCircle size={12} /> Gợi ý: {cond.feedback.fixAction}
+                                            </div>
+                                          )}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })
+                          ) : (
+                            <div className="py-2 text-center text-xs text-slate-400">Không có dữ liệu câu hỏi trong project này.</div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="rounded-lg border border-dashed border-slate-300 p-4 text-center text-xs text-slate-500">
+                  Không tìm thấy danh sách Project chi tiết trong dữ liệu phản hồi.
+                </div>
+              )}
+            </div>
+          </>
         )}
       </div>
     );
@@ -369,15 +528,18 @@ const XmlGradingRulesPage = () => {
               <button onClick={validateRuleSet} className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white"><CheckCircle2 size={16} /> Validate</button>
               {validation && <div className="mt-3 rounded-lg border p-3 text-sm"><div className={validation.isValid ? 'text-emerald-700' : 'text-red-700'}>{validation.isValid ? 'Hợp lệ' : 'Chưa hợp lệ'}</div>{validation.errors?.length > 0 && <ul className="mt-2 text-xs text-red-600">{validation.errors.map((e, i) => <li key={i}>{e}</li>)}</ul>}</div>}
             </div>
+            
             <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
               <div className="mb-2 flex items-center gap-2 font-semibold"><FileCode2 size={18} /> Test chấm XML</div>
-              <select value={gradeProjectCode} onChange={(e) => setGradeProjectCode(e.target.value)} className="mb-2 w-full rounded-lg border px-3 py-2"><option value="">Chọn project</option>{selected.projects.map((p) => <option key={p.projectCode} value={p.projectCode}>{p.projectCode} - {p.projectName}</option>)}</select>
+              <select value={gradeProjectCode} onChange={(e) => setGradeProjectCode(e.target.value)} className="mb-2 w-full rounded-lg border px-3 py-2 text-sm"><option value="">Chọn project</option>{selected.projects.map((p) => <option key={p.projectCode} value={p.projectCode}>{p.projectCode} - {p.projectName}</option>)}</select>
               <input type="file" accept=".xlsx,.xlsm,.docx" onChange={(e) => setGradeFile(e.target.files?.[0] || null)} className="mb-2 w-full text-sm" />
               <button onClick={gradeWithXmlRules} className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white"><Upload size={16} /> Chấm thử</button>
 
+              {/* Component kết quả đã được nâng cấp */}
               {renderGradeResult()}
             </div>
           </section>
+          
           <p className="flex items-center gap-2 text-xs text-slate-500"><AlertTriangle size={14} /> CRUD cho phép build từng phần; hãy chạy Validate đầy đủ trước khi bật Active để tránh chấm sai.</p>
         </main>
       </div>
