@@ -128,22 +128,22 @@ const XmlGradingRulesPage = () => {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div><h1 className="text-2xl font-bold text-slate-900">Chấm điểm mới bằng XML Rules</h1><p className="text-sm text-slate-500">Quản lý ruleset → project → task → condition và test chấm file Office.</p></div>
-        <button onClick={() => setSelected(emptyRuleSet())} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"><Plus size={16} /> Ruleset mới</button>
+        <div><h1 className="text-2xl font-bold text-slate-900">Chấm điểm mới bằng XML Rules</h1><p className="text-sm text-slate-500">Quản lý bộ luật → bài project → câu/task → điều kiện chấm và test chấm file Office.</p></div>
+        <button onClick={() => setSelected(emptyRuleSet())} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"><Plus size={16} /> Tạo bộ luật mới</button>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[360px_1fr]">
         <aside className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <div className="mb-3 flex gap-2">
-            <input value={subjectFilter} onChange={(e) => setSubjectFilter(e.target.value)} placeholder="subject" className="w-full rounded-lg border px-3 py-2 text-sm" />
-            <select value={activeFilter} onChange={(e) => setActiveFilter(e.target.value as 'all' | 'true' | 'false')} className="rounded-lg border px-2 text-sm"><option value="all">Tất cả</option><option value="true">Active</option><option value="false">Inactive</option></select>
+            <input value={subjectFilter} onChange={(e) => setSubjectFilter(e.target.value)} placeholder="Môn: excel/word" className="w-full rounded-lg border px-3 py-2 text-sm" />
+            <select value={activeFilter} onChange={(e) => setActiveFilter(e.target.value as 'all' | 'true' | 'false')} className="rounded-lg border px-2 text-sm"><option value="all">Tất cả</option><option value="true">Đang bật</option><option value="false">Đang tắt</option></select>
             <button onClick={loadRuleSets} className="rounded-lg border px-3"><RefreshCw size={16} className={cx(loading && 'animate-spin')} /></button>
           </div>
           <div className="space-y-2">
             {ruleSets.map((item) => (
               <button key={item.id} onClick={() => replaceSelected(item)} className={cx('w-full rounded-lg border p-3 text-left text-sm hover:bg-slate-50', selected.id === item.id && 'border-blue-400 bg-blue-50')}>
                 <div className="font-semibold text-slate-900">{item.subject} / {item.version}</div>
-                <div className="text-xs text-slate-500">{item.projects.length} project • {item.isActive ? 'Active' : 'Inactive'}</div>
+                <div className="text-xs text-slate-500">{item.projects.length} project • {item.isActive ? 'Đang bật' : 'Đang tắt'}</div>
               </button>
             ))}
             {!loading && ruleSets.length === 0 && <p className="py-6 text-center text-sm text-slate-500">Chưa có ruleset.</p>}
@@ -153,9 +153,9 @@ const XmlGradingRulesPage = () => {
         <main className="space-y-4">
           <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="grid gap-3 md:grid-cols-4">
-              <label className="text-sm">Subject<input value={selected.subject} onChange={(e) => replaceSelected({ ...selected, subject: e.target.value })} className="mt-1 w-full rounded-lg border px-3 py-2" /></label>
-              <label className="text-sm">Version<input value={selected.version} onChange={(e) => replaceSelected({ ...selected, version: e.target.value })} className="mt-1 w-full rounded-lg border px-3 py-2" /></label>
-              <label className="flex items-center gap-2 pt-7 text-sm"><input type="checkbox" checked={selected.isActive} onChange={(e) => replaceSelected({ ...selected, isActive: e.target.checked })} /> Active</label>
+              <label className="text-sm">Môn / loại file (subject)<input value={selected.subject} onChange={(e) => replaceSelected({ ...selected, subject: e.target.value })} placeholder="excel hoặc word" className="mt-1 w-full rounded-lg border px-3 py-2" /></label>
+              <label className="text-sm">Phiên bản bộ luật (version)<input value={selected.version} onChange={(e) => replaceSelected({ ...selected, version: e.target.value })} placeholder="v1, 2026-08..." className="mt-1 w-full rounded-lg border px-3 py-2" /></label>
+              <label className="flex items-center gap-2 pt-7 text-sm"><input type="checkbox" checked={selected.isActive} onChange={(e) => replaceSelected({ ...selected, isActive: e.target.checked })} /> Bật dùng để chấm (Active)</label>
               <div className="flex items-end gap-2">
                 <button onClick={saveRuleSet} disabled={saving} className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"><Save size={16} /> {saving ? 'Đang lưu...' : 'Lưu'}</button>
                 {selected.id && <button onClick={() => deleteRuleSet(selected.id)} className="rounded-lg border border-red-200 px-3 py-2 text-red-600"><Trash2 size={16} /></button>}
@@ -164,43 +164,43 @@ const XmlGradingRulesPage = () => {
           </section>
 
           <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="mb-3 flex items-center justify-between"><h2 className="font-semibold">Projects</h2><button onClick={() => replaceSelected({ ...selected, projects: [...selected.projects, emptyProject()] })} className="rounded-lg border px-3 py-2 text-sm"><Plus size={14} className="inline" /> Thêm project</button></div>
+            <div className="mb-3 flex items-center justify-between"><h2 className="font-semibold">Danh sách bài Project</h2><button onClick={() => replaceSelected({ ...selected, projects: [...selected.projects, emptyProject()] })} className="rounded-lg border px-3 py-2 text-sm"><Plus size={14} className="inline" /> Thêm bài project</button></div>
             <div className="space-y-4">
               {selected.projects.map((project, pi) => (
                 <div key={`${project.projectCode}-${pi}`} className="rounded-xl border border-slate-200 p-4">
                   <div className="grid gap-3 md:grid-cols-[1fr_1fr_120px_auto]">
-                    <input value={project.projectCode} onChange={(e) => mutateProject(pi, { projectCode: e.target.value })} placeholder="projectCode" className="rounded-lg border px-3 py-2" />
-                    <input value={project.projectName} onChange={(e) => mutateProject(pi, { projectName: e.target.value })} placeholder="projectName" className="rounded-lg border px-3 py-2" />
+                    <input value={project.projectCode} onChange={(e) => mutateProject(pi, { projectCode: e.target.value })} placeholder="Mã project, ví dụ project22" className="rounded-lg border px-3 py-2" />
+                    <input value={project.projectName} onChange={(e) => mutateProject(pi, { projectName: e.target.value })} placeholder="Tên project, ví dụ Excel Project 22" className="rounded-lg border px-3 py-2" />
                     <input type="number" value={project.maxScore} onChange={(e) => mutateProject(pi, { maxScore: Number(e.target.value) })} className="rounded-lg border px-3 py-2" />
                     <button onClick={() => replaceSelected({ ...selected, projects: selected.projects.filter((_, i) => i !== pi) })} className="rounded-lg border border-red-200 px-3 text-red-600"><Trash2 size={16} /></button>
                   </div>
                   <div className="mt-3 space-y-3 pl-4">
-                    <div className="flex justify-between"><h3 className="text-sm font-semibold text-slate-700">Tasks</h3><button onClick={() => mutateProject(pi, { tasks: [...project.tasks, emptyTask()] })} className="text-sm text-blue-600">+ Thêm task</button></div>
+                    <div className="flex justify-between"><h3 className="text-sm font-semibold text-slate-700">Các câu / nhiệm vụ chấm (Tasks)</h3><button onClick={() => mutateProject(pi, { tasks: [...project.tasks, emptyTask()] })} className="text-sm text-blue-600">+ Thêm câu/task</button></div>
                     {project.tasks.map((task, ti) => (
                       <div key={`${task.taskId}-${ti}`} className="rounded-lg border bg-slate-50 p-3">
                         <div className="grid gap-2 md:grid-cols-[1fr_1fr_100px_auto]">
-                          <input value={task.taskId} onChange={(e) => mutateTask(pi, ti, { taskId: e.target.value })} placeholder="taskId" className="rounded border px-2 py-1" />
-                          <input value={task.taskName} onChange={(e) => mutateTask(pi, ti, { taskName: e.target.value })} placeholder="taskName" className="rounded border px-2 py-1" />
+                          <input value={task.taskId} onChange={(e) => mutateTask(pi, ti, { taskId: e.target.value })} placeholder="Mã câu, ví dụ P22-T1" className="rounded border px-2 py-1" />
+                          <input value={task.taskName} onChange={(e) => mutateTask(pi, ti, { taskName: e.target.value })} placeholder="Tên câu/nhiệm vụ" className="rounded border px-2 py-1" />
                           <input type="number" value={task.maxScore} onChange={(e) => mutateTask(pi, ti, { maxScore: Number(e.target.value) })} className="rounded border px-2 py-1" />
                           <button onClick={() => mutateProject(pi, { tasks: project.tasks.filter((_, i) => i !== ti) })} className="text-red-600"><Trash2 size={16} /></button>
                         </div>
                         <div className="mt-3 space-y-3 pl-3">
-                          <div className="flex justify-between"><span className="text-sm font-medium">Conditions</span><button onClick={() => mutateTask(pi, ti, { conditions: [...task.conditions, emptyCondition()] })} className="text-sm text-blue-600">+ Thêm condition</button></div>
+                          <div className="flex justify-between"><span className="text-sm font-medium">Điều kiện chấm điểm (Conditions)</span><button onClick={() => mutateTask(pi, ti, { conditions: [...task.conditions, emptyCondition()] })} className="text-sm text-blue-600">+ Thêm điều kiện</button></div>
                           {task.conditions.map((condition, ci) => (
                             <div key={`${condition.conditionId}-${ci}`} className="rounded-lg border bg-white p-3">
                               <div className="grid gap-2 md:grid-cols-[1fr_90px_1fr_170px_120px_auto]">
-                                <input value={condition.conditionId} onChange={(e) => mutateCondition(pi, ti, ci, { conditionId: e.target.value })} placeholder="conditionId" className="rounded border px-2 py-1" />
+                                <input value={condition.conditionId} onChange={(e) => mutateCondition(pi, ti, ci, { conditionId: e.target.value })} placeholder="Mã điều kiện, ví dụ P22-T1-C1" className="rounded border px-2 py-1" />
                                 <input type="number" value={condition.score} onChange={(e) => mutateCondition(pi, ti, ci, { score: Number(e.target.value) })} className="rounded border px-2 py-1" />
-                                <input value={condition.sourceFile} onChange={(e) => mutateCondition(pi, ti, ci, { sourceFile: e.target.value })} placeholder="xl/worksheets/sheet1.xml" className="rounded border px-2 py-1" />
-                                <select value={condition.compareMode} onChange={(e) => mutateCondition(pi, ti, ci, { compareMode: e.target.value as XmlCompareMode })} className="rounded border px-2 py-1">{compareModes.map((m) => <option key={m}>{m}</option>)}</select>
-                                <select value={condition.matchPolicy} onChange={(e) => mutateCondition(pi, ti, ci, { matchPolicy: e.target.value as XmlMatchPolicy })} className="rounded border px-2 py-1">{matchPolicies.map((m) => <option key={m}>{m}</option>)}</select>
+                                <input value={condition.sourceFile} onChange={(e) => mutateCondition(pi, ti, ci, { sourceFile: e.target.value })} placeholder="File XML bên trong Office, ví dụ xl/worksheets/sheet1.xml" className="rounded border px-2 py-1" />
+                                <select value={condition.compareMode} onChange={(e) => mutateCondition(pi, ti, ci, { compareMode: e.target.value as XmlCompareMode })} title="Cách so khớp XML/chuỗi" className="rounded border px-2 py-1">{compareModes.map((m) => <option key={m} value={m}>{m === 'xmlContainsNormalized' ? 'So khớp XML đã chuẩn hóa' : m === 'xmlContains' ? 'So khớp XML chứa đoạn này' : m === 'xmlEquivalentWholeFile' ? 'So toàn bộ file XML' : 'So chuỗi chính xác'}</option>)}</select>
+                                <select value={condition.matchPolicy} onChange={(e) => mutateCondition(pi, ti, ci, { matchPolicy: e.target.value as XmlMatchPolicy })} title="Quy tắc khi có nhiều expected value" className="rounded border px-2 py-1">{matchPolicies.map((m) => <option key={m} value={m}>{m === 'all' ? 'Phải đúng tất cả' : m === 'any' ? 'Đúng một trong các dòng' : 'Đúng theo thứ tự'}</option>)}</select>
                                 <button onClick={() => mutateTask(pi, ti, { conditions: task.conditions.filter((_, i) => i !== ci) })} className="text-red-600"><Trash2 size={16} /></button>
                               </div>
-                              <textarea value={expectedText(condition)} onChange={(e) => mutateCondition(pi, ti, ci, { expectedValues: e.target.value.split('\n') })} placeholder="expectedValue, mỗi dòng một fragment" className="mt-2 min-h-24 w-full rounded border px-2 py-1 font-mono text-xs" />
+                              <textarea value={expectedText(condition)} onChange={(e) => mutateCondition(pi, ti, ci, { expectedValues: e.target.value.split('\n') })} placeholder="Giá trị cần tìm trong XML (expectedValue), mỗi dòng là một đoạn XML/chuỗi cần kiểm tra" className="mt-2 min-h-24 w-full rounded border px-2 py-1 font-mono text-xs" />
                               <div className="mt-2 grid gap-2 md:grid-cols-3">
-                                <input value={condition.feedback?.successDetail || ''} onChange={(e) => mutateCondition(pi, ti, ci, { feedback: { ...condition.feedback, successDetail: e.target.value } })} placeholder="successDetail" className="rounded border px-2 py-1" />
-                                <input value={condition.feedback?.errorMessage || ''} onChange={(e) => mutateCondition(pi, ti, ci, { feedback: { ...condition.feedback, errorMessage: e.target.value } })} placeholder="errorMessage" className="rounded border px-2 py-1" />
-                                <input value={condition.feedback?.fixAction || ''} onChange={(e) => mutateCondition(pi, ti, ci, { feedback: { ...condition.feedback, fixAction: e.target.value } })} placeholder="fixAction" className="rounded border px-2 py-1" />
+                                <input value={condition.feedback?.successDetail || ''} onChange={(e) => mutateCondition(pi, ti, ci, { feedback: { ...condition.feedback, successDetail: e.target.value } })} placeholder="Thông báo khi đúng" className="rounded border px-2 py-1" />
+                                <input value={condition.feedback?.errorMessage || ''} onChange={(e) => mutateCondition(pi, ti, ci, { feedback: { ...condition.feedback, errorMessage: e.target.value } })} placeholder="Thông báo khi sai" className="rounded border px-2 py-1" />
+                                <input value={condition.feedback?.fixAction || ''} onChange={(e) => mutateCondition(pi, ti, ci, { feedback: { ...condition.feedback, fixAction: e.target.value } })} placeholder="Gợi ý cách sửa" className="rounded border px-2 py-1" />
                               </div>
                             </div>
                           ))}
