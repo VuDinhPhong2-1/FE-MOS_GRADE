@@ -13,8 +13,7 @@ export interface XmlGradingCondition {
   conditionId: string;
   score: number;
   sourceFile: string;
-  expectedValue?: string | string[];
-  expectedValues?: string[];
+  expectedValues: string[];
   compareMode: XmlCompareMode;
   matchPolicy: XmlMatchPolicy;
   feedback: XmlConditionFeedback;
