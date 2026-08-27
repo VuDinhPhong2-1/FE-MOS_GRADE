@@ -177,7 +177,7 @@ const XmlGradingRulesPage = () => {
                   <div className="mt-3 space-y-3 pl-4">
                     <div className="flex justify-between"><h3 className="text-sm font-semibold text-slate-700">Các câu / nhiệm vụ chấm (Tasks)</h3><button onClick={() => mutateProject(pi, { tasks: [...project.tasks, emptyTask()] })} className="text-sm text-blue-600">+ Thêm câu/task</button></div>
                     {project.tasks.map((task, ti) => (
-                      <div key={`${task.taskId}-${ti}`} className="rounded-lg border bg-slate-50 p-3">
+                      <div key={ti} className="rounded-lg border bg-slate-50 p-3">
                         <div className="grid gap-2 md:grid-cols-[1fr_1fr_100px_auto]">
                           <label className="text-xs font-medium text-slate-600">Mã câu (taskId)<input value={task.taskId} onChange={(e) => mutateTask(pi, ti, { taskId: e.target.value })} placeholder="Ví dụ P22-T1" className="mt-1 w-full rounded border px-2 py-1 text-sm font-normal text-slate-900" /></label>
                           <label className="text-xs font-medium text-slate-600">Tên câu / nhiệm vụ (taskName)<input value={task.taskName} onChange={(e) => mutateTask(pi, ti, { taskName: e.target.value })} placeholder="Ví dụ Định dạng bảng dữ liệu" className="mt-1 w-full rounded border px-2 py-1 text-sm font-normal text-slate-900" /></label>
@@ -187,7 +187,7 @@ const XmlGradingRulesPage = () => {
                         <div className="mt-3 space-y-3 pl-3">
                           <div className="flex justify-between"><span className="text-sm font-medium">Điều kiện chấm điểm (Conditions)</span><button onClick={() => mutateTask(pi, ti, { conditions: [...task.conditions, emptyCondition()] })} className="text-sm text-blue-600">+ Thêm điều kiện</button></div>
                           {task.conditions.map((condition, ci) => (
-                            <div key={`${condition.conditionId}-${ci}`} className="rounded-lg border bg-white p-3">
+                            <div key={ci} className="rounded-lg border bg-white p-3">
                               <div className="grid gap-2 md:grid-cols-[1fr_90px_1fr_170px_140px_auto]">
                                 <label className="text-xs font-medium text-slate-600">Mã điều kiện (conditionId)<input value={condition.conditionId} onChange={(e) => mutateCondition(pi, ti, ci, { conditionId: e.target.value })} placeholder="Ví dụ P22-T1-C1" className="mt-1 w-full rounded border px-2 py-1 text-sm font-normal text-slate-900" /></label>
                                 <label className="text-xs font-medium text-slate-600">Điểm<input type="number" value={condition.score} onChange={(e) => mutateCondition(pi, ti, ci, { score: Number(e.target.value) })} className="mt-1 w-full rounded border px-2 py-1 text-sm font-normal text-slate-900" /></label>
