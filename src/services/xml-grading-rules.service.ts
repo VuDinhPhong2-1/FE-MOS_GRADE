@@ -14,9 +14,30 @@ const jsonHeaders = { 'Content-Type': 'application/json' };
 const baseUrl = `${API_BASE_URL}/admin/xml-grading-rules`;
 
 const readError = async (response: Response) => {
+  const flattenErrors = (errors: unknown): string => {
+    if (Array.isArray(errors)) {
+      return errors.map(String).filter(Boolean).join('\n');
+    }
+
+    if (errors && typeof errors === 'object') {
+      return Object.entries(errors as Record<string, unknown>)
+        .flatMap(([field, value]) => {
+          if (Array.isArray(value)) {
+            return value.map((item) => `${field}: ${String(item)}`);
+          }
+          return [`${field}: ${String(value)}`];
+        })
+        .filter(Boolean)
+        .join('\n');
+    }
+
+    return '';
+  };
+
   try {
     const body = await response.json();
-    return body?.message || body?.title || body?.errors?.join?.('\n') || JSON.stringify(body);
+    const errors = flattenErrors(body?.errors);
+    return body?.message || errors || body?.detail || body?.title || JSON.stringify(body);
   } catch {
     return `HTTP ${response.status}`;
   }

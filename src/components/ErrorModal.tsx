@@ -25,6 +25,7 @@ const ErrorModal: React.FC = () => {
   const issues = (payload.issues || []).filter(
     (issue) => issue.heading.trim().length > 0 && issue.message.trim().length > 0
   );
+  const message = (payload.message || '').trim();
 
   return (
     <div className="fixed inset-0 z-[11000] flex items-center justify-center">
@@ -50,6 +51,12 @@ const ErrorModal: React.FC = () => {
             </div>
 
             <div className="mt-3 space-y-3 text-sm">
+              {message && (
+                <div className="whitespace-pre-wrap rounded-lg border border-rose-100 bg-rose-50/60 p-3 font-medium text-rose-700">
+                  {message}
+                </div>
+              )}
+
               {issues.map((issue, idx) => (
                 <div
                   key={`${idx}-${issue.heading}-${issue.message}`}
@@ -88,7 +95,9 @@ const ErrorModal: React.FC = () => {
                       `${issue.heading}\n${issue.message}${issue.fixAction ? `\n\nHướng dẫn:\n${issue.fixAction}` : ''}`
                     )
                     .join('\n\n');
-                  navigator.clipboard?.writeText(`${payload.title ?? 'Lỗi'}\n\n${combined}`);
+                  navigator.clipboard?.writeText(
+                    [payload.title ?? 'Lỗi', message, combined].filter(Boolean).join('\n\n')
+                  );
                 }}
                 className="rounded bg-slate-100 px-3 py-1 text-sm text-slate-700 hover:bg-slate-200"
               >

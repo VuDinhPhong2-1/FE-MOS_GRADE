@@ -108,6 +108,7 @@ const XmlGradingRulesPage = () => {
     if (!gradeFile) return notify.warning('Vui lòng chọn file Office cần test chấm.');
     const projectCode = gradeProjectCode || selected.projects[0]?.projectCode;
     if (!projectCode) return notify.warning('Vui lòng nhập/chọn projectCode.');
+    if (!selected.isActive) return notify.warning('Ruleset hiện tại chưa bật Active. Backend chỉ dùng ruleset Active để chấm thử XML.');
     try {
       const result = await xmlGradingRulesService.grade(selected.subject, projectCode, gradeFile, getAccessToken);
       setGradeJson(JSON.stringify(result, null, 2));
