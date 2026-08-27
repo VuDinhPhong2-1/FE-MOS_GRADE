@@ -48,7 +48,12 @@ const prepareCondition = (condition: XmlGradingCondition): XmlGradingCondition =
   expectedValue: (condition.expectedValues ?? []).map((value) => value.trim()).filter(Boolean),
   expectedValues: undefined,
 });
-
+const compareModesLabels: Record<XmlCompareMode, string> = {
+  'xmlContainsNormalized': 'Chứa (Chuẩn hóa)',
+  'xmlContains': 'Chứa (Chính xác)',
+  'xmlEquivalentWholeFile': 'Tương đương toàn file',
+  'exactStringContains': 'Chứa chuỗi chính xác'
+};
 const XmlGradingRulesPage = () => {
   const { getAccessToken, user } = useAuth();
   const [ruleSets, setRuleSets] = useState<GradingRuleSet[]>([]);
@@ -196,8 +201,8 @@ const XmlGradingRulesPage = () => {
     const totalScore = parsed.totalScore ?? 0;
     const maxScore = parsed.maxScore ?? 125;
     const percentage = parsed.percentage ?? (maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0);
-    const isPassed = typeof parsed.isPassed === 'boolean' 
-      ? parsed.isPassed 
+    const isPassed = typeof parsed.isPassed === 'boolean'
+      ? parsed.isPassed
       : (parsed.status === 'Excellent' || parsed.status === 'PASSED' || percentage >= 70);
 
     const tasksList = parsed.taskResults ?? [];
@@ -273,7 +278,7 @@ const XmlGradingRulesPage = () => {
                           <td className="px-3 py-3 font-mono font-medium text-slate-800">{task.taskId}</td>
                           <td className="px-4 py-3">
                             <div className="font-medium text-slate-900 leading-snug">{task.taskName}</div>
-                            
+
                             {/* Chi tiết điều kiện XML / Details */}
                             {Array.isArray(task.details) && task.details.length > 0 && (
                               <div className="mt-1.5 space-y-1">
@@ -433,7 +438,7 @@ const XmlGradingRulesPage = () => {
                                 </label>
                                 <label className="text-xs font-medium text-slate-600">Cách so khớp (compareMode)
                                   <select value={condition.compareMode} onChange={(e) => mutateCondition(pi, ti, ci, { compareMode: e.target.value as XmlCompareMode })} className="w-full rounded-lg border px-2 py-1 text-sm mt-1">
-                                    {compareModes.map((m) => <option key={m} value={m}>{m}</option>)}
+                                    {compareModes.map((m) => <option key={m} value={m}>{compareModesLabels[m]}</option>)}
                                   </select>
                                 </label>
                                 <label className="text-xs font-medium text-slate-600">Quy tắc nhiều giá trị
