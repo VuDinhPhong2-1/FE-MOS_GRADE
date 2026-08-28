@@ -29,10 +29,10 @@ const compareModes: XmlCompareMode[] = ['xmlContainsNormalized', 'xmlContains', 
 const matchPolicies: XmlMatchPolicy[] = ['all', 'any', 'ordered'];
 
 const compareModesLabels: Record<XmlCompareMode, string> = {
-  'xmlContainsNormalized': 'Chứa (Chuẩn hóa)',
-  'xmlContains': 'Chứa (Chính xác)',
-  'xmlEquivalentWholeFile': 'Tương đương toàn file',
-  'exactStringContains': 'Chứa chuỗi chính xác'
+  'xmlContainsNormalized': 'Bỏ qua whitespace/format',
+  'xmlContains': 'Tìm XML fragment nguyên văn',
+  'xmlEquivalentWholeFile': 'Parse XML và so sánh cấu trúc',
+  'exactStringContains': 'Raw string tuyệt đối'
 };
 
 const matchPoliciesLabels: Record<XmlMatchPolicy, string> = {
