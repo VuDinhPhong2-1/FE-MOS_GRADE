@@ -869,29 +869,41 @@ const XmlGradingRulesPage = () => {
 
                                       {taskExpanded && (
                                         <div className="border-t border-slate-100 p-4">
-                                          <div className="grid gap-3 md:grid-cols-[1fr_1.5fr_120px]">
+                                          <div className="grid gap-4 md:grid-cols-[180px_minmax(0,1fr)_140px]">
                                             <label className="text-xs font-semibold text-slate-600">
                                               Mã Task
                                               <input
                                                 value={task.taskId}
-                                                onChange={(e) => mutateTask(pi, ti, { taskId: e.target.value })}
+                                                onChange={(e) =>
+                                                  mutateTask(pi, ti, { taskId: e.target.value })
+                                                }
                                                 className={inputClass}
+                                                placeholder="TASK-01"
                                               />
                                             </label>
+
                                             <label className="text-xs font-semibold text-slate-600">
                                               Tên nhiệm vụ
                                               <input
                                                 value={task.taskName}
-                                                onChange={(e) => mutateTask(pi, ti, { taskName: e.target.value })}
+                                                onChange={(e) =>
+                                                  mutateTask(pi, ti, { taskName: e.target.value })
+                                                }
                                                 className={inputClass}
+                                                placeholder="Nhập tên nhiệm vụ..."
                                               />
                                             </label>
+
                                             <label className="text-xs font-semibold text-slate-600">
                                               Điểm tối đa
                                               <input
                                                 type="number"
                                                 value={task.maxScore}
-                                                onChange={(e) => mutateTask(pi, ti, { maxScore: Number(e.target.value) })}
+                                                onChange={(e) =>
+                                                  mutateTask(pi, ti, {
+                                                    maxScore: Number(e.target.value),
+                                                  })
+                                                }
                                                 className={inputClass}
                                               />
                                             </label>
