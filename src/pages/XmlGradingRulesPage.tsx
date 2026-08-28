@@ -817,7 +817,7 @@ const XmlGradingRulesPage = () => {
                             </div>
 
                             {/* Tasks */}
-                            <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3">
+                            <div className="rounded-xl border border-slate-200 bg-slate-100 p-3">
                               <div className="mb-3 flex items-center justify-between gap-2">
                                 <div>
                                   <p className="text-sm font-bold text-slate-800">Tasks</p>
