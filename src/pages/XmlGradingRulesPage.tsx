@@ -508,7 +508,7 @@ const XmlGradingRulesPage = () => {
   return (
     <div className="min-h-full space-y-5 bg-gradient-to-br from-slate-50 via-white to-blue-50/30 pb-10">
       {/* Page header */}
-      <header className="sticky top-0 z-40 -mx-4 border-b border-slate-200 bg-white px-4 py-3 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+      <header className="sticky top-0 z-40 -mx-4 border-b border-slate-200/60 bg-white/70 px-4 py-3 shadow-sm shadow-slate-900/5 backdrop-blur-lg sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
         <div className="flex items-center justify-between gap-4">
 
           {/* Left */}
