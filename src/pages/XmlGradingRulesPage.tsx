@@ -29,10 +29,17 @@ const compareModes: XmlCompareMode[] = ['xmlContainsNormalized', 'xmlContains', 
 const matchPolicies: XmlMatchPolicy[] = ['all', 'any', 'ordered'];
 
 const compareModesLabels: Record<XmlCompareMode, string> = {
-  'xmlContainsNormalized': 'Bỏ qua whitespace/format',
-  'xmlContains': 'Tìm XML fragment nguyên văn',
-  'xmlEquivalentWholeFile': 'Parse XML và so sánh cấu trúc',
-  'exactStringContains': 'Raw string tuyệt đối'
+  'xmlContainsNormalized':
+    'Tìm XML, bỏ qua khác biệt về khoảng trắng và format',
+
+  'xmlContains':
+    'Tìm đúng đoạn XML đã nhập, chỉ bỏ khoảng trắng đầu và cuối',
+
+  'xmlEquivalentWholeFile':
+    'Đọc XML và so sánh toàn bộ cấu trúc, không phụ thuộc format',
+
+  'exactStringContains':
+    'Tìm đúng chuỗi ký tự, không thay đổi hoặc chuẩn hóa nội dung'
 };
 
 const matchPoliciesLabels: Record<XmlMatchPolicy, string> = {
@@ -254,11 +261,11 @@ const XmlGradingRulesPage = () => {
         projectIndex !== pi
           ? project
           : {
-              ...project,
-              tasks: project.tasks.map((task, taskIndex) =>
-                taskIndex === ti ? { ...task, ...patch } : task
-              ),
-            }
+            ...project,
+            tasks: project.tasks.map((task, taskIndex) =>
+              taskIndex === ti ? { ...task, ...patch } : task
+            ),
+          }
       ),
     }));
   };
@@ -275,20 +282,20 @@ const XmlGradingRulesPage = () => {
         projectIndex !== pi
           ? project
           : {
-              ...project,
-              tasks: project.tasks.map((task, taskIndex) =>
-                taskIndex !== ti
-                  ? task
-                  : {
-                      ...task,
-                      conditions: task.conditions.map((condition, conditionIndex) =>
-                        conditionIndex === ci
-                          ? { ...condition, ...patch }
-                          : condition
-                      ),
-                    }
-              ),
-            }
+            ...project,
+            tasks: project.tasks.map((task, taskIndex) =>
+              taskIndex !== ti
+                ? task
+                : {
+                  ...task,
+                  conditions: task.conditions.map((condition, conditionIndex) =>
+                    conditionIndex === ci
+                      ? { ...condition, ...patch }
+                      : condition
+                  ),
+                }
+            ),
+          }
       ),
     }));
   };
