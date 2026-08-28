@@ -730,7 +730,7 @@ const XmlGradingRulesPage = () => {
               </section>
 
               {/* Projects */}
-              <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <section className="rounded-2xl border border-slate-200 bg-slate-100 p-5 shadow-sm">
                 <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <h3 className="text-sm font-bold text-slate-900">Projects</h3>
@@ -817,7 +817,7 @@ const XmlGradingRulesPage = () => {
                             </div>
 
                             {/* Tasks */}
-                            <div className="rounded-xl border border-slate-200 bg-slate-100 p-3">
+                            <div className="rounded-xl border border-slate-200 bg-slate-200 p-3">
                               <div className="mb-3 flex items-center justify-between gap-2">
                                 <div>
                                   <p className="text-sm font-bold text-slate-800">Tasks</p>
