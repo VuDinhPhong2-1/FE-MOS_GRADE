@@ -773,7 +773,7 @@ const XmlGradingRulesPage = () => {
                         <div className="flex items-center gap-3 border-b border-slate-100 bg-gradient-to-r from-white to-slate-50 px-4 py-3.5">
                           <button
                             onClick={() => toggleProject(pi)}
-                            className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                            className="flex min-w-0 flex-1 items-center gap-3 text-left p-2"
                           >
                             <span className="text-slate-400">{projectExpanded ? '▼' : '▶'}</span>
                             <div className="min-w-0">
