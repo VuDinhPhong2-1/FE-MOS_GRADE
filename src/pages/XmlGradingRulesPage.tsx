@@ -529,7 +529,7 @@ const XmlGradingRulesPage = () => {
 
       <div className="grid gap-5 xl:grid-cols-[280px_minmax(0,1fr)]">
         {/* Sidebar */}
-        <aside className="h-fit rounded-2xl border border-slate-200 bg-white p-3 shadow-sm xl:sticky xl:top-24">
+        <aside className="h-fit rounded-2xl border border-slate-200 bg-white p-3 shadow-sm xl:sticky xl:top-24  mb-2">
           <div className="mb-3 flex items-center justify-between px-2">
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Rulesets</p>
@@ -558,7 +558,7 @@ const XmlGradingRulesPage = () => {
             </select>
           </div>
 
-          <div className="max-h-[calc(100vh-280px)] space-y-1 overflow-y-auto pr-1  mb-2">
+          <div className="max-h-[calc(100vh-280px)] space-y-1 overflow-y-auto pr-1">
             {ruleSets.map((item) => {
               const isSelected = selected.id === item.id;
               return (
