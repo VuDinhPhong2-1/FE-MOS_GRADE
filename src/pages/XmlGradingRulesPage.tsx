@@ -508,34 +508,48 @@ const XmlGradingRulesPage = () => {
   return (
     <div className="min-h-full space-y-5 bg-gradient-to-br from-slate-50 via-white to-blue-50/30 pb-10">
       {/* Page header */}
-      <header className="sticky top-0 z-40 -mx-4 border-b border-slate-200/80 bg-white/90 px-4 py-3.5 shadow-sm shadow-slate-900/5 backdrop-blur-xl sm:-mx-6 sm:px-6 lg:-mx-8 lg:p-8">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <div className="rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 p-2.5 text-white shadow-lg shadow-blue-600/20">
-                <FileCode2 size={20} />
+      <header className="sticky top-0 z-40 -mx-4 border-b border-slate-200 bg-white px-4 py-3 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+        <div className="flex items-center justify-between gap-4">
+
+          {/* Left */}
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+              <FileCode2 size={18} />
+            </div>
+
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <h1 className="truncate text-base font-bold text-slate-900">
+                  XML Grading Rules
+                </h1>
+
+                <span
+                  className={cx(
+                    "hidden rounded-full border px-2 py-0.5 text-[10px] font-bold sm:inline-flex",
+                    statusBadge
+                  )}
+                >
+                  {selected.isActive ? "ACTIVE" : "INACTIVE"}
+                </span>
               </div>
-              <div>
-                <h1 className="text-xl font-extrabold tracking-tight text-slate-950">XML Grading Rules</h1>
-                <p className="text-xs text-slate-500">
-                  Quản lý ruleset → project → task → điều kiện chấm
-                </p>
-              </div>
+
+              <p className="truncate text-xs text-slate-500">
+                Quản lý ruleset · project · task · điều kiện chấm
+              </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className={cx('rounded-full border px-3 py-1.5 text-xs font-semibold', statusBadge)}>
-              <span className="mr-1.5">●</span>
-              {selected.isActive ? 'ACTIVE' : 'INACTIVE'}
-            </span>
+          {/* Right */}
+          <div className="flex shrink-0 items-center gap-2">
             <button
               onClick={() => setSelected(emptyRuleSet())}
-              className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-slate-900/15 transition-all hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-blue-600/20"
+              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
             >
-              <Plus size={16} /> Tạo ruleset
+              <Plus size={16} />
+              <span className="hidden sm:inline">Tạo ruleset</span>
             </button>
           </div>
+
         </div>
       </header>
 
