@@ -441,6 +441,11 @@ const XmlGradingRulesPage = () => {
                                 {task.errors.join(', ')}
                               </div>
                             )}
+                            {Array.isArray(task.errors) && task.errors.length > 0 && (
+                              <div className="mt-1.5 text-[11px] text-green-600 bg-rose-50 border border-rose-100 p-1 rounded">
+                                {task.fixActions.join(', ')}
+                              </div>
+                            )}
                           </td>
                           <td className="px-3 py-3 text-center">
                             <span className={cx(
