@@ -786,7 +786,7 @@ const XmlGradingRulesPage = () => {
                         </div>
 
                         {projectExpanded && (
-                          <div className="space-y-4 bg-white p-4">
+                          <div className="space-y-4 bg-white p-8">
                             {/* Project fields */}
                             <div className="grid gap-3 md:grid-cols-[1fr_1.5fr_130px]">
                               <label className="text-xs font-semibold text-slate-600">
