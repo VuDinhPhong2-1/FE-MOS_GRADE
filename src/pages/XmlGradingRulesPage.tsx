@@ -754,7 +754,7 @@ const XmlGradingRulesPage = () => {
                   {selected.projects.map((project, pi) => {
                     const projectExpanded = expandedProjects[pi] ?? true;
                     return (
-                      <div key={pi} className="group overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition hover:border-slate-300 hover:shadow-md">
+                      <div key={pi} className="group overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition hover:border-slate-300 hover:shadow-md p-4">
                         {/* Project header */}
                         <div className="flex items-center gap-3 border-b border-slate-100 bg-gradient-to-r from-white to-slate-50 px-4 py-3.5">
                           <button
@@ -786,7 +786,7 @@ const XmlGradingRulesPage = () => {
                         </div>
 
                         {projectExpanded && (
-                          <div className="space-y-4 bg-white p-8">
+                          <div className="space-y-4 bg-white p-4">
                             {/* Project fields */}
                             <div className="grid gap-3 md:grid-cols-[1fr_1.5fr_130px]">
                               <label className="text-xs font-semibold text-slate-600">
