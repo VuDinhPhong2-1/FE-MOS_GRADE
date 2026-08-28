@@ -442,7 +442,7 @@ const XmlGradingRulesPage = () => {
                               </div>
                             )}
                             {Array.isArray(task.errors) && task.errors.length > 0 && (
-                              <div className="mt-1.5 text-[11px] text-green-600 bg-rose-50 border border-rose-100 p-1 rounded">
+                              <div className="mt-1.5 text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-100 p-1 rounded">
                                 {task.fixActions.join(', ')}
                               </div>
                             )}
@@ -506,17 +506,17 @@ const XmlGradingRulesPage = () => {
     'inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-800';
 
   return (
-    <div className="min-h-full space-y-5 bg-slate-50/60 pb-8">
+    <div className="min-h-full space-y-5 bg-gradient-to-br from-slate-50 via-white to-blue-50/30 pb-10">
       {/* Page header */}
-      <header className="sticky top-0 z-20 -mx-4 border-b border-slate-200 bg-white/95 px-4 py-4 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+      <header className="sticky top-0 z-40 -mx-4 border-b border-slate-200/80 bg-white/90 px-4 py-3.5 shadow-sm shadow-slate-900/5 backdrop-blur-xl sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <div className="rounded-xl bg-blue-50 p-2 text-blue-600">
+              <div className="rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 p-2.5 text-white shadow-lg shadow-blue-600/20">
                 <FileCode2 size={20} />
               </div>
               <div>
-                <h1 className="text-xl font-bold tracking-tight text-slate-900">XML Grading Rules</h1>
+                <h1 className="text-xl font-extrabold tracking-tight text-slate-950">XML Grading Rules</h1>
                 <p className="text-xs text-slate-500">
                   Quản lý ruleset → project → task → điều kiện chấm
                 </p>
@@ -531,7 +531,7 @@ const XmlGradingRulesPage = () => {
             </span>
             <button
               onClick={() => setSelected(emptyRuleSet())}
-              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+              className="inline-flex items-center gap-2 rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-slate-900/15 transition-all hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-blue-600/20"
             >
               <Plus size={16} /> Tạo ruleset
             </button>
@@ -539,12 +539,12 @@ const XmlGradingRulesPage = () => {
         </div>
       </header>
 
-      <div className="grid gap-5 xl:grid-cols-[280px_minmax(0,1fr)]">
+      <div className="grid gap-5 xl:grid-cols-[292px_minmax(0,1fr)]">
         {/* Sidebar */}
-        <aside className="h-fit rounded-2xl border border-slate-200 bg-white p-3 shadow-sm xl:sticky xl:top-24  mb-2">
+        <aside className="h-fit rounded-2xl border border-slate-200/80 bg-white/95 p-3.5 shadow-xl shadow-slate-900/5 xl:sticky xl:top-24 mb-2">
           <div className="mb-3 flex items-center justify-between px-2">
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Rulesets</p>
+              <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-slate-400">Rulesets</p>
               <p className="text-sm font-semibold text-slate-800">{ruleSets.length} bộ luật</p>
             </div>
             <button onClick={loadRuleSets} className={iconButtonClass} title="Làm mới">
@@ -557,12 +557,12 @@ const XmlGradingRulesPage = () => {
               value={subjectFilter}
               onChange={(e) => setSubjectFilter(e.target.value)}
               placeholder="Tìm theo môn..."
-              className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
             />
             <select
               value={activeFilter}
               onChange={(e) => setActiveFilter(e.target.value as 'all' | 'true' | 'false')}
-              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-500"
+              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
             >
               <option value="all">Tất cả trạng thái</option>
               <option value="true">Đang bật</option>
@@ -615,9 +615,9 @@ const XmlGradingRulesPage = () => {
         </aside>
 
         {/* Main */}
-        <main className="min-w-0 space-y-4">
+        <main className="min-w-0 space-y-5">
           {/* Ruleset overview */}
-          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-lg shadow-slate-900/5">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <div className="mb-1 flex flex-wrap items-center gap-2">
@@ -654,7 +654,7 @@ const XmlGradingRulesPage = () => {
                 ['Conditions', conditionCount],
                 ['Max score', selectedMaxScore],
               ].map(([label, value]) => (
-                <div key={label} className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
+                <div key={label} className="group rounded-xl border border-slate-100 bg-gradient-to-br from-slate-50 to-white px-4 py-3 transition hover:-translate-y-0.5 hover:border-blue-100 hover:shadow-md">
                   <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">{label}</p>
                   <p className="mt-1 text-xl font-black text-slate-900">{value}</p>
                 </div>
@@ -662,7 +662,7 @@ const XmlGradingRulesPage = () => {
             </div>
 
             {/* Tabs */}
-            <div className="mt-5 flex gap-1 border-b border-slate-200">
+            <div className="mt-5 flex gap-1 overflow-x-auto border-b border-slate-200">
               {[
                 ['editor', 'Rules editor'],
                 ['validation', 'Validation'],
@@ -692,7 +692,7 @@ const XmlGradingRulesPage = () => {
           {activeTab === 'editor' && (
             <>
               {/* Ruleset settings */}
-              <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-lg shadow-slate-900/5">
                 <div className="mb-4">
                   <h3 className="text-sm font-bold text-slate-900">Thông tin ruleset</h3>
                   <p className="mt-1 text-xs text-slate-500">Các thiết lập chung cho toàn bộ bộ luật.</p>
@@ -730,7 +730,7 @@ const XmlGradingRulesPage = () => {
               </section>
 
               {/* Projects */}
-              <section className="rounded-2xl border border-slate-200 bg-slate-100 p-5 shadow-sm">
+              <section className="rounded-2xl border border-slate-200/80 bg-slate-100/70 p-5 shadow-lg shadow-slate-900/5">
                 <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <h3 className="text-sm font-bold text-slate-900">Projects</h3>
@@ -754,9 +754,9 @@ const XmlGradingRulesPage = () => {
                   {selected.projects.map((project, pi) => {
                     const projectExpanded = expandedProjects[pi] ?? true;
                     return (
-                      <div key={pi} className="overflow-hidden rounded-2xl border border-slate-200">
+                      <div key={pi} className="group overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition hover:border-slate-300 hover:shadow-md">
                         {/* Project header */}
-                        <div className="flex items-center gap-3 bg-slate-50 px-4 py-3">
+                        <div className="flex items-center gap-3 border-b border-slate-100 bg-gradient-to-r from-white to-slate-50 px-4 py-3.5">
                           <button
                             onClick={() => toggleProject(pi)}
                             className="flex min-w-0 flex-1 items-center gap-3 text-left"
@@ -786,7 +786,7 @@ const XmlGradingRulesPage = () => {
                         </div>
 
                         {projectExpanded && (
-                          <div className="space-y-4 p-4">
+                          <div className="space-y-4 bg-white p-4">
                             {/* Project fields */}
                             <div className="grid gap-3 md:grid-cols-[1fr_1.5fr_130px]">
                               <label className="text-xs font-semibold text-slate-600">
@@ -817,7 +817,7 @@ const XmlGradingRulesPage = () => {
                             </div>
 
                             {/* Tasks */}
-                            <div className="rounded-xl border border-slate-200 bg-slate-200 p-3">
+                            <div className="rounded-2xl border border-slate-200/80 bg-slate-50/80 p-3.5">
                               <div className="mb-3 flex items-center justify-between gap-2">
                                 <div>
                                   <p className="text-sm font-bold text-slate-800">Tasks</p>
@@ -837,14 +837,14 @@ const XmlGradingRulesPage = () => {
                                   const taskExpanded = expandedTasks[taskKey] ?? false;
 
                                   return (
-                                    <div key={taskKey} className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-                                      <div className="flex items-center gap-2 px-3 py-3">
+                                    <div key={taskKey} className="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm transition hover:border-slate-300 hover:shadow-sm">
+                                      <div className="flex items-center gap-2 border-b border-slate-100 px-3.5 py-3">
                                         <button
                                           onClick={() => toggleTask(taskKey)}
                                           className="flex min-w-0 flex-1 items-center gap-3 text-left"
                                         >
                                           <span className="text-xs text-slate-400">{taskExpanded ? '▼' : '▶'}</span>
-                                          <span className="rounded-md bg-slate-100 px-2 py-1 font-mono text-[11px] font-bold text-slate-600">
+                                          <span className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 font-mono text-[11px] font-bold text-slate-600">
                                             {task.taskId || `TASK-${ti + 1}`}
                                           </span>
                                           <span className="min-w-0 truncate text-sm font-semibold text-slate-800">
@@ -868,7 +868,7 @@ const XmlGradingRulesPage = () => {
                                       </div>
 
                                       {taskExpanded && (
-                                        <div className="border-t border-slate-100 p-4">
+                                        <div className="border-t border-slate-100 bg-slate-50/30 p-4">
                                           <div className="grid gap-4 md:grid-cols-[180px_minmax(0,1fr)_140px]">
                                             <label className="text-xs font-semibold text-slate-600">
                                               Mã Task
@@ -1175,7 +1175,7 @@ const XmlGradingRulesPage = () => {
 
           {/* Validation tab */}
           {activeTab === 'validation' && (
-            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-lg shadow-slate-900/5">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <h3 className="text-sm font-bold text-slate-900">Validation</h3>
@@ -1262,7 +1262,7 @@ const XmlGradingRulesPage = () => {
 
           {/* Test tab */}
           {activeTab === 'test' && (
-            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-lg shadow-slate-900/5">
               <div className="mb-5 flex items-start justify-between gap-3">
                 <div>
                   <div className="flex items-center gap-2">
@@ -1343,7 +1343,7 @@ const XmlGradingRulesPage = () => {
           </div>
 
           {/* Sticky action bar: Save ngay tại vị trí đang nhập, không cần cuộn về đầu trang. */}
-          <div className="sticky bottom-3 z-30 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white/95 px-4 py-3 shadow-lg shadow-slate-900/10 backdrop-blur">
+          <div className="sticky bottom-4 z-30 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200/80 bg-white/95 px-4 py-3.5 shadow-2xl shadow-slate-900/15 backdrop-blur-xl">
             <div className="flex min-w-0 items-center gap-2 text-xs text-slate-500">
               <span className={cx(
                 'h-2 w-2 shrink-0 rounded-full',
@@ -1364,7 +1364,7 @@ const XmlGradingRulesPage = () => {
               <button
                 onClick={validateRuleSet}
                 disabled={saving}
-                className="inline-flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-3.5 py-2.5 text-sm font-bold text-indigo-700 transition hover:border-indigo-300 hover:bg-indigo-100 disabled:opacity-50"
               >
                 <CheckCircle2 size={15} /> Validate
               </button>
@@ -1373,7 +1373,7 @@ const XmlGradingRulesPage = () => {
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={saveRuleSet}
                 disabled={saving}
-                className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-emerald-600/20 transition hover:-translate-y-0.5 hover:bg-emerald-700 hover:shadow-emerald-600/30 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Save size={15} className={cx(saving && 'animate-pulse')} />
                 {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
