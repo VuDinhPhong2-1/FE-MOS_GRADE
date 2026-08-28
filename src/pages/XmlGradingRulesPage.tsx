@@ -555,7 +555,7 @@ const XmlGradingRulesPage = () => {
 
       <div className="grid gap-5 xl:grid-cols-[292px_minmax(0,1fr)]">
         {/* Sidebar */}
-        <aside className="h-fit rounded-2xl border border-slate-200/80 bg-white/95 p-3.5 shadow-xl shadow-slate-900/5 xl:sticky xl:top-24 mb-2">
+        <aside className="h-fit rounded-2xl border border-slate-200/80 bg-white/95 p-3.5 shadow-xl shadow-slate-900/5 xl:sticky xl:top-24 mb-2 p-6">
           <div className="mb-3 flex items-center justify-between px-2">
             <div>
               <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-slate-400">Rulesets</p>
