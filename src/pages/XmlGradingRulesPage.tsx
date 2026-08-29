@@ -27,7 +27,7 @@ import type {
   PictureBulletConfig
 } from '../types/xml-grading-rules.types';
 import { notify } from '../utils/notify';
-import PictureBulletEditor from '../components/grading/PictureBulletEditor';
+import PictureBulletEditor from '../components/PictureBulletEditor';
 
 const compareModes: XmlCompareMode[] = ['xmlContainsNormalized', 'xmlContains', 'xmlEquivalentWholeFile', 'exactStringContains'];
 const matchPolicies: XmlMatchPolicy[] = ['all', 'any', 'ordered'];
