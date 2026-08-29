@@ -7,7 +7,7 @@ import {
 
 import type {
   PictureBulletConfig
-} from '../../types/xml-grading-rules.types';
+} from '../types/xml-grading-rules.types';
 
 interface PictureBulletEditorProps {
   config?: PictureBulletConfig;
