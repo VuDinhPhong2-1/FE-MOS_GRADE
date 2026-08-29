@@ -21,9 +21,13 @@ import type {
   XmlCompareMode,
   XmlGradingCondition,
   XmlMatchPolicy,
-  XmlRuleValidationResult
+  XmlRuleValidationResult,
+  SpecialCondition,
+  SpecialConditionType,
+  PictureBulletConfig
 } from '../types/xml-grading-rules.types';
 import { notify } from '../utils/notify';
+import PictureBulletEditor from '../components/grading/PictureBulletEditor';
 
 const compareModes: XmlCompareMode[] = ['xmlContainsNormalized', 'xmlContains', 'xmlEquivalentWholeFile', 'exactStringContains'];
 const matchPolicies: XmlMatchPolicy[] = ['all', 'any', 'ordered'];
@@ -47,6 +51,21 @@ const matchPoliciesLabels: Record<XmlMatchPolicy, string> = {
   'any': 'Bất kỳ điều kiện nào',
   'ordered': 'Theo thứ tự'
 };
+
+// Danh sách các loại điều kiện đặc biệt hỗ trợ theo từng Task.
+// Thêm loại mới chỉ cần bổ sung thêm 1 phần tử vào mảng này.
+const specialConditionOptions: Array<{
+  value: SpecialConditionType;
+  label: string;
+  description: string;
+}> = [
+  {
+    value: 'pictureBullet',
+    label: 'Dấu đầu dòng bằng hình ảnh',
+    description:
+      'Kiểm tra paragraph có sử dụng đúng hình ảnh làm dấu đầu dòng hay không.',
+  },
+];
 
 const emptyRuleSet = (): GradingRuleSet => ({ id: '', subject: 'excel', version: 'v1', isActive: false, projects: [] });
 const emptyProject = (): ProjectXmlRule => ({ projectCode: 'project22', projectName: '', maxScore: 125, tasks: [] });
@@ -298,6 +317,17 @@ const XmlGradingRulesPage = () => {
           }
       ),
     }));
+  };
+
+  // Cập nhật Special Condition của riêng 1 Task (không dùng chung toàn trang).
+  const updateTaskSpecialCondition = (
+    pi: number,
+    ti: number,
+    specialCondition?: SpecialCondition
+  ) => {
+    mutateTask(pi, ti, {
+      specialCondition,
+    });
   };
 
   if (!canUsePage) {
@@ -921,6 +951,130 @@ const XmlGradingRulesPage = () => {
                                                 className={inputClass}
                                               />
                                             </label>
+                                          </div>
+
+                                          {/* =========================================================
+                                              SPECIAL CONDITION (thuộc riêng Task này, không phải state global)
+                                              ========================================================= */}
+                                          <div className="mt-5 rounded-2xl border border-violet-200/80 bg-white p-4 shadow-sm">
+                                            <div className="flex items-start gap-3">
+                                              {/* Icon */}
+                                              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
+                                                <span className="text-base">✦</span>
+                                              </div>
+
+                                              {/* Title */}
+                                              <div className="min-w-0 flex-1">
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                  <p className="text-sm font-bold text-slate-800">
+                                                    Điều kiện đặc biệt
+                                                  </p>
+
+                                                  {task.specialCondition && (
+                                                    <span className="rounded-full border border-violet-200 bg-violet-50 px-2 py-0.5 text-[10px] font-bold text-violet-700">
+                                                      ĐANG SỬ DỤNG
+                                                    </span>
+                                                  )}
+                                                </div>
+
+                                                <p className="mt-1 text-xs leading-5 text-slate-500">
+                                                  Chỉ sử dụng khi Task cần kiểm tra thành phần đặc biệt
+                                                  trong file Word mà Condition XML thông thường không đủ
+                                                  để xác định.
+                                                </p>
+                                              </div>
+                                            </div>
+
+                                            {/* Select */}
+                                            <div className="mt-4">
+                                              <label className="block text-xs font-semibold text-slate-600">
+                                                Loại kiểm tra đặc biệt
+
+                                                <div className="relative">
+                                                  <select
+                                                    value={task.specialCondition?.type ?? ''}
+                                                    onChange={(e) => {
+                                                      const value = e.target.value;
+
+                                                      if (!value) {
+                                                        updateTaskSpecialCondition(pi, ti, undefined);
+                                                        return;
+                                                      }
+
+                                                      if (value === 'pictureBullet') {
+                                                        updateTaskSpecialCondition(pi, ti, {
+                                                          type: 'pictureBullet',
+                                                          config: {
+                                                            level: 0,
+                                                          },
+                                                        });
+                                                      }
+                                                    }}
+                                                    className="mt-1 w-full appearance-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 pr-10 text-sm font-medium text-slate-800 shadow-sm outline-none transition hover:border-slate-300 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
+                                                  >
+                                                    <option value="">Không sử dụng</option>
+
+                                                    {specialConditionOptions.map((option) => (
+                                                      <option key={option.value} value={option.value}>
+                                                        {option.label}
+                                                      </option>
+                                                    ))}
+                                                  </select>
+
+                                                  <svg
+                                                    className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+                                                    viewBox="0 0 20 20"
+                                                    fill="currentColor"
+                                                  >
+                                                    <path
+                                                      fillRule="evenodd"
+                                                      d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.51a.75.75 0 01-1.08 0l-4.25-4.51a.75.75 0 01.02-1.06z"
+                                                      clipRule="evenodd"
+                                                    />
+                                                  </svg>
+                                                </div>
+                                              </label>
+                                            </div>
+
+                                            {/* Description */}
+                                            {task.specialCondition?.type && (
+                                              <div className="mt-3 flex items-start gap-3 rounded-xl border border-violet-100 bg-violet-50/60 p-3">
+                                                <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-violet-100 text-violet-600">
+                                                  💡
+                                                </div>
+
+                                                <div>
+                                                  <p className="text-xs font-bold text-violet-900">
+                                                    {
+                                                      specialConditionOptions.find(
+                                                        (option) => option.value === task.specialCondition?.type
+                                                      )?.label
+                                                    }
+                                                  </p>
+
+                                                  <p className="mt-0.5 text-xs leading-5 text-violet-700/80">
+                                                    {
+                                                      specialConditionOptions.find(
+                                                        (option) => option.value === task.specialCondition?.type
+                                                      )?.description
+                                                    }
+                                                  </p>
+                                                </div>
+                                              </div>
+                                            )}
+
+                                            {/* Picture Bullet configuration */}
+                                            {task.specialCondition?.type === 'pictureBullet' && (
+                                              <PictureBulletEditor
+                                                config={task.specialCondition.config}
+                                                onChange={(config: PictureBulletConfig) => {
+                                                  updateTaskSpecialCondition(pi, ti, {
+                                                    type: 'pictureBullet',
+                                                    config,
+                                                  });
+                                                }}
+                                              />
+                                            )}
                                           </div>
 
                                           <div className="mt-5">

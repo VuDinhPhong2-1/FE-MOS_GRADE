@@ -20,11 +20,48 @@ export interface XmlGradingCondition {
   stopTaskIfFailed: boolean;
 }
 
+/**
+ * Danh sách các loại điều kiện đặc biệt được hỗ trợ.
+ * Thêm loại mới bằng cách mở rộng union này.
+ */
+export type SpecialConditionType =
+  | 'pictureBullet';
+
+export interface PictureBulletConfig {
+  /**
+   * Level của numbering trong Word.
+   * 0 = cấp đầu tiên.
+   */
+  level?: number;
+
+  /**
+   * ID của image sau khi upload lên server.
+   * FE chưa có thì để undefined.
+   */
+  assetId?: string;
+
+  /**
+   * SHA-256 của image chuẩn.
+   * BE sẽ tạo sau khi upload.
+   */
+  imageHash?: string;
+}
+
+export interface SpecialCondition {
+  type: SpecialConditionType;
+  config?: PictureBulletConfig;
+}
+
 export interface TaskXmlRule {
   taskId: string;
   taskName: string;
   maxScore: number;
   conditions: XmlGradingCondition[];
+
+  /**
+   * Điều kiện đặc biệt của riêng Task này (không dùng chung toàn trang).
+   */
+  specialCondition?: SpecialCondition;
 }
 
 export interface ProjectXmlRule {
