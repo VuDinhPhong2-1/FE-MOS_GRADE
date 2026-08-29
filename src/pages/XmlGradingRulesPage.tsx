@@ -59,13 +59,13 @@ const specialConditionOptions: Array<{
   label: string;
   description: string;
 }> = [
-  {
-    value: 'pictureBullet',
-    label: 'Dấu đầu dòng bằng hình ảnh',
-    description:
-      'Kiểm tra paragraph có sử dụng đúng hình ảnh làm dấu đầu dòng hay không.',
-  },
-];
+    {
+      value: 'pictureBullet',
+      label: 'Dấu đầu dòng bằng hình ảnh',
+      description:
+        'Kiểm tra paragraph có sử dụng đúng hình ảnh làm dấu đầu dòng hay không.',
+    },
+  ];
 
 const emptyRuleSet = (): GradingRuleSet => ({ id: '', subject: 'excel', version: 'v1', isActive: false, projects: [] });
 const emptyProject = (): ProjectXmlRule => ({ projectCode: 'project22', projectName: '', maxScore: 125, tasks: [] });
@@ -1067,6 +1067,7 @@ const XmlGradingRulesPage = () => {
                                             {task.specialCondition?.type === 'pictureBullet' && (
                                               <PictureBulletEditor
                                                 config={task.specialCondition.config}
+                                                getAccessToken={getAccessToken}
                                                 onChange={(config: PictureBulletConfig) => {
                                                   updateTaskSpecialCondition(pi, ti, {
                                                     type: 'pictureBullet',
