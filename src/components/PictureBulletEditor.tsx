@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   Image as ImageIcon,
+  Loader2,
   Upload,
   X
 } from 'lucide-react';
@@ -8,10 +9,14 @@ import {
 import type {
   PictureBulletConfig
 } from '../types/xml-grading-rules.types';
+import { pictureBulletAssetsService } from '../services/pictureBulletAssets.service';
 
 interface PictureBulletEditorProps {
   config?: PictureBulletConfig;
   onChange: (config: PictureBulletConfig) => void;
+  // Lấy từ useAuth().getAccessToken ở component cha (XmlGradingRulesPage),
+  // truyền xuống để gọi API upload/preview có xác thực.
+  getAccessToken: () => Promise<string | null> | string | null;
 }
 
 const ACCEPTED_IMAGE_TYPES = [
@@ -27,12 +32,18 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const PictureBulletEditor = ({
   config,
   onChange,
+  getAccessToken,
 }: PictureBulletEditorProps) => {
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string>('');
   const [error, setError] = useState<string>('');
+  const [uploading, setUploading] = useState(false);
+
+  // Ref theo dõi assetId đã tải preview, tránh việc effect chạy lại vô ích
+  // hoặc ghi đè preview đang có do người dùng vừa chọn file mới.
+  const loadedAssetIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     return () => {
@@ -42,7 +53,45 @@ const PictureBulletEditor = ({
     };
   }, [previewUrl]);
 
-  const handleFileChange = (
+  // Khi mở 1 Task đã có sẵn assetId (ruleset cũ đã upload ảnh trước đó),
+  // tự động tải lại ảnh để hiển thị preview thay vì để trống.
+  useEffect(() => {
+    const assetId = config?.assetId;
+
+    if (!assetId || loadedAssetIdRef.current === assetId) {
+      return;
+    }
+
+    let cancelled = false;
+    loadedAssetIdRef.current = assetId;
+
+    pictureBulletAssetsService
+      .fetchPreviewUrl(assetId, getAccessToken)
+      .then((url) => {
+        if (cancelled) {
+          URL.revokeObjectURL(url);
+          return;
+        }
+        setPreviewUrl((previous) => {
+          if (previous) {
+            URL.revokeObjectURL(previous);
+          }
+          return url;
+        });
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setError('Không tải được ảnh đã lưu trước đó.');
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [config?.assetId]);
+
+  const handleFileChange = async (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
     const file = event.target.files?.[0];
@@ -69,32 +118,48 @@ const PictureBulletEditor = ({
       return;
     }
 
-    const newPreviewUrl = URL.createObjectURL(file);
-
+    // Preview tức thì bằng blob URL cục bộ trong lúc chờ upload xong,
+    // để người dùng thấy phản hồi ngay thay vì màn hình trống + spinner.
+    const localPreviewUrl = URL.createObjectURL(file);
     setPreviewUrl((previous) => {
       if (previous) {
         URL.revokeObjectURL(previous);
       }
-
-      return newPreviewUrl;
+      return localPreviewUrl;
     });
-
     setFileName(file.name);
+    setUploading(true);
 
-    /*
-     * QUAN TRỌNG:
-     *
-     * Ở bước FE hiện tại ta chỉ giữ preview.
-     * Chưa upload file lên BE.
-     *
-     * Sau này: file -> uploadImage() -> assetId + imageHash
-     * rồi cập nhật: { ...config, assetId, imageHash }
-     */
+    try {
+      const result = await pictureBulletAssetsService.upload(file, getAccessToken);
 
-    onChange({
-      ...config,
-      level: config?.level ?? 0,
-    });
+      loadedAssetIdRef.current = result.assetId;
+
+      onChange({
+        ...config,
+        level: config?.level ?? 0,
+        assetId: result.assetId,
+        imageHash: result.imageHash,
+      });
+    } catch (uploadError) {
+      setError(
+        uploadError instanceof Error
+          ? uploadError.message
+          : 'Tải ảnh lên thất bại. Vui lòng thử lại.'
+      );
+
+      // Upload thất bại -> không giữ assetId/imageHash cũ (nếu có) để tránh
+      // hiểu nhầm là đã lưu thành công; nhưng vẫn giữ preview cục bộ để
+      // người dùng biết ảnh nào vừa chọn và có thể thử lại.
+      onChange({
+        ...config,
+        level: config?.level ?? 0,
+        assetId: undefined,
+        imageHash: undefined,
+      });
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleRemoveImage = () => {
@@ -108,6 +173,7 @@ const PictureBulletEditor = ({
 
     setFileName('');
     setError('');
+    loadedAssetIdRef.current = null;
 
     if (inputRef.current) {
       inputRef.current.value = '';
@@ -128,6 +194,8 @@ const PictureBulletEditor = ({
       level: Number(event.target.value),
     });
   };
+
+  const hasSavedImage = Boolean(config?.assetId && config?.imageHash);
 
   return (
     <div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
@@ -163,17 +231,27 @@ const PictureBulletEditor = ({
               type="file"
               accept={ACCEPTED_IMAGE_TYPES.join(',')}
               onChange={handleFileChange}
+              disabled={uploading}
               className="hidden"
             />
 
             <button
               type="button"
               onClick={() => inputRef.current?.click()}
-              className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 bg-white px-4 py-3 text-xs font-semibold text-slate-600 transition hover:border-violet-300 hover:bg-violet-50 hover:text-violet-700"
+              disabled={uploading}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 bg-white px-4 py-3 text-xs font-semibold text-slate-600 transition hover:border-violet-300 hover:bg-violet-50 hover:text-violet-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <Upload size={15} />
+              {uploading ? (
+                <Loader2 size={15} className="animate-spin" />
+              ) : (
+                <Upload size={15} />
+              )}
 
-              {fileName ? 'Thay đổi hình ảnh' : 'Chọn hình ảnh'}
+              {uploading
+                ? 'Đang tải lên...'
+                : fileName || hasSavedImage
+                  ? 'Thay đổi hình ảnh'
+                  : 'Chọn hình ảnh'}
             </button>
           </div>
 
@@ -186,7 +264,8 @@ const PictureBulletEditor = ({
               <button
                 type="button"
                 onClick={handleRemoveImage}
-                className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+                disabled={uploading}
+                className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-slate-400 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-60"
                 title="Xóa hình"
               >
                 <X size={13} />
@@ -201,6 +280,12 @@ const PictureBulletEditor = ({
           {error && (
             <p className="mt-2 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-[11px] text-red-600">
               {error}
+            </p>
+          )}
+
+          {!error && !uploading && hasSavedImage && (
+            <p className="mt-2 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-[11px] text-emerald-700">
+              Đã lưu ảnh và hash trên server — sẵn sàng dùng để chấm điểm.
             </p>
           )}
         </div>
@@ -243,10 +328,17 @@ const PictureBulletEditor = ({
               className="max-h-20 max-w-20 object-contain"
             />
 
+            {uploading && (
+              <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-white/70">
+                <Loader2 size={20} className="animate-spin text-violet-600" />
+              </div>
+            )}
+
             <button
               type="button"
               onClick={handleRemoveImage}
-              className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white text-slate-400 shadow-sm ring-1 ring-slate-200 transition hover:bg-red-50 hover:text-red-600"
+              disabled={uploading}
+              className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white text-slate-400 shadow-sm ring-1 ring-slate-200 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-60"
               title="Xóa hình"
             >
               <X size={14} />
@@ -263,25 +355,6 @@ const PictureBulletEditor = ({
             </div>
           </div>
         )}
-      </div>
-
-      {/* Status */}
-      <div className="mt-4 rounded-xl border border-amber-100 bg-amber-50 px-3 py-2.5">
-        <div className="flex items-start gap-2">
-          <span className="mt-0.5 text-xs">⚠️</span>
-
-          <div className="text-[11px] leading-5 text-amber-700">
-            <p className="font-semibold">
-              Hình ảnh mới chỉ được dùng làm mẫu ở FE.
-            </p>
-
-            <p>
-              Khi kết nối BE, hình ảnh sẽ được upload,
-              tạo <strong>assetId</strong> và{' '}
-              <strong>imageHash</strong> để dùng khi chấm bài.
-            </p>
-          </div>
-        </div>
       </div>
     </div>
   );
