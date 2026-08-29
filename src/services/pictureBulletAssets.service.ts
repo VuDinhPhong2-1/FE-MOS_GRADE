@@ -1,7 +1,8 @@
-// Điều chỉnh BASE_URL cho khớp với cách các service khác trong project trỏ
-// tới API (ví dụ nếu có biến cấu hình chung như `API_BASE_URL` thì dùng lại,
-// thay vì hardcode '/api' ở đây).
-const BASE_URL = '/api/picture-bullet-assets';
+import { API_BASE_URL } from '../config/api';
+import { authFetch } from './auth-fetch';
+
+const PICTURE_BULLET_ASSET_API_BASE_URL =
+  `${API_BASE_URL}/picture-bullet-assets`;
 
 export interface PictureBulletAssetUploadResult {
   assetId: string;
@@ -10,59 +11,121 @@ export interface PictureBulletAssetUploadResult {
   sizeBytes: number;
 }
 
-type GetAccessToken = () => Promise<string | null> | string | null;
+type GetAccessToken = (
+  forceRefresh?: boolean
+) => Promise<string | null>;
 
-const buildAuthHeaders = async (getAccessToken: GetAccessToken): Promise<HeadersInit> => {
-  const token = await getAccessToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
-};
+const parseErrorMessage = async (
+  response: Response,
+  fallback: string
+): Promise<string> => {
+  const errorData = await response.json().catch(() => null);
 
-const parseErrorMessage = async (response: Response, fallback: string): Promise<string> => {
-  try {
-    const body = await response.json();
-    return body?.message || fallback;
-  } catch {
+  if (!errorData) {
     return fallback;
   }
+
+  if (
+    typeof errorData.message === 'string' &&
+    errorData.message.trim()
+  ) {
+    return errorData.message;
+  }
+
+  if (
+    errorData.errors &&
+    typeof errorData.errors === 'object'
+  ) {
+    const firstField = Object.keys(errorData.errors)[0];
+
+    const firstErrors = Array.isArray(errorData.errors[firstField])
+      ? errorData.errors[firstField]
+      : [];
+
+    if (firstErrors.length > 0) {
+      return String(firstErrors[0]);
+    }
+  }
+
+  return fallback;
 };
 
 export const pictureBulletAssetsService = {
   /**
-   * Upload ảnh bullet chuẩn lên BE. BE sẽ tính SHA-256 và trả về
-   * assetId + imageHash để điền vào SpecialCondition.Config.
+   * Upload ảnh bullet chuẩn lên BE.
+   *
+   * POST /api/picture-bullet-assets
+   *
+   * BE tính SHA-256 và trả về:
+   * - assetId
+   * - imageHash
+   * - contentType
+   * - sizeBytes
    */
-  async upload(file: File, getAccessToken: GetAccessToken): Promise<PictureBulletAssetUploadResult> {
+  async upload(
+    file: File,
+    getAccessToken: GetAccessToken
+  ): Promise<PictureBulletAssetUploadResult> {
     const formData = new FormData();
+
     formData.append('file', file);
 
-    const headers = await buildAuthHeaders(getAccessToken);
-    const response = await fetch(BASE_URL, {
-      method: 'POST',
-      headers,
-      body: formData,
-    });
+    const response = await authFetch(
+      PICTURE_BULLET_ASSET_API_BASE_URL,
+      {
+        method: 'POST',
+
+        // QUAN TRỌNG:
+        // Không set Content-Type ở đây.
+        // Browser sẽ tự tạo:
+        // multipart/form-data; boundary=...
+        body: formData,
+      },
+      getAccessToken
+    );
 
     if (!response.ok) {
-      throw new Error(await parseErrorMessage(response, 'Tải ảnh lên thất bại.'));
+      const message = await parseErrorMessage(
+        response,
+        'Tải ảnh lên thất bại.'
+      );
+
+      throw new Error(message);
     }
 
     return response.json();
   },
 
   /**
-   * Lấy lại ảnh theo assetId (dùng khi mở 1 ruleset đã có sẵn assetId,
-   * để hiển thị preview mà không cần người dùng chọn lại file).
-   * Trả về object URL (blob:) — nhớ revoke khi component unmount.
+   * Lấy lại ảnh theo assetId.
+   *
+   * GET /api/picture-bullet-assets/{assetId}
+   *
+   * Trả về object URL để FE hiển thị preview.
    */
-  async fetchPreviewUrl(assetId: string, getAccessToken: GetAccessToken): Promise<string> {
-    const headers = await buildAuthHeaders(getAccessToken);
-    const response = await fetch(`${BASE_URL}/${assetId}`, { headers });
+  async fetchPreviewUrl(
+    assetId: string,
+    getAccessToken: GetAccessToken
+  ): Promise<string> {
+    const response = await authFetch(
+      `${PICTURE_BULLET_ASSET_API_BASE_URL}/${encodeURIComponent(assetId)}`,
+      {
+        method: 'GET',
+      },
+      getAccessToken
+    );
 
     if (!response.ok) {
-      throw new Error('Không tải được ảnh xem trước.');
+      const message = await parseErrorMessage(
+        response,
+        'Không tải được ảnh xem trước.'
+      );
+
+      throw new Error(message);
     }
 
     const blob = await response.blob();
+
     return URL.createObjectURL(blob);
   },
 };
