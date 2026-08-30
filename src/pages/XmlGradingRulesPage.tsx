@@ -980,7 +980,9 @@ const XmlGradingRulesPage = () => {
                                                 <p className="mt-1 text-xs leading-5 text-slate-500">
                                                   Chỉ sử dụng khi Task cần kiểm tra thành phần đặc biệt
                                                   trong file Word mà Condition XML thông thường không đủ
-                                                  để xác định.
+                                                  để xác định. Task có thể chỉ dùng riêng điều kiện đặc
+                                                  biệt (không cần Condition XML nào khác), hoặc kết hợp
+                                                  cả hai — miễn tổng điểm bằng Điểm tối đa của Task.
                                                 </p>
                                               </div>
                                             </div>
@@ -1004,7 +1006,10 @@ const XmlGradingRulesPage = () => {
                                                       if (value === 'pictureBullet') {
                                                         updateTaskSpecialCondition(pi, ti, {
                                                           type: 'pictureBullet',
-                                                          config: {
+                                                          // Giữ lại score nếu người dùng đã nhập trước đó
+                                                          // (VD: đổi qua đổi lại giữa các loại), mặc định 0.
+                                                          score: task.specialCondition?.score ?? 0,
+                                                          config: task.specialCondition?.config ?? {
                                                             level: 0,
                                                           },
                                                         });
@@ -1035,6 +1040,32 @@ const XmlGradingRulesPage = () => {
                                                 </div>
                                               </label>
                                             </div>
+
+                                            {/* Score input cho Special Condition */}
+                                            {task.specialCondition?.type && (
+                                              <div className="mt-4 grid gap-3 md:grid-cols-[160px_1fr] md:items-end">
+                                                <label className="text-xs font-semibold text-slate-600">
+                                                  Điểm điều kiện đặc biệt
+                                                  <input
+                                                    type="number"
+                                                    min={0}
+                                                    value={task.specialCondition.score ?? 0}
+                                                    onChange={(e) =>
+                                                      updateTaskSpecialCondition(pi, ti, {
+                                                        ...task.specialCondition!,
+                                                        score: Number(e.target.value),
+                                                      })
+                                                    }
+                                                    className={inputClass}
+                                                  />
+                                                </label>
+                                                <p className="text-[11px] leading-4 text-slate-400">
+                                                  Tổng điểm (các Conditions XML + Điều kiện đặc biệt) phải
+                                                  bằng Điểm tối đa của Task ({task.maxScore}). Có thể để 0
+                                                  Condition XML nếu điều kiện đặc biệt chiếm trọn điểm Task.
+                                                </p>
+                                              </div>
+                                            )}
 
                                             {/* Description */}
                                             {task.specialCondition?.type && (
@@ -1070,6 +1101,7 @@ const XmlGradingRulesPage = () => {
                                                 getAccessToken={getAccessToken}
                                                 onChange={(config: PictureBulletConfig) => {
                                                   updateTaskSpecialCondition(pi, ti, {
+                                                    ...task.specialCondition!,
                                                     type: 'pictureBullet',
                                                     config,
                                                   });
@@ -1291,9 +1323,15 @@ const XmlGradingRulesPage = () => {
 
                                               {task.conditions.length === 0 && (
                                                 <div className="rounded-xl border border-dashed border-slate-200 px-4 py-7 text-center">
-                                                  <p className="text-sm font-medium text-slate-500">Chưa có điều kiện</p>
+                                                  <p className="text-sm font-medium text-slate-500">
+                                                    {task.specialCondition
+                                                      ? 'Không có điều kiện XML — Task chỉ dùng điều kiện đặc biệt.'
+                                                      : 'Chưa có điều kiện'}
+                                                  </p>
                                                   <p className="mt-1 text-xs text-slate-400">
-                                                    Thêm condition để ruleset có thể chấm Task này.
+                                                    {task.specialCondition
+                                                      ? 'Hợp lệ nếu điểm Điều kiện đặc biệt bằng Điểm tối đa của Task.'
+                                                      : 'Thêm condition hoặc bật Điều kiện đặc biệt để ruleset có thể chấm Task này.'}
                                                   </p>
                                                 </div>
                                               )}

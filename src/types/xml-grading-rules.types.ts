@@ -49,6 +49,15 @@ export interface PictureBulletConfig {
 
 export interface SpecialCondition {
   type: SpecialConditionType;
+
+  /**
+   * Điểm riêng của điều kiện đặc biệt này.
+   * Cộng vào điểm Task khi PASS, độc lập với tổng điểm các Conditions XML
+   * thông thường (nếu Task có cả hai). Task cũng có thể chỉ dùng
+   * specialCondition (0 Condition XML), miễn score = task.maxScore.
+   */
+  score: number;
+
   config?: PictureBulletConfig;
 }
 
