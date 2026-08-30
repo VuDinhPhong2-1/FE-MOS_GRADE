@@ -314,23 +314,25 @@ const PictureBulletEditor = ({
         </div>
       </div>
 
-      {/* Preview */}
+      {/* Preview — thu nhỏ lại: giảm min-h, padding và kích thước ảnh
+          so với bản trước (min-h-28 / max-h-20 max-w-20) để đỡ chiếm
+          diện tích khi có nhiều Task/Condition trên cùng màn hình. */}
       <div className="mt-4">
         <p className="mb-2 text-xs font-semibold text-slate-600">
           Xem trước
         </p>
 
         {previewUrl ? (
-          <div className="relative flex min-h-28 items-center justify-center rounded-xl border border-slate-200 bg-white p-4">
+          <div className="relative flex min-h-16 items-center justify-center rounded-xl border border-slate-200 bg-white p-2.5">
             <img
               src={previewUrl}
               alt="Picture bullet preview"
-              className="max-h-20 max-w-20 object-contain"
+              className="max-h-10 max-w-10 object-contain"
             />
 
             {uploading && (
               <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-white/70">
-                <Loader2 size={20} className="animate-spin text-violet-600" />
+                <Loader2 size={16} className="animate-spin text-violet-600" />
               </div>
             )}
 
@@ -338,18 +340,18 @@ const PictureBulletEditor = ({
               type="button"
               onClick={handleRemoveImage}
               disabled={uploading}
-              className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white text-slate-400 shadow-sm ring-1 ring-slate-200 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-60"
+              className="absolute right-1.5 top-1.5 inline-flex h-6 w-6 items-center justify-center rounded-lg bg-white text-slate-400 shadow-sm ring-1 ring-slate-200 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-60"
               title="Xóa hình"
             >
-              <X size={14} />
+              <X size={12} />
             </button>
           </div>
         ) : (
-          <div className="flex min-h-28 items-center justify-center rounded-xl border border-dashed border-slate-200 bg-white">
+          <div className="flex min-h-16 items-center justify-center rounded-xl border border-dashed border-slate-200 bg-white">
             <div className="text-center">
-              <ImageIcon size={22} className="mx-auto text-slate-300" />
+              <ImageIcon size={18} className="mx-auto text-slate-300" />
 
-              <p className="mt-2 text-xs text-slate-400">
+              <p className="mt-1.5 text-[11px] text-slate-400">
                 Chưa chọn hình ảnh
               </p>
             </div>

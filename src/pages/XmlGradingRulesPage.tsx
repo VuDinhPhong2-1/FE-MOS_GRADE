@@ -104,6 +104,9 @@ const XmlGradingRulesPage = () => {
   const [viewRawJson, setViewRawJson] = useState(false);
   const [expandedProjects, setExpandedProjects] = useState<Record<number, boolean>>({});
   const [expandedTasks, setExpandedTasks] = useState<Record<string, boolean>>({});
+  // Ẩn/hiện riêng khối "Điều kiện đặc biệt" của từng Task, độc lập với
+  // việc Task đang expand/collapse. Mặc định mở (true) để giữ hành vi cũ.
+  const [expandedSpecialConditions, setExpandedSpecialConditions] = useState<Record<string, boolean>>({});
   const [activeTab, setActiveTab] = useState<'editor' | 'validation' | 'test'>('editor');
   const [showAdvanced, setShowAdvanced] = useState<Record<string, boolean>>({});
   const [saveError, setSaveError] = useState('');
@@ -329,6 +332,11 @@ const XmlGradingRulesPage = () => {
       specialCondition,
     });
   };
+
+  // Ẩn/hiện riêng khối "Điều kiện đặc biệt" — mặc định mở (true) nếu
+  // chưa từng bấm toggle, để không thay đổi hành vi hiển thị hiện tại.
+  const toggleSpecialCondition = (key: string) =>
+    setExpandedSpecialConditions((prev) => ({ ...prev, [key]: !(prev[key] ?? true) }));
 
   if (!canUsePage) {
     return <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-amber-800">Chỉ tài khoản Admin được quản lý XML grading rules.</div>;
@@ -879,6 +887,7 @@ const XmlGradingRulesPage = () => {
                                 {project.tasks.map((task, ti) => {
                                   const taskKey = `${pi}-${ti}`;
                                   const taskExpanded = expandedTasks[taskKey] ?? false;
+                                  const specialConditionExpanded = expandedSpecialConditions[taskKey] ?? true;
 
                                   return (
                                     <div key={taskKey} className="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm transition hover:border-slate-300 hover:shadow-sm">
@@ -955,6 +964,9 @@ const XmlGradingRulesPage = () => {
 
                                           {/* =========================================================
                                               SPECIAL CONDITION (thuộc riêng Task này, không phải state global)
+                                              Header có thể bấm để ẩn/hiện toàn bộ nội dung bên trong
+                                              (select loại, điểm, mô tả, PictureBulletEditor), độc lập
+                                              với việc Task đang mở hay đóng.
                                               ========================================================= */}
                                           <div className="mt-5 rounded-2xl border border-violet-200/80 bg-white p-4 shadow-sm">
                                             <div className="flex items-start gap-3">
@@ -963,150 +975,164 @@ const XmlGradingRulesPage = () => {
                                                 <span className="text-base">✦</span>
                                               </div>
 
-                                              {/* Title */}
-                                              <div className="min-w-0 flex-1">
-                                                <div className="flex flex-wrap items-center gap-2">
-                                                  <p className="text-sm font-bold text-slate-800">
-                                                    Điều kiện đặc biệt
+                                              {/* Title — bấm để ẩn/hiện */}
+                                              <button
+                                                type="button"
+                                                onClick={() => toggleSpecialCondition(taskKey)}
+                                                className="flex min-w-0 flex-1 items-start gap-2 text-left"
+                                              >
+                                                <div className="min-w-0 flex-1">
+                                                  <div className="flex flex-wrap items-center gap-2">
+                                                    <p className="text-sm font-bold text-slate-800">
+                                                      Điều kiện đặc biệt
+                                                    </p>
+
+                                                    {task.specialCondition && (
+                                                      <span className="rounded-full border border-violet-200 bg-violet-50 px-2 py-0.5 text-[10px] font-bold text-violet-700">
+                                                        ĐANG SỬ DỤNG
+                                                      </span>
+                                                    )}
+                                                  </div>
+
+                                                  <p className="mt-1 text-xs leading-5 text-slate-500">
+                                                    Chỉ sử dụng khi Task cần kiểm tra thành phần đặc biệt
+                                                    trong file Word mà Condition XML thông thường không đủ
+                                                    để xác định. Task có thể chỉ dùng riêng điều kiện đặc
+                                                    biệt (không cần Condition XML nào khác), hoặc kết hợp
+                                                    cả hai — miễn tổng điểm bằng Điểm tối đa của Task.
                                                   </p>
-
-                                                  {task.specialCondition && (
-                                                    <span className="rounded-full border border-violet-200 bg-violet-50 px-2 py-0.5 text-[10px] font-bold text-violet-700">
-                                                      ĐANG SỬ DỤNG
-                                                    </span>
-                                                  )}
                                                 </div>
 
-                                                <p className="mt-1 text-xs leading-5 text-slate-500">
-                                                  Chỉ sử dụng khi Task cần kiểm tra thành phần đặc biệt
-                                                  trong file Word mà Condition XML thông thường không đủ
-                                                  để xác định. Task có thể chỉ dùng riêng điều kiện đặc
-                                                  biệt (không cần Condition XML nào khác), hoặc kết hợp
-                                                  cả hai — miễn tổng điểm bằng Điểm tối đa của Task.
-                                                </p>
-                                              </div>
+                                                <span className="mt-1 shrink-0 text-xs text-slate-400">
+                                                  {specialConditionExpanded ? '▼' : '▶'}
+                                                </span>
+                                              </button>
                                             </div>
 
-                                            {/* Select */}
-                                            <div className="mt-4">
-                                              <label className="block text-xs font-semibold text-slate-600">
-                                                Loại kiểm tra đặc biệt
+                                            {specialConditionExpanded && (
+                                              <>
+                                                {/* Select */}
+                                                <div className="mt-4">
+                                                  <label className="block text-xs font-semibold text-slate-600">
+                                                    Loại kiểm tra đặc biệt
 
-                                                <div className="relative">
-                                                  <select
-                                                    value={task.specialCondition?.type ?? ''}
-                                                    onChange={(e) => {
-                                                      const value = e.target.value;
+                                                    <div className="relative">
+                                                      <select
+                                                        value={task.specialCondition?.type ?? ''}
+                                                        onChange={(e) => {
+                                                          const value = e.target.value;
 
-                                                      if (!value) {
-                                                        updateTaskSpecialCondition(pi, ti, undefined);
-                                                        return;
-                                                      }
+                                                          if (!value) {
+                                                            updateTaskSpecialCondition(pi, ti, undefined);
+                                                            return;
+                                                          }
 
-                                                      if (value === 'pictureBullet') {
-                                                        updateTaskSpecialCondition(pi, ti, {
-                                                          type: 'pictureBullet',
-                                                          // Giữ lại score nếu người dùng đã nhập trước đó
-                                                          // (VD: đổi qua đổi lại giữa các loại), mặc định 0.
-                                                          score: task.specialCondition?.score ?? 0,
-                                                          config: task.specialCondition?.config ?? {
-                                                            level: 0,
-                                                          },
-                                                        });
-                                                      }
-                                                    }}
-                                                    className="mt-1 w-full appearance-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 pr-10 text-sm font-medium text-slate-800 shadow-sm outline-none transition hover:border-slate-300 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
-                                                  >
-                                                    <option value="">Không sử dụng</option>
+                                                          if (value === 'pictureBullet') {
+                                                            updateTaskSpecialCondition(pi, ti, {
+                                                              type: 'pictureBullet',
+                                                              // Giữ lại score nếu người dùng đã nhập trước đó
+                                                              // (VD: đổi qua đổi lại giữa các loại), mặc định 0.
+                                                              score: task.specialCondition?.score ?? 0,
+                                                              config: task.specialCondition?.config ?? {
+                                                                level: 0,
+                                                              },
+                                                            });
+                                                          }
+                                                        }}
+                                                        className="mt-1 w-full appearance-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 pr-10 text-sm font-medium text-slate-800 shadow-sm outline-none transition hover:border-slate-300 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
+                                                      >
+                                                        <option value="">Không sử dụng</option>
 
-                                                    {specialConditionOptions.map((option) => (
-                                                      <option key={option.value} value={option.value}>
-                                                        {option.label}
-                                                      </option>
-                                                    ))}
-                                                  </select>
+                                                        {specialConditionOptions.map((option) => (
+                                                          <option key={option.value} value={option.value}>
+                                                            {option.label}
+                                                          </option>
+                                                        ))}
+                                                      </select>
 
-                                                  <svg
-                                                    className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
-                                                    viewBox="0 0 20 20"
-                                                    fill="currentColor"
-                                                  >
-                                                    <path
-                                                      fillRule="evenodd"
-                                                      d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.51a.75.75 0 01-1.08 0l-4.25-4.51a.75.75 0 01.02-1.06z"
-                                                      clipRule="evenodd"
-                                                    />
-                                                  </svg>
+                                                      <svg
+                                                        className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+                                                        viewBox="0 0 20 20"
+                                                        fill="currentColor"
+                                                      >
+                                                        <path
+                                                          fillRule="evenodd"
+                                                          d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.51a.75.75 0 01-1.08 0l-4.25-4.51a.75.75 0 01.02-1.06z"
+                                                          clipRule="evenodd"
+                                                        />
+                                                      </svg>
+                                                    </div>
+                                                  </label>
                                                 </div>
-                                              </label>
-                                            </div>
 
-                                            {/* Score input cho Special Condition */}
-                                            {task.specialCondition?.type && (
-                                              <div className="mt-4 grid gap-3 md:grid-cols-[160px_1fr] md:items-end">
-                                                <label className="text-xs font-semibold text-slate-600">
-                                                  Điểm điều kiện đặc biệt
-                                                  <input
-                                                    type="number"
-                                                    min={0}
-                                                    value={task.specialCondition.score ?? 0}
-                                                    onChange={(e) =>
+                                                {/* Score input cho Special Condition */}
+                                                {task.specialCondition?.type && (
+                                                  <div className="mt-4 grid gap-3 md:grid-cols-[160px_1fr] md:items-end">
+                                                    <label className="text-xs font-semibold text-slate-600">
+                                                      Điểm điều kiện đặc biệt
+                                                      <input
+                                                        type="number"
+                                                        min={0}
+                                                        value={task.specialCondition.score ?? 0}
+                                                        onChange={(e) =>
+                                                          updateTaskSpecialCondition(pi, ti, {
+                                                            ...task.specialCondition!,
+                                                            score: Number(e.target.value),
+                                                          })
+                                                        }
+                                                        className={inputClass}
+                                                      />
+                                                    </label>
+                                                    <p className="text-[11px] leading-4 text-slate-400">
+                                                      Tổng điểm (các Conditions XML + Điều kiện đặc biệt) phải
+                                                      bằng Điểm tối đa của Task ({task.maxScore}). Có thể để 0
+                                                      Condition XML nếu điều kiện đặc biệt chiếm trọn điểm Task.
+                                                    </p>
+                                                  </div>
+                                                )}
+
+                                                {/* Description */}
+                                                {task.specialCondition?.type && (
+                                                  <div className="mt-3 flex items-start gap-3 rounded-xl border border-violet-100 bg-violet-50/60 p-3">
+                                                    <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-violet-100 text-violet-600">
+                                                      💡
+                                                    </div>
+
+                                                    <div>
+                                                      <p className="text-xs font-bold text-violet-900">
+                                                        {
+                                                          specialConditionOptions.find(
+                                                            (option) => option.value === task.specialCondition?.type
+                                                          )?.label
+                                                        }
+                                                      </p>
+
+                                                      <p className="mt-0.5 text-xs leading-5 text-violet-700/80">
+                                                        {
+                                                          specialConditionOptions.find(
+                                                            (option) => option.value === task.specialCondition?.type
+                                                          )?.description
+                                                        }
+                                                      </p>
+                                                    </div>
+                                                  </div>
+                                                )}
+
+                                                {/* Picture Bullet configuration */}
+                                                {task.specialCondition?.type === 'pictureBullet' && (
+                                                  <PictureBulletEditor
+                                                    config={task.specialCondition.config}
+                                                    getAccessToken={getAccessToken}
+                                                    onChange={(config: PictureBulletConfig) => {
                                                       updateTaskSpecialCondition(pi, ti, {
                                                         ...task.specialCondition!,
-                                                        score: Number(e.target.value),
-                                                      })
-                                                    }
-                                                    className={inputClass}
+                                                        type: 'pictureBullet',
+                                                        config,
+                                                      });
+                                                    }}
                                                   />
-                                                </label>
-                                                <p className="text-[11px] leading-4 text-slate-400">
-                                                  Tổng điểm (các Conditions XML + Điều kiện đặc biệt) phải
-                                                  bằng Điểm tối đa của Task ({task.maxScore}). Có thể để 0
-                                                  Condition XML nếu điều kiện đặc biệt chiếm trọn điểm Task.
-                                                </p>
-                                              </div>
-                                            )}
-
-                                            {/* Description */}
-                                            {task.specialCondition?.type && (
-                                              <div className="mt-3 flex items-start gap-3 rounded-xl border border-violet-100 bg-violet-50/60 p-3">
-                                                <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-violet-100 text-violet-600">
-                                                  💡
-                                                </div>
-
-                                                <div>
-                                                  <p className="text-xs font-bold text-violet-900">
-                                                    {
-                                                      specialConditionOptions.find(
-                                                        (option) => option.value === task.specialCondition?.type
-                                                      )?.label
-                                                    }
-                                                  </p>
-
-                                                  <p className="mt-0.5 text-xs leading-5 text-violet-700/80">
-                                                    {
-                                                      specialConditionOptions.find(
-                                                        (option) => option.value === task.specialCondition?.type
-                                                      )?.description
-                                                    }
-                                                  </p>
-                                                </div>
-                                              </div>
-                                            )}
-
-                                            {/* Picture Bullet configuration */}
-                                            {task.specialCondition?.type === 'pictureBullet' && (
-                                              <PictureBulletEditor
-                                                config={task.specialCondition.config}
-                                                getAccessToken={getAccessToken}
-                                                onChange={(config: PictureBulletConfig) => {
-                                                  updateTaskSpecialCondition(pi, ti, {
-                                                    ...task.specialCondition!,
-                                                    type: 'pictureBullet',
-                                                    config,
-                                                  });
-                                                }}
-                                              />
+                                                )}
+                                              </>
                                             )}
                                           </div>
 
