@@ -6,6 +6,7 @@ export interface ComputerRoom {
   studentMachineCount: number;
   teacherMachineCount: number;
   brokenMachineCount: number;
+  brokenMachinesDetail?: string;
   availableStudentMachines: number;
   totalMachineCount: number;
   totalMachinesText: string;
@@ -26,6 +27,7 @@ export interface CreateComputerRoomRequest {
   studentMachineCount: number;
   teacherMachineCount?: number;
   brokenMachineCount?: number;
+  brokenMachinesDetail?: string;
   netSupportStatus?: string;
   audioStatus?: string;
   coolingStatus?: string;
@@ -39,6 +41,7 @@ export interface UpdateComputerRoomRequest {
   studentMachineCount?: number;
   teacherMachineCount?: number;
   brokenMachineCount?: number;
+  brokenMachinesDetail?: string;
   netSupportStatus?: string;
   audioStatus?: string;
   coolingStatus?: string;

@@ -71,6 +71,7 @@ interface ComputerRoomFormState {
   studentMachineCount: string;
   teacherMachineCount: string;
   brokenMachineCount: string;
+  brokenMachinesDetail: string;
   netSupportStatus: string;
   audioStatus: string;
   coolingStatus: string;
@@ -208,6 +209,7 @@ const createDefaultRoomForm = (schoolId = ''): ComputerRoomFormState => ({
   studentMachineCount: '45',
   teacherMachineCount: '1',
   brokenMachineCount: '0',
+  brokenMachinesDetail: '',
   netSupportStatus: 'Tốt',
   audioStatus: 'Tốt',
   coolingStatus: 'Tốt',
@@ -857,6 +859,7 @@ const TeacherSchedule = () => {
       studentMachineCount: `${room.studentMachineCount}`,
       teacherMachineCount: `${room.teacherMachineCount}`,
       brokenMachineCount: `${room.brokenMachineCount}`,
+      brokenMachinesDetail: room.brokenMachinesDetail || '',
       netSupportStatus: room.netSupportStatus || 'Tốt',
       audioStatus: room.audioStatus || 'Tốt',
       coolingStatus: room.coolingStatus || 'Tốt',
@@ -902,6 +905,7 @@ const TeacherSchedule = () => {
       studentMachineCount: parseNonNegativeInt(roomForm.studentMachineCount, 0),
       teacherMachineCount: parseNonNegativeInt(roomForm.teacherMachineCount, 1),
       brokenMachineCount: parseNonNegativeInt(roomForm.brokenMachineCount, 0),
+      brokenMachinesDetail: roomForm.brokenMachinesDetail.trim() || undefined,
       netSupportStatus: roomForm.netSupportStatus.trim() || 'Tốt',
       audioStatus: roomForm.audioStatus.trim() || 'Tốt',
       coolingStatus: roomForm.coolingStatus.trim() || 'Tốt',
@@ -1670,6 +1674,11 @@ const TeacherSchedule = () => {
                       </span>
                     </p>
                   ) : null}
+                  {attendanceData?.computerRoom?.brokenMachinesDetail ? (
+                    <p className="text-xs text-rose-700">
+                      Chi tiết máy hỏng: <span className="font-semibold">{attendanceData.computerRoom.brokenMachinesDetail}</span>
+                    </p>
+                  ) : null}
                 </div>
                 <button
                   type="button"
@@ -2357,6 +2366,12 @@ const TeacherSchedule = () => {
                                 </div>
                               </div>
 
+                              {room.brokenMachinesDetail ? (
+                                <p className="mt-2 rounded-lg border border-rose-200 bg-rose-50/70 px-2.5 py-1.5 text-xs text-rose-700">
+                                  Chi tiết máy hỏng: {room.brokenMachinesDetail}
+                                </p>
+                              ) : null}
+
                               <div className="mt-4 flex flex-wrap gap-2">
                                 {[
                                   { label: 'NetSupport', value: room.netSupportStatus },
@@ -2496,6 +2511,26 @@ const TeacherSchedule = () => {
                           />
                         </label>
                       </div>
+
+                      <label className="mt-3 grid gap-1.5 text-sm">
+                        <span className="font-medium leading-snug text-slate-700">
+                          Chi tiết máy hỏng (nhập tay)
+                        </span>
+                        <textarea
+                          value={roomForm.brokenMachinesDetail}
+                          onChange={(event) =>
+                            setRoomForm((prev) => ({
+                              ...prev,
+                              brokenMachinesDetail: event.target.value,
+                            }))
+                          }
+                          placeholder="Ví dụ: PC 32 hỏng màn hình, PC 15 mất chuột..."
+                          className="min-h-[70px] w-full bg-white px-3 py-2.5"
+                        />
+                        <span className="text-xs text-slate-400">
+                          Mô tả cụ thể từng máy hỏng — không ảnh hưởng tới số lượng máy lỗi ở trên.
+                        </span>
+                      </label>
                     </div>
 
                     <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
