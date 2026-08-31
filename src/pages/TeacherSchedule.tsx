@@ -2701,7 +2701,7 @@ const TeacherSchedule = () => {
                     </select>
                   </label>
 
-                  <label className="grid gap-1 text-sm">
+                  <label className="grid gap-2 text-sm">
                     <span className="font-semibold text-slate-700">Lớp có sẵn</span>
                     <select
                       value={form.classId}
