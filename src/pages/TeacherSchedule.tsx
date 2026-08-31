@@ -1350,26 +1350,24 @@ const TeacherSchedule = () => {
   };
 
   return (
-    <div className="space-y-4">
-      <section className="app-card p-4 sm:p-5">
-        <div className="flex flex-wrap items-center gap-3">
+    <div className="min-h-full space-y-5 bg-slate-50/60 p-1 sm:p-2">
+      <section className="app-card overflow-hidden border-slate-200/80 bg-white p-0 shadow-sm">
+        <div className="flex flex-col gap-4 p-4 sm:p-5 lg:flex-row lg:items-center">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="grid h-11 w-11 place-items-center rounded-2xl bg-blue-50 text-blue-700">
+            <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-600/20">
               <CalendarClock size={22} />
             </div>
             <div>
-              <h2 className="app-section-title text-2xl">Lịch dạy trong tuần</h2>
-              <p className="text-sm text-slate-500">
-                Sắp xếp lớp, phòng học, tiết học, môn học theo từng tuần.
-              </p>
+              <h2 className="text-xl font-extrabold tracking-tight text-slate-900 sm:text-2xl">Lịch dạy trong tuần</h2>
+              <p className="mt-1 text-sm leading-5 text-slate-500">Quản lý lịch giảng dạy, phòng máy và điểm danh theo tuần.</p>
             </div>
           </div>
 
-          <div className="ml-auto flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 lg:ml-auto">
             <button
               type="button"
               onClick={() => shiftWeek(-7)}
-              className="app-btn-secondary inline-flex items-center gap-1 px-3 py-2 text-sm"
+              className="app-btn-secondary inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm shadow-sm transition hover:-translate-y-0.5"
             >
               <ChevronLeft size={16} />
               Tuần trước
@@ -1379,19 +1377,19 @@ const TeacherSchedule = () => {
               type="date"
               value={weekStart}
               onChange={(event) => setWeekStart(toYmd(getWeekStart(new Date(`${event.target.value}T00:00:00`))))}
-              className="px-3 py-2 text-sm"
+              className="rounded-xl border-slate-200 bg-white px-3 py-2.5 text-sm shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10"
             />
 
             <button
               type="button"
               onClick={() => shiftWeek(7)}
-              className="app-btn-secondary inline-flex items-center gap-1 px-3 py-2 text-sm"
+              className="app-btn-secondary inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm shadow-sm transition hover:-translate-y-0.5"
             >
               Tuần sau
               <ChevronRight size={16} />
             </button>
 
-            <button type="button" onClick={openCreate} className="app-btn-primary inline-flex items-center gap-2 px-4 py-2 text-sm">
+            <button type="button" onClick={openCreate} className="app-btn-primary inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold shadow-sm transition hover:-translate-y-0.5">
               <Plus size={16} />
               Thêm lịch
             </button>
@@ -1417,12 +1415,12 @@ const TeacherSchedule = () => {
           </div>
         </div>
 
-        <div className="mt-3 rounded-xl border border-blue-100 bg-blue-50/70 px-3 py-2 text-sm text-blue-800">
+        <div className="mx-4 mb-4 rounded-xl border border-blue-100 bg-gradient-to-r from-blue-50 to-indigo-50 px-3.5 py-2.5 text-sm text-blue-800 shadow-sm sm:mx-5 sm:mb-5">
           Tuần đang xem: <strong>{formatDateViFromYmd(weekStart)}</strong> đến <strong>{formatDateViFromYmd(weekEnd)}</strong>
         </div>
 
         {selectedScheduleIds.length > 0 && (
-          <div className="mt-3 flex flex-col gap-2 rounded-xl border border-sky-200 bg-sky-50/80 px-3 py-2 text-sm text-sky-900 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mx-4 mb-4 flex flex-col gap-3 rounded-xl border border-blue-200 bg-blue-50/70 px-3.5 py-3 text-sm text-blue-950 shadow-sm sm:mx-5 sm:mb-5 sm:flex-row sm:items-center sm:justify-between">
             <p>
               Đã chọn <strong>{selectedScheduleIds.length}</strong> lịch dạy
             </p>
@@ -1433,7 +1431,7 @@ const TeacherSchedule = () => {
                   void handleCopySelectedToNextWeek();
                 }}
                 disabled={copying || loading}
-                className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-3 py-1.5 text-sm font-medium text-blue-700 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-white px-3 py-2 text-sm font-semibold text-blue-700 shadow-sm transition hover:border-blue-300 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Copy size={14} />
                 {copying ? 'Đang sao chép...' : 'Sao chép đã chọn'}
@@ -1444,7 +1442,7 @@ const TeacherSchedule = () => {
                   void handleDeleteSelected();
                 }}
                 disabled={loading}
-                className="inline-flex items-center gap-2 rounded-lg border border-rose-200 bg-white px-3 py-1.5 text-sm font-medium text-rose-700 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center gap-2 rounded-xl border border-rose-200 bg-white px-3 py-2 text-sm font-semibold text-rose-700 shadow-sm transition hover:border-rose-300 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Trash2 size={14} />
                 Xóa đã chọn
@@ -1452,7 +1450,7 @@ const TeacherSchedule = () => {
               <button
                 type="button"
                 onClick={() => setSelectedScheduleIds([])}
-                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100"
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-100"
               >
                 Bỏ chọn
               </button>
@@ -1461,12 +1459,12 @@ const TeacherSchedule = () => {
         )}
       </section>
 
-      <section className="app-card overflow-hidden">
+      <section className="app-card overflow-hidden border-slate-200/80 bg-white shadow-sm">
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
-            <thead className="bg-slate-50 text-slate-700">
+            <thead className="sticky top-0 z-10 border-b border-slate-200 bg-slate-50/95 text-slate-600 shadow-sm backdrop-blur">
               <tr>
-                <th className="w-12 px-3 py-3 text-center font-semibold">
+                <th className="w-12 px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-500">
                   <input
                     type="checkbox"
                     checked={areAllSchedulesSelected}
@@ -1476,20 +1474,20 @@ const TeacherSchedule = () => {
                     title="Chọn tất cả lịch trong tuần"
                   />
                 </th>
-                <th className="px-3 py-3 text-left font-semibold">Ngày</th>
-                <th className="px-3 py-3 text-left font-semibold">Thứ</th>
-                <th className="px-3 py-3 text-left font-semibold">Tiết</th>
-                <th className="px-3 py-3 text-left font-semibold">Thời gian</th>
-                <th className="px-3 py-3 text-left font-semibold">Môn học</th>
-                <th className="px-3 py-3 text-left font-semibold">Lớp</th>
-                <th className="px-3 py-3 text-left font-semibold">Trường</th>
-                <th className="px-3 py-3 text-left font-semibold">Phòng</th>
-                <th className="px-3 py-3 text-left font-semibold">Ghi chú</th>
-                <th className="px-3 py-3 text-left font-semibold">Trạng thái</th>
+                <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500">Ngày</th>
+                <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500">Thứ</th>
+                <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500">Tiết</th>
+                <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500">Thời gian</th>
+                <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500">Môn học</th>
+                <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500">Lớp</th>
+                <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500">Trường</th>
+                <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500">Phòng</th>
+                <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500">Ghi chú</th>
+                <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500">Trạng thái</th>
                 <th className="px-3 py-3 text-right font-semibold">Hành động</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="[&_tr:last-child]:border-0">
               {loading && (
                 <tr>
                   <td className="px-3 py-6 text-center text-slate-500" colSpan={12}>
@@ -1597,7 +1595,7 @@ const TeacherSchedule = () => {
                               event.stopPropagation();
                               void openAttendance(item);
                             }}
-                            className="rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-emerald-700 hover:bg-emerald-100"
+                            className="rounded-xl border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-emerald-700 shadow-sm transition hover:border-emerald-300 hover:bg-emerald-100"
                             title="Điểm danh"
                           >
                             <ClipboardCheck size={14} />
@@ -1608,7 +1606,7 @@ const TeacherSchedule = () => {
                               event.stopPropagation();
                               openEdit(item);
                             }}
-                            className="rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1.5 text-blue-700 hover:bg-blue-100"
+                            className="rounded-xl border border-blue-200 bg-blue-50 px-2.5 py-1.5 text-blue-700 shadow-sm transition hover:border-blue-300 hover:bg-blue-100"
                           >
                             <Pencil size={14} />
                           </button>
@@ -1618,7 +1616,7 @@ const TeacherSchedule = () => {
                               event.stopPropagation();
                               void handleDelete(item);
                             }}
-                            className="rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-rose-700 hover:bg-rose-100"
+                            className="rounded-xl border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-rose-700 shadow-sm transition hover:border-rose-300 hover:bg-rose-100"
                           >
                             <Trash2 size={14} />
                           </button>
@@ -1636,15 +1634,15 @@ const TeacherSchedule = () => {
       </section>
 
       {attendanceOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/45 backdrop-blur-[1px] sm:grid sm:place-items-center sm:p-3">
-          <div className="app-card flex h-[100dvh] w-full flex-col overflow-hidden rounded-none sm:h-auto sm:max-h-[92vh] sm:max-w-5xl sm:rounded-2xl">
+        <div className="fixed inset-0 z-50 bg-slate-950/60 p-0 backdrop-blur-sm sm:grid sm:place-items-center sm:p-4">
+          <div className="app-card flex h-[100dvh] w-full flex-col overflow-hidden rounded-none border-slate-200 shadow-2xl sm:h-auto sm:max-h-[94vh] sm:max-w-5xl sm:rounded-[24px]">
             <div
-              className="shrink-0 border-b border-slate-200 bg-white px-4 py-3"
+              className="shrink-0 border-b border-slate-200 bg-gradient-to-r from-white via-blue-50/40 to-indigo-50/60 px-4 py-4 shadow-sm"
               style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }}
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <h3 className="text-lg font-bold text-slate-900">Điểm danh học sinh</h3>
+                  <h3 className="text-xl font-extrabold tracking-tight text-slate-900">Điểm danh học sinh</h3>
                   {attendanceData ? (
                     <p className="text-sm text-slate-600">
                       {attendanceData.subject} - {attendanceData.className} - {formatDateViFromYmd(parseApiDateToLocalYmd(attendanceData.date))}
@@ -1681,7 +1679,7 @@ const TeacherSchedule = () => {
               </div>
             </div>
 
-            <div className="flex-1 space-y-3 overflow-y-auto p-4">
+            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto bg-slate-50/60 p-4 sm:p-5">
               {attendanceLoading && (
                 <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-6 text-center text-slate-600">
                   Đang tải danh sách học sinh...
@@ -1694,9 +1692,9 @@ const TeacherSchedule = () => {
                     <button
                       type="button"
                       onClick={() => setAttendanceTab('attendance')}
-                      className={`inline-flex items-center justify-center gap-1 rounded-lg border px-3 py-2 text-sm font-medium ${attendanceTab === 'attendance'
-                        ? 'border-blue-300 bg-blue-50 text-blue-700'
-                        : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                      className={`inline-flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-semibold transition ${attendanceTab === 'attendance'
+                        ? 'border-blue-300 bg-blue-600 text-white shadow-sm shadow-blue-600/20'
+                        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'
                         }`}
                     >
                       <ClipboardCheck size={14} />
@@ -1882,16 +1880,16 @@ const TeacherSchedule = () => {
                               return (
                                 <tr
                                   key={student.studentId}
-                                  className={`border-t ${isAbsent ? 'border-rose-100 bg-rose-50/40' : 'border-slate-100'}`}
+                                  className={`border-t transition-colors hover:bg-slate-50 ${isAbsent ? 'border-rose-100 bg-rose-50/40' : 'border-slate-100'}`}
                                 >
                                   <td className="px-3 py-2 text-slate-500">{index + 1}</td>
-                                  <td className="px-3 py-2">
+                                  <td className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10">
                                     <p className="font-medium text-slate-800">
                                       {student.middleName} {student.firstName}
                                     </p>
                                     <p className="text-xs text-slate-500">Trạng thái học sinh: {student.studentStatus || '-'}</p>
                                   </td>
-                                  <td className="px-3 py-2">
+                                  <td className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10">
                                     <button
                                       type="button"
                                       onClick={() => toggleAttendanceStatus(student.studentId)}
@@ -1903,7 +1901,7 @@ const TeacherSchedule = () => {
                                       {isAbsent ? 'Vắng' : 'Có mặt'}
                                     </button>
                                   </td>
-                                  <td className="px-3 py-2">
+                                  <td className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10">
                                     <input
                                       value={draft.note}
                                       onChange={(event) => updateAttendanceNote(student.studentId, event.target.value)}
@@ -1928,7 +1926,7 @@ const TeacherSchedule = () => {
                   )}
 
                   {attendanceTab === 'startLesson' && (
-                    <div className="space-y-3 rounded-xl border border-emerald-200 bg-emerald-50/40 p-4">
+                    <div className="space-y-3 rounded-2xl border border-emerald-200/80 bg-white p-4 shadow-sm">
                       <h4 className="font-semibold text-emerald-800">BÁO CÁO ĐẦU BUỔI DẠY</h4>
                       {hasRoomSnapshot && (
                         <p className="text-xs text-emerald-700">
@@ -1938,67 +1936,67 @@ const TeacherSchedule = () => {
                       <div className="grid gap-3 sm:grid-cols-2">
                         <label className="grid gap-1 text-sm">
                           <span>Tên giáo viên</span>
-                          <input value={reportsDraft.startLesson.teacherName} onChange={(e) => updateStartLessonReportField('teacherName', e.target.value)} className="px-3 py-2" />
+                          <input value={reportsDraft.startLesson.teacherName} onChange={(e) => updateStartLessonReportField('teacherName', e.target.value)} className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10" />
                         </label>
                         <label className="grid gap-1 text-sm">
                           <span>Tên trợ giảng</span>
-                          <input value={reportsDraft.startLesson.assistantName} onChange={(e) => updateStartLessonReportField('assistantName', e.target.value)} className="px-3 py-2" />
+                          <input value={reportsDraft.startLesson.assistantName} onChange={(e) => updateStartLessonReportField('assistantName', e.target.value)} className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10" />
                         </label>
                         <label className="grid gap-1 text-sm">
                           <span>Phòng máy</span>
-                          <input value={reportsDraft.startLesson.roomName} onChange={(e) => updateStartLessonReportField('roomName', e.target.value)} className="px-3 py-2" disabled={hasRoomSnapshot} />
+                          <input value={reportsDraft.startLesson.roomName} onChange={(e) => updateStartLessonReportField('roomName', e.target.value)} className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10" disabled={hasRoomSnapshot} />
                         </label>
                         <label className="grid gap-1 text-sm">
                           <span>Tổng số máy</span>
-                          <input value={reportsDraft.startLesson.totalMachines} onChange={(e) => updateStartLessonReportField('totalMachines', e.target.value)} className="px-3 py-2" disabled={hasRoomSnapshot} />
+                          <input value={reportsDraft.startLesson.totalMachines} onChange={(e) => updateStartLessonReportField('totalMachines', e.target.value)} className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10" disabled={hasRoomSnapshot} />
                         </label>
                         <label className="grid gap-1 text-sm sm:col-span-2">
                           <span>Tổng số máy lỗi (mô tả)</span>
-                          <input value={reportsDraft.startLesson.brokenMachinesSummary} onChange={(e) => updateStartLessonReportField('brokenMachinesSummary', e.target.value)} className="px-3 py-2" disabled={hasRoomSnapshot} />
+                          <input value={reportsDraft.startLesson.brokenMachinesSummary} onChange={(e) => updateStartLessonReportField('brokenMachinesSummary', e.target.value)} className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10" disabled={hasRoomSnapshot} />
                         </label>
                         <label className="grid gap-1 text-sm">
                           <span>Số máy thiếu cho học sinh</span>
-                          <input value={reportsDraft.startLesson.missingMachinesForStudents} onChange={(e) => updateStartLessonReportField('missingMachinesForStudents', e.target.value)} className="px-3 py-2" disabled={hasRoomSnapshot} />
+                          <input value={reportsDraft.startLesson.missingMachinesForStudents} onChange={(e) => updateStartLessonReportField('missingMachinesForStudents', e.target.value)} className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10" disabled={hasRoomSnapshot} />
                         </label>
                         <label className="grid gap-1 text-sm">
                           <span>Tình trạng NetSupport</span>
-                          <input value={reportsDraft.startLesson.netSupportStatus} onChange={(e) => updateStartLessonReportField('netSupportStatus', e.target.value)} className="px-3 py-2" disabled={hasRoomSnapshot} />
+                          <input value={reportsDraft.startLesson.netSupportStatus} onChange={(e) => updateStartLessonReportField('netSupportStatus', e.target.value)} className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10" disabled={hasRoomSnapshot} />
                         </label>
                         <label className="grid gap-1 text-sm">
                           <span>Tình trạng loa, âm ly</span>
-                          <input value={reportsDraft.startLesson.audioStatus} onChange={(e) => updateStartLessonReportField('audioStatus', e.target.value)} className="px-3 py-2" disabled={hasRoomSnapshot} />
+                          <input value={reportsDraft.startLesson.audioStatus} onChange={(e) => updateStartLessonReportField('audioStatus', e.target.value)} className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10" disabled={hasRoomSnapshot} />
                         </label>
                         <label className="grid gap-1 text-sm">
                           <span>Tình trạng máy lạnh, quạt</span>
-                          <input value={reportsDraft.startLesson.coolingStatus} onChange={(e) => updateStartLessonReportField('coolingStatus', e.target.value)} className="px-3 py-2" disabled={hasRoomSnapshot} />
+                          <input value={reportsDraft.startLesson.coolingStatus} onChange={(e) => updateStartLessonReportField('coolingStatus', e.target.value)} className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10" disabled={hasRoomSnapshot} />
                         </label>
                         <label className="grid gap-1 text-sm sm:col-span-2">
                           <span>Tình trạng vệ sinh phòng máy</span>
-                          <input value={reportsDraft.startLesson.hygieneStatus} onChange={(e) => updateStartLessonReportField('hygieneStatus', e.target.value)} className="px-3 py-2" disabled={hasRoomSnapshot} />
+                          <input value={reportsDraft.startLesson.hygieneStatus} onChange={(e) => updateStartLessonReportField('hygieneStatus', e.target.value)} className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10" disabled={hasRoomSnapshot} />
                         </label>
                       </div>
                     </div>
                   )}
 
                   {attendanceTab === 'professional' && (
-                    <div className="space-y-3 rounded-xl border border-violet-200 bg-violet-50/40 p-4">
+                    <div className="space-y-3 rounded-2xl border border-violet-200/80 bg-white p-4 shadow-sm">
                       <h4 className="font-semibold text-violet-800">BÁO CÁO CHUYÊN MÔN</h4>
                       <div className="grid gap-3 sm:grid-cols-2">
                         <label className="grid gap-1 text-sm">
                           <span>Tên giáo viên</span>
-                          <input value={reportsDraft.professional.teacherName} onChange={(e) => updateProfessionalReportField('teacherName', e.target.value)} className="px-3 py-2" />
+                          <input value={reportsDraft.professional.teacherName} onChange={(e) => updateProfessionalReportField('teacherName', e.target.value)} className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10" />
                         </label>
                         <label className="grid gap-1 text-sm">
                           <span>Lớp</span>
-                          <input value={reportsDraft.professional.className} onChange={(e) => updateProfessionalReportField('className', e.target.value)} className="px-3 py-2" />
+                          <input value={reportsDraft.professional.className} onChange={(e) => updateProfessionalReportField('className', e.target.value)} className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10" />
                         </label>
                         <label className="grid gap-1 text-sm">
                           <span>Môn</span>
-                          <input value={reportsDraft.professional.subjectName} onChange={(e) => updateProfessionalReportField('subjectName', e.target.value)} className="px-3 py-2" />
+                          <input value={reportsDraft.professional.subjectName} onChange={(e) => updateProfessionalReportField('subjectName', e.target.value)} className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10" />
                         </label>
                         <label className="grid gap-1 text-sm">
                           <span>Tài liệu dạy</span>
-                          <input value={reportsDraft.professional.teachingMaterials} onChange={(e) => updateProfessionalReportField('teachingMaterials', e.target.value)} className="px-3 py-2" />
+                          <input value={reportsDraft.professional.teachingMaterials} onChange={(e) => updateProfessionalReportField('teachingMaterials', e.target.value)} className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10" />
                         </label>
                         <label className="grid gap-1 text-sm sm:col-span-2">
                           <span>Nội dung dạy</span>
@@ -2006,26 +2004,26 @@ const TeacherSchedule = () => {
                         </label>
                         <label className="grid gap-1 text-sm">
                           <span>Số tiết dự kiến</span>
-                          <input value={reportsDraft.professional.plannedLessons} onChange={(e) => updateProfessionalReportField('plannedLessons', e.target.value)} className="px-3 py-2" />
+                          <input value={reportsDraft.professional.plannedLessons} onChange={(e) => updateProfessionalReportField('plannedLessons', e.target.value)} className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10" />
                         </label>
                         <label className="grid gap-1 text-sm">
                           <span>Số tiết đã dạy</span>
-                          <input value={reportsDraft.professional.taughtLessons} onChange={(e) => updateProfessionalReportField('taughtLessons', e.target.value)} className="px-3 py-2" />
+                          <input value={reportsDraft.professional.taughtLessons} onChange={(e) => updateProfessionalReportField('taughtLessons', e.target.value)} className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10" />
                         </label>
                         <label className="grid gap-1 text-sm">
                           <span>Số lần hoàn thành OTTH</span>
-                          <input value={reportsDraft.professional.ongoingPracticeCompletions} onChange={(e) => updateProfessionalReportField('ongoingPracticeCompletions', e.target.value)} className="px-3 py-2" />
+                          <input value={reportsDraft.professional.ongoingPracticeCompletions} onChange={(e) => updateProfessionalReportField('ongoingPracticeCompletions', e.target.value)} className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10" />
                         </label>
                         <label className="grid gap-1 text-sm">
                           <span>Tỷ lệ kết quả Gmetrix</span>
-                          <input value={reportsDraft.professional.gmetrixResultRate} onChange={(e) => updateProfessionalReportField('gmetrixResultRate', e.target.value)} className="px-3 py-2" />
+                          <input value={reportsDraft.professional.gmetrixResultRate} onChange={(e) => updateProfessionalReportField('gmetrixResultRate', e.target.value)} className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10" />
                         </label>
                       </div>
                     </div>
                   )}
 
                   {attendanceTab === 'endLesson' && (
-                    <div className="space-y-3 rounded-xl border border-amber-200 bg-amber-50/50 p-4">
+                    <div className="space-y-3 rounded-2xl border border-amber-200/80 bg-white p-4 shadow-sm">
                       <h4 className="font-semibold text-amber-800">BÁO CÁO CUỐI BUỔI DẠY</h4>
                       {hasRoomSnapshot && (
                         <p className="text-xs text-amber-700">
@@ -2040,59 +2038,59 @@ const TeacherSchedule = () => {
                       <div className="grid gap-3 sm:grid-cols-2">
                         <label className="grid gap-1 text-sm">
                           <span>Tên giáo viên</span>
-                          <input value={reportsDraft.endLesson.teacherName} onChange={(e) => updateEndLessonReportField('teacherName', e.target.value)} className="px-3 py-2" />
+                          <input value={reportsDraft.endLesson.teacherName} onChange={(e) => updateEndLessonReportField('teacherName', e.target.value)} className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10" />
                         </label>
                         <label className="grid gap-1 text-sm">
                           <span>Tên trợ giảng</span>
-                          <input value={reportsDraft.endLesson.assistantName} onChange={(e) => updateEndLessonReportField('assistantName', e.target.value)} className="px-3 py-2" />
+                          <input value={reportsDraft.endLesson.assistantName} onChange={(e) => updateEndLessonReportField('assistantName', e.target.value)} className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10" />
                         </label>
                         <label className="grid gap-1 text-sm">
                           <span>Phòng máy</span>
-                          <input value={reportsDraft.endLesson.roomName} onChange={(e) => updateEndLessonReportField('roomName', e.target.value)} className="px-3 py-2" disabled={hasRoomSnapshot} />
+                          <input value={reportsDraft.endLesson.roomName} onChange={(e) => updateEndLessonReportField('roomName', e.target.value)} className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10" disabled={hasRoomSnapshot} />
                         </label>
                         <label className="grid gap-1 text-sm">
                           <span>Tổng số máy</span>
-                          <input value={reportsDraft.endLesson.totalMachines} onChange={(e) => updateEndLessonReportField('totalMachines', e.target.value)} className="px-3 py-2" disabled={hasRoomSnapshot} />
+                          <input value={reportsDraft.endLesson.totalMachines} onChange={(e) => updateEndLessonReportField('totalMachines', e.target.value)} className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10" disabled={hasRoomSnapshot} />
                         </label>
                         <label className="grid gap-1 text-sm sm:col-span-2">
                           <span>Số lượng học sinh các lớp cùng phòng</span>
-                          <input value={reportsDraft.endLesson.classStudentCountSummary} onChange={(e) => updateEndLessonReportField('classStudentCountSummary', e.target.value)} className="px-3 py-2" />
+                          <input value={reportsDraft.endLesson.classStudentCountSummary} onChange={(e) => updateEndLessonReportField('classStudentCountSummary', e.target.value)} className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10" />
                         </label>
                         <label className="grid gap-1 text-sm">
                           <span>Tỷ lệ học sinh có tài liệu</span>
-                          <input value={reportsDraft.endLesson.studentMaterialCoverageRate} onChange={(e) => updateEndLessonReportField('studentMaterialCoverageRate', e.target.value)} className="px-3 py-2" />
+                          <input value={reportsDraft.endLesson.studentMaterialCoverageRate} onChange={(e) => updateEndLessonReportField('studentMaterialCoverageRate', e.target.value)} className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10" />
                         </label>
                         <label className="grid gap-1 text-sm">
                           <span>Tổng số máy lỗi (mô tả)</span>
-                          <input value={reportsDraft.endLesson.brokenMachinesSummary} onChange={(e) => updateEndLessonReportField('brokenMachinesSummary', e.target.value)} className="px-3 py-2" disabled={hasRoomSnapshot} />
+                          <input value={reportsDraft.endLesson.brokenMachinesSummary} onChange={(e) => updateEndLessonReportField('brokenMachinesSummary', e.target.value)} className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10" disabled={hasRoomSnapshot} />
                         </label>
                         <label className="grid gap-1 text-sm">
                           <span>Tình trạng NetSupport</span>
-                          <input value={reportsDraft.endLesson.netSupportStatus} onChange={(e) => updateEndLessonReportField('netSupportStatus', e.target.value)} className="px-3 py-2" disabled={hasRoomSnapshot} />
+                          <input value={reportsDraft.endLesson.netSupportStatus} onChange={(e) => updateEndLessonReportField('netSupportStatus', e.target.value)} className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10" disabled={hasRoomSnapshot} />
                         </label>
                         <label className="grid gap-1 text-sm">
                           <span>Tình trạng loa, âm ly</span>
-                          <input value={reportsDraft.endLesson.audioStatus} onChange={(e) => updateEndLessonReportField('audioStatus', e.target.value)} className="px-3 py-2" disabled={hasRoomSnapshot} />
+                          <input value={reportsDraft.endLesson.audioStatus} onChange={(e) => updateEndLessonReportField('audioStatus', e.target.value)} className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10" disabled={hasRoomSnapshot} />
                         </label>
                         <label className="grid gap-1 text-sm">
                           <span>Tình trạng máy lạnh, quạt</span>
-                          <input value={reportsDraft.endLesson.coolingStatus} onChange={(e) => updateEndLessonReportField('coolingStatus', e.target.value)} className="px-3 py-2" disabled={hasRoomSnapshot} />
+                          <input value={reportsDraft.endLesson.coolingStatus} onChange={(e) => updateEndLessonReportField('coolingStatus', e.target.value)} className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10" disabled={hasRoomSnapshot} />
                         </label>
                         <label className="grid gap-1 text-sm">
                           <span>Đã tắt các thiết bị điện</span>
-                          <input value={reportsDraft.endLesson.devicesPoweredOffStatus} onChange={(e) => updateEndLessonReportField('devicesPoweredOffStatus', e.target.value)} className="px-3 py-2" disabled={hasRoomSnapshot} />
+                          <input value={reportsDraft.endLesson.devicesPoweredOffStatus} onChange={(e) => updateEndLessonReportField('devicesPoweredOffStatus', e.target.value)} className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10" disabled={hasRoomSnapshot} />
                         </label>
                         <label className="grid gap-1 text-sm">
                           <span>HS sắp xếp ghế ngồi</span>
-                          <input value={reportsDraft.endLesson.seatingOrderStatus} onChange={(e) => updateEndLessonReportField('seatingOrderStatus', e.target.value)} className="px-3 py-2" disabled={hasRoomSnapshot} />
+                          <input value={reportsDraft.endLesson.seatingOrderStatus} onChange={(e) => updateEndLessonReportField('seatingOrderStatus', e.target.value)} className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10" disabled={hasRoomSnapshot} />
                         </label>
                         <label className="grid gap-1 text-sm">
                           <span>HS vệ sinh phòng máy</span>
-                          <input value={reportsDraft.endLesson.roomHygieneStatus} onChange={(e) => updateEndLessonReportField('roomHygieneStatus', e.target.value)} className="px-3 py-2" disabled={hasRoomSnapshot} />
+                          <input value={reportsDraft.endLesson.roomHygieneStatus} onChange={(e) => updateEndLessonReportField('roomHygieneStatus', e.target.value)} className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10" disabled={hasRoomSnapshot} />
                         </label>
                         <label className="grid gap-1 text-sm">
                           <span>Tuân thủ nội quy của HS</span>
-                          <input value={reportsDraft.endLesson.studentRuleComplianceStatus} onChange={(e) => updateEndLessonReportField('studentRuleComplianceStatus', e.target.value)} className="px-3 py-2" />
+                          <input value={reportsDraft.endLesson.studentRuleComplianceStatus} onChange={(e) => updateEndLessonReportField('studentRuleComplianceStatus', e.target.value)} className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10" />
                         </label>
                         <label className="grid gap-1 text-sm sm:col-span-2">
                           <span>Danh sách vi phạm</span>
@@ -2133,10 +2131,10 @@ const TeacherSchedule = () => {
       )}
 
       {roomManagerOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-sm sm:grid sm:place-items-center sm:p-4">
-          <div className="app-card flex h-[100dvh] w-full flex-col overflow-hidden rounded-none sm:h-auto sm:max-h-[94vh] sm:max-w-7xl sm:rounded-[28px]">
+        <div className="fixed inset-0 z-50 bg-slate-950/65 p-0 backdrop-blur-sm sm:grid sm:place-items-center sm:p-4">
+          <div className="app-card flex h-[100dvh] w-full flex-col overflow-hidden rounded-none border-slate-200 shadow-2xl sm:h-auto sm:max-h-[94vh] sm:max-w-7xl sm:rounded-[28px]">
             <div
-              className="border-b border-slate-200 bg-[radial-gradient(circle_at_top_left,_rgba(147,197,253,0.28),_transparent_35%),linear-gradient(135deg,_#f8fbff,_#eef4ff_55%,_#f8fafc)] px-4 py-4 sm:px-5"
+              className="border-b border-slate-200 bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.20),_transparent_35%),linear-gradient(135deg,_#ffffff,_#eff6ff_55%,_#f8fafc)] px-4 py-4 sm:px-5"
               style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top))' }}
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -2176,10 +2174,10 @@ const TeacherSchedule = () => {
               </div>
             </div>
 
-            <div className="min-h-0 flex-1 overflow-y-auto bg-[linear-gradient(180deg,_rgba(248,250,252,0.92),_rgba(255,255,255,1))] p-4 sm:p-5">
-              <div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_420px]">
+            <div className="min-h-0 flex-1 overflow-y-auto bg-slate-50/70 p-4 sm:p-5">
+              <div className="grid gap-5 xl:grid-cols-[minmax(0,1.25fr)_400px]">
                 <div className="space-y-2">
-                  <div className="app-card-soft p-4">
+                  <div className="app-card-soft border-slate-200/80 bg-white p-4 shadow-sm">
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                       <div className="flex-1">
                         <label className="grid gap-1.5 text-sm">
@@ -2241,7 +2239,7 @@ const TeacherSchedule = () => {
                     </div>
                   </div>
 
-                  <div className="app-card overflow-hidden">
+                  <div className="app-card overflow-hidden border-slate-200/80 bg-white shadow-sm">
                     <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
                       <div>
                         <h4 className="text-base font-bold text-slate-900">Danh sách phòng máy</h4>
@@ -2271,9 +2269,9 @@ const TeacherSchedule = () => {
                           {roomManagerRows.map((room) => (
                             <article
                               key={room.id}
-                              className={`rounded-2xl border p-4 shadow-sm transition ${editingRoomId === room.id
-                                ? 'border-blue-300 bg-blue-50/70 shadow-blue-100'
-                                : 'border-slate-200 bg-white hover:border-blue-200 hover:shadow-md'
+                              className={`group rounded-2xl border p-4 shadow-sm transition-all duration-200 ${editingRoomId === room.id
+                                ? 'border-blue-300 bg-blue-50/80 shadow-md shadow-blue-100/60'
+                                : 'border-slate-200/80 bg-white hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md'
                                 }`}
                             >
                               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -2378,8 +2376,8 @@ const TeacherSchedule = () => {
                   </div>
                 </div>
 
-                <form onSubmit={handleSaveRoom} className="app-card flex min-h-[640px] flex-col overflow-hidden">
-                  <div className="border-b border-slate-200 bg-slate-50/90 px-4 py-4">
+                <form onSubmit={handleSaveRoom} className="app-card flex min-h-[640px] flex-col overflow-hidden border-slate-200/80 bg-white shadow-sm">
+                  <div className="border-b border-slate-200 bg-gradient-to-r from-slate-50 to-blue-50/40 px-4 py-4">
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <h4 className="text-base font-bold text-slate-900">
@@ -2418,8 +2416,8 @@ const TeacherSchedule = () => {
                     </div>
                   </div>
 
-                  <div className="min-h-0 flex-1 space-y-4 overflow-y-auto bg-white p-4">
-                    <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+                  <div className="min-h-0 flex-1 space-y-4 overflow-y-auto bg-slate-50/40 p-4">
+                    <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
                       <label className="grid gap-1.5 text-sm">
                         <span className="font-semibold text-slate-700">Tên phòng máy *</span>
                         <input
@@ -2434,7 +2432,7 @@ const TeacherSchedule = () => {
                       </label>
                     </div>
 
-                    <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+                    <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
                       <div className="mb-3 flex items-center gap-2">
                         <Wrench size={16} className="text-slate-500" />
                         <h5 className="text-sm font-bold text-slate-800">Cấu hình thiết bị</h5>
@@ -2491,7 +2489,7 @@ const TeacherSchedule = () => {
                       </div>
                     </div>
 
-                    <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+                    <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
                       <div className="mb-3 flex items-center gap-2">
                         <Sparkles size={16} className="text-slate-500" />
                         <h5 className="text-sm font-bold text-slate-800">Tình trạng trước giờ học</h5>
@@ -2558,7 +2556,7 @@ const TeacherSchedule = () => {
                       </div>
                     </div>
 
-                    <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+                    <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
                       <div className="mb-3 flex items-center gap-2">
                         <Power size={16} className="text-slate-500" />
                         <h5 className="text-sm font-bold text-slate-800">Tình trạng sau giờ học</h5>
@@ -2663,7 +2661,7 @@ const TeacherSchedule = () => {
 
       {formOpen && (
         <div className="fixed inset-0 z-40 bg-slate-900/45 backdrop-blur-[1px] sm:grid sm:place-items-center sm:p-3">
-          <div className="app-card flex h-[100dvh] w-full flex-col overflow-hidden rounded-none sm:h-auto sm:max-h-[92vh] sm:max-w-3xl sm:rounded-2xl">
+          <div className="app-card flex h-[100dvh] w-full flex-col overflow-hidden rounded-none border-slate-200 shadow-2xl sm:h-auto sm:max-h-[92vh] sm:max-w-3xl sm:rounded-[24px]">
             <div
               className="border-b border-slate-200 px-4 py-3"
               style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }}
@@ -2691,7 +2689,7 @@ const TeacherSchedule = () => {
                           roomName: '',
                         }));
                       }}
-                      className="px-3 py-2"
+                      className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10"
                       required
                     >
                       <option value="">-- Chọn trường --</option>
@@ -2720,7 +2718,7 @@ const TeacherSchedule = () => {
                           className: selectedClass?.name || prev.className,
                         }));
                       }}
-                      className="px-3 py-2"
+                      className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10"
                     >
                       <option value="">-- Chọn lớp --</option>
                       {classesBySelectedSchool.map((item) => (
@@ -2739,7 +2737,7 @@ const TeacherSchedule = () => {
                         setForm((prev) => ({ ...prev, className: event.target.value }))
                       }
                       placeholder="Ví dụ: 11A11"
-                      className="px-3 py-2"
+                      className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10"
                       required
                     />
                   </label>
@@ -2754,7 +2752,7 @@ const TeacherSchedule = () => {
                         setForm((prev) => ({ ...prev, subject: event.target.value }))
                       }
                       placeholder="Ví dụ: Tin học"
-                      className="px-3 py-2"
+                      className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10"
                       required
                     />
                   </label>
@@ -2772,7 +2770,7 @@ const TeacherSchedule = () => {
                           roomName: selectedRoom?.name || prev.roomName,
                         }));
                       }}
-                      className="px-3 py-2"
+                      className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10"
                     >
                       <option value="">-- Chọn phòng --</option>
                       {computerRooms.map((room) => (
@@ -2790,7 +2788,7 @@ const TeacherSchedule = () => {
                         setForm((prev) => ({ ...prev, roomName: event.target.value, roomId: '' }))
                       }
                       placeholder={form.roomId ? 'Đã lấy theo phòng đã chọn' : 'Ví dụ: P.Máy 03'}
-                      className="px-3 py-2"
+                      className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10"
                       disabled={Boolean(form.roomId)}
                     />
                   </label>
@@ -2802,7 +2800,7 @@ const TeacherSchedule = () => {
                         setForm((prev) => ({ ...prev, periodLabel: event.target.value }))
                       }
                       placeholder="Ví dụ: Tiết 1-2"
-                      className="px-3 py-2"
+                      className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10"
                     />
                   </label>
                 </div>
@@ -2814,7 +2812,7 @@ const TeacherSchedule = () => {
                       type="date"
                       value={form.date}
                       onChange={(event) => setForm((prev) => ({ ...prev, date: event.target.value }))}
-                      className="px-3 py-2"
+                      className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10"
                       required
                     />
                   </label>
@@ -2826,7 +2824,7 @@ const TeacherSchedule = () => {
                       onChange={(event) =>
                         setForm((prev) => ({ ...prev, startTime: event.target.value }))
                       }
-                      className="px-3 py-2"
+                      className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10"
                       required
                     />
                   </label>
@@ -2838,7 +2836,7 @@ const TeacherSchedule = () => {
                       onChange={(event) =>
                         setForm((prev) => ({ ...prev, endTime: event.target.value }))
                       }
-                      className="px-3 py-2"
+                      className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10"
                       required
                     />
                   </label>
