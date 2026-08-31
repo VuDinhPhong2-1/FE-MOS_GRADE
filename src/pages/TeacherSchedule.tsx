@@ -6,6 +6,7 @@ import {
   CheckCheck,
   ClipboardCheck,
   ClipboardList,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Clock,
@@ -2184,22 +2185,28 @@ const TeacherSchedule = () => {
                       <div className="flex-1">
                         <label className="grid gap-1.5 text-sm">
                           <span className="font-semibold text-slate-700">Trường áp dụng</span>
-                          <select
-                            value={roomManagerSchoolId}
-                            onChange={(event) => {
-                              const nextSchoolId = event.target.value;
-                              setRoomManagerSchoolId(nextSchoolId);
-                              resetRoomForm(nextSchoolId);
-                            }}
-                            className="min-w-[260px] bg-white px-3 py-2.5"
-                          >
-                            <option value="">-- Chọn trường --</option>
-                            {schools.map((item) => (
-                              <option key={item.id} value={item.id}>
-                                {item.name}
-                              </option>
-                            ))}
-                          </select>
+                          <div className="relative">
+                            <select
+                              value={roomManagerSchoolId}
+                              onChange={(event) => {
+                                const nextSchoolId = event.target.value;
+                                setRoomManagerSchoolId(nextSchoolId);
+                                resetRoomForm(nextSchoolId);
+                              }}
+                              className="min-w-[260px] w-full appearance-none bg-white px-3 py-2.5 pr-9"
+                            >
+                              <option value="">-- Chọn trường --</option>
+                              {schools.map((item) => (
+                                <option key={item.id} value={item.id}>
+                                  {item.name}
+                                </option>
+                              ))}
+                            </select>
+                            <ChevronDown
+                              size={16}
+                              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+                            />
+                          </div>
                         </label>
                       </div>
 
@@ -2661,300 +2668,318 @@ const TeacherSchedule = () => {
         </div>
       )}
 
-    {formOpen && (
-  <div className="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-sm sm:grid sm:place-items-center sm:p-4">
-    <div className="app-card flex h-[100dvh] w-full flex-col overflow-hidden rounded-none border-slate-200 shadow-2xl sm:h-auto sm:max-h-[92vh] sm:max-w-2xl sm:rounded-[24px]">
-      {/* Header */}
-      <div
-        className="shrink-0 border-b border-slate-200 bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.16),_transparent_40%),linear-gradient(135deg,_#ffffff,_#eff6ff_60%,_#f8fafc)] px-5 py-4"
-        style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top))' }}
-      >
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-start gap-3">
-            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-600/25">
-              <CalendarClock size={20} />
-            </div>
-            <div>
-              <h3 className="text-lg font-extrabold tracking-tight text-slate-900">
-                {editing ? 'Chỉnh sửa lịch dạy' : 'Tạo lịch dạy mới'}
-              </h3>
-              <p className="mt-0.5 text-sm text-slate-500">
-                {editing ? 'Cập nhật thông tin cho buổi dạy này.' : 'Điền thông tin để thêm một buổi dạy vào tuần.'}
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => setFormOpen(false)}
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-slate-200 bg-white/90 text-slate-500 shadow-sm transition hover:border-slate-300 hover:bg-white hover:text-slate-800"
-          >
-            <X size={16} />
-          </button>
-        </div>
-      </div>
-
-      <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
-        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto bg-slate-50/60 p-4 sm:p-5">
-
-          {/* Nhóm: Lớp học */}
-          <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
-            <div className="mb-3 flex items-center gap-2">
-              <Building2 size={15} className="text-blue-500" />
-              <h4 className="text-sm font-bold text-slate-800">Trường &amp; lớp học</h4>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <label className="grid gap-1.5 text-sm">
-                <span className="font-medium text-slate-600">Trường *</span>
-                <select
-                  value={form.schoolId}
-                  onChange={(event) => {
-                    const nextSchoolId = event.target.value;
-                    setForm((prev) => ({
-                      ...prev,
-                      schoolId: nextSchoolId,
-                      classId: '',
-                      className: '',
-                      roomId: '',
-                      roomName: '',
-                    }));
-                  }}
-                  className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10"
-                  required
-                >
-                  <option value="">-- Chọn trường --</option>
-                  {schools.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="grid gap-1.5 text-sm">
-                <span className="font-medium text-slate-600">Lớp có sẵn</span>
-                <select
-                  value={form.classId}
-                  disabled={!form.schoolId}
-                  onChange={(event) => {
-                    const nextClassId = event.target.value;
-                    const selectedClass = classesBySelectedSchool.find(
-                      (item) => item.id === nextClassId
-                    );
-                    setForm((prev) => ({
-                      ...prev,
-                      schoolId: selectedClass?.schoolId || prev.schoolId,
-                      classId: nextClassId,
-                      className: selectedClass?.name || prev.className,
-                    }));
-                  }}
-                  className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
-                >
-                  <option value="">-- Chọn lớp --</option>
-                  {classesBySelectedSchool.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="grid gap-1.5 text-sm sm:col-span-2">
-                <span className="font-medium text-slate-600">Tên lớp hiển thị *</span>
-                <input
-                  value={form.className}
-                  onChange={(event) =>
-                    setForm((prev) => ({ ...prev, className: event.target.value }))
-                  }
-                  placeholder="Ví dụ: 11A11"
-                  className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10"
-                  required
-                />
-              </label>
-            </div>
-          </div>
-
-          {/* Nhóm: Môn học & phòng */}
-          <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
-            <div className="mb-3 flex items-center gap-2">
-              <Monitor size={15} className="text-indigo-500" />
-              <h4 className="text-sm font-bold text-slate-800">Môn học &amp; phòng dạy</h4>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <label className="grid gap-1.5 text-sm">
-                <span className="font-medium text-slate-600">Môn học *</span>
-                <input
-                  value={form.subject}
-                  onChange={(event) =>
-                    setForm((prev) => ({ ...prev, subject: event.target.value }))
-                  }
-                  placeholder="Ví dụ: Tin học"
-                  className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10"
-                  required
-                />
-              </label>
-
-              <label className="grid gap-1.5 text-sm">
-                <span className="font-medium text-slate-600">Tiết mấy</span>
-                <input
-                  value={form.periodLabel}
-                  onChange={(event) =>
-                    setForm((prev) => ({ ...prev, periodLabel: event.target.value }))
-                  }
-                  placeholder="Ví dụ: Tiết 1-2"
-                  className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10"
-                />
-              </label>
-
-              <label className="grid gap-1.5 text-sm">
-                <span className="font-medium text-slate-600">Phòng máy đã cấu hình</span>
-                <select
-                  value={form.roomId}
-                  disabled={!form.schoolId || computerRoomsLoading}
-                  onChange={(event) => {
-                    const nextRoomId = event.target.value;
-                    const selectedRoom = computerRooms.find((room) => room.id === nextRoomId);
-                    setForm((prev) => ({
-                      ...prev,
-                      roomId: nextRoomId,
-                      roomName: selectedRoom?.name || prev.roomName,
-                    }));
-                  }}
-                  className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
-                >
-                  <option value="">-- Chọn phòng --</option>
-                  {computerRooms.map((room) => (
-                    <option key={room.id} value={room.id}>
-                      {room.name} ({room.totalMachinesText}, lỗi: {room.brokenMachineCount})
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="grid gap-1.5 text-sm">
-                <span className="font-medium text-slate-600">Phòng học / phòng máy</span>
-                <input
-                  value={form.roomName}
-                  onChange={(event) =>
-                    setForm((prev) => ({ ...prev, roomName: event.target.value, roomId: '' }))
-                  }
-                  placeholder={form.roomId ? 'Đã lấy theo phòng đã chọn' : 'Ví dụ: P.Máy 03'}
-                  className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
-                  disabled={Boolean(form.roomId)}
-                />
-              </label>
-            </div>
-          </div>
-
-          {/* Nhóm: Thời gian */}
-          <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
-            <div className="mb-3 flex items-center gap-2">
-              <Clock size={15} className="text-emerald-500" />
-              <h4 className="text-sm font-bold text-slate-800">Thời gian</h4>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-3">
-              <label className="grid gap-1.5 text-sm">
-                <span className="font-medium text-slate-600">Ngày dạy *</span>
-                <input
-                  type="date"
-                  value={form.date}
-                  onChange={(event) => setForm((prev) => ({ ...prev, date: event.target.value }))}
-                  className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10"
-                  required
-                />
-              </label>
-              <label className="grid gap-1.5 text-sm">
-                <span className="font-medium text-slate-600">Giờ bắt đầu *</span>
-                <input
-                  type="time"
-                  value={form.startTime}
-                  onChange={(event) =>
-                    setForm((prev) => ({ ...prev, startTime: event.target.value }))
-                  }
-                  className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10"
-                  required
-                />
-              </label>
-              <label className="grid gap-1.5 text-sm">
-                <span className="font-medium text-slate-600">Giờ kết thúc *</span>
-                <input
-                  type="time"
-                  value={form.endTime}
-                  onChange={(event) =>
-                    setForm((prev) => ({ ...prev, endTime: event.target.value }))
-                  }
-                  className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10"
-                  required
-                />
-              </label>
-            </div>
-          </div>
-
-          {/* Nhóm: Ghi chú & trạng thái */}
-          <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
-            <div className="mb-3 flex items-center gap-2">
-              <MessageSquareText size={15} className="text-amber-500" />
-              <h4 className="text-sm font-bold text-slate-800">Ghi chú</h4>
-            </div>
-            <label className="grid gap-1.5 text-sm">
-              <textarea
-                value={form.notes}
-                onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))}
-                className="min-h-[80px] rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10"
-                placeholder="Ghi chú thêm..."
-              />
-            </label>
-
-            {editing && (
-              <label className="mt-3 inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700">
-                <input
-                  type="checkbox"
-                  checked={form.isActive}
-                  onChange={(event) =>
-                    setForm((prev) => ({ ...prev, isActive: event.target.checked }))
-                  }
-                  className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                />
-                Lịch đang hoạt động
-              </label>
-            )}
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div
-          className="shrink-0 border-t border-slate-200 bg-white px-4 py-3 sm:px-5"
-          style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}
-        >
-          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-            <button
-              type="button"
-              onClick={() => setFormOpen(false)}
-              className="app-btn-secondary w-full px-4 py-2.5 text-sm sm:w-auto"
+      {formOpen && (
+        <div className="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-sm sm:grid sm:place-items-center sm:p-4">
+          <div className="app-card flex h-[100dvh] w-full flex-col overflow-hidden rounded-none border-slate-200 shadow-2xl sm:h-auto sm:max-h-[92vh] sm:max-w-2xl sm:rounded-[24px]">
+            {/* Header */}
+            <div
+              className="shrink-0 border-b border-slate-200 bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.16),_transparent_40%),linear-gradient(135deg,_#ffffff,_#eff6ff_60%,_#f8fafc)] px-5 py-4"
+              style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top))' }}
             >
-              Hủy
-            </button>
-            <button
-              type="submit"
-              className="app-btn-primary inline-flex w-full items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold sm:w-auto"
-            >
-              {editing ? (
-                <>
-                  <Pencil size={15} />
-                  Lưu cập nhật
-                </>
-              ) : (
-                <>
-                  <Plus size={15} />
-                  Tạo lịch
-                </>
-              )}
-            </button>
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-600/25">
+                    <CalendarClock size={20} />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-extrabold tracking-tight text-slate-900">
+                      {editing ? 'Chỉnh sửa lịch dạy' : 'Tạo lịch dạy mới'}
+                    </h3>
+                    <p className="mt-0.5 text-sm text-slate-500">
+                      {editing ? 'Cập nhật thông tin cho buổi dạy này.' : 'Điền thông tin để thêm một buổi dạy vào tuần.'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setFormOpen(false)}
+                  className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-slate-200 bg-white/90 text-slate-500 shadow-sm transition hover:border-slate-300 hover:bg-white hover:text-slate-800"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            </div>
+
+            <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+              <div className="min-h-0 flex-1 space-y-4 overflow-y-auto bg-slate-50/60 p-4 sm:p-5">
+
+                {/* Nhóm: Lớp học */}
+                <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
+                  <div className="mb-3 flex items-center gap-2">
+                    <Building2 size={15} className="text-blue-500" />
+                    <h4 className="text-sm font-bold text-slate-800">Trường &amp; lớp học</h4>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <label className="grid gap-1.5 text-sm">
+                      <span className="font-medium text-slate-600">Trường *</span>
+                      <div className="relative">
+                        <select
+                          value={form.schoolId}
+                          onChange={(event) => {
+                            const nextSchoolId = event.target.value;
+                            setForm((prev) => ({
+                              ...prev,
+                              schoolId: nextSchoolId,
+                              classId: '',
+                              className: '',
+                              roomId: '',
+                              roomName: '',
+                            }));
+                          }}
+                          className="w-full appearance-none rounded-xl border-slate-200 bg-white px-3 py-2.5 pr-9 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10"
+                          required
+                        >
+                          <option value="">-- Chọn trường --</option>
+                          {schools.map((item) => (
+                            <option key={item.id} value={item.id}>
+                              {item.name}
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown
+                          size={16}
+                          className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+                        />
+                      </div>
+                    </label>
+
+                    <label className="grid gap-1.5 text-sm">
+                      <span className="font-medium text-slate-600">Lớp có sẵn</span>
+                      <div className="relative">
+                        <select
+                          value={form.classId}
+                          disabled={!form.schoolId}
+                          onChange={(event) => {
+                            const nextClassId = event.target.value;
+                            const selectedClass = classesBySelectedSchool.find(
+                              (item) => item.id === nextClassId
+                            );
+                            setForm((prev) => ({
+                              ...prev,
+                              schoolId: selectedClass?.schoolId || prev.schoolId,
+                              classId: nextClassId,
+                              className: selectedClass?.name || prev.className,
+                            }));
+                          }}
+                          className="w-full appearance-none rounded-xl border-slate-200 bg-white px-3 py-2.5 pr-9 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
+                        >
+                          <option value="">-- Chọn lớp --</option>
+                          {classesBySelectedSchool.map((item) => (
+                            <option key={item.id} value={item.id}>
+                              {item.name}
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown
+                          size={16}
+                          className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+                        />
+                      </div>
+                    </label>
+
+                    <label className="grid gap-1.5 text-sm sm:col-span-2">
+                      <span className="font-medium text-slate-600">Tên lớp hiển thị *</span>
+                      <input
+                        value={form.className}
+                        onChange={(event) =>
+                          setForm((prev) => ({ ...prev, className: event.target.value }))
+                        }
+                        placeholder="Ví dụ: 11A11"
+                        className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10"
+                        required
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                {/* Nhóm: Môn học & phòng */}
+                <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
+                  <div className="mb-3 flex items-center gap-2">
+                    <Monitor size={15} className="text-indigo-500" />
+                    <h4 className="text-sm font-bold text-slate-800">Môn học &amp; phòng dạy</h4>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <label className="grid gap-1.5 text-sm">
+                      <span className="font-medium text-slate-600">Môn học *</span>
+                      <input
+                        value={form.subject}
+                        onChange={(event) =>
+                          setForm((prev) => ({ ...prev, subject: event.target.value }))
+                        }
+                        placeholder="Ví dụ: Tin học"
+                        className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10"
+                        required
+                      />
+                    </label>
+
+                    <label className="grid gap-1.5 text-sm">
+                      <span className="font-medium text-slate-600">Tiết mấy</span>
+                      <input
+                        value={form.periodLabel}
+                        onChange={(event) =>
+                          setForm((prev) => ({ ...prev, periodLabel: event.target.value }))
+                        }
+                        placeholder="Ví dụ: Tiết 1-2"
+                        className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10"
+                      />
+                    </label>
+
+                    <label className="grid gap-1.5 text-sm">
+                      <span className="font-medium text-slate-600">Phòng máy đã cấu hình</span>
+                      <div className="relative">
+                        <select
+                          value={form.roomId}
+                          disabled={!form.schoolId || computerRoomsLoading}
+                          onChange={(event) => {
+                            const nextRoomId = event.target.value;
+                            const selectedRoom = computerRooms.find((room) => room.id === nextRoomId);
+                            setForm((prev) => ({
+                              ...prev,
+                              roomId: nextRoomId,
+                              roomName: selectedRoom?.name || prev.roomName,
+                            }));
+                          }}
+                          className="w-full appearance-none rounded-xl border-slate-200 bg-white px-3 py-2.5 pr-9 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
+                        >
+                          <option value="">-- Chọn phòng --</option>
+                          {computerRooms.map((room) => (
+                            <option key={room.id} value={room.id}>
+                              {room.name} ({room.totalMachinesText}, lỗi: {room.brokenMachineCount})
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown
+                          size={16}
+                          className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+                        />
+                      </div>
+                    </label>
+
+                    <label className="grid gap-1.5 text-sm">
+                      <span className="font-medium text-slate-600">Phòng học / phòng máy</span>
+                      <input
+                        value={form.roomName}
+                        onChange={(event) =>
+                          setForm((prev) => ({ ...prev, roomName: event.target.value, roomId: '' }))
+                        }
+                        placeholder={form.roomId ? 'Đã lấy theo phòng đã chọn' : 'Ví dụ: P.Máy 03'}
+                        className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
+                        disabled={Boolean(form.roomId)}
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                {/* Nhóm: Thời gian */}
+                <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
+                  <div className="mb-3 flex items-center gap-2">
+                    <Clock size={15} className="text-emerald-500" />
+                    <h4 className="text-sm font-bold text-slate-800">Thời gian</h4>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <label className="grid gap-1.5 text-sm">
+                      <span className="font-medium text-slate-600">Ngày dạy *</span>
+                      <input
+                        type="date"
+                        value={form.date}
+                        onChange={(event) => setForm((prev) => ({ ...prev, date: event.target.value }))}
+                        className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10"
+                        required
+                      />
+                    </label>
+                    <label className="grid gap-1.5 text-sm">
+                      <span className="font-medium text-slate-600">Giờ bắt đầu *</span>
+                      <input
+                        type="time"
+                        value={form.startTime}
+                        onChange={(event) =>
+                          setForm((prev) => ({ ...prev, startTime: event.target.value }))
+                        }
+                        className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10"
+                        required
+                      />
+                    </label>
+                    <label className="grid gap-1.5 text-sm">
+                      <span className="font-medium text-slate-600">Giờ kết thúc *</span>
+                      <input
+                        type="time"
+                        value={form.endTime}
+                        onChange={(event) =>
+                          setForm((prev) => ({ ...prev, endTime: event.target.value }))
+                        }
+                        className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10"
+                        required
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                {/* Nhóm: Ghi chú & trạng thái */}
+                <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
+                  <div className="mb-3 flex items-center gap-2">
+                    <MessageSquareText size={15} className="text-amber-500" />
+                    <h4 className="text-sm font-bold text-slate-800">Ghi chú</h4>
+                  </div>
+                  <label className="grid gap-1.5 text-sm">
+                    <textarea
+                      value={form.notes}
+                      onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))}
+                      className="min-h-[80px] rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10"
+                      placeholder="Ghi chú thêm..."
+                    />
+                  </label>
+
+                  {editing && (
+                    <label className="mt-3 inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700">
+                      <input
+                        type="checkbox"
+                        checked={form.isActive}
+                        onChange={(event) =>
+                          setForm((prev) => ({ ...prev, isActive: event.target.checked }))
+                        }
+                        className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      Lịch đang hoạt động
+                    </label>
+                  )}
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div
+                className="shrink-0 border-t border-slate-200 bg-white px-4 py-3 sm:px-5"
+                style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}
+              >
+                <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setFormOpen(false)}
+                    className="app-btn-secondary w-full px-4 py-2.5 text-sm sm:w-auto"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    className="app-btn-primary inline-flex w-full items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold sm:w-auto"
+                  >
+                    {editing ? (
+                      <>
+                        <Pencil size={15} />
+                        Lưu cập nhật
+                      </>
+                    ) : (
+                      <>
+                        <Plus size={15} />
+                        Tạo lịch
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </form>
           </div>
         </div>
-      </form>
-    </div>
-  </div>
-)}
+      )}
     </div>
   );
 };
