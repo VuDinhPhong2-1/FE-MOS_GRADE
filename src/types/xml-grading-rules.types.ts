@@ -25,7 +25,7 @@ export interface XmlGradingCondition {
  * Thêm loại mới bằng cách mở rộng union này.
  */
 export type SpecialConditionType =
-  | 'pictureBullet';
+  | 'pictureBullet'
   | 'insertedImage';
 
   export type ImageWrapType =
