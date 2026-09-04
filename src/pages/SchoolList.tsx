@@ -226,7 +226,7 @@ const SchoolList = () => {
           {/* Table Container in M3 Style */}
           <div className="overflow-hidden rounded-3xl border border-m3-outline-variant/60 bg-m3-surface-container shadow-xs">
             <div className="overflow-x-auto">
-              <table className="min-w-[560px] w-full border-collapse text-left">
+              <table className="min-w-140 w-full border-collapse text-left">
                 <thead>
                   <tr className="border-b border-m3-outline-variant/60 bg-m3-surface-container-high text-xs font-bold uppercase tracking-wider text-m3-on-surface-variant">
                     <th className="w-16 px-6 py-4">STT</th>
@@ -418,9 +418,8 @@ const SchoolList = () => {
                       value={formData.attendanceSpreadsheetId || ''}
                       onChange={handleChange}
                       disabled={!canEditAttendanceSpreadsheetId}
-                      className={`w-full rounded-2xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2.5 text-sm text-m3-on-surface outline-none focus:border-m3-primary focus:ring-2 focus:ring-m3-primary/20 ${
-                        canEditAttendanceSpreadsheetId ? '' : 'cursor-not-allowed opacity-60 bg-m3-surface-container-high'
-                      }`}
+                      className={`w-full rounded-2xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2.5 text-sm text-m3-on-surface outline-none focus:border-m3-primary focus:ring-2 focus:ring-m3-primary/20 ${canEditAttendanceSpreadsheetId ? '' : 'cursor-not-allowed opacity-60 bg-m3-surface-container-high'
+                        }`}
                       placeholder="Dán Spreadsheet ID hoặc link Google Sheet"
                     />
                     <p className="mt-1 text-xs text-m3-on-surface-variant">
