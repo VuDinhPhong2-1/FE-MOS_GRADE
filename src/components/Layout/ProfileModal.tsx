@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Icon, ProgressIndicator } from '@bug-on/m3-expressive';
 import { useAuth } from '../../context/AuthContext';
 import { authService } from '../../services/auth.service';
@@ -17,16 +18,21 @@ interface ProfileFormState {
 }
 
 export const ProfileModal = ({ isOpen, onClose, onAvatarPreview }: ProfileModalProps) => {
-  const { user, getAccessToken, updateUser } = useAuth();
+  const { user, getAccessToken, updateUser, logout } = useAuth();
+  const navigate = useNavigate();
   const [form, setForm] = useState<ProfileFormState>({
     fullName: '',
     phoneNumber: '',
     avatar: '',
   });
   const [saving, setSaving] = useState(false);
+  const [confirmLogout, setConfirmLogout] = useState(false);
 
   useEffect(() => {
-    if (!isOpen || !user) return;
+    if (!isOpen || !user) {
+      setConfirmLogout(false);
+      return;
+    }
     const initial = {
       fullName: user.fullName || '',
       phoneNumber: user.phoneNumber || '',
@@ -40,6 +46,13 @@ export const ProfileModal = ({ isOpen, onClose, onAvatarPreview }: ProfileModalP
   }, [isOpen, user, onAvatarPreview]);
 
   if (!isOpen || !user) return null;
+
+  const handleLogout = () => {
+    onClose();
+    logout();
+    navigate('/login', { replace: true });
+    notify.success('Đã đăng xuất thành công');
+  };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -83,7 +96,7 @@ export const ProfileModal = ({ isOpen, onClose, onAvatarPreview }: ProfileModalP
           <button
             type="button"
             onClick={onClose}
-            className="grid h-9 w-9 place-items-center rounded-full border border-m3-outline-variant text-m3-on-surface-variant transition-colors hover:bg-m3-surface-container-highest hover:text-m3-on-surface"
+            className="grid h-9 w-9 place-items-center rounded-full border border-m3-outline-variant text-m3-on-surface-variant transition-colors hover:bg-m3-surface-container-highest hover:text-m3-on-surface cursor-pointer"
             aria-label="Đóng hộp thoại"
           >
             <Icon name="close" className="text-lg" />
@@ -168,23 +181,54 @@ export const ProfileModal = ({ isOpen, onClose, onAvatarPreview }: ProfileModalP
           </div>
 
           {/* Footer actions */}
-          <div className="flex justify-end gap-2.5 border-t border-m3-outline-variant pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-full border border-m3-outline-variant px-5 py-2.5 text-sm font-semibold text-m3-on-surface transition-colors hover:bg-m3-surface-container-highest"
-              disabled={saving}
-            >
-              Hủy
-            </button>
-            <button
-              type="submit"
-              className="inline-flex items-center gap-2 rounded-full bg-m3-primary px-5 py-2.5 text-sm font-semibold text-m3-on-primary transition-opacity hover:opacity-90 disabled:opacity-50"
-              disabled={saving}
-            >
-              {saving ? <ProgressIndicator variant="circular" shape="wavy" size={16} aria-label="Đang lưu" /> : null}
-              Lưu thay đổi
-            </button>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-m3-outline-variant pt-4">
+            {confirmLogout ? (
+              <div className="inline-flex items-center gap-2 rounded-full border border-m3-error/50 bg-m3-error-container/30 px-3 py-1.5 text-xs font-semibold text-m3-error animate-in fade-in zoom-in duration-150">
+                <span>Xác nhận đăng xuất?</span>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="rounded-full bg-m3-error px-3 py-1 text-xs font-bold text-m3-on-error transition-opacity hover:opacity-90 cursor-pointer shadow-xs"
+                >
+                  Đồng ý
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfirmLogout(false)}
+                  className="rounded-full border border-m3-outline-variant bg-m3-surface-container px-2.5 py-1 text-xs font-medium text-m3-on-surface transition-colors hover:bg-m3-surface-container-highest cursor-pointer"
+                >
+                  Hủy
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setConfirmLogout(true)}
+                className="inline-flex items-center gap-2 rounded-full border border-m3-error/40 bg-m3-error-container/20 px-4 py-2.5 text-sm font-semibold text-m3-error transition-colors hover:bg-m3-error-container/40 cursor-pointer"
+              >
+                <Icon name="logout" className="text-base" />
+                Đăng xuất
+              </button>
+            )}
+
+            <div className="flex items-center gap-2.5">
+              <button
+                type="button"
+                onClick={onClose}
+                className="rounded-full border border-m3-outline-variant px-5 py-2.5 text-sm font-semibold text-m3-on-surface transition-colors hover:bg-m3-surface-container-highest cursor-pointer"
+                disabled={saving}
+              >
+                Hủy
+              </button>
+              <button
+                type="submit"
+                className="inline-flex items-center gap-2 rounded-full bg-m3-primary px-5 py-2.5 text-sm font-semibold text-m3-on-primary transition-opacity hover:opacity-90 disabled:opacity-50 cursor-pointer"
+                disabled={saving}
+              >
+                {saving ? <ProgressIndicator variant="circular" shape="wavy" size={16} aria-label="Đang lưu" /> : null}
+                Lưu thay đổi
+              </button>
+            </div>
           </div>
         </form>
       </div>

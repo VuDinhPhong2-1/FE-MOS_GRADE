@@ -5,11 +5,10 @@ import ProfileModal from './ProfileModal';
 import ThemeToggle from '../ThemeToggle';
 
 interface HeaderProps {
-  onToggleSidebar: () => void;
   fullName?: string;
 }
 
-const Header = ({ onToggleSidebar, fullName = 'Giáo viên' }: HeaderProps) => {
+const Header = ({ fullName = 'Giáo viên' }: HeaderProps) => {
   const { user } = useAuth();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [previewAvatar, setPreviewAvatar] = useState<string | null>(null);
@@ -18,22 +17,22 @@ const Header = ({ onToggleSidebar, fullName = 'Giáo viên' }: HeaderProps) => {
   return (
     <>
       <header
-        className="sticky top-0 z-20 flex items-center border-b border-m3-outline-variant bg-m3-surface/85 px-3 shadow-xs backdrop-blur-md transition-colors sm:px-5"
+        className="sticky top-0 z-20 flex items-center justify-between border-b border-m3-outline-variant bg-m3-surface/85 px-3 shadow-xs backdrop-blur-md transition-colors sm:px-5"
         style={{
           minHeight: 'calc(4rem + env(safe-area-inset-top))',
           paddingTop: 'env(safe-area-inset-top)',
         }}
       >
-        <button
-          onClick={onToggleSidebar}
-          className="grid h-10 w-10 place-items-center rounded-2xl border border-m3-outline-variant bg-m3-surface-container text-m3-on-surface shadow-xs transition-colors hover:bg-m3-surface-container-high"
-          aria-label="Bật hoặc tắt thanh bên"
-        >
-          <Icon name="menu" className="text-xl" />
-        </button>
+        {/* Mobile: Chỉ hiển thị icon M thương hiệu (không kèm label) */}
+        <div className="flex items-center lg:hidden">
+          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-m3-primary text-sm font-extrabold text-m3-on-primary shadow-xs select-none">
+            M
+          </div>
+        </div>
 
         <div className="ml-auto flex min-w-0 items-center gap-3">
-          <ThemeToggle />
+          {/* ThemeToggle: hiển thị ở Header trên mobile, ẩn trên desktop (vì đã có ở Navigation Rail) */}
+          <ThemeToggle className="lg:hidden" />
 
           <div className="hidden text-sm text-m3-on-surface-variant sm:block">
             Xin chào, <span className="font-semibold text-m3-on-surface">{displayName}</span>
