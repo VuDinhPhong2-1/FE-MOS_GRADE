@@ -11,8 +11,15 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({ className = '' }) => {
   const isDark = effectiveMode === 'dark';
 
   const toggleTheme = () => {
-    // Nếu đang ở system hoặc light -> chuyển sang đối diện
-    setMode(isDark ? 'light' : 'dark');
+    const nextMode = isDark ? 'light' : 'dark';
+    setMode(nextMode);
+    if (typeof document !== 'undefined') {
+      if (nextMode === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    }
   };
 
   return (
