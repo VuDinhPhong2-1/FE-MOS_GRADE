@@ -1,4 +1,5 @@
 @import "tailwindcss" source(none);
+@import "@bug-on/m3-tailwind";
 @import "@bug-on/m3-expressive/index.css";
 @import "@bug-on/m3-expressive/typography.css";
 @source "../src/{App,main}.tsx";
@@ -19,10 +20,14 @@ body,
   min-height: 100%;
 }
 
+html,
+body {
+  overflow-x: hidden;
+}
+
 body {
   margin: 0;
   font-family: "Google Sans Flex", "Be Vietnam Pro", system-ui, -apple-system, sans-serif;
-  font-variation-settings: "ROND" 100;
   color: var(--md-sys-color-on-surface);
   background-color: var(--md-sys-color-surface);
   transition: background-color 0.25s ease, color 0.25s ease;
@@ -40,24 +45,6 @@ button {
 button:disabled {
   cursor: not-allowed;
   opacity: 0.65;
-}
-
-input,
-select,
-textarea {
-  border: 1px solid var(--md-sys-color-outline-variant);
-  background: var(--md-sys-color-surface-container);
-  color: var(--md-sys-color-on-surface);
-  border-radius: 10px;
-  outline: none;
-  transition: box-shadow 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
-}
-
-input:focus,
-select:focus,
-textarea:focus {
-  border-color: var(--md-sys-color-primary);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--md-sys-color-primary) 20%, transparent);
 }
 
 table {
