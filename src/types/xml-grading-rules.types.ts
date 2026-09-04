@@ -26,6 +26,30 @@ export interface XmlGradingCondition {
  */
 export type SpecialConditionType =
   | 'pictureBullet';
+  | 'insertedImage';
+
+  export type ImageWrapType =
+  | 'inline'
+  | 'square'
+  | 'tight'
+  | 'through'
+  | 'topAndBottom'
+  | 'behind'
+  | 'inFront';
+
+  export interface ImageInsertConfig {
+  assetId?: string;
+  imageHash?: string;
+  /** Để trống nếu không cần kiểm tra chế độ ngắt dòng, chỉ kiểm tra đúng ảnh. */
+  wrapType?: ImageWrapType;
+}
+
+export interface SpecialCondition {
+  type: SpecialConditionType;
+  score: number;
+  config?: PictureBulletConfig;
+  imageInsertConfig?: ImageInsertConfig; // MỚI
+}
 
 export interface PictureBulletConfig {
   /**

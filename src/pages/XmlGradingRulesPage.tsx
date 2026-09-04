@@ -28,6 +28,7 @@ import type {
 } from '../types/xml-grading-rules.types';
 import { notify } from '../utils/notify';
 import PictureBulletEditor from '../components/PictureBulletEditor';
+import InsertedImageEditor from '../components/InsertedImageEditor'; 
 
 const compareModes: XmlCompareMode[] = ['xmlContainsNormalized', 'xmlContains', 'xmlEquivalentWholeFile', 'exactStringContains'];
 const matchPolicies: XmlMatchPolicy[] = ['all', 'any', 'ordered'];
@@ -64,6 +65,12 @@ const specialConditionOptions: Array<{
       label: 'Dấu đầu dòng bằng hình ảnh',
       description:
         'Kiểm tra paragraph có sử dụng đúng hình ảnh làm dấu đầu dòng hay không.',
+    },
+    {
+      value: 'insertedImage',
+      label: 'Chèn đúng hình ảnh vào tài liệu',
+      description:
+        'Kiểm tra tài liệu có chèn đúng file ảnh yêu cầu (so khớp theo nội dung ảnh) và đúng chế độ ngắt dòng văn bản (Tight/Square/Through/Top and Bottom/Inline...) hay không.',
     },
   ];
 
@@ -1038,6 +1045,15 @@ const XmlGradingRulesPage = () => {
                                                               },
                                                             });
                                                           }
+                                                          if (value === 'insertedImage') {
+                                                            updateTaskSpecialCondition(pi, ti, {
+                                                              type: 'insertedImage',
+                                                              score: task.specialCondition?.score ?? 0,
+                                                              imageInsertConfig: task.specialCondition?.imageInsertConfig ?? {
+                                                                wrapType: 'tight',
+                                                              },
+                                                            });
+                                                          }
                                                         }}
                                                         className="mt-1 w-full appearance-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 pr-10 text-sm font-medium text-slate-800 shadow-sm outline-none transition hover:border-slate-300 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
                                                       >
@@ -1134,8 +1150,21 @@ const XmlGradingRulesPage = () => {
                                                 )}
                                               </>
                                             )}
-                                          </div>
 
+                                                {task.specialCondition?.type === 'insertedImage' && (
+                                                  <InsertedImageEditor
+                                                    config={task.specialCondition.imageInsertConfig}
+                                                    getAccessToken={getAccessToken}
+                                                    onChange={(imageInsertConfig: ImageInsertConfig) => {
+                                                      updateTaskSpecialCondition(pi, ti, {
+                                                        ...task.specialCondition!,
+                                                        type: 'insertedImage',
+                                                        imageInsertConfig,
+                                                      });
+                                                    }}
+                                                  />
+                                                )}
+                                          </div>
                                           <div className="mt-5">
                                             <div className="mb-3 flex items-center justify-between gap-2">
                                               <div>
