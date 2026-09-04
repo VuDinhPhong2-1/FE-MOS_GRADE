@@ -18,7 +18,7 @@ const Header = ({ onToggleSidebar, fullName = 'Giáo viên' }: HeaderProps) => {
   return (
     <>
       <header
-        className="sticky top-0 z-20 flex items-center border-b border-slate-200/80 bg-white/85 px-3 shadow-sm backdrop-blur transition-colors dark:border-slate-800 dark:bg-slate-900/85 sm:px-5"
+        className="sticky top-0 z-20 flex items-center border-b border-[var(--md-sys-color-outline-variant)] bg-[var(--md-sys-color-surface)]/85 px-3 shadow-sm backdrop-blur transition-colors sm:px-5"
         style={{
           minHeight: 'calc(4rem + env(safe-area-inset-top))',
           paddingTop: 'env(safe-area-inset-top)',
@@ -26,7 +26,7 @@ const Header = ({ onToggleSidebar, fullName = 'Giáo viên' }: HeaderProps) => {
       >
         <button
           onClick={onToggleSidebar}
-          className="rounded-xl border border-slate-200 bg-white p-2 text-slate-600 shadow-sm hover:bg-slate-50 hover:text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white"
+          className="rounded-xl border border-[var(--md-sys-color-outline-variant)] bg-[var(--md-sys-color-surface-container)] p-2 text-[var(--md-sys-color-on-surface)] shadow-sm hover:bg-[var(--md-sys-color-surface-container-high)]"
           aria-label="Bật hoặc tắt thanh bên"
         >
           <Menu size={20} />
@@ -35,14 +35,14 @@ const Header = ({ onToggleSidebar, fullName = 'Giáo viên' }: HeaderProps) => {
         <div className="ml-auto flex min-w-0 items-center gap-3">
           <ThemeToggle />
 
-          <div className="hidden text-sm text-slate-600 dark:text-slate-300 sm:block">
-            Xin chào, <span className="font-semibold text-slate-900 dark:text-white">{displayName}</span>
+          <div className="hidden text-sm text-[var(--md-sys-color-on-surface-variant)] sm:block">
+            Xin chào, <span className="font-semibold text-[var(--md-sys-color-on-surface)]">{displayName}</span>
           </div>
 
           <button
             type="button"
             onClick={() => setIsProfileOpen(true)}
-            className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-800 shadow-sm hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+            className="inline-flex items-center gap-2 rounded-full border border-[var(--md-sys-color-outline-variant)] bg-[var(--md-sys-color-surface-container)] px-3 py-1.5 text-sm font-semibold text-[var(--md-sys-color-on-surface)] shadow-sm hover:bg-[var(--md-sys-color-surface-container-high)]"
             aria-label="Chỉnh sửa thông tin tài khoản"
           >
             <div

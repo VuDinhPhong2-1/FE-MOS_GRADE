@@ -7,38 +7,6 @@
 @source "../src/components/{ClassAnalyticsPanel,ErrorModal,GradingModal,LocalAgentCompactPanel,LocalAgentPanel,ResultCard,ThemeToggle,ToastCenter,ViewAllScoresModal}.tsx";
 @source "../src/components/Layout/{Header,Layout,ProfileModal,Sidebar}.tsx";
 
-:root {
-  --bg-page: var(--md-sys-color-surface, #fef7ff);
-  --bg-page-alt: var(--md-sys-color-surface-container-low, #f7f2fa);
-  --surface: var(--md-sys-color-surface-container, #f3edf7);
-  --surface-muted: var(--md-sys-color-surface-container-low, #f7f2fa);
-  --text-main: var(--md-sys-color-on-surface, #1d1b20);
-  --text-soft: var(--md-sys-color-on-surface-variant, #49454f);
-  --border-soft: var(--md-sys-color-outline-variant, #cac4d0);
-  --primary: var(--md-sys-color-primary, #1b6ef3);
-  --primary-strong: var(--md-sys-color-on-primary-container, #001d36);
-  --success: #059669;
-  --danger: var(--md-sys-color-error, #ba1a1a);
-  --shadow-card: 0 8px 30px rgba(15, 23, 42, 0.08);
-  --shadow-soft: 0 2px 10px rgba(15, 23, 42, 0.06);
-}
-
-[data-theme="dark"],
-.dark {
-  color-scheme: dark;
-  --bg-page: var(--md-sys-color-surface, #141218);
-  --bg-page-alt: var(--md-sys-color-surface-container-lowest, #0f0d13);
-  --surface: var(--md-sys-color-surface-container, #211f26);
-  --surface-muted: var(--md-sys-color-surface-container-low, #1d1b20);
-  --text-main: var(--md-sys-color-on-surface, #e6e1e5);
-  --text-soft: var(--md-sys-color-on-surface-variant, #cac4d0);
-  --border-soft: var(--md-sys-color-outline-variant, #49454f);
-  --primary: var(--md-sys-color-primary, #a8c7fa);
-  --primary-strong: var(--md-sys-color-primary-container, #004a77);
-  --shadow-card: 0 8px 30px rgba(0, 0, 0, 0.35);
-  --shadow-soft: 0 2px 10px rgba(0, 0, 0, 0.25);
-}
-
 *,
 *::before,
 *::after {
@@ -55,23 +23,9 @@ body {
   margin: 0;
   font-family: "Google Sans Flex", "Be Vietnam Pro", system-ui, -apple-system, sans-serif;
   font-variation-settings: "ROND" 100;
-  color: var(--text-main);
-  background-color: var(--bg-page);
+  color: var(--md-sys-color-on-surface);
+  background-color: var(--md-sys-color-surface);
   transition: background-color 0.25s ease, color 0.25s ease;
-}
-
-body:not([data-theme="dark"]) {
-  background-image:
-    radial-gradient(1100px 500px at -5% -15%, color-mix(in srgb, var(--primary) 12%, transparent) 0%, transparent 60%),
-    radial-gradient(900px 420px at 110% -10%, color-mix(in srgb, var(--md-sys-color-tertiary, #10b981) 10%, transparent) 0%, transparent 60%),
-    linear-gradient(180deg, var(--bg-page-alt), var(--bg-page));
-}
-
-[data-theme="dark"] body,
-body.dark {
-  background-image:
-    radial-gradient(1100px 500px at -5% -15%, color-mix(in srgb, var(--primary) 15%, transparent) 0%, transparent 60%),
-    linear-gradient(180deg, var(--bg-page-alt), var(--bg-page));
 }
 
 a {
@@ -91,8 +45,9 @@ button:disabled {
 input,
 select,
 textarea {
-  border: 1px solid var(--border-soft);
-  background: #fff;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  background: var(--md-sys-color-surface-container);
+  color: var(--md-sys-color-on-surface);
   border-radius: 10px;
   outline: none;
   transition: box-shadow 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
@@ -101,8 +56,8 @@ textarea {
 input:focus,
 select:focus,
 textarea:focus {
-  border-color: #93c5fd;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
+  border-color: var(--md-sys-color-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--md-sys-color-primary) 20%, transparent);
 }
 
 table {
@@ -112,7 +67,7 @@ table {
 
 th,
 td {
-  border-color: var(--border-soft);
+  border-color: var(--md-sys-color-outline-variant);
 }
 
 ::-webkit-scrollbar {
@@ -125,66 +80,68 @@ td {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #c5d2e6;
+  background: var(--md-sys-color-outline-variant);
   border-radius: 999px;
   border: 2px solid transparent;
   background-clip: content-box;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #9fb5d8;
+  background: var(--md-sys-color-outline);
   border: 2px solid transparent;
   background-clip: content-box;
 }
 
 @layer components {
   .app-card {
-    border: 1px solid var(--border-soft);
+    border: 1px solid var(--md-sys-color-outline-variant);
     border-radius: 16px;
-    background: var(--surface);
-    box-shadow: var(--shadow-card);
+    background: var(--md-sys-color-surface-container);
+    color: var(--md-sys-color-on-surface);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
   }
 
   .app-card-soft {
-    border: 1px solid var(--border-soft);
+    border: 1px solid var(--md-sys-color-outline-variant);
     border-radius: 14px;
-    background: var(--surface-muted);
-    box-shadow: var(--shadow-soft);
+    background: var(--md-sys-color-surface-container-low);
+    color: var(--md-sys-color-on-surface);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
   }
 
   .app-btn-primary {
     border-radius: 12px;
     border: 1px solid transparent;
-    background: linear-gradient(135deg, var(--primary), var(--primary-strong));
-    color: #fff;
+    background: var(--md-sys-color-primary);
+    color: var(--md-sys-color-on-primary);
     font-weight: 600;
-    box-shadow: 0 8px 20px rgba(37, 99, 235, 0.24);
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--md-sys-color-primary) 30%, transparent);
   }
 
   .app-btn-primary:hover {
     transform: translateY(-1px);
-    box-shadow: 0 10px 24px rgba(37, 99, 235, 0.3);
+    box-shadow: 0 6px 16px color-mix(in srgb, var(--md-sys-color-primary) 40%, transparent);
   }
 
   .app-btn-secondary {
     border-radius: 12px;
-    border: 1px solid var(--border-soft);
-    background: #fff;
-    color: var(--text-soft);
+    border: 1px solid var(--md-sys-color-outline-variant);
+    background: var(--md-sys-color-surface-container);
+    color: var(--md-sys-color-on-surface-variant);
     font-weight: 600;
   }
 
   .app-btn-secondary:hover {
-    border-color: #bfdbfe;
-    background: #f8fbff;
-    color: #1e3a8a;
+    border-color: var(--md-sys-color-primary);
+    background: var(--md-sys-color-surface-container-high);
+    color: var(--md-sys-color-primary);
   }
 
   .app-section-title {
     font-size: 1.5rem;
     font-weight: 800;
     letter-spacing: -0.01em;
-    color: #0b1f44;
+    color: var(--md-sys-color-on-surface);
   }
 
   /* Utility to hide input/container border and focus shadow for specific inputs */
