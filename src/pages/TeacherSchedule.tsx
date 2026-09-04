@@ -1,30 +1,6 @@
-﻿import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import {
-  BookOpen,
-  Building2,
-  CalendarClock,
-  CheckCheck,
-  ClipboardCheck,
-  ClipboardList,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  Clock,
-  Copy,
-  FileText,
-  MessageSquareText,
-  Monitor,
-  Pencil,
-  Plus,
-  Power,
-  Sparkles,
-  Trash2,
-  RefreshCw,
-  Volume2,
-  Wind,
-  Wrench,
-  X,
-} from 'lucide-react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { Icon, ProgressIndicator } from '@bug-on/m3-expressive';
+
 import { useAuth } from '../context/AuthContext';
 import { classService } from '../services/class.service';
 import { computerRoomService } from '../services/computer-room.service';
@@ -1358,15 +1334,15 @@ const TeacherSchedule = () => {
 
   return (
     <div className="min-h-full space-y-5 bg-slate-50/60 p-1 sm:p-2">
-      <section className="app-card overflow-hidden border-slate-200/80 bg-white p-0 shadow-sm">
+      <section className="rounded-3xl border border-m3-outline-variant/60 bg-m3-surface-container p-0 shadow-xs overflow-hidden">
         <div className="flex flex-col gap-4 p-4 sm:p-5 lg:flex-row lg:items-center">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-600/20">
-              <CalendarClock size={22} />
+            <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-linear-to-br from-m3-primary to-m3-primary/80 text-m3-on-primary shadow-md">
+              <Icon name="calendar_month" className="text-2xl" />
             </div>
             <div>
-              <h2 className="text-xl font-extrabold tracking-tight text-slate-900 sm:text-2xl">Lịch dạy trong tuần</h2>
-              <p className="mt-1 text-sm leading-5 text-slate-500">Quản lý lịch giảng dạy, phòng máy và điểm danh theo tuần.</p>
+              <h2 className="text-xl font-bold tracking-tight text-m3-on-surface sm:text-2xl font-md3-expressive">Lịch dạy trong tuần</h2>
+              <p className="mt-1 text-sm text-m3-on-surface-variant">Quản lý lịch giảng dạy, phòng máy và điểm danh theo tuần.</p>
             </div>
           </div>
 
@@ -1374,9 +1350,9 @@ const TeacherSchedule = () => {
             <button
               type="button"
               onClick={() => shiftWeek(-7)}
-              className="app-btn-secondary inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm shadow-sm transition hover:-translate-y-0.5"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-m3-outline-variant bg-m3-surface px-3 py-2 text-sm font-medium text-m3-on-surface transition hover:bg-m3-surface-container-high"
             >
-              <ChevronLeft size={16} />
+              <Icon name="chevron_left" className="text-base" />
               Tuần trước
             </button>
 
@@ -1384,29 +1360,33 @@ const TeacherSchedule = () => {
               type="date"
               value={weekStart}
               onChange={(event) => setWeekStart(toYmd(getWeekStart(new Date(`${event.target.value}T00:00:00`))))}
-              className="rounded-xl border-slate-200 bg-white px-3 py-2.5 text-sm shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10"
+              className="rounded-xl border border-m3-outline-variant bg-m3-surface px-3 py-2 text-sm text-m3-on-surface transition focus:border-m3-primary focus:outline-hidden"
             />
 
             <button
               type="button"
               onClick={() => shiftWeek(7)}
-              className="app-btn-secondary inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm shadow-sm transition hover:-translate-y-0.5"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-m3-outline-variant bg-m3-surface px-3 py-2 text-sm font-medium text-m3-on-surface transition hover:bg-m3-surface-container-high"
             >
               Tuần sau
-              <ChevronRight size={16} />
+              <Icon name="chevron_right" className="text-base" />
             </button>
 
-            <button type="button" onClick={openCreate} className="app-btn-primary inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold shadow-sm transition hover:-translate-y-0.5">
-              <Plus size={16} />
+            <button
+              type="button"
+              onClick={openCreate}
+              className="inline-flex items-center gap-2 rounded-xl bg-m3-primary px-4 py-2 text-sm font-semibold text-m3-on-primary shadow-xs transition hover:bg-m3-primary/90"
+            >
+              <Icon name="add" className="text-base" />
               Thêm lịch
             </button>
 
             <button
               type="button"
               onClick={openRoomManager}
-              className="app-btn-secondary inline-flex items-center gap-2 px-4 py-2 text-sm"
+              className="inline-flex items-center gap-2 rounded-xl border border-m3-outline-variant bg-m3-surface px-4 py-2 text-sm font-medium text-m3-on-surface transition hover:bg-m3-surface-container-high"
             >
-              <Monitor size={15} />
+              <Icon name="desktop_windows" className="text-base" />
               Quản lý phòng máy
             </button>
 
@@ -1414,20 +1394,20 @@ const TeacherSchedule = () => {
               type="button"
               onClick={handleCopyToNextWeek}
               disabled={copying || loading}
-              className="app-btn-secondary inline-flex items-center gap-2 px-4 py-2 text-sm"
+              className="inline-flex items-center gap-2 rounded-xl border border-m3-outline-variant bg-m3-surface px-4 py-2 text-sm font-medium text-m3-on-surface transition hover:bg-m3-surface-container-high disabled:opacity-50"
             >
-              <Copy size={15} />
+              <Icon name="content_copy" className="text-base" />
               {copying ? 'Đang sao chép...' : 'Sao chép tuần sau'}
             </button>
           </div>
         </div>
 
-        <div className="mx-4 mb-4 rounded-xl border border-blue-100 bg-gradient-to-r from-blue-50 to-indigo-50 px-3.5 py-2.5 text-sm text-blue-800 shadow-sm sm:mx-5 sm:mb-5">
+        <div className="mx-4 mb-4 rounded-2xl border border-m3-primary/20 bg-m3-primary/5 px-4 py-3 text-sm text-m3-primary sm:mx-5 sm:mb-5">
           Tuần đang xem: <strong>{formatDateViFromYmd(weekStart)}</strong> đến <strong>{formatDateViFromYmd(weekEnd)}</strong>
         </div>
 
         {selectedScheduleIds.length > 0 && (
-          <div className="mx-4 mb-4 flex flex-col gap-3 rounded-xl border border-blue-200 bg-blue-50/70 px-3.5 py-3 text-sm text-blue-950 shadow-sm sm:mx-5 sm:mb-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mx-4 mb-4 flex flex-col gap-3 rounded-2xl border border-m3-primary/30 bg-m3-primary/10 px-4 py-3 text-sm text-m3-on-surface sm:mx-5 sm:mb-5 sm:flex-row sm:items-center sm:justify-between">
             <p>
               Đã chọn <strong>{selectedScheduleIds.length}</strong> lịch dạy
             </p>
@@ -1438,9 +1418,9 @@ const TeacherSchedule = () => {
                   void handleCopySelectedToNextWeek();
                 }}
                 disabled={copying || loading}
-                className="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-white px-3 py-2 text-sm font-semibold text-blue-700 shadow-sm transition hover:border-blue-300 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center gap-2 rounded-xl border border-m3-primary/30 bg-m3-surface px-3 py-2 text-sm font-semibold text-m3-primary transition hover:bg-m3-surface-container-high disabled:cursor-not-allowed disabled:opacity-60"
               >
-                <Copy size={14} />
+                <Icon name="content_copy" className="text-sm" />
                 {copying ? 'Đang sao chép...' : 'Sao chép đã chọn'}
               </button>
               <button
@@ -1449,15 +1429,15 @@ const TeacherSchedule = () => {
                   void handleDeleteSelected();
                 }}
                 disabled={loading}
-                className="inline-flex items-center gap-2 rounded-xl border border-rose-200 bg-white px-3 py-2 text-sm font-semibold text-rose-700 shadow-sm transition hover:border-rose-300 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center gap-2 rounded-xl border border-m3-error/30 bg-m3-surface px-3 py-2 text-sm font-semibold text-m3-error transition hover:bg-m3-error-container/20 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                <Trash2 size={14} />
+                <Icon name="delete" className="text-sm" />
                 Xóa đã chọn
               </button>
               <button
                 type="button"
                 onClick={() => setSelectedScheduleIds([])}
-                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-100"
+                className="inline-flex items-center gap-2 rounded-xl border border-m3-outline-variant bg-m3-surface px-3 py-2 text-sm font-semibold text-m3-on-surface-variant transition hover:bg-m3-surface-container-high"
               >
                 Bỏ chọn
               </button>
@@ -1466,46 +1446,50 @@ const TeacherSchedule = () => {
         )}
       </section>
 
-      <section className="app-card overflow-hidden border-slate-200/80 bg-white shadow-sm">
+      <section className="rounded-3xl border border-m3-outline-variant/60 bg-m3-surface-container overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
-            <thead className="sticky top-0 z-10 border-b border-slate-200 bg-slate-50/95 text-slate-600 shadow-sm backdrop-blur">
+            <thead className="sticky top-0 z-10 border-b border-m3-outline-variant/60 bg-m3-surface-container-high text-m3-on-surface-variant backdrop-blur-xs">
               <tr>
-                <th className="w-12 px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                <th className="w-12 px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-m3-on-surface-variant">
                   <input
                     type="checkbox"
                     checked={areAllSchedulesSelected}
                     onChange={toggleSelectAllSchedules}
                     disabled={loading || schedules.length === 0}
-                    className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    className="h-4 w-4 rounded-sm border-m3-outline accent-m3-primary"
                     title="Chọn tất cả lịch trong tuần"
                   />
                 </th>
-                <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500">Ngày</th>
-                <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500">Thứ</th>
-                <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500">Tiết</th>
-                <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500">Thời gian</th>
-                <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500">Môn học</th>
-                <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500">Lớp</th>
-                <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500">Trường</th>
-                <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500">Phòng</th>
-                <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500">Ghi chú</th>
-                <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500">Trạng thái</th>
-                <th className="px-3 py-3 text-right font-semibold">Hành động</th>
+                <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-m3-on-surface-variant">Ngày</th>
+                <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-m3-on-surface-variant">Thứ</th>
+                <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-m3-on-surface-variant">Tiết</th>
+                <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-m3-on-surface-variant">Thời gian</th>
+                <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-m3-on-surface-variant">Môn học</th>
+                <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-m3-on-surface-variant">Lớp</th>
+                <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-m3-on-surface-variant">Trường</th>
+                <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-m3-on-surface-variant">Phòng</th>
+                <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-m3-on-surface-variant">Ghi chú</th>
+                <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-m3-on-surface-variant">Trạng thái</th>
+                <th className="px-3 py-3 text-right font-semibold text-m3-on-surface-variant">Hành động</th>
               </tr>
             </thead>
-            <tbody className="[&_tr:last-child]:border-0">
+            <tbody className="[&_tr:last-child]:border-0 divide-y divide-m3-outline-variant/30">
               {loading && (
                 <tr>
-                  <td className="px-3 py-6 text-center text-slate-500" colSpan={12}>
-                    Đang tải lịch dạy...
+                  <td className="px-3 py-12 text-center" colSpan={12}>
+                    <div className="flex flex-col items-center justify-center gap-3">
+                      <ProgressIndicator variant="circular" shape="wavy" size={28} aria-label="Đang tải lịch dạy..." />
+                      <p className="text-xs text-m3-on-surface-variant font-medium">Đang tải lịch dạy...</p>
+                    </div>
                   </td>
                 </tr>
               )}
 
               {!loading && schedules.length === 0 && (
                 <tr>
-                  <td className="px-3 py-8 text-center text-slate-500" colSpan={12}>
+                  <td className="px-3 py-12 text-center text-m3-on-surface-variant" colSpan={12}>
+                    <Icon name="event_busy" className="mx-auto mb-2 text-3xl opacity-40" />
                     Tuần này chưa có lịch dạy.
                   </td>
                 </tr>
@@ -1532,11 +1516,11 @@ const TeacherSchedule = () => {
                       onClick={() => {
                         void openAttendance(item);
                       }}
-                      className={`cursor-pointer border-t border-slate-100 ${isSelected
-                        ? 'bg-blue-50/75 hover:bg-blue-100/70'
+                      className={`cursor-pointer transition ${isSelected
+                        ? 'bg-m3-primary/10 hover:bg-m3-primary/15'
                         : isToday
-                          ? 'bg-amber-50/85 hover:bg-amber-100/70'
-                          : 'hover:bg-slate-50/80'
+                          ? 'bg-amber-500/10 hover:bg-amber-500/15'
+                          : 'hover:bg-m3-surface-container-high/60'
                         }`}
                     >
                       <td className="px-3 py-3 text-center">
@@ -1545,50 +1529,50 @@ const TeacherSchedule = () => {
                           checked={isSelected}
                           onClick={(event) => event.stopPropagation()}
                           onChange={() => toggleScheduleSelection(item.id)}
-                          className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                          className="h-4 w-4 rounded-sm border-m3-outline accent-m3-primary"
                           title={`Chọn lịch ${item.subject} - ${item.className}`}
                         />
                       </td>
-                      <td className="px-3 py-3">
+                      <td className="px-3 py-3 text-m3-on-surface">
                         <div className="flex items-center gap-2">
                           <span>{formatDateViFromYmd(localYmd)}</span>
                           {isToday ? (
-                            <span className="rounded-full bg-amber-200 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
+                            <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[11px] font-semibold text-amber-800 dark:text-amber-300">
                               Hôm nay
                             </span>
                           ) : null}
                           {todayLessonTimeline === 'ongoing' ? (
-                            <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-semibold text-blue-700">
+                            <span className="rounded-full bg-m3-primary/20 px-2 py-0.5 text-[11px] font-semibold text-m3-primary">
                               Đang dạy
                             </span>
                           ) : null}
                           {todayLessonTimeline === 'done' ? (
-                            <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[11px] font-semibold text-slate-700">
+                            <span className="rounded-full bg-m3-surface-container-highest px-2 py-0.5 text-[11px] font-semibold text-m3-on-surface-variant">
                               Đã dạy
                             </span>
                           ) : null}
                           {todayLessonTimeline === 'upcoming' ? (
-                            <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[11px] font-semibold text-violet-700">
+                            <span className="rounded-full bg-indigo-500/20 px-2 py-0.5 text-[11px] font-semibold text-indigo-700 dark:text-indigo-300">
                               Sắp tới
                             </span>
                           ) : null}
                         </div>
                       </td>
-                      <td className="px-3 py-3">{getWeekdayLabelFromYmd(localYmd)}</td>
-                      <td className="px-3 py-3">{item.periodLabel || '-'}</td>
-                      <td className="px-3 py-3">
+                      <td className="px-3 py-3 text-m3-on-surface">{getWeekdayLabelFromYmd(localYmd)}</td>
+                      <td className="px-3 py-3 text-m3-on-surface">{item.periodLabel || '-'}</td>
+                      <td className="px-3 py-3 text-m3-on-surface">
                         {item.startTime} - {item.endTime}
                       </td>
-                      <td className="px-3 py-3 font-semibold text-slate-800">{item.subject}</td>
-                      <td className="px-3 py-3">{item.className}</td>
-                      <td className="px-3 py-3 text-slate-700">
-                        {resolveSchoolNameForSchedule(item) || <span className="text-slate-400">Chưa gán trường</span>}
+                      <td className="px-3 py-3 font-semibold text-m3-on-surface">{item.subject}</td>
+                      <td className="px-3 py-3 text-m3-on-surface">{item.className}</td>
+                      <td className="px-3 py-3 text-m3-on-surface-variant">
+                        {resolveSchoolNameForSchedule(item) || <span className="text-m3-on-surface-variant/40">Chưa gán trường</span>}
                       </td>
-                      <td className="px-3 py-3">{item.roomName || '-'}</td>
-                      <td className="max-w-[260px] truncate px-3 py-3 text-slate-600">{item.notes || '-'}</td>
+                      <td className="px-3 py-3 text-m3-on-surface">{item.roomName || '-'}</td>
+                      <td className="max-w-[260px] truncate px-3 py-3 text-m3-on-surface-variant">{item.notes || '-'}</td>
                       <td className="px-3 py-3">
                         <span
-                          className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${item.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'
+                          className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${item.isActive ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300' : 'bg-m3-surface-container-highest text-m3-on-surface-variant'
                             }`}
                         >
                           {item.isActive ? 'Hoạt động' : 'Tạm ẩn'}
@@ -1602,10 +1586,10 @@ const TeacherSchedule = () => {
                               event.stopPropagation();
                               void openAttendance(item);
                             }}
-                            className="rounded-xl border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-emerald-700 shadow-sm transition hover:border-emerald-300 hover:bg-emerald-100"
+                            className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1.5 text-emerald-700 dark:text-emerald-300 shadow-2xs transition hover:bg-emerald-500/20"
                             title="Điểm danh"
                           >
-                            <ClipboardCheck size={14} />
+                            <Icon name="fact_check" className="text-sm" />
                           </button>
                           <button
                             type="button"
@@ -1613,9 +1597,10 @@ const TeacherSchedule = () => {
                               event.stopPropagation();
                               openEdit(item);
                             }}
-                            className="rounded-xl border border-blue-200 bg-blue-50 px-2.5 py-1.5 text-blue-700 shadow-sm transition hover:border-blue-300 hover:bg-blue-100"
+                            className="rounded-xl border border-m3-outline-variant bg-m3-surface px-2.5 py-1.5 text-m3-primary shadow-2xs transition hover:bg-m3-surface-container-high"
+                            title="Chỉnh sửa"
                           >
-                            <Pencil size={14} />
+                            <Icon name="edit" className="text-sm" />
                           </button>
                           <button
                             type="button"
@@ -1623,9 +1608,10 @@ const TeacherSchedule = () => {
                               event.stopPropagation();
                               void handleDelete(item);
                             }}
-                            className="rounded-xl border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-rose-700 shadow-sm transition hover:border-rose-300 hover:bg-rose-100"
+                            className="rounded-xl border border-m3-error/30 bg-m3-surface px-2.5 py-1.5 text-m3-error shadow-2xs transition hover:bg-m3-error-container/20"
+                            title="Xóa"
                           >
-                            <Trash2 size={14} />
+                            <Icon name="delete" className="text-sm" />
                           </button>
                         </div>
                       </td>
@@ -1635,47 +1621,47 @@ const TeacherSchedule = () => {
             </tbody>
           </table>
         </div>
-        <div className="border-t border-slate-100 px-3 py-2 text-xs text-slate-500">
-          Mẹo: bấm vào dòng lịch hoặc nút <span className="font-semibold text-emerald-700">Điểm danh</span> để mở điểm danh. Tick checkbox để chọn nhiều lịch rồi xóa/sao chép cùng lúc.
+        <div className="border-t border-m3-outline-variant/60 px-4 py-2.5 text-xs text-m3-on-surface-variant bg-m3-surface-container-high/40">
+          Mẹo: bấm vào dòng lịch hoặc nút <span className="font-semibold text-emerald-700 dark:text-emerald-300">Điểm danh</span> để mở điểm danh. Tick checkbox để chọn nhiều lịch rồi xóa/sao chép cùng lúc.
         </div>
       </section>
 
       {attendanceOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/60 p-0 backdrop-blur-sm sm:grid sm:place-items-center sm:p-4">
-          <div className="app-card flex h-[100dvh] w-full flex-col overflow-hidden rounded-none border-slate-200 shadow-2xl sm:h-auto sm:max-h-[94vh] sm:max-w-5xl sm:rounded-[24px]">
+        <div className="fixed inset-0 z-50 bg-black/60 p-0 backdrop-blur-xs sm:grid sm:place-items-center sm:p-4">
+          <div className="flex h-[100dvh] w-full flex-col overflow-hidden rounded-none border border-m3-outline-variant/60 bg-m3-surface-container shadow-2xl sm:h-auto sm:max-h-[94vh] sm:max-w-5xl sm:rounded-4xl">
             <div
-              className="shrink-0 border-b border-slate-200 bg-gradient-to-r from-white via-blue-50/40 to-indigo-50/60 px-4 py-4 shadow-sm"
+              className="shrink-0 border-b border-m3-outline-variant/60 bg-m3-surface-container-high px-4 py-4 sm:px-6 shadow-xs"
               style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }}
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <h3 className="text-xl font-extrabold tracking-tight text-slate-900">Điểm danh học sinh</h3>
+                  <h3 className="text-xl font-bold tracking-tight text-m3-on-surface font-md3-expressive">Điểm danh học sinh</h3>
                   {attendanceData ? (
-                    <p className="text-sm text-slate-600">
+                    <p className="text-sm text-m3-on-surface-variant">
                       {attendanceData.subject} - {attendanceData.className} - {formatDateViFromYmd(parseApiDateToLocalYmd(attendanceData.date))}
                       {' · '}
                       {attendanceData.startTime} - {attendanceData.endTime}
                     </p>
                   ) : null}
                   {attendanceSchoolName ? (
-                    <p className="text-xs font-medium text-blue-700">Trường: {attendanceSchoolName}</p>
+                    <p className="text-xs font-medium text-m3-primary">Trường: {attendanceSchoolName}</p>
                   ) : null}
                   {attendanceData?.computerRoom ? (
-                    <p className="text-xs text-slate-600">
-                      Phòng máy: <span className="font-semibold text-slate-800">{attendanceData.computerRoom.name}</span>
+                    <p className="text-xs text-m3-on-surface-variant">
+                      Phòng máy: <span className="font-semibold text-m3-on-surface">{attendanceData.computerRoom.name}</span>
                       {' · '}
-                      Tổng máy: <span className="font-semibold text-slate-800">{attendanceData.computerRoom.totalMachinesText}</span>
+                      Tổng máy: <span className="font-semibold text-m3-on-surface">{attendanceData.computerRoom.totalMachinesText}</span>
                       {' · '}
-                      Máy lỗi: <span className="font-semibold text-slate-800">{attendanceData.computerRoom.brokenMachineCount}</span>
+                      Máy lỗi: <span className="font-semibold text-m3-on-surface">{attendanceData.computerRoom.brokenMachineCount}</span>
                       {' · '}
                       Thiếu cho HS:{' '}
-                      <span className="font-semibold text-slate-800">
+                      <span className="font-semibold text-m3-on-surface">
                         {attendanceMissingMachinesByFormula ?? attendanceData.computerRoom.missingMachinesForStudents}
                       </span>
                     </p>
                   ) : null}
                   {attendanceData?.computerRoom?.brokenMachinesDetail ? (
-                    <p className="text-xs text-rose-700">
+                    <p className="text-xs text-m3-error">
                       Chi tiết máy hỏng: <span className="font-semibold">{attendanceData.computerRoom.brokenMachinesDetail}</span>
                     </p>
                   ) : null}
@@ -1683,7 +1669,7 @@ const TeacherSchedule = () => {
                 <button
                   type="button"
                   onClick={closeAttendance}
-                  className="app-btn-secondary px-3 py-1.5 text-sm"
+                  className="rounded-xl border border-m3-outline-variant bg-m3-surface px-3.5 py-1.5 text-sm font-medium text-m3-on-surface hover:bg-m3-surface-container-high transition"
                   disabled={attendanceSaving}
                 >
                   Đóng
@@ -1691,10 +1677,11 @@ const TeacherSchedule = () => {
               </div>
             </div>
 
-            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto bg-slate-50/60 p-4 sm:p-5">
+            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto bg-m3-surface p-4 sm:p-6">
               {attendanceLoading && (
-                <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-6 text-center text-slate-600">
-                  Đang tải danh sách học sinh...
+                <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
+                  <ProgressIndicator variant="circular" shape="wavy" size={28} aria-label="Đang tải danh sách học sinh..." />
+                  <p className="text-xs text-m3-on-surface-variant font-medium">Đang tải danh sách học sinh...</p>
                 </div>
               )}
 
@@ -1704,45 +1691,45 @@ const TeacherSchedule = () => {
                     <button
                       type="button"
                       onClick={() => setAttendanceTab('attendance')}
-                      className={`inline-flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-semibold transition ${attendanceTab === 'attendance'
-                        ? 'border-blue-300 bg-blue-600 text-white shadow-sm shadow-blue-600/20'
-                        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'
+                      className={`inline-flex items-center justify-center gap-2 rounded-2xl border px-3 py-2.5 text-sm font-semibold transition ${attendanceTab === 'attendance'
+                        ? 'border-m3-primary bg-m3-primary text-m3-on-primary shadow-xs'
+                        : 'border-m3-outline-variant bg-m3-surface-container text-m3-on-surface-variant hover:bg-m3-surface-container-high'
                         }`}
                     >
-                      <ClipboardCheck size={14} />
+                      <Icon name="fact_check" className="text-base" />
                       Điểm danh
                     </button>
                     <button
                       type="button"
                       onClick={() => setAttendanceTab('startLesson')}
-                      className={`inline-flex items-center justify-center gap-1 rounded-lg border px-3 py-2 text-sm font-medium ${attendanceTab === 'startLesson'
-                        ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
-                        : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                      className={`inline-flex items-center justify-center gap-2 rounded-2xl border px-3 py-2.5 text-sm font-semibold transition ${attendanceTab === 'startLesson'
+                        ? 'border-emerald-500/50 bg-emerald-500/20 text-emerald-800 dark:text-emerald-200'
+                        : 'border-m3-outline-variant bg-m3-surface-container text-m3-on-surface-variant hover:bg-m3-surface-container-high'
                         }`}
                     >
-                      <FileText size={14} />
+                      <Icon name="description" className="text-base" />
                       Báo cáo đầu buổi
                     </button>
                     <button
                       type="button"
                       onClick={() => setAttendanceTab('professional')}
-                      className={`inline-flex items-center justify-center gap-1 rounded-lg border px-3 py-2 text-sm font-medium ${attendanceTab === 'professional'
-                        ? 'border-violet-300 bg-violet-50 text-violet-700'
-                        : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                      className={`inline-flex items-center justify-center gap-2 rounded-2xl border px-3 py-2.5 text-sm font-semibold transition ${attendanceTab === 'professional'
+                        ? 'border-violet-500/50 bg-violet-500/20 text-violet-800 dark:text-violet-200'
+                        : 'border-m3-outline-variant bg-m3-surface-container text-m3-on-surface-variant hover:bg-m3-surface-container-high'
                         }`}
                     >
-                      <BookOpen size={14} />
+                      <Icon name="menu_book" className="text-base" />
                       Báo cáo chuyên môn
                     </button>
                     <button
                       type="button"
                       onClick={() => setAttendanceTab('endLesson')}
-                      className={`inline-flex items-center justify-center gap-1 rounded-lg border px-3 py-2 text-sm font-medium ${attendanceTab === 'endLesson'
-                        ? 'border-amber-300 bg-amber-50 text-amber-700'
-                        : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                      className={`inline-flex items-center justify-center gap-2 rounded-2xl border px-3 py-2.5 text-sm font-semibold transition ${attendanceTab === 'endLesson'
+                        ? 'border-amber-500/50 bg-amber-500/20 text-amber-800 dark:text-amber-200'
+                        : 'border-m3-outline-variant bg-m3-surface-container text-m3-on-surface-variant hover:bg-m3-surface-container-high'
                         }`}
                     >
-                      <ClipboardList size={14} />
+                      <Icon name="assignment" className="text-base" />
                       Báo cáo cuối buổi
                     </button>
                   </div>
@@ -1750,10 +1737,10 @@ const TeacherSchedule = () => {
                   {attendanceTab === 'attendance' && (
                     <>
                       <div className="grid gap-2 sm:grid-cols-2">
-                        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+                        <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-2.5 text-sm text-emerald-800 dark:text-emerald-200">
                           Có mặt: <strong>{attendanceStats.present}</strong>
                         </div>
-                        <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+                        <div className="rounded-2xl border border-m3-error/30 bg-m3-error-container/20 px-4 py-2.5 text-sm text-m3-on-error-container">
                           Vắng: <strong>{attendanceStats.absent}</strong>
                         </div>
                       </div>
@@ -1763,12 +1750,12 @@ const TeacherSchedule = () => {
                           value={attendanceKeyword}
                           onChange={(event) => setAttendanceKeyword(event.target.value)}
                           placeholder="Tìm theo tên học sinh..."
-                          className="w-full px-3 py-2 text-sm sm:max-w-xs"
+                          className="w-full rounded-xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2 text-sm text-m3-on-surface focus:border-m3-primary focus:outline-hidden sm:max-w-xs"
                         />
                         <button
                           type="button"
                           onClick={toggleAttendanceNameSort}
-                          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 sm:w-auto"
+                          className="w-full rounded-xl border border-m3-outline-variant bg-m3-surface px-3 py-2 text-sm font-medium text-m3-on-surface hover:bg-m3-surface-container-high sm:w-auto"
                           title="Sắp xếp theo tên"
                         >
                           Tên {attendanceNameSortDirection === 'asc' ? '▲' : attendanceNameSortDirection === 'desc' ? '▼' : '⇅'}
@@ -1777,17 +1764,17 @@ const TeacherSchedule = () => {
                         <button
                           type="button"
                           onClick={() => setAllAttendanceStatus('Present')}
-                          className="w-full rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-100 sm:w-auto"
+                          className="w-full rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm font-semibold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20 sm:w-auto"
                         >
-                          <span className="inline-flex items-center gap-1">
-                            <CheckCheck size={14} />
+                          <span className="inline-flex items-center gap-1.5">
+                            <Icon name="done_all" className="text-sm" />
                             Tất cả có mặt
                           </span>
                         </button>
                         <button
                           type="button"
                           onClick={() => setAllAttendanceStatus('Absent')}
-                          className="w-full rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700 hover:bg-rose-100 sm:w-auto"
+                          className="w-full rounded-xl border border-m3-error/40 bg-m3-error-container/20 px-3 py-2 text-sm font-semibold text-m3-error hover:bg-m3-error-container/40 sm:w-auto"
                         >
                           Tất cả vắng
                         </button>
@@ -1796,19 +1783,19 @@ const TeacherSchedule = () => {
                           onClick={() => void handleSyncAttendanceToGoogleSheet()}
                           disabled={attendanceSyncing || attendanceSaving || attendanceLoading || !attendanceData || hasUnsavedAttendanceChanges}
                           title={hasUnsavedAttendanceChanges ? 'Lưu điểm danh trước khi đồng bộ Google Sheet' : 'Đồng bộ điểm danh đã lưu với Google Sheet'}
-                          className={`w-full rounded-lg border px-3 py-2 text-sm font-medium sm:w-auto ${attendanceSyncing || attendanceSaving || attendanceLoading || !attendanceData || hasUnsavedAttendanceChanges
-                            ? 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400'
-                            : 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100'
+                          className={`w-full rounded-xl border px-3 py-2 text-sm font-semibold transition sm:w-auto ${attendanceSyncing || attendanceSaving || attendanceLoading || !attendanceData || hasUnsavedAttendanceChanges
+                            ? 'cursor-not-allowed border-m3-outline-variant/40 bg-m3-surface-container text-m3-on-surface-variant/40'
+                            : 'border-m3-primary/40 bg-m3-primary/10 text-m3-primary hover:bg-m3-primary/20'
                             }`}
                         >
-                          <span className="inline-flex items-center gap-1">
-                            <RefreshCw size={14} className={attendanceSyncing ? 'animate-spin' : ''} />
+                          <span className="inline-flex items-center gap-1.5">
+                            <Icon name="refresh" className={attendanceSyncing ? 'animate-spin text-sm' : 'text-sm'} />
                             {attendanceSyncing ? 'Đang đồng bộ...' : 'Đồng bộ GG Sheet'}
                           </span>
                         </button>
                       </div>
 
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-m3-on-surface-variant">
                         Chạm vào nút trạng thái của từng học sinh để đổi nhanh giữa <strong>Có mặt</strong> và <strong>Vắng</strong>.
                       </p>
 
@@ -2143,33 +2130,33 @@ const TeacherSchedule = () => {
       )}
 
       {roomManagerOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/65 p-0 backdrop-blur-sm sm:grid sm:place-items-center sm:p-4">
-          <div className="app-card flex h-[100dvh] w-full flex-col overflow-hidden rounded-none border-slate-200 shadow-2xl sm:h-auto sm:max-h-[94vh] sm:max-w-7xl sm:rounded-[28px]">
+        <div className="fixed inset-0 z-50 bg-black/60 p-0 backdrop-blur-xs sm:grid sm:place-items-center sm:p-4">
+          <div className="flex h-[100dvh] w-full flex-col overflow-hidden rounded-none border border-m3-outline-variant/60 bg-m3-surface-container shadow-2xl sm:h-auto sm:max-h-[94vh] sm:max-w-7xl sm:rounded-4xl">
             <div
-              className="border-b border-slate-200 bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.20),_transparent_35%),linear-gradient(135deg,_#ffffff,_#eff6ff_55%,_#f8fafc)] px-4 py-4 sm:px-5"
+              className="border-b border-m3-outline-variant/60 bg-m3-surface-container-high px-4 py-4 sm:px-6 shadow-xs"
               style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top))' }}
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="flex items-start gap-3">
-                  <div className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-500/25">
-                    <Monitor size={22} />
+                  <div className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-m3-primary to-m3-primary/80 text-m3-on-primary shadow-md">
+                    <Icon name="desktop_windows" className="text-2xl" />
                   </div>
                   <div className="space-y-2">
                     <div>
-                      <h3 className="text-xl font-extrabold text-slate-900">Quản lý phòng máy</h3>
-                      <p className="text-sm text-slate-600">
+                      <h3 className="text-xl font-bold text-m3-on-surface font-md3-expressive">Quản lý phòng máy</h3>
+                      <p className="mt-1 text-sm text-m3-on-surface-variant">
                         Cấu hình phòng máy theo từng trường để dùng cho lịch dạy, điểm danh và báo cáo.
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-2 text-xs font-medium">
-                      <span className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-blue-700">
-                        <Building2 size={13} />
+                      <span className="inline-flex items-center gap-1 rounded-full border border-m3-primary/30 bg-m3-primary/10 px-3 py-1 text-m3-primary">
+                        <Icon name="domain" className="text-xs" />
                         {selectedRoomManagerSchool?.name || 'Chưa chọn trường'}
                       </span>
-                      <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-slate-600">
+                      <span className="rounded-full border border-m3-outline-variant bg-m3-surface px-3 py-1 text-m3-on-surface-variant">
                         {roomManagerSummary.totalRooms} phòng
                       </span>
-                      <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-emerald-700">
+                      <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-emerald-700 dark:text-emerald-300">
                         {roomManagerSummary.activeRooms} đang hoạt động
                       </span>
                     </div>
@@ -2178,22 +2165,22 @@ const TeacherSchedule = () => {
                 <button
                   type="button"
                   onClick={() => setRoomManagerOpen(false)}
-                  className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white/90 px-3.5 py-2 text-sm font-semibold text-slate-600 shadow-sm hover:border-slate-300 hover:bg-white hover:text-slate-900"
+                  className="inline-flex items-center gap-2 rounded-xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2 text-sm font-semibold text-m3-on-surface hover:bg-m3-surface-container-high transition"
                 >
-                  <X size={16} />
+                  <Icon name="close" className="text-base" />
                   Đóng
                 </button>
               </div>
             </div>
 
-            <div className="min-h-0 flex-1 overflow-y-auto bg-slate-50/70 p-4 sm:p-5">
+            <div className="min-h-0 flex-1 overflow-y-auto bg-m3-surface p-4 sm:p-6">
               <div className="grid gap-5 xl:grid-cols-[minmax(0,1.25fr)_400px]">
-                <div className="space-y-2">
-                  <div className="app-card-soft border-slate-200/80 bg-white p-4 shadow-sm">
+                <div className="space-y-4">
+                  <div className="rounded-3xl border border-m3-outline-variant/60 bg-m3-surface-container p-4 sm:p-5 shadow-xs">
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                       <div className="flex-1">
                         <label className="grid gap-1.5 text-sm">
-                          <span className="font-semibold text-slate-700">Trường áp dụng</span>
+                          <span className="font-semibold text-m3-on-surface">Trường áp dụng</span>
                           <div className="relative">
                             <select
                               value={roomManagerSchoolId}
@@ -2202,7 +2189,7 @@ const TeacherSchedule = () => {
                                 setRoomManagerSchoolId(nextSchoolId);
                                 resetRoomForm(nextSchoolId);
                               }}
-                              className="min-w-[260px] w-full appearance-none bg-white px-3 py-2.5 pr-9"
+                              className="min-w-[260px] w-full appearance-none rounded-xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2.5 pr-9 text-m3-on-surface focus:border-m3-primary focus:outline-hidden"
                             >
                               <option value="">-- Chọn trường --</option>
                               {schools.map((item) => (
@@ -2211,9 +2198,9 @@ const TeacherSchedule = () => {
                                 </option>
                               ))}
                             </select>
-                            <ChevronDown
-                              size={16}
-                              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+                            <Icon
+                              name="expand_more"
+                              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-m3-on-surface-variant text-base"
                             />
                           </div>
                         </label>
@@ -2222,62 +2209,63 @@ const TeacherSchedule = () => {
                       <button
                         type="button"
                         onClick={() => resetRoomForm(roomManagerSchoolId)}
-                        className="app-btn-secondary inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm"
+                        className="inline-flex items-center justify-center gap-2 rounded-xl bg-m3-primary px-4 py-2.5 text-sm font-semibold text-m3-on-primary hover:bg-m3-primary/90 transition shadow-xs"
                       >
-                        <Plus size={15} />
+                        <Icon name="add" className="text-base" />
                         Tạo phòng mới
                       </button>
                     </div>
 
                     <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                      <div className="rounded-2xl border border-white/70 bg-white/90 p-3 shadow-sm">
-                        <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                      <div className="rounded-2xl border border-m3-outline-variant/60 bg-m3-surface p-3.5 shadow-2xs">
+                        <div className="text-xs font-semibold uppercase tracking-wider text-m3-on-surface-variant">
                           Tổng phòng
                         </div>
-                        <div className="mt-2 text-2xl font-extrabold text-slate-900">
+                        <div className="mt-2 text-2xl font-bold text-m3-on-surface">
                           {roomManagerSummary.totalRooms}
                         </div>
                       </div>
-                      <div className="rounded-2xl border border-emerald-100 bg-emerald-50/80 p-3 shadow-sm">
-                        <div className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-600">
+                      <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-3.5 shadow-2xs">
+                        <div className="text-xs font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
                           Máy sẵn sàng
                         </div>
-                        <div className="mt-2 text-2xl font-extrabold text-emerald-700">
+                        <div className="mt-2 text-2xl font-bold text-emerald-800 dark:text-emerald-200">
                           {roomManagerSummary.availableMachines}
                         </div>
                       </div>
-                      <div className="rounded-2xl border border-blue-100 bg-blue-50/80 p-3 shadow-sm">
-                        <div className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-600">
+                      <div className="rounded-2xl border border-m3-primary/30 bg-m3-primary/10 p-3.5 shadow-2xs">
+                        <div className="text-xs font-semibold uppercase tracking-wider text-m3-primary">
                           Tổng thiết bị
                         </div>
-                        <div className="mt-2 text-2xl font-extrabold text-blue-700">
+                        <div className="mt-2 text-2xl font-bold text-m3-primary">
                           {roomManagerSummary.totalMachines}
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="app-card overflow-hidden border-slate-200/80 bg-white shadow-sm">
-                    <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+                  <div className="rounded-3xl border border-m3-outline-variant/60 bg-m3-surface-container overflow-hidden shadow-xs">
+                    <div className="flex items-center justify-between border-b border-m3-outline-variant/60 bg-m3-surface-container-high px-4 py-3">
                       <div>
-                        <h4 className="text-base font-bold text-slate-900">Danh sách phòng máy</h4>
-                        <p className="text-sm text-slate-500">
+                        <h4 className="text-base font-bold text-m3-on-surface">Danh sách phòng máy</h4>
+                        <p className="text-xs text-m3-on-surface-variant">
                           Chọn một phòng để chỉnh sửa nhanh cấu hình và trạng thái vận hành.
                         </p>
                       </div>
-                      <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
+                      <span className="rounded-full border border-m3-outline-variant bg-m3-surface px-3 py-1 text-xs font-semibold text-m3-on-surface-variant">
                         {roomManagerRows.length} mục
                       </span>
                     </div>
-                    <div className="max-h-[58vh] overflow-y-auto bg-white p-3 sm:p-4">
+                    <div className="max-h-[58vh] overflow-y-auto bg-m3-surface-container/50 p-3 sm:p-4">
                       {roomManagerLoading && (
-                        <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-10 text-center text-sm text-slate-500">
-                          Đang tải phòng máy...
+                        <div className="flex flex-col items-center justify-center gap-3 py-10 text-center">
+                          <ProgressIndicator variant="circular" shape="wavy" size={28} aria-label="Đang tải phòng máy..." />
+                          <p className="text-xs text-m3-on-surface-variant font-medium">Đang tải phòng máy...</p>
                         </div>
                       )}
 
                       {!roomManagerLoading && roomManagerRows.length === 0 && (
-                        <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-10 text-center text-sm text-slate-500">
+                        <div className="rounded-2xl border border-dashed border-m3-outline-variant/60 bg-m3-surface px-4 py-10 text-center text-sm text-m3-on-surface-variant">
                           Chưa có phòng máy nào trong trường này.
                         </div>
                       )}
@@ -2287,25 +2275,25 @@ const TeacherSchedule = () => {
                           {roomManagerRows.map((room) => (
                             <article
                               key={room.id}
-                              className={`group rounded-2xl border p-4 shadow-sm transition-all duration-200 ${editingRoomId === room.id
-                                ? 'border-blue-300 bg-blue-50/80 shadow-md shadow-blue-100/60'
-                                : 'border-slate-200/80 bg-white hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md'
+                              className={`group rounded-2xl border p-4 shadow-2xs transition-all ${editingRoomId === room.id
+                                ? 'border-m3-primary bg-m3-primary/10 shadow-xs'
+                                : 'border-m3-outline-variant/60 bg-m3-surface hover:bg-m3-surface-container-high/50'
                                 }`}
                             >
                               <div className="flex flex-wrap items-start justify-between gap-3">
                                 <div>
                                   <div className="flex flex-wrap items-center gap-2">
-                                    <h5 className="text-lg font-bold text-slate-900">{room.name}</h5>
+                                    <h5 className="text-lg font-bold text-m3-on-surface">{room.name}</h5>
                                     <span
                                       className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${room.isActive
-                                        ? 'bg-emerald-100 text-emerald-700'
-                                        : 'bg-slate-200 text-slate-600'
+                                        ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300'
+                                        : 'bg-m3-surface-container-highest text-m3-on-surface-variant'
                                         }`}
                                     >
                                       {room.isActive ? 'Đang dùng' : 'Tạm ẩn'}
                                     </span>
                                   </div>
-                                  <p className="mt-1 text-sm text-slate-500">
+                                  <p className="mt-1 text-sm text-m3-on-surface-variant">
                                     Tổng {room.totalMachinesText} · Máy lỗi {room.brokenMachineCount} · Dùng được{' '}
                                     {room.availableStudentMachines}
                                   </p>
@@ -2315,17 +2303,17 @@ const TeacherSchedule = () => {
                                   <button
                                     type="button"
                                     onClick={() => handleEditRoom(room)}
-                                    className="inline-flex items-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100"
+                                    className="inline-flex items-center gap-1.5 rounded-xl border border-m3-outline-variant bg-m3-surface px-3 py-1.5 text-xs font-semibold text-m3-primary hover:bg-m3-surface-container-high transition"
                                   >
-                                    <Pencil size={13} />
+                                    <Icon name="edit" className="text-xs" />
                                     Sửa
                                   </button>
                                   <button
                                     type="button"
                                     onClick={() => void handleDeleteRoom(room)}
-                                    className="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-100"
+                                    className="inline-flex items-center gap-1.5 rounded-xl border border-m3-error/30 bg-m3-surface px-3 py-1.5 text-xs font-semibold text-m3-error hover:bg-m3-error-container/20 transition"
                                   >
-                                    <Trash2 size={13} />
+                                    <Icon name="delete" className="text-xs" />
                                     Xóa
                                   </button>
                                 </div>
@@ -2456,14 +2444,14 @@ const TeacherSchedule = () => {
                       </label>
                     </div>
 
-                    <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
+                    <div className="rounded-3xl border border-m3-outline-variant/60 bg-m3-surface p-4 shadow-xs">
                       <div className="mb-3 flex items-center gap-2">
-                        <Wrench size={16} className="text-slate-500" />
-                        <h5 className="text-sm font-bold text-slate-800">Cấu hình thiết bị</h5>
+                        <Icon name="build" className="text-base text-m3-primary" />
+                        <h5 className="text-sm font-bold text-m3-on-surface">Cấu hình thiết bị</h5>
                       </div>
                       <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(108px,1fr))]">
                         <label className="grid min-w-0 gap-1.5 text-sm">
-                          <span className="font-medium leading-snug text-slate-700">Số máy HS</span>
+                          <span className="font-medium leading-snug text-m3-on-surface">Số máy HS</span>
                           <input
                             type="number"
                             min={0}
@@ -2474,12 +2462,12 @@ const TeacherSchedule = () => {
                                 studentMachineCount: event.target.value,
                               }))
                             }
-                            className="w-full bg-white px-3 py-2.5"
+                            className="w-full rounded-xl border border-m3-outline-variant bg-m3-surface-container px-3.5 py-2.5 text-m3-on-surface focus:border-m3-primary focus:outline-hidden"
                             required
                           />
                         </label>
                         <label className="grid min-w-0 gap-1.5 text-sm">
-                          <span className="font-medium leading-snug text-slate-700">Số máy GV</span>
+                          <span className="font-medium leading-snug text-m3-on-surface">Số máy GV</span>
                           <input
                             type="number"
                             min={0}
@@ -2490,12 +2478,12 @@ const TeacherSchedule = () => {
                                 teacherMachineCount: event.target.value,
                               }))
                             }
-                            className="w-full bg-white px-3 py-2.5"
+                            className="w-full rounded-xl border border-m3-outline-variant bg-m3-surface-container px-3.5 py-2.5 text-m3-on-surface focus:border-m3-primary focus:outline-hidden"
                             required
                           />
                         </label>
                         <label className="grid min-w-0 gap-1.5 text-sm">
-                          <span className="font-medium leading-snug text-slate-700">Máy lỗi</span>
+                          <span className="font-medium leading-snug text-m3-on-surface">Máy lỗi</span>
                           <input
                             type="number"
                             min={0}
@@ -2506,14 +2494,14 @@ const TeacherSchedule = () => {
                                 brokenMachineCount: event.target.value,
                               }))
                             }
-                            className="w-full bg-white px-3 py-2.5"
+                            className="w-full rounded-xl border border-m3-outline-variant bg-m3-surface-container px-3.5 py-2.5 text-m3-on-surface focus:border-m3-primary focus:outline-hidden"
                             required
                           />
                         </label>
                       </div>
 
                       <label className="mt-3 grid gap-1.5 text-sm">
-                        <span className="font-medium leading-snug text-slate-700">
+                        <span className="font-medium leading-snug text-m3-on-surface">
                           Chi tiết máy hỏng (nhập tay)
                         </span>
                         <textarea
@@ -2525,23 +2513,23 @@ const TeacherSchedule = () => {
                             }))
                           }
                           placeholder="Ví dụ: PC 32 hỏng màn hình, PC 15 mất chuột..."
-                          className="min-h-[70px] w-full bg-white px-3 py-2.5"
+                          className="min-h-[70px] w-full rounded-xl border border-m3-outline-variant bg-m3-surface-container px-3.5 py-2.5 text-m3-on-surface focus:border-m3-primary focus:outline-hidden"
                         />
-                        <span className="text-xs text-slate-400">
+                        <span className="text-xs text-m3-on-surface-variant">
                           Mô tả cụ thể từng máy hỏng — không ảnh hưởng tới số lượng máy lỗi ở trên.
                         </span>
                       </label>
                     </div>
 
-                    <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
+                    <div className="rounded-3xl border border-m3-outline-variant/60 bg-m3-surface p-4 shadow-xs">
                       <div className="mb-3 flex items-center gap-2">
-                        <Sparkles size={16} className="text-slate-500" />
-                        <h5 className="text-sm font-bold text-slate-800">Tình trạng trước giờ học</h5>
+                        <Icon name="auto_awesome" className="text-base text-m3-primary" />
+                        <h5 className="text-sm font-bold text-m3-on-surface">Tình trạng trước giờ học</h5>
                       </div>
                       <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(170px,1fr))]">
                         <label className="grid min-w-0 gap-1.5 text-sm">
-                          <span className="flex items-start gap-1.5 font-medium leading-snug text-slate-700">
-                            <Monitor size={14} className="mt-0.5 shrink-0 text-slate-400" />
+                          <span className="flex items-start gap-1.5 font-medium leading-snug text-m3-on-surface">
+                            <Icon name="desktop_windows" className="mt-0.5 shrink-0 text-sm text-m3-on-surface-variant/60" />
                             <span className="min-w-0">Tình trạng NetSupport</span>
                           </span>
                           <input
@@ -2552,12 +2540,12 @@ const TeacherSchedule = () => {
                                 netSupportStatus: event.target.value,
                               }))
                             }
-                            className="w-full bg-white px-3 py-2.5"
+                            className="w-full rounded-xl border border-m3-outline-variant bg-m3-surface-container px-3.5 py-2.5 text-m3-on-surface focus:border-m3-primary focus:outline-hidden"
                           />
                         </label>
                         <label className="grid min-w-0 gap-1.5 text-sm">
-                          <span className="flex items-start gap-1.5 font-medium leading-snug text-slate-700">
-                            <Volume2 size={14} className="mt-0.5 shrink-0 text-slate-400" />
+                          <span className="flex items-start gap-1.5 font-medium leading-snug text-m3-on-surface">
+                            <Icon name="volume_up" className="mt-0.5 shrink-0 text-sm text-m3-on-surface-variant/60" />
                             <span className="min-w-0">Tình trạng loa, âm ly</span>
                           </span>
                           <input
@@ -2565,12 +2553,12 @@ const TeacherSchedule = () => {
                             onChange={(event) =>
                               setRoomForm((prev) => ({ ...prev, audioStatus: event.target.value }))
                             }
-                            className="w-full bg-white px-3 py-2.5"
+                            className="w-full rounded-xl border border-m3-outline-variant bg-m3-surface-container px-3.5 py-2.5 text-m3-on-surface focus:border-m3-primary focus:outline-hidden"
                           />
                         </label>
                         <label className="grid min-w-0 gap-1.5 text-sm">
-                          <span className="flex items-start gap-1.5 font-medium leading-snug text-slate-700">
-                            <Wind size={14} className="mt-0.5 shrink-0 text-slate-400" />
+                          <span className="flex items-start gap-1.5 font-medium leading-snug text-m3-on-surface">
+                            <Icon name="air" className="mt-0.5 shrink-0 text-sm text-m3-on-surface-variant/60" />
                             <span className="min-w-0">Tình trạng máy lạnh, quạt</span>
                           </span>
                           <input
@@ -2581,11 +2569,11 @@ const TeacherSchedule = () => {
                                 coolingStatus: event.target.value,
                               }))
                             }
-                            className="w-full bg-white px-3 py-2.5"
+                            className="w-full rounded-xl border border-m3-outline-variant bg-m3-surface-container px-3.5 py-2.5 text-m3-on-surface focus:border-m3-primary focus:outline-hidden"
                           />
                         </label>
                         <label className="grid min-w-0 gap-1.5 text-sm">
-                          <span className="font-medium leading-snug text-slate-700">HS vệ sinh phòng máy</span>
+                          <span className="font-medium leading-snug text-m3-on-surface">HS vệ sinh phòng máy</span>
                           <input
                             value={roomForm.roomHygieneStatus}
                             onChange={(event) =>
@@ -2594,20 +2582,20 @@ const TeacherSchedule = () => {
                                 roomHygieneStatus: event.target.value,
                               }))
                             }
-                            className="w-full bg-white px-3 py-2.5"
+                            className="w-full rounded-xl border border-m3-outline-variant bg-m3-surface-container px-3.5 py-2.5 text-m3-on-surface focus:border-m3-primary focus:outline-hidden"
                           />
                         </label>
                       </div>
                     </div>
 
-                    <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
+                    <div className="rounded-3xl border border-m3-outline-variant/60 bg-m3-surface p-4 shadow-xs">
                       <div className="mb-3 flex items-center gap-2">
-                        <Power size={16} className="text-slate-500" />
-                        <h5 className="text-sm font-bold text-slate-800">Tình trạng sau giờ học</h5>
+                        <Icon name="power_settings_new" className="text-base text-m3-primary" />
+                        <h5 className="text-sm font-bold text-m3-on-surface">Tình trạng sau giờ học</h5>
                       </div>
                       <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(170px,1fr))]">
                         <label className="grid min-w-0 gap-1.5 text-sm">
-                          <span className="font-medium leading-snug text-slate-700">Đã tắt thiết bị điện</span>
+                          <span className="font-medium leading-snug text-m3-on-surface">Đã tắt thiết bị điện</span>
                           <input
                             value={roomForm.devicesPoweredOffStatus}
                             onChange={(event) =>
@@ -2616,11 +2604,11 @@ const TeacherSchedule = () => {
                                 devicesPoweredOffStatus: event.target.value,
                               }))
                             }
-                            className="w-full bg-white px-3 py-2.5"
+                            className="w-full rounded-xl border border-m3-outline-variant bg-m3-surface-container px-3.5 py-2.5 text-m3-on-surface focus:border-m3-primary focus:outline-hidden"
                           />
                         </label>
                         <label className="grid min-w-0 gap-1.5 text-sm">
-                          <span className="font-medium leading-snug text-slate-700">HS xếp ghế gọn gàng</span>
+                          <span className="font-medium leading-snug text-m3-on-surface">HS xếp ghế gọn gàng</span>
                           <input
                             value={roomForm.seatingOrderStatus}
                             onChange={(event) =>
@@ -2629,33 +2617,34 @@ const TeacherSchedule = () => {
                                 seatingOrderStatus: event.target.value,
                               }))
                             }
-                            className="w-full bg-white px-3 py-2.5"
+                            className="w-full rounded-xl border border-m3-outline-variant bg-m3-surface-container px-3.5 py-2.5 text-m3-on-surface focus:border-m3-primary focus:outline-hidden"
                           />
                         </label>
                       </div>
                     </div>
 
                     {editingRoomId && (
-                      <label className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700">
+                      <label className="inline-flex items-center gap-2 rounded-xl border border-m3-outline-variant bg-m3-surface px-3 py-2 text-sm font-medium text-m3-on-surface">
                         <input
                           type="checkbox"
                           checked={roomForm.isActive}
                           onChange={(event) =>
                             setRoomForm((prev) => ({ ...prev, isActive: event.target.checked }))
                           }
+                          className="rounded-sm accent-m3-primary"
                         />
                         Phòng đang hoạt động
                       </label>
                     )}
                   </div>
 
-                  <div className="shrink-0 border-t border-slate-200 bg-white px-4 py-4">
+                  <div className="shrink-0 border-t border-m3-outline-variant/60 bg-m3-surface-container-high px-4 py-4 sm:px-6">
                     <div className="flex flex-wrap justify-end gap-2">
                       {editingRoomId && (
                         <button
                           type="button"
                           onClick={() => resetRoomForm(roomManagerSchoolId)}
-                          className="app-btn-secondary px-4 py-2 text-sm"
+                          className="rounded-xl border border-m3-outline-variant bg-m3-surface px-4 py-2 text-sm font-medium text-m3-on-surface hover:bg-m3-surface-container-high transition"
                         >
                           Hủy sửa
                         </button>
@@ -2663,18 +2652,18 @@ const TeacherSchedule = () => {
                       <button
                         type="submit"
                         disabled={roomSubmitting}
-                        className="app-btn-primary inline-flex items-center justify-center gap-2 px-4 py-2 text-sm"
+                        className="inline-flex items-center justify-center gap-2 rounded-xl bg-m3-primary px-4 py-2 text-sm font-semibold text-m3-on-primary hover:bg-m3-primary/90 transition shadow-xs disabled:opacity-60"
                       >
                         {roomSubmitting ? (
                           'Đang lưu...'
                         ) : editingRoomId ? (
                           <>
-                            <Pencil size={15} />
+                            <Icon name="edit" className="text-sm" />
                             Lưu phòng máy
                           </>
                         ) : (
                           <>
-                            <Plus size={15} />
+                            <Icon name="add" className="text-sm" />
                             Tạo phòng máy
                           </>
                         )}
@@ -2686,14 +2675,14 @@ const TeacherSchedule = () => {
             </div>
 
             <div
-              className="shrink-0 border-t border-slate-200 bg-white px-4 py-3"
+              className="shrink-0 border-t border-m3-outline-variant/60 bg-m3-surface-container-high px-4 py-3 sm:px-6"
               style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}
             >
               <div className="flex justify-end">
                 <button
                   type="button"
                   onClick={() => setRoomManagerOpen(false)}
-                  className="app-btn-secondary px-4 py-2 text-sm"
+                  className="rounded-xl border border-m3-outline-variant bg-m3-surface px-4 py-2 text-sm font-medium text-m3-on-surface hover:bg-m3-surface-container-high transition"
                 >
                   Đóng
                 </button>
@@ -2704,23 +2693,23 @@ const TeacherSchedule = () => {
       )}
 
       {formOpen && (
-        <div className="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-sm sm:grid sm:place-items-center sm:p-4">
-          <div className="app-card flex h-[100dvh] w-full flex-col overflow-hidden rounded-none border-slate-200 shadow-2xl sm:h-auto sm:max-h-[92vh] sm:max-w-2xl sm:rounded-[24px]">
+        <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-xs sm:grid sm:place-items-center sm:p-4">
+          <div className="flex h-[100dvh] w-full flex-col overflow-hidden rounded-none border border-m3-outline-variant/60 bg-m3-surface-container shadow-2xl sm:h-auto sm:max-h-[92vh] sm:max-w-2xl sm:rounded-4xl">
             {/* Header */}
             <div
-              className="shrink-0 border-b border-slate-200 bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.16),_transparent_40%),linear-gradient(135deg,_#ffffff,_#eff6ff_60%,_#f8fafc)] px-5 py-4"
+              className="shrink-0 border-b border-m3-outline-variant/60 bg-m3-surface-container-high px-5 py-4 shadow-xs"
               style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top))' }}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-3">
-                  <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-600/25">
-                    <CalendarClock size={20} />
+                  <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-linear-to-br from-m3-primary to-m3-primary/80 text-m3-on-primary shadow-md">
+                    <Icon name="calendar_month" className="text-xl" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-extrabold tracking-tight text-slate-900">
+                    <h3 className="text-lg font-bold tracking-tight text-m3-on-surface font-md3-expressive">
                       {editing ? 'Chỉnh sửa lịch dạy' : 'Tạo lịch dạy mới'}
                     </h3>
-                    <p className="mt-0.5 text-sm text-slate-500">
+                    <p className="mt-0.5 text-sm text-m3-on-surface-variant">
                       {editing ? 'Cập nhật thông tin cho buổi dạy này.' : 'Điền thông tin để thêm một buổi dạy vào tuần.'}
                     </p>
                   </div>
@@ -2728,25 +2717,25 @@ const TeacherSchedule = () => {
                 <button
                   type="button"
                   onClick={() => setFormOpen(false)}
-                  className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-slate-200 bg-white/90 text-slate-500 shadow-sm transition hover:border-slate-300 hover:bg-white hover:text-slate-800"
+                  className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-m3-outline-variant bg-m3-surface text-m3-on-surface-variant hover:bg-m3-surface-container-high transition"
                 >
-                  <X size={16} />
+                  <Icon name="close" className="text-base" />
                 </button>
               </div>
             </div>
 
             <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
-              <div className="min-h-0 flex-1 space-y-4 overflow-y-auto bg-slate-50/60 p-4 sm:p-5">
+              <div className="min-h-0 flex-1 space-y-4 overflow-y-auto bg-m3-surface p-4 sm:p-5">
 
                 {/* Nhóm: Lớp học */}
-                <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
+                <div className="rounded-3xl border border-m3-outline-variant/60 bg-m3-surface-container p-4 sm:p-5 shadow-xs">
                   <div className="mb-3 flex items-center gap-2">
-                    <Building2 size={15} className="text-blue-500" />
-                    <h4 className="text-sm font-bold text-slate-800">Trường &amp; lớp học</h4>
+                    <Icon name="domain" className="text-base text-m3-primary" />
+                    <h4 className="text-sm font-bold text-m3-on-surface">Trường &amp; lớp học</h4>
                   </div>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <label className="grid gap-1.5 text-sm">
-                      <span className="font-medium text-slate-600">Trường *</span>
+                      <span className="font-medium text-m3-on-surface">Trường *</span>
                       <div className="relative">
                         <select
                           value={form.schoolId}
@@ -2761,7 +2750,7 @@ const TeacherSchedule = () => {
                               roomName: '',
                             }));
                           }}
-                          className="w-full appearance-none rounded-xl border-slate-200 bg-white px-3 py-2.5 pr-9 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10"
+                          className="w-full appearance-none rounded-xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2.5 pr-9 text-m3-on-surface focus:border-m3-primary focus:outline-hidden"
                           required
                         >
                           <option value="">-- Chọn trường --</option>
@@ -2771,15 +2760,15 @@ const TeacherSchedule = () => {
                             </option>
                           ))}
                         </select>
-                        <ChevronDown
-                          size={16}
-                          className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+                        <Icon
+                          name="expand_more"
+                          className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-m3-on-surface-variant text-base"
                         />
                       </div>
                     </label>
 
                     <label className="grid gap-1.5 text-sm">
-                      <span className="font-medium text-slate-600">Lớp có sẵn</span>
+                      <span className="font-medium text-m3-on-surface">Lớp có sẵn</span>
                       <div className="relative">
                         <select
                           value={form.classId}
@@ -2796,7 +2785,7 @@ const TeacherSchedule = () => {
                               className: selectedClass?.name || prev.className,
                             }));
                           }}
-                          className="w-full appearance-none rounded-xl border-slate-200 bg-white px-3 py-2.5 pr-9 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
+                          className="w-full appearance-none rounded-xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2.5 pr-9 text-m3-on-surface focus:border-m3-primary focus:outline-hidden disabled:cursor-not-allowed disabled:opacity-40"
                         >
                           <option value="">-- Chọn lớp --</option>
                           {classesBySelectedSchool.map((item) => (
@@ -2805,22 +2794,22 @@ const TeacherSchedule = () => {
                             </option>
                           ))}
                         </select>
-                        <ChevronDown
-                          size={16}
-                          className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+                        <Icon
+                          name="expand_more"
+                          className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-m3-on-surface-variant text-base"
                         />
                       </div>
                     </label>
 
                     <label className="grid gap-1.5 text-sm sm:col-span-2">
-                      <span className="font-medium text-slate-600">Tên lớp hiển thị *</span>
+                      <span className="font-medium text-m3-on-surface">Tên lớp hiển thị *</span>
                       <input
                         value={form.className}
                         onChange={(event) =>
                           setForm((prev) => ({ ...prev, className: event.target.value }))
                         }
                         placeholder="Ví dụ: 11A11"
-                        className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10"
+                        className="rounded-xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2.5 text-m3-on-surface focus:border-m3-primary focus:outline-hidden"
                         required
                       />
                     </label>
@@ -2828,39 +2817,39 @@ const TeacherSchedule = () => {
                 </div>
 
                 {/* Nhóm: Môn học & phòng */}
-                <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
+                <div className="rounded-3xl border border-m3-outline-variant/60 bg-m3-surface-container p-4 sm:p-5 shadow-xs">
                   <div className="mb-3 flex items-center gap-2">
-                    <Monitor size={15} className="text-indigo-500" />
-                    <h4 className="text-sm font-bold text-slate-800">Môn học &amp; phòng dạy</h4>
+                    <Icon name="desktop_windows" className="text-base text-m3-primary" />
+                    <h4 className="text-sm font-bold text-m3-on-surface">Môn học &amp; phòng dạy</h4>
                   </div>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <label className="grid gap-1.5 text-sm">
-                      <span className="font-medium text-slate-600">Môn học *</span>
+                      <span className="font-medium text-m3-on-surface">Môn học *</span>
                       <input
                         value={form.subject}
                         onChange={(event) =>
                           setForm((prev) => ({ ...prev, subject: event.target.value }))
                         }
                         placeholder="Ví dụ: Tin học"
-                        className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10"
+                        className="rounded-xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2.5 text-m3-on-surface focus:border-m3-primary focus:outline-hidden"
                         required
                       />
                     </label>
 
                     <label className="grid gap-1.5 text-sm">
-                      <span className="font-medium text-slate-600">Tiết mấy</span>
+                      <span className="font-medium text-m3-on-surface">Tiết mấy</span>
                       <input
                         value={form.periodLabel}
                         onChange={(event) =>
                           setForm((prev) => ({ ...prev, periodLabel: event.target.value }))
                         }
                         placeholder="Ví dụ: Tiết 1-2"
-                        className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10"
+                        className="rounded-xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2.5 text-m3-on-surface focus:border-m3-primary focus:outline-hidden"
                       />
                     </label>
 
                     <label className="grid gap-1.5 text-sm">
-                      <span className="font-medium text-slate-600">Phòng máy đã cấu hình</span>
+                      <span className="font-medium text-m3-on-surface">Phòng máy đã cấu hình</span>
                       <div className="relative">
                         <select
                           value={form.roomId}
@@ -2874,7 +2863,7 @@ const TeacherSchedule = () => {
                               roomName: selectedRoom?.name || prev.roomName,
                             }));
                           }}
-                          className="w-full appearance-none rounded-xl border-slate-200 bg-white px-3 py-2.5 pr-9 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
+                          className="w-full appearance-none rounded-xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2.5 pr-9 text-m3-on-surface focus:border-m3-primary focus:outline-hidden disabled:cursor-not-allowed disabled:opacity-40"
                         >
                           <option value="">-- Chọn phòng --</option>
                           {computerRooms.map((room) => (
@@ -2883,22 +2872,22 @@ const TeacherSchedule = () => {
                             </option>
                           ))}
                         </select>
-                        <ChevronDown
-                          size={16}
-                          className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+                        <Icon
+                          name="expand_more"
+                          className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-m3-on-surface-variant text-base"
                         />
                       </div>
                     </label>
 
                     <label className="grid gap-1.5 text-sm">
-                      <span className="font-medium text-slate-600">Phòng học / phòng máy</span>
+                      <span className="font-medium text-m3-on-surface">Phòng học / phòng máy</span>
                       <input
                         value={form.roomName}
                         onChange={(event) =>
                           setForm((prev) => ({ ...prev, roomName: event.target.value, roomId: '' }))
                         }
                         placeholder={form.roomId ? 'Đã lấy theo phòng đã chọn' : 'Ví dụ: P.Máy 03'}
-                        className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
+                        className="rounded-xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2.5 text-m3-on-surface focus:border-m3-primary focus:outline-hidden disabled:cursor-not-allowed disabled:opacity-40"
                         disabled={Boolean(form.roomId)}
                       />
                     </label>
@@ -2906,43 +2895,43 @@ const TeacherSchedule = () => {
                 </div>
 
                 {/* Nhóm: Thời gian */}
-                <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
+                <div className="rounded-3xl border border-m3-outline-variant/60 bg-m3-surface-container p-4 sm:p-5 shadow-xs">
                   <div className="mb-3 flex items-center gap-2">
-                    <Clock size={15} className="text-emerald-500" />
-                    <h4 className="text-sm font-bold text-slate-800">Thời gian</h4>
+                    <Icon name="schedule" className="text-base text-m3-primary" />
+                    <h4 className="text-sm font-bold text-m3-on-surface">Thời gian</h4>
                   </div>
                   <div className="grid gap-3 sm:grid-cols-3">
                     <label className="grid gap-1.5 text-sm">
-                      <span className="font-medium text-slate-600">Ngày dạy *</span>
+                      <span className="font-medium text-m3-on-surface">Ngày dạy *</span>
                       <input
                         type="date"
                         value={form.date}
                         onChange={(event) => setForm((prev) => ({ ...prev, date: event.target.value }))}
-                        className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10"
+                        className="rounded-xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2.5 text-m3-on-surface focus:border-m3-primary focus:outline-hidden"
                         required
                       />
                     </label>
                     <label className="grid gap-1.5 text-sm">
-                      <span className="font-medium text-slate-600">Giờ bắt đầu *</span>
+                      <span className="font-medium text-m3-on-surface">Giờ bắt đầu *</span>
                       <input
                         type="time"
                         value={form.startTime}
                         onChange={(event) =>
                           setForm((prev) => ({ ...prev, startTime: event.target.value }))
                         }
-                        className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10"
+                        className="rounded-xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2.5 text-m3-on-surface focus:border-m3-primary focus:outline-hidden"
                         required
                       />
                     </label>
                     <label className="grid gap-1.5 text-sm">
-                      <span className="font-medium text-slate-600">Giờ kết thúc *</span>
+                      <span className="font-medium text-m3-on-surface">Giờ kết thúc *</span>
                       <input
                         type="time"
                         value={form.endTime}
                         onChange={(event) =>
                           setForm((prev) => ({ ...prev, endTime: event.target.value }))
                         }
-                        className="rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10"
+                        className="rounded-xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2.5 text-m3-on-surface focus:border-m3-primary focus:outline-hidden"
                         required
                       />
                     </label>
@@ -2950,29 +2939,29 @@ const TeacherSchedule = () => {
                 </div>
 
                 {/* Nhóm: Ghi chú & trạng thái */}
-                <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
+                <div className="rounded-3xl border border-m3-outline-variant/60 bg-m3-surface-container p-4 sm:p-5 shadow-xs">
                   <div className="mb-3 flex items-center gap-2">
-                    <MessageSquareText size={15} className="text-amber-500" />
-                    <h4 className="text-sm font-bold text-slate-800">Ghi chú</h4>
+                    <Icon name="chat" className="text-base text-m3-primary" />
+                    <h4 className="text-sm font-bold text-m3-on-surface">Ghi chú</h4>
                   </div>
                   <label className="grid gap-1.5 text-sm">
                     <textarea
                       value={form.notes}
                       onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))}
-                      className="min-h-[80px] rounded-xl border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10"
+                      className="min-h-[80px] rounded-xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2.5 text-sm text-m3-on-surface focus:border-m3-primary focus:outline-hidden"
                       placeholder="Ghi chú thêm..."
                     />
                   </label>
 
                   {editing && (
-                    <label className="mt-3 inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700">
+                    <label className="mt-3 inline-flex items-center gap-2 rounded-xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2 text-sm font-medium text-m3-on-surface">
                       <input
                         type="checkbox"
                         checked={form.isActive}
                         onChange={(event) =>
                           setForm((prev) => ({ ...prev, isActive: event.target.checked }))
                         }
-                        className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                        className="rounded-sm accent-m3-primary"
                       />
                       Lịch đang hoạt động
                     </label>
@@ -2982,29 +2971,29 @@ const TeacherSchedule = () => {
 
               {/* Footer */}
               <div
-                className="shrink-0 border-t border-slate-200 bg-white px-4 py-3 sm:px-5"
+                className="shrink-0 border-t border-m3-outline-variant/60 bg-m3-surface-container-high px-4 py-3 sm:px-6"
                 style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}
               >
                 <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                   <button
                     type="button"
                     onClick={() => setFormOpen(false)}
-                    className="app-btn-secondary w-full px-4 py-2.5 text-sm sm:w-auto"
+                    className="rounded-xl border border-m3-outline-variant bg-m3-surface px-4 py-2.5 text-sm font-medium text-m3-on-surface hover:bg-m3-surface-container-high transition w-full sm:w-auto"
                   >
                     Hủy
                   </button>
                   <button
                     type="submit"
-                    className="app-btn-primary inline-flex w-full items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold sm:w-auto"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-m3-primary px-4 py-2.5 text-sm font-semibold text-m3-on-primary hover:bg-m3-primary/90 transition shadow-xs sm:w-auto"
                   >
                     {editing ? (
                       <>
-                        <Pencil size={15} />
+                        <Icon name="edit" className="text-base" />
                         Lưu cập nhật
                       </>
                     ) : (
                       <>
-                        <Plus size={15} />
+                        <Icon name="add" className="text-base" />
                         Tạo lịch
                       </>
                     )}
