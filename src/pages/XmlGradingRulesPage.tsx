@@ -1,17 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  AlertTriangle,
-  CheckCircle2,
-  Copy,
-  Download,
-  FileCode2,
-  Plus,
-  RefreshCw,
-  Save,
-  Trash2,
-  Upload,
-  XCircle
-} from 'lucide-react';
+import { Button, Icon } from '@bug-on/m3-expressive';
 import { useAuth } from '../context/AuthContext';
 import { xmlGradingRulesService } from '../services/xml-grading-rules.service';
 import type {
@@ -409,11 +397,11 @@ const XmlGradingRulesPage = () => {
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={() => setViewRawJson(!viewRawJson)} className="rounded-lg border border-slate-300 bg-white px-3 py-1 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50">
+            <button onClick={() => setViewRawJson(!viewRawJson)} className="rounded-lg border border-m3-outline-variant bg-m3-surface px-3 py-1 text-xs font-medium text-m3-on-surface hover:bg-m3-surface-container">
               {viewRawJson ? "Giao diện Bảng" : "Xem JSON"}
             </button>
-            <button onClick={copyJsonToClipboard} title="Sao chép JSON" className="rounded-lg border border-slate-300 bg-white p-1.5 text-slate-600 shadow-sm hover:bg-slate-50"><Copy size={14} /></button>
-            <button onClick={() => downloadJson()} title="Tải xuống JSON" className="rounded-lg border border-slate-300 bg-white p-1.5 text-slate-600 shadow-sm hover:bg-slate-50"><Download size={14} /></button>
+            <button onClick={copyJsonToClipboard} title="Sao chép JSON" className="rounded-lg border border-m3-outline-variant bg-m3-surface p-1.5 text-m3-on-surface-variant hover:bg-m3-surface-container"><Icon name="content_copy" className="text-sm" /></button>
+            <button onClick={() => downloadJson()} title="Tải xuống JSON" className="rounded-lg border border-m3-outline-variant bg-m3-surface p-1.5 text-m3-on-surface-variant hover:bg-m3-surface-container"><Icon name="download" className="text-sm" /></button>
           </div>
         </div>
 
@@ -498,7 +486,7 @@ const XmlGradingRulesPage = () => {
                               "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold",
                               taskPassed ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"
                             )}>
-                              {taskPassed ? <CheckCircle2 size={12} /> : <XCircle size={12} />}
+                              {taskPassed ? <Icon name="check_circle" className="text-xs" /> : <Icon name="cancel" className="text-xs" />}
                               {taskPassed ? "Đạt" : "Sai"}
                             </span>
                           </td>
@@ -549,29 +537,29 @@ const XmlGradingRulesPage = () => {
     'mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100';
 
   const iconButtonClass =
-    'inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-800';
+    'inline-flex h-9 w-9 items-center justify-center rounded-full border border-m3-outline-variant bg-m3-surface text-m3-on-surface-variant transition-colors hover:bg-m3-surface-container-high hover:text-m3-on-surface';
 
   return (
-    <div className="min-h-full space-y-5 bg-gradient-to-br from-slate-50 via-white to-blue-50/30 pb-10">
+    <div className="min-h-full space-y-5 bg-m3-surface pb-10">
       {/* Page header */}
-      <header className="sticky top-0 z-20 -mx-4 border-b border-slate-200 bg-white/95 px-4 py-4 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+      <header className="sticky top-0 z-20 -mx-4 border-b border-m3-outline-variant/60 bg-m3-surface/95 px-4 py-3.5 backdrop-blur-md sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
         <div className="flex items-center justify-between gap-4">
 
           {/* Left */}
           <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-              <FileCode2 size={18} />
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-m3-primary/10 text-m3-primary">
+              <Icon name="code" className="text-2xl" />
             </div>
 
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <h1 className="truncate text-base font-bold text-slate-900">
+                <h1 className="truncate text-base font-black text-m3-on-surface">
                   XML Grading Rules
                 </h1>
 
                 <span
                   className={cx(
-                    "hidden rounded-full border px-2 py-0.5 text-[10px] font-bold sm:inline-flex",
+                    "hidden rounded-full border px-2.5 py-0.5 text-[10px] font-bold tracking-wide sm:inline-flex",
                     statusBadge
                   )}
                 >
@@ -579,7 +567,7 @@ const XmlGradingRulesPage = () => {
                 </span>
               </div>
 
-              <p className="truncate text-xs text-slate-500">
+              <p className="truncate text-xs text-m3-on-surface-variant">
                 Quản lý ruleset · project · task · điều kiện chấm
               </p>
             </div>
@@ -587,13 +575,16 @@ const XmlGradingRulesPage = () => {
 
           {/* Right */}
           <div className="flex shrink-0 items-center gap-2">
-            <button
+            <Button
+              colorStyle="filled"
+              size="sm"
               onClick={() => setSelected(emptyRuleSet())}
-              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
             >
-              <Plus size={16} />
-              <span className="hidden sm:inline">Tạo ruleset</span>
-            </button>
+              <div className="flex items-center gap-1.5">
+                <Icon name="add" className="text-base" />
+                <span className="hidden sm:inline">Tạo ruleset</span>
+              </div>
+            </Button>
           </div>
 
         </div>
@@ -601,14 +592,14 @@ const XmlGradingRulesPage = () => {
 
       <div className="grid gap-5 xl:grid-cols-[292px_minmax(0,1fr)]">
         {/* Sidebar */}
-        <aside className="h-fit rounded-2xl border border-slate-200/80 bg-white/95 p-3.5 shadow-xl shadow-slate-900/5 xl:sticky xl:top-24 mb-2 p-6">
-          <div className="mb-3 flex items-center justify-between px-2">
+        <aside className="h-fit rounded-3xl border border-m3-outline-variant/60 bg-m3-surface-container p-4 shadow-xs xl:sticky xl:top-24 mb-2">
+          <div className="mb-3 flex items-center justify-between px-1">
             <div>
-              <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-slate-400">Rulesets</p>
-              <p className="text-sm font-semibold text-slate-800">{ruleSets.length} bộ luật</p>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-m3-on-surface-variant">Rulesets</p>
+              <p className="text-sm font-bold text-m3-on-surface">{ruleSets.length} bộ luật</p>
             </div>
             <button onClick={loadRuleSets} className={iconButtonClass} title="Làm mới">
-              <RefreshCw size={15} className={cx(loading && 'animate-spin')} />
+              <Icon name="refresh" className={cx('text-base', loading && 'animate-spin')} />
             </button>
           </div>
 
@@ -617,12 +608,12 @@ const XmlGradingRulesPage = () => {
               value={subjectFilter}
               onChange={(e) => setSubjectFilter(e.target.value)}
               placeholder="Tìm theo môn..."
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
+              className="w-full rounded-2xl border border-m3-outline-variant bg-m3-surface px-3 py-2 text-xs text-m3-on-surface outline-none transition focus:border-m3-primary focus:ring-2 focus:ring-m3-primary/20"
             />
             <select
               value={activeFilter}
               onChange={(e) => setActiveFilter(e.target.value as 'all' | 'true' | 'false')}
-              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+              className="w-full rounded-2xl border border-m3-outline-variant bg-m3-surface px-3 py-2 text-xs text-m3-on-surface outline-none transition focus:border-m3-primary focus:ring-2 focus:ring-m3-primary/20"
             >
               <option value="all">Tất cả trạng thái</option>
               <option value="true">Đang bật</option>
@@ -638,25 +629,25 @@ const XmlGradingRulesPage = () => {
                   key={item.id}
                   onClick={() => replaceSelected(item)}
                   className={cx(
-                    'w-full rounded-xl border p-3 text-left transition',
+                    'w-full rounded-2xl border p-3 text-left transition',
                     isSelected
-                      ? 'border-blue-200 bg-blue-50 shadow-sm'
-                      : 'border-transparent hover:border-slate-200 hover:bg-slate-50'
+                      ? 'border-m3-primary/50 bg-m3-primary/10 shadow-xs'
+                      : 'border-transparent hover:border-m3-outline-variant/60 hover:bg-m3-surface-container-high'
                   )}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <div className="truncate text-sm font-bold text-slate-900">
+                      <div className="truncate text-xs font-bold text-m3-on-surface">
                         {item.subject} · {item.version}
                       </div>
-                      <div className="mt-1 text-xs text-slate-500">
+                      <div className="mt-0.5 text-[11px] text-m3-on-surface-variant">
                         {item.projects.length} project · {item.projects.reduce((n, p) => n + p.tasks.length, 0)} task
                       </div>
                     </div>
                     <span
                       className={cx(
-                        'mt-0.5 h-2 w-2 shrink-0 rounded-full',
-                        item.isActive ? 'bg-emerald-500' : 'bg-slate-300'
+                        'mt-1 h-2 w-2 shrink-0 rounded-full',
+                        item.isActive ? 'bg-emerald-500' : 'bg-m3-outline-variant'
                       )}
                     />
                   </div>
@@ -665,10 +656,10 @@ const XmlGradingRulesPage = () => {
             })}
 
             {!loading && ruleSets.length === 0 && (
-              <div className="rounded-xl border border-dashed border-slate-200 px-4 py-8 text-center">
-                <FileCode2 className="mx-auto mb-2 text-slate-300" size={24} />
-                <p className="text-sm font-medium text-slate-500">Chưa có ruleset</p>
-                <p className="mt-1 text-xs text-slate-400">Tạo ruleset đầu tiên để bắt đầu.</p>
+              <div className="rounded-2xl border border-dashed border-m3-outline-variant/60 px-4 py-8 text-center">
+                <Icon name="code" className="mx-auto mb-2 text-m3-on-surface-variant text-2xl" />
+                <p className="text-xs font-bold text-m3-on-surface">Chưa có ruleset</p>
+                <p className="mt-1 text-[11px] text-m3-on-surface-variant">Tạo ruleset đầu tiên để bắt đầu.</p>
               </div>
             )}
           </div>
@@ -677,18 +668,18 @@ const XmlGradingRulesPage = () => {
         {/* Main */}
         <main className="min-w-0 space-y-5">
           {/* Ruleset overview */}
-          <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-lg shadow-slate-900/5">
+          <section className="rounded-3xl border border-m3-outline-variant/60 bg-m3-surface-container p-5 shadow-xs">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <div className="mb-1 flex flex-wrap items-center gap-2">
-                  <h2 className="text-lg font-bold text-slate-900">
+                  <h2 className="text-lg font-black text-m3-on-surface">
                     {selected.subject || 'Chưa đặt tên'} · {selected.version || 'v1'}
                   </h2>
-                  <span className={cx('rounded-full border px-2.5 py-1 text-[11px] font-bold', statusBadge)}>
+                  <span className={cx('rounded-full border px-2.5 py-0.5 text-[11px] font-bold', statusBadge)}>
                     {selected.isActive ? 'Đang hoạt động' : 'Đang tắt'}
                   </span>
                 </div>
-                <p className="text-sm text-slate-500">
+                <p className="text-xs text-m3-on-surface-variant">
                   {selected.id ? `ID: ${selected.id}` : 'Ruleset mới chưa được lưu'}
                 </p>
               </div>
@@ -698,9 +689,9 @@ const XmlGradingRulesPage = () => {
                   <button
                     onClick={() => deleteRuleSet(selected.id)}
                     title="Xóa ruleset"
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-red-200 text-red-600 transition hover:bg-red-50"
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-full text-m3-error transition-colors hover:bg-m3-error-container"
                   >
-                    <Trash2 size={16} />
+                    <Icon name="delete" className="text-base" />
                   </button>
                 )}
               </div>
@@ -714,15 +705,15 @@ const XmlGradingRulesPage = () => {
                 ['Conditions', conditionCount],
                 ['Max score', selectedMaxScore],
               ].map(([label, value]) => (
-                <div key={label} className="group rounded-xl border border-slate-100 bg-gradient-to-br from-slate-50 to-white px-4 py-3 transition hover:-translate-y-0.5 hover:border-blue-100 hover:shadow-md">
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">{label}</p>
-                  <p className="mt-1 text-xl font-black text-slate-900">{value}</p>
+                <div key={label} className="group rounded-2xl border border-m3-outline-variant/40 bg-m3-surface px-4 py-3 transition hover:-translate-y-0.5 hover:border-m3-primary/40 hover:shadow-xs">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-m3-on-surface-variant">{label}</p>
+                  <p className="mt-1 text-xl font-black text-m3-on-surface">{value}</p>
                 </div>
               ))}
             </div>
 
             {/* Tabs */}
-            <div className="mt-5 flex gap-1 overflow-x-auto border-b border-slate-200">
+            <div className="mt-5 flex gap-1 overflow-x-auto border-b border-m3-outline-variant/40">
               {[
                 ['editor', 'Rules editor'],
                 ['validation', 'Validation'],
@@ -732,15 +723,15 @@ const XmlGradingRulesPage = () => {
                   key={key}
                   onClick={() => setActiveTab(key as typeof activeTab)}
                   className={cx(
-                    'border-b-2 px-3 py-2.5 text-sm font-semibold transition',
+                    'border-b-2 px-3.5 py-2.5 text-xs font-bold transition',
                     activeTab === key
-                      ? 'border-blue-600 text-blue-700'
-                      : 'border-transparent text-slate-500 hover:text-slate-800'
+                      ? 'border-m3-primary text-m3-primary'
+                      : 'border-transparent text-m3-on-surface-variant hover:text-m3-on-surface'
                   )}
                 >
                   {label}
                   {key === 'validation' && validation && (
-                    <span className={cx('ml-2 rounded-full px-1.5 py-0.5 text-[10px]', validation.isValid ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700')}>
+                    <span className={cx('ml-2 rounded-full px-1.5 py-0.5 text-[10px] font-bold', validation.isValid ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' : 'bg-m3-error-container text-m3-on-error-container')}>
                       {validation.isValid ? 'OK' : `${validation.errors?.length || 0}`}
                     </span>
                   )}
@@ -777,12 +768,12 @@ const XmlGradingRulesPage = () => {
                       className={inputClass}
                     />
                   </label>
-                  <label className="flex items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 md:self-end">
+                  <label className="flex items-center gap-3 rounded-xl border border-m3-outline-variant/60 px-4 py-3 text-sm font-semibold text-m3-on-surface md:self-end">
                     <input
                       type="checkbox"
                       checked={selected.isActive}
                       onChange={(e) => replaceSelected({ ...selected, isActive: e.target.checked })}
-                      className="h-4 w-4 accent-blue-600"
+                      className="h-4 w-4 rounded-sm accent-m3-primary"
                     />
                     Kích hoạt
                   </label>
@@ -790,11 +781,11 @@ const XmlGradingRulesPage = () => {
               </section>
 
               {/* Projects */}
-              <section className="rounded-2xl border border-slate-200/80 bg-slate-100/70 p-5 shadow-lg shadow-slate-900/5">
+              <section className="rounded-3xl border border-m3-outline-variant/60 bg-m3-surface-container p-5 shadow-xs">
                 <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <h3 className="text-sm font-bold text-slate-900">Projects</h3>
-                    <p className="mt-1 text-xs text-slate-500">
+                    <h3 className="text-sm font-bold text-m3-on-surface">Projects</h3>
+                    <p className="mt-1 text-xs text-m3-on-surface-variant">
                       Mỗi project chứa các Task và điều kiện chấm tương ứng.
                     </p>
                   </div>
@@ -804,9 +795,9 @@ const XmlGradingRulesPage = () => {
                       replaceSelected(next);
                       setExpandedProjects((prev) => ({ ...prev, [next.projects.length - 1]: true }));
                     }}
-                    className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-100"
+                    className="inline-flex items-center gap-2 rounded-xl border border-m3-outline-variant bg-m3-surface px-3 py-2 text-xs font-bold text-m3-primary transition hover:bg-m3-surface-container"
                   >
-                    <Plus size={15} /> Thêm project
+                    <Icon name="add" className="text-base" /> Thêm project
                   </button>
                 </div>
 
@@ -841,7 +832,7 @@ const XmlGradingRulesPage = () => {
                             title="Xóa project"
                             className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-red-50 hover:text-red-600"
                           >
-                            <Trash2 size={15} />
+                            <Icon name="delete" className="text-base" />
                           </button>
                         </div>
 
@@ -870,7 +861,7 @@ const XmlGradingRulesPage = () => {
                                 <input
                                   type="number"
                                   value={project.maxScore}
-                                  onChange={(e) => mutateProject(pi, { maxScore: Number(e.target.value) })}
+                                  onChange={(e) => mutateProject(pi, { maxScore: Number(e.target.value) || 0 })}
                                   className={inputClass}
                                 />
                               </label>
@@ -887,7 +878,7 @@ const XmlGradingRulesPage = () => {
                                   onClick={() => mutateProject(pi, { tasks: [...project.tasks, emptyTask()] })}
                                   className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
                                 >
-                                  <Plus size={14} /> Thêm Task
+                                  <Icon name="add" className="text-sm" /> Thêm Task
                                 </button>
                               </div>
 
@@ -924,7 +915,7 @@ const XmlGradingRulesPage = () => {
                                           title="Xóa Task"
                                           className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600"
                                         >
-                                          <Trash2 size={14} />
+                                          <Icon name="delete" className="text-sm" />
                                         </button>
                                       </div>
 
@@ -1180,9 +1171,9 @@ const XmlGradingRulesPage = () => {
                                                     conditions: [...task.conditions, emptyCondition()],
                                                   })
                                                 }
-                                                className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800"
+                                                className="inline-flex items-center gap-1.5 rounded-xl bg-m3-primary px-3 py-1.5 text-xs font-semibold text-m3-on-primary hover:bg-m3-primary/90"
                                               >
-                                                <Plus size={14} /> Thêm điều kiện
+                                                <Icon name="add" className="text-sm" /> Thêm điều kiện
                                               </button>
                                             </div>
 
@@ -1192,13 +1183,13 @@ const XmlGradingRulesPage = () => {
                                                 const advanced = showAdvanced[conditionKey] ?? false;
 
                                                 return (
-                                                  <div key={conditionKey} className="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+                                                  <div key={conditionKey} className="rounded-xl border border-m3-outline-variant/60 bg-m3-surface p-4">
                                                     <div className="flex items-start justify-between gap-3">
                                                       <div className="flex min-w-0 items-center gap-2">
-                                                        <span className="rounded-md bg-blue-50 px-2 py-1 font-mono text-[11px] font-bold text-blue-700">
+                                                        <span className="rounded-md bg-m3-primary/10 px-2 py-1 font-mono text-[11px] font-bold text-m3-primary">
                                                           {condition.conditionId || `C${String(ci + 1).padStart(2, '0')}`}
                                                         </span>
-                                                        <span className="text-xs text-slate-500">
+                                                        <span className="text-xs text-m3-on-surface-variant">
                                                           {condition.score} điểm
                                                         </span>
                                                       </div>
@@ -1209,9 +1200,9 @@ const XmlGradingRulesPage = () => {
                                                           })
                                                         }
                                                         title="Xóa điều kiện"
-                                                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600"
+                                                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-m3-on-surface-variant/60 hover:bg-m3-error/10 hover:text-m3-error"
                                                       >
-                                                        <Trash2 size={14} />
+                                                        <Icon name="delete" className="text-sm" />
                                                       </button>
                                                     </div>
 
@@ -1419,15 +1410,15 @@ const XmlGradingRulesPage = () => {
                   })}
 
                   {selected.projects.length === 0 && (
-                    <div className="rounded-2xl border border-dashed border-slate-300 px-6 py-12 text-center">
-                      <FileCode2 className="mx-auto mb-3 text-slate-300" size={34} />
-                      <p className="font-semibold text-slate-700">Chưa có Project</p>
-                      <p className="mt-1 text-sm text-slate-400">Tạo project đầu tiên để xây ruleset.</p>
+                    <div className="rounded-2xl border border-dashed border-m3-outline-variant/60 px-6 py-12 text-center bg-m3-surface">
+                      <Icon name="code" className="mx-auto mb-3 text-4xl text-m3-on-surface-variant/40" />
+                      <p className="font-semibold text-m3-on-surface">Chưa có Project</p>
+                      <p className="mt-1 text-sm text-m3-on-surface-variant">Tạo project đầu tiên để xây ruleset.</p>
                       <button
                         onClick={() => replaceSelected({ ...selected, projects: [emptyProject()] })}
-                        className="mt-4 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3.5 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                        className="mt-4 inline-flex items-center gap-2 rounded-xl bg-m3-primary px-3.5 py-2 text-sm font-semibold text-m3-on-primary hover:bg-m3-primary/90"
                       >
-                        <Plus size={15} /> Thêm project
+                        <Icon name="add" className="text-base" /> Thêm project
                       </button>
                     </div>
                   )}
@@ -1438,27 +1429,27 @@ const XmlGradingRulesPage = () => {
 
           {/* Validation tab */}
           {activeTab === 'validation' && (
-            <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-lg shadow-slate-900/5">
+            <section className="rounded-3xl border border-m3-outline-variant/60 bg-m3-surface-container p-5 shadow-xs">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900">Validation</h3>
-                  <p className="mt-1 text-xs text-slate-500">
+                  <h3 className="text-sm font-bold text-m3-on-surface">Validation</h3>
+                  <p className="mt-1 text-xs text-m3-on-surface-variant">
                     Kiểm tra cấu trúc ruleset trước khi bật Active.
                   </p>
                 </div>
                 <button
                   onClick={validateRuleSet}
-                  className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-3.5 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+                  className="inline-flex items-center gap-2 rounded-xl bg-m3-primary px-3.5 py-2 text-sm font-semibold text-m3-on-primary hover:bg-m3-primary/90"
                 >
-                  <CheckCircle2 size={16} /> Chạy Validate
+                  <Icon name="check_circle" className="text-base" /> Chạy Validate
                 </button>
               </div>
 
               {!validation && (
-                <div className="mt-5 rounded-xl border border-dashed border-slate-200 px-6 py-10 text-center">
-                  <CheckCircle2 className="mx-auto mb-2 text-slate-300" size={30} />
-                  <p className="text-sm font-medium text-slate-600">Chưa chạy validation</p>
-                  <p className="mt-1 text-xs text-slate-400">Nên Validate trước khi bật Active.</p>
+                <div className="mt-5 rounded-2xl border border-dashed border-m3-outline-variant/60 bg-m3-surface px-6 py-10 text-center">
+                  <Icon name="check_circle" className="mx-auto mb-2 text-3xl text-m3-on-surface-variant/40" />
+                  <p className="text-sm font-medium text-m3-on-surface">Chưa chạy validation</p>
+                  <p className="mt-1 text-xs text-m3-on-surface-variant">Nên Validate trước khi bật Active.</p>
                 </div>
               )}
 
@@ -1473,29 +1464,29 @@ const XmlGradingRulesPage = () => {
                     )}
                   >
                     {validation.isValid ? (
-                      <CheckCircle2 className="text-emerald-600" size={22} />
+                      <Icon name="check_circle" className="text-emerald-600 text-2xl" />
                     ) : (
-                      <XCircle className="text-red-600" size={22} />
+                      <Icon name="cancel" className="text-m3-error text-2xl" />
                     )}
                     <div>
-                      <p className={cx('text-sm font-bold', validation.isValid ? 'text-emerald-800' : 'text-red-800')}>
+                      <p className={cx('text-sm font-bold', validation.isValid ? 'text-emerald-800' : 'text-m3-error')}>
                         {validation.isValid ? 'Ruleset hợp lệ' : 'Ruleset có lỗi'}
                       </p>
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-m3-on-surface-variant">
                         {validation.errors?.length || 0} lỗi · {validation.warnings?.length || 0} cảnh báo
                       </p>
                     </div>
                   </div>
 
                   {(validation.errors || []).length > 0 && (
-                    <div className="rounded-xl border border-red-100 bg-white">
-                      <div className="border-b border-red-100 bg-red-50 px-4 py-3 text-xs font-bold text-red-800">
+                    <div className="rounded-2xl border border-m3-error/20 bg-m3-surface overflow-hidden">
+                      <div className="border-b border-m3-error/10 bg-m3-error-container/40 px-4 py-3 text-xs font-bold text-m3-on-error-container">
                         Lỗi cần sửa
                       </div>
-                      <div className="divide-y divide-slate-100">
+                      <div className="divide-y divide-m3-outline-variant/40">
                         {(validation.errors || []).map((err, i) => (
-                          <div key={i} className="flex gap-3 px-4 py-3 text-xs text-red-700">
-                            <XCircle size={14} className="mt-0.5 shrink-0" />
+                          <div key={i} className="flex gap-3 px-4 py-3 text-xs text-m3-error">
+                            <Icon name="cancel" className="text-sm mt-0.5 shrink-0" />
                             <span>{err}</span>
                           </div>
                         ))}
@@ -1504,14 +1495,14 @@ const XmlGradingRulesPage = () => {
                   )}
 
                   {(validation.warnings || []).length > 0 && (
-                    <div className="rounded-xl border border-amber-100 bg-white">
+                    <div className="rounded-2xl border border-amber-200/60 bg-m3-surface overflow-hidden">
                       <div className="border-b border-amber-100 bg-amber-50 px-4 py-3 text-xs font-bold text-amber-800">
                         Cảnh báo
                       </div>
-                      <div className="divide-y divide-slate-100">
+                      <div className="divide-y divide-m3-outline-variant/40">
                         {(validation.warnings || []).map((warning, i) => (
                           <div key={i} className="flex gap-3 px-4 py-3 text-xs text-amber-700">
-                            <AlertTriangle size={14} className="mt-0.5 shrink-0" />
+                            <Icon name="warning" className="text-sm mt-0.5 shrink-0" />
                             <span>{warning}</span>
                           </div>
                         ))}
@@ -1525,16 +1516,16 @@ const XmlGradingRulesPage = () => {
 
           {/* Test tab */}
           {activeTab === 'test' && (
-            <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-lg shadow-slate-900/5">
+            <section className="rounded-3xl border border-m3-outline-variant/60 bg-m3-surface-container p-5 shadow-xs">
               <div className="mb-5 flex items-start justify-between gap-3">
                 <div>
                   <div className="flex items-center gap-2">
-                    <div className="rounded-lg bg-slate-100 p-2 text-slate-700">
-                      <FileCode2 size={18} />
+                    <div className="rounded-xl bg-m3-surface p-2 text-m3-on-surface">
+                      <Icon name="code" className="text-lg" />
                     </div>
-                    <h3 className="text-sm font-bold text-slate-900">Test chấm XML</h3>
+                    <h3 className="text-sm font-bold text-m3-on-surface">Test chấm XML</h3>
                   </div>
-                  <p className="mt-1 text-xs text-slate-500">
+                  <p className="mt-1 text-xs text-m3-on-surface-variant">
                     Chọn project và file Office để kiểm tra kết quả chấm trước khi đưa ruleset vào sử dụng.
                   </p>
                 </div>
@@ -1569,9 +1560,9 @@ const XmlGradingRulesPage = () => {
 
                 <button
                   onClick={gradeWithXmlRules}
-                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-m3-primary px-4 py-2 text-sm font-semibold text-m3-on-primary hover:bg-m3-primary/90"
                 >
-                  <Upload size={16} /> Chấm thử
+                  <Icon name="upload" className="text-base" /> Chấm thử
                 </button>
               </div>
 
@@ -1580,37 +1571,37 @@ const XmlGradingRulesPage = () => {
           )}
 
           {saveError && (
-            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700 shadow-sm">
+            <div className="rounded-2xl border border-m3-error/20 bg-m3-error-container/20 px-4 py-3 text-xs text-m3-on-error-container shadow-xs">
               <div className="flex items-start gap-2">
-                <XCircle size={15} className="mt-0.5 shrink-0" />
+                <Icon name="cancel" className="mt-0.5 shrink-0 text-base text-m3-error" />
                 <div className="min-w-0">
                   <p className="font-bold">Không thể lưu ruleset</p>
                   <p className="mt-0.5">{saveError}</p>
                 </div>
                 <button
                   onClick={() => setSaveError('')}
-                  className="ml-auto shrink-0 text-red-400 hover:text-red-700"
+                  className="ml-auto shrink-0 text-m3-on-error-container/60 hover:text-m3-error"
                   title="Đóng"
                 >
-                  <XCircle size={15} />
+                  <Icon name="close" className="text-base" />
                 </button>
               </div>
             </div>
           )}
 
-          <div className="flex items-center gap-2 rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-xs text-amber-800">
-            <AlertTriangle size={15} className="shrink-0" />
+          <div className="flex items-center gap-2 rounded-2xl border border-amber-200/60 bg-amber-500/10 px-4 py-3 text-xs text-amber-900 dark:text-amber-200">
+            <Icon name="warning" className="shrink-0 text-base text-amber-600" />
             <span>
               Hãy chạy <strong>Validate</strong> đầy đủ trước khi bật <strong>Active</strong>.
             </span>
           </div>
 
           {/* Sticky action bar: Save ngay tại vị trí đang nhập, không cần cuộn về đầu trang. */}
-          <div className="sticky bottom-4 z-30 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200/80 bg-white/95 px-4 py-3.5 shadow-2xl shadow-slate-900/15 backdrop-blur-xl">
-            <div className="flex min-w-0 items-center gap-2 text-xs text-slate-500">
+          <div className="sticky bottom-4 z-30 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-m3-outline-variant/60 bg-m3-surface/90 px-4 py-3.5 shadow-xl backdrop-blur-xl">
+            <div className="flex min-w-0 items-center gap-2 text-xs text-m3-on-surface-variant">
               <span className={cx(
                 'h-2 w-2 shrink-0 rounded-full',
-                saving ? 'animate-pulse bg-blue-500' : saveError ? 'bg-red-500' : 'bg-emerald-500'
+                saving ? 'animate-pulse bg-m3-primary' : saveError ? 'bg-m3-error' : 'bg-emerald-500'
               )} />
               <span className="truncate">
                 {saving
@@ -1627,18 +1618,18 @@ const XmlGradingRulesPage = () => {
               <button
                 onClick={validateRuleSet}
                 disabled={saving}
-                className="inline-flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-3.5 py-2.5 text-sm font-bold text-indigo-700 transition hover:border-indigo-300 hover:bg-indigo-100 disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-xl border border-m3-outline-variant bg-m3-surface-container px-3.5 py-2.5 text-sm font-bold text-m3-primary transition hover:bg-m3-surface-container-high disabled:opacity-50"
               >
-                <CheckCircle2 size={15} /> Validate
+                <Icon name="check_circle" className="text-base" /> Validate
               </button>
               <button
                 type="button"
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={saveRuleSet}
                 disabled={saving}
-                className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-emerald-600/20 transition hover:-translate-y-0.5 hover:bg-emerald-700 hover:shadow-emerald-600/30 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center gap-2 rounded-xl bg-m3-primary px-4 py-2.5 text-sm font-bold text-m3-on-primary shadow-sm transition hover:bg-m3-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                <Save size={15} className={cx(saving && 'animate-pulse')} />
+                <Icon name="save" className={cx('text-base', saving && 'animate-pulse')} />
                 {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
               </button>
             </div>
