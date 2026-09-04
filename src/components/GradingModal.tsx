@@ -1,6 +1,6 @@
-﻿// src/components/GradingModal.optimized.tsx
+// src/components/GradingModal.optimized.tsx
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { X, Plus, Save, Loader2, ArrowLeft, XCircle, CheckCircle, Upload, Search, Check, Pencil, Trash2 } from 'lucide-react';
+import { Icon, ProgressIndicator } from '@bug-on/m3-expressive';
 import * as XLSX from 'xlsx';
 import { useAuth } from '../context/AuthContext';
 import type { Assignment, GradingEndpointInfo, UpdateAssignmentRequest } from '../types/assignment.types';
@@ -2511,13 +2511,13 @@ const GradingModal: React.FC<GradingModalProps> = ({
     // ============ RENDER FUNCTIONS ============
     const renderModeSelector = () => (
         <div className="flex-1 flex flex-col items-center justify-center gap-6 py-12">
-            <h3 className="text-xl font-semibold text-gray-700">Bạn muốn làm gì?</h3>
-            <div className="flex flex-col gap-4">
+            <h3 className="text-xl font-bold text-m3-on-surface font-md3-expressive">Bạn muốn làm gì?</h3>
+            <div className="flex flex-col gap-4 w-full max-w-md px-4">
                 <button
                     onClick={() => setChooseMode('new')}
-                    className="bg-blue-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-700 flex items-center gap-3 shadow-md transition"
+                    className="bg-m3-primary text-m3-on-primary px-8 py-4 rounded-2xl text-base font-semibold hover:bg-m3-primary/90 flex items-center justify-center gap-3 shadow-xs transition"
                 >
-                    <Plus size={24} />
+                    <Icon name="add" className="text-2xl" />
                     Tạo bài chấm mới
                 </button>
                 <button
@@ -2532,19 +2532,19 @@ const GradingModal: React.FC<GradingModalProps> = ({
                     disabled={activeAutoAssignments.length === 0}
                     title={
                         activeAutoAssignments.length === 0
-                            ? 'Chua co bai tap tu dong dang hoat dong. Hay vao Quan ly bai tap de kich hoat.'
+                            ? 'Chưa có bài tập tự động đang hoạt động. Hãy vào Quản lý bài tập để kích hoạt.'
                             : undefined
                     }
-                    className="bg-emerald-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-emerald-700 flex items-center gap-3 shadow-md transition disabled:cursor-not-allowed disabled:opacity-60"
+                    className="border border-emerald-500/40 bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 px-8 py-4 rounded-2xl text-base font-semibold hover:bg-emerald-500/30 flex items-center justify-center gap-3 shadow-xs transition disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                    <Save size={24} />
+                    <Icon name="save" className="text-2xl" />
                     Chấm nhiều bài tự động
                 </button>
                 <button
                     onClick={() => setChooseMode('manage')}
-                    className="bg-amber-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-amber-700 flex items-center gap-3 shadow-md transition"
+                    className="border border-amber-500/40 bg-amber-500/20 text-amber-900 dark:text-amber-200 px-8 py-4 rounded-2xl text-base font-semibold hover:bg-amber-500/30 flex items-center justify-center gap-3 shadow-xs transition"
                 >
-                    <Pencil size={24} />
+                    <Icon name="edit" className="text-2xl" />
                     Quản lý bài tập
                 </button>
             </div>
@@ -2552,25 +2552,25 @@ const GradingModal: React.FC<GradingModalProps> = ({
     );
 
     const renderNewAssignmentForm = () => (
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-6 bg-m3-surface">
             <button
                 onClick={() => setChooseMode(null)}
-                className="text-sm text-gray-600 hover:text-gray-800 flex items-center gap-1 mb-4"
+                className="rounded-xl border border-m3-outline-variant bg-m3-surface px-3 py-1.5 text-xs font-semibold text-m3-on-surface hover:bg-m3-surface-container-high transition inline-flex items-center gap-1.5 mb-4"
             >
-                <ArrowLeft size={16} /> Quay lại
+                <Icon name="arrow_back" className="text-base" /> Quay lại
             </button>
 
-            <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                <h3 className="font-semibold mb-4 text-lg">Tạo nhanh bài tập theo môn và phần</h3>
+            <div className="p-5 bg-m3-surface-container rounded-3xl border border-m3-outline-variant/60 shadow-xs">
+                <h3 className="font-bold mb-4 text-lg text-m3-on-surface font-md3-expressive">Tạo nhanh bài tập theo môn và phần</h3>
 
                 <div className="mb-3">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-m3-on-surface mb-1">
                         Chọn môn *
                     </label>
                     <select
                         value={newAssignmentSubject}
                         onChange={(e) => setNewAssignmentSubject(e.target.value as SubjectCode)}
-                        className="w-full border border-gray-300 rounded-md px-3 py-2"
+                        className="w-full rounded-xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2.5 text-m3-on-surface focus:border-m3-primary focus:outline-hidden"
                     >
                         {SUBJECT_OPTIONS.map((subject) => (
                             <option key={subject.code} value={subject.code}>
@@ -2581,13 +2581,13 @@ const GradingModal: React.FC<GradingModalProps> = ({
                 </div>
 
                 <div className="mb-3">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-m3-on-surface mb-1">
                         Chọn phần *
                     </label>
                     <select
                         value={newAssignmentPracticeCode}
                         onChange={(e) => setNewAssignmentPracticeCode(e.target.value as PracticeCode)}
-                        className="w-full border border-gray-300 rounded-md px-3 py-2"
+                        className="w-full rounded-xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2.5 text-m3-on-surface focus:border-m3-primary focus:outline-hidden"
                     >
                         {PRACTICE_OPTIONS.map((practice) => (
                             <option key={practice.code} value={practice.code}>
@@ -2595,11 +2595,11 @@ const GradingModal: React.FC<GradingModalProps> = ({
                             </option>
                         ))}
                     </select>
-                    <p className="text-xs text-slate-600 mt-1">
+                    <p className="text-xs text-m3-on-surface-variant mt-1">
                         Hệ thống sẽ lấy danh sách project của môn và phần đã chọn, rồi điền sẵn tên theo project.
                     </p>
                     {newAssignmentPracticeCode === 'exam_review' && (
-                        <p className="text-xs text-indigo-700 mt-1">
+                        <p className="text-xs text-m3-primary mt-1">
                             {newAssignmentSubject === 'excel'
                                 ? 'Ôn thi Excel dùng nhóm project: 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22.'
                                 : 'Ôn thi Word dùng nhóm project: 1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23 và thêm 20, 22.'}
@@ -2607,8 +2607,8 @@ const GradingModal: React.FC<GradingModalProps> = ({
                     )}
                 </div>
 
-                <div className="mb-4 rounded-md border border-indigo-200 bg-indigo-50 p-3">
-                    <p className="text-xs font-semibold text-indigo-900">
+                <div className="mb-4 rounded-2xl border border-m3-primary/20 bg-m3-primary/5 p-4">
+                    <p className="text-xs font-semibold text-m3-primary">
                         Tạo nhanh từng phần ({newAssignmentSubject.toUpperCase()})
                     </p>
                     <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
@@ -2626,10 +2626,10 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                     type="button"
                                     onClick={() => void handleQuickCreateByPractice(practice.code)}
                                     disabled={isCreatingAssignment || !hasProjects}
-                                    className="rounded-md border border-indigo-300 bg-white px-3 py-2 text-left text-xs font-medium text-indigo-800 hover:bg-indigo-100 disabled:cursor-not-allowed disabled:opacity-60"
+                                    className="rounded-xl border border-m3-outline-variant bg-m3-surface px-3 py-2 text-left text-xs font-medium text-m3-on-surface hover:bg-m3-surface-container-high transition disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                     <div>{practice.label}</div>
-                                    <div className="mt-1 text-[11px] text-indigo-600">
+                                    <div className="mt-1 text-[11px] text-m3-primary">
                                         {hasProjects ? `${practiceEndpoints.length} project` : 'Chưa có project'}
                                     </div>
                                 </button>
@@ -2639,23 +2639,23 @@ const GradingModal: React.FC<GradingModalProps> = ({
                 </div>
 
                 <div className="mb-3">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-m3-on-surface mb-1">
                         Mô tả dùng chung (tuỳ chọn)
                     </label>
                     <textarea
                         value={bulkAssignmentDescription}
                         onChange={(e) => setBulkAssignmentDescription(e.target.value)}
-                        className="w-full border border-gray-300 rounded-md px-3 py-2"
+                        className="w-full rounded-xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2.5 text-m3-on-surface focus:border-m3-primary focus:outline-hidden"
                         rows={2}
                         placeholder="Nội dung này sẽ áp dụng cho tất cả bài được tạo nhanh."
                     />
                 </div>
 
-                <div className="mb-4 rounded-md border border-emerald-200 bg-emerald-50 p-3">
+                <div className="mb-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4">
                     <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                         <div>
-                            <h4 className="text-sm font-semibold text-emerald-800">Danh sách project sẽ tạo</h4>
-                            <p className="text-xs text-emerald-700 mt-1">
+                            <h4 className="text-sm font-semibold text-emerald-800 dark:text-emerald-200">Danh sách project sẽ tạo</h4>
+                            <p className="text-xs text-emerald-700 dark:text-emerald-300 mt-1">
                                 Bạn có thể bỏ chọn project không cần tạo và đổi tên từng bài trước khi lưu.
                             </p>
                         </div>
@@ -2664,7 +2664,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                 type="button"
                                 onClick={handleSelectAllBulkAssignments}
                                 disabled={isCreatingAssignment || bulkAssignmentDrafts.length === 0}
-                                className="px-2.5 py-1 text-xs rounded-md border border-emerald-300 bg-white text-emerald-700 hover:bg-emerald-100 disabled:opacity-50"
+                                className="px-2.5 py-1 text-xs rounded-xl border border-emerald-500/30 bg-m3-surface text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/10 transition disabled:opacity-50"
                             >
                                 Chọn tất cả
                             </button>
@@ -2672,7 +2672,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                 type="button"
                                 onClick={handleClearBulkAssignments}
                                 disabled={isCreatingAssignment || bulkAssignmentDrafts.length === 0}
-                                className="px-2.5 py-1 text-xs rounded-md border border-emerald-300 bg-white text-emerald-700 hover:bg-emerald-100 disabled:opacity-50"
+                                className="px-2.5 py-1 text-xs rounded-xl border border-emerald-500/30 bg-m3-surface text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/10 transition disabled:opacity-50"
                             >
                                 Bỏ chọn
                             </button>
@@ -2680,7 +2680,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                 type="button"
                                 onClick={handleResetBulkAssignmentNames}
                                 disabled={isCreatingAssignment || bulkAssignmentDrafts.length === 0}
-                                className="px-2.5 py-1 text-xs rounded-md border border-emerald-300 bg-white text-emerald-700 hover:bg-emerald-100 disabled:opacity-50"
+                                className="px-2.5 py-1 text-xs rounded-xl border border-emerald-500/30 bg-m3-surface text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/10 transition disabled:opacity-50"
                             >
                                 Reset tên theo Project
                             </button>
@@ -2692,17 +2692,17 @@ const GradingModal: React.FC<GradingModalProps> = ({
                             Practice này chưa có project khả dụng để tạo nhanh.
                         </p>
                     ) : (
-                        <div className="mt-3 overflow-x-auto rounded-md border border-emerald-100 bg-white">
-                            <table className="min-w-full divide-y divide-emerald-100">
-                                <thead className="bg-emerald-50">
+                        <div className="mt-3 overflow-x-auto rounded-xl border border-emerald-500/20 bg-m3-surface">
+                            <table className="min-w-full divide-y divide-emerald-500/20">
+                                <thead className="bg-emerald-500/10">
                                     <tr>
-                                        <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase text-emerald-800">Chọn</th>
-                                        <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase text-emerald-800">Project</th>
-                                        <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase text-emerald-800">Tên bài tập</th>
-                                        <th className="px-3 py-2 text-center text-[11px] font-semibold uppercase text-emerald-800">Điểm tối đa</th>
+                                        <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase text-emerald-800 dark:text-emerald-200">Chọn</th>
+                                        <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase text-emerald-800 dark:text-emerald-200">Project</th>
+                                        <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase text-emerald-800 dark:text-emerald-200">Tên bài tập</th>
+                                        <th className="px-3 py-2 text-center text-[11px] font-semibold uppercase text-emerald-800 dark:text-emerald-200">Điểm tối đa</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-emerald-50">
+                                <tbody className="divide-y divide-emerald-500/10">
                                     {bulkAssignmentDrafts.map((draft) => (
                                         <tr key={draft.endpoint}>
                                             <td className="px-3 py-2">
@@ -2711,9 +2711,10 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                                     checked={draft.selected}
                                                     onChange={() => handleToggleBulkAssignmentSelection(draft.endpoint)}
                                                     disabled={isCreatingAssignment}
+                                                    className="rounded-sm accent-m3-primary"
                                                 />
                                             </td>
-                                            <td className="px-3 py-2 text-xs text-gray-700">{draft.displayName}</td>
+                                            <td className="px-3 py-2 text-xs text-m3-on-surface">{draft.displayName}</td>
                                             <td className="px-3 py-2">
                                                 <input
                                                     type="text"
@@ -2722,11 +2723,11 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                                         handleBulkAssignmentNameChange(draft.endpoint, e.target.value)
                                                     }
                                                     disabled={isCreatingAssignment}
-                                                    className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+                                                    className="w-full rounded-xl border border-m3-outline-variant bg-m3-surface px-3 py-1.5 text-sm text-m3-on-surface focus:border-m3-primary focus:outline-hidden"
                                                     placeholder="Nhập tên bài tập"
                                                 />
                                             </td>
-                                            <td className="px-3 py-2 text-center text-sm text-gray-700">{draft.maxScore}</td>
+                                            <td className="px-3 py-2 text-center text-sm text-m3-on-surface">{draft.maxScore}</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -2734,21 +2735,21 @@ const GradingModal: React.FC<GradingModalProps> = ({
                         </div>
                     )}
 
-                    <div className="mt-3">
+                    <div className="mt-4">
                         <button
                             type="button"
                             onClick={handleCreateBulkAssignments}
                             disabled={isCreatingAssignment || selectedBulkAssignmentCount === 0}
-                            className="w-full rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            className="w-full rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition shadow-xs"
                         >
                             {isCreatingAssignment ? (
                                 <>
-                                    <Loader2 size={16} className="animate-spin" />
+                                    <ProgressIndicator variant="circular" shape="wavy" size={16} aria-label="Đang tạo nhiều bài..." />
                                     Đang tạo nhiều bài...
                                 </>
                             ) : (
                                 <>
-                                    <Plus size={16} />
+                                    <Icon name="add" className="text-base" />
                                     Tạo nhanh {selectedBulkAssignmentCount} bài đã chọn
                                 </>
                             )}
@@ -2767,22 +2768,22 @@ const GradingModal: React.FC<GradingModalProps> = ({
         return (
             <div
                 data-student-scroll-container="true"
-                className="max-h-[55vh] overflow-auto rounded-md border border-gray-200"
+                className="max-h-[55vh] overflow-auto rounded-2xl border border-m3-outline-variant/60 bg-m3-surface"
             >
-                <table className="min-w-full divide-y divide-gray-200">
-                    <caption className="caption-top pb-2 text-left text-sm font-semibold text-gray-700">
+                <table className="min-w-full divide-y divide-m3-outline-variant/30">
+                    <caption className="caption-top px-4 pb-2 text-left text-sm font-semibold text-m3-on-surface">
                         Bảng chấm điểm học sinh
                     </caption>
-                    <thead className="sticky top-0 z-10 bg-gray-50">
+                    <thead className="sticky top-0 z-10 bg-m3-surface-container-low">
                         <tr>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">STT</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Học sinh</th>
-                            <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">File bài làm</th>
-                            <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Điểm</th>
-                            <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Trạng thái</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-m3-on-surface-variant uppercase tracking-wider">STT</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-m3-on-surface-variant uppercase tracking-wider">Học sinh</th>
+                            <th className="px-4 py-3 text-center text-xs font-semibold text-m3-on-surface-variant uppercase tracking-wider">File bài làm</th>
+                            <th className="px-4 py-3 text-center text-xs font-semibold text-m3-on-surface-variant uppercase tracking-wider">Điểm</th>
+                            <th className="px-4 py-3 text-center text-xs font-semibold text-m3-on-surface-variant uppercase tracking-wider">Trạng thái</th>
                         </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody className="bg-m3-surface divide-y divide-m3-outline-variant/20">
                         {gradingStudents.map((student, index) => {
                             const state = studentGradingStates.get(student.id);
                             const autoErrors = state?.autoGradingErrors || extractAutoGradingErrors(state?.gradingResult || null);
@@ -2802,18 +2803,18 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                         if (node) rowRefs.current.set(student.id, node);
                                         else rowRefs.current.delete(student.id);
                                     }}
-                                    className="hover:bg-gray-50"
+                                    className="hover:bg-m3-surface-container-high/40 transition-colors"
                                 >
-                                    <td className="px-4 py-3 text-sm text-gray-500">{index + 1}</td>
-                                    <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                                    <td className="px-4 py-3 text-sm text-m3-on-surface-variant">{index + 1}</td>
+                                    <td className="px-4 py-3 text-sm font-medium text-m3-on-surface">
                                         {student.middleName} {student.firstName}
                                     </td>
                                     <td className="px-4 py-3 text-center">
                                         <div
-                                            className={`rounded-md border border-dashed p-2 transition ${
+                                            className={`rounded-xl border border-dashed p-2.5 transition ${
                                                 singleDragOverStudentId === student.id
-                                                    ? 'border-blue-500 bg-blue-50'
-                                                    : 'border-gray-300 bg-gray-50'
+                                                    ? 'border-m3-primary bg-m3-primary/10'
+                                                    : 'border-m3-outline-variant bg-m3-surface-container-low'
                                             } ${state?.isGrading ? 'opacity-60 cursor-not-allowed' : ''}`}
                                             onDragOver={(e) =>
                                                 handleStudentFileDragOver(student.id, Boolean(state?.isGrading), e)
@@ -2833,19 +2834,19 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                             />
                                             <label
                                                 htmlFor={`single-file-${student.id}`}
-                                                className={`inline-flex px-2 py-1 rounded text-xs border ${
+                                                className={`inline-flex px-3 py-1.5 rounded-lg text-xs font-medium border transition ${
                                                     state?.isGrading
-                                                        ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
-                                                        : 'bg-blue-50 text-blue-700 border-blue-200 cursor-pointer hover:bg-blue-100'
+                                                        ? 'bg-m3-surface-container text-m3-on-surface-variant/40 border-m3-outline-variant/40 cursor-not-allowed'
+                                                        : 'bg-m3-primary/10 text-m3-primary border-m3-primary/20 cursor-pointer hover:bg-m3-primary/20'
                                                 }`}
                                             >
                                                 {state?.studentFile ? 'Đổi file bài làm' : 'Chọn file bài làm'}
                                             </label>
-                                            <p className="mt-1 text-[11px] text-gray-500">
+                                            <p className="mt-1 text-[11px] text-m3-on-surface-variant/70">
                                                 Kéo thả file vào đây
                                             </p>
                                             {state?.studentFile && (
-                                                <p className="text-xs text-gray-600 mt-1 truncate">
+                                                <p className="text-xs text-m3-on-surface mt-1 truncate">
                                                     {state.studentFile.name}
                                                 </p>
                                             )}
@@ -2854,7 +2855,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                                     type="button"
                                                     onClick={() => void handleUndoSingleStudentFile(student.id)}
                                                     disabled={Boolean(state?.isGrading) || undoingSingleStudentId === student.id}
-                                                    className="mt-2 inline-flex items-center gap-1 rounded border border-amber-200 bg-amber-50 px-2 py-1 text-[11px] text-amber-700 hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
+                                                    className="mt-2 inline-flex items-center gap-1 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-[11px] text-amber-700 dark:text-amber-300 hover:bg-amber-500/20 disabled:cursor-not-allowed disabled:opacity-60"
                                                 >
                                                     {undoingSingleStudentId === student.id ? 'Đang hoàn tác...' : 'Hoàn tác file vừa chọn'}
                                                 </button>
@@ -2868,13 +2869,15 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                     </td>
                                     <td className="px-4 py-3 text-center">
                                         {state?.isGrading ? (
-                                            <Loader2 className="animate-spin mx-auto" size={20} />
+                                            <div className="flex items-center justify-center py-1">
+                                                <ProgressIndicator variant="circular" shape="wavy" size={20} aria-label="Grading" />
+                                            </div>
                                         ) : (
                                             <input
                                                 type="number"
                                                 value={state?.manualScore ?? ''}
                                                 readOnly
-                                                className="w-20 border border-gray-300 rounded-md px-2 py-1 text-center bg-gray-50"
+                                                className="w-20 border border-m3-outline-variant rounded-lg px-2 py-1 text-center bg-m3-surface-container-low text-m3-on-surface"
                                                 min="0"
                                                 max={selectedAssignmentData?.maxScore || 10}
                                                 step="0.01"
@@ -2882,24 +2885,24 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                             />
                                         )}
                                         {state?.gradingResult && (
-                                            <p className="text-xs text-green-600 mt-1">Đã chấm tự động</p>
+                                            <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">Đã chấm tự động</p>
                                         )}
                                     </td>
                                     <td className="px-4 py-3 text-center">
                                         {state?.isGrading ? (
-                                            <span className="text-blue-600 text-sm">Đang chấm...</span>
+                                            <span className="text-m3-primary text-sm font-medium">Đang chấm...</span>
                                         ) : state?.error ? (
-                                            <span className="text-red-600 text-sm flex items-center gap-1 justify-center">
-                                                <XCircle size={16} />
+                                            <span className="text-m3-error text-sm flex items-center gap-1 justify-center">
+                                                <Icon name="cancel" className="text-base text-m3-error" />
                                                 Lỗi
                                             </span>
                                         ) : state?.gradingResult ? (
-                                            <span className="text-green-600 text-sm flex items-center gap-1 justify-center">
-                                                <CheckCircle size={16} />
+                                            <span className="text-emerald-600 dark:text-emerald-400 text-sm flex items-center gap-1 justify-center">
+                                                <Icon name="check_circle" className="text-base text-emerald-600 dark:text-emerald-400" />
                                                 Hoàn thành
                                             </span>
                                         ) : (
-                                            <span className="text-gray-400 text-sm">Chờ file</span>
+                                            <span className="text-m3-on-surface-variant/60 text-sm">Chờ file</span>
                                         )}
                                     </td>
                                 </tr>
@@ -2918,19 +2921,19 @@ const GradingModal: React.FC<GradingModalProps> = ({
                     setChooseMode(null);
                     setSelectedAssignment('');
                 }}
-                className="text-sm text-gray-600 hover:text-gray-800 flex items-center gap-1 mb-4"
+                className="text-sm text-m3-on-surface-variant hover:text-m3-on-surface flex items-center gap-1.5 mb-4 font-medium transition-colors"
             >
-                <ArrowLeft size={16} /> Quay lại
+                <Icon name="arrow_back" className="text-base" /> Quay lại
             </button>
 
             <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-m3-on-surface mb-2">
                     Chọn bài tập
                 </label>
                 <select
                     value={selectedAssignment}
                     onChange={(e) => setSelectedAssignment(e.target.value)}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2"
+                    className="w-full border border-m3-outline-variant bg-m3-surface-container-lowest text-m3-on-surface rounded-xl px-3 py-2.5 focus:outline-hidden focus:border-m3-primary"
                 >
                     <option value="">-- Chọn bài tập --</option>
                     {activeAutoAssignments.map((a) => (
@@ -2941,13 +2944,13 @@ const GradingModal: React.FC<GradingModalProps> = ({
                 </select>
             </div>
 
-            <div className="sticky top-0 z-30 mb-4 rounded-md border border-gray-200 bg-gray-50 p-3 shadow-sm">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="sticky top-0 z-30 mb-4 rounded-2xl border border-m3-outline-variant/60 bg-m3-surface-container p-3.5 shadow-sm">
+                <label className="block text-sm font-medium text-m3-on-surface mb-2">
                     Tìm học sinh và cuộn tới vị trí trong bảng
                 </label>
                 <div className="flex flex-col sm:flex-row gap-2">
                     <div className="relative flex-1">
-                        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                        <Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-m3-on-surface-variant text-base" />
                         <input
                             value={studentSearchQuery}
                             onChange={(e) => {
@@ -2964,41 +2967,41 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                 }
                             }}
                             placeholder="Nhập tên học sinh..."
-                            className="w-full rounded-md border border-gray-300 pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
+                            className="w-full rounded-xl border border-m3-outline-variant bg-m3-surface-container-lowest text-m3-on-surface pl-9 pr-3 py-2 text-sm focus:outline-hidden focus:border-m3-primary"
                         />
                     </div>
                     <div className="flex gap-2">
                         <button
                             type="button"
                             onClick={() => moveToMatchedStudent(-1)}
-                            className="inline-flex items-center justify-center gap-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
+                            className="inline-flex items-center justify-center gap-1 rounded-xl border border-m3-outline-variant bg-m3-surface px-3 py-2 text-sm font-medium text-m3-on-surface hover:bg-m3-surface-container-high transition-colors"
                         >
                             Trước
                         </button>
                         <button
                             type="button"
                             onClick={scrollToStudentByKeyword}
-                            className="inline-flex items-center justify-center gap-1 rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                            className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-m3-primary px-3.5 py-2 text-sm font-medium text-m3-on-primary hover:bg-m3-primary/90 transition-colors"
                         >
-                            <Search size={14} />
+                            <Icon name="search" className="text-sm" />
                             Tìm / Kế tiếp
                         </button>
                         <button
                             type="button"
                             onClick={() => moveToMatchedStudent(1)}
-                            className="inline-flex items-center justify-center gap-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
+                            className="inline-flex items-center justify-center gap-1 rounded-xl border border-m3-outline-variant bg-m3-surface px-3 py-2 text-sm font-medium text-m3-on-surface hover:bg-m3-surface-container-high transition-colors"
                         >
                             Sau
                         </button>
                     </div>
                 </div>
                 {studentSearchHint && (
-                    <p className="mt-2 text-xs text-blue-700">{studentSearchHint}</p>
+                    <p className="mt-2 text-xs text-m3-primary font-medium">{studentSearchHint}</p>
                 )}
             </div>
 
             {selectedAssignment && (
-                <div className="mb-4 p-3 rounded-md border border-blue-100 bg-blue-50">
+                <div className="mb-4 p-4 rounded-2xl border border-m3-primary/20 bg-m3-primary/10">
                     <input
                         id="bulk-single-assignment-upload"
                         type="file"
@@ -3010,25 +3013,25 @@ const GradingModal: React.FC<GradingModalProps> = ({
                     />
                     <label
                         htmlFor="bulk-single-assignment-upload"
-                        className={`inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm border ${
+                        className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-medium border transition ${
                             isBulkUploading
-                                ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
-                                : 'bg-white text-blue-700 border-blue-200 cursor-pointer hover:bg-blue-100'
+                                ? 'bg-m3-surface-container text-m3-on-surface-variant/50 border-m3-outline-variant cursor-not-allowed'
+                                : 'bg-m3-surface text-m3-primary border-m3-primary/30 cursor-pointer hover:bg-m3-primary/15'
                         }`}
                     >
                         {isBulkUploading ? (
                             <>
-                                <Loader2 size={16} className="animate-spin" />
+                                <ProgressIndicator variant="circular" shape="wavy" size={16} aria-label="Loading" />
                                 Đang chấm nhiều file...
                             </>
                         ) : (
                             <>
-                                <Upload size={16} />
+                                <Icon name="upload" className="text-base" />
                                 Chọn nhiều file 1 lần
                             </>
                         )}
                     </label>
-                    <p className="mt-2 text-xs text-blue-700">
+                    <p className="mt-2 text-xs text-m3-on-surface-variant">
                         Hệ thống ghép file theo thứ tự danh sách học sinh trên bảng: file 1 -&gt; học sinh 1, file 2 -&gt; học sinh 2...
                     </p>
                 </div>
@@ -3069,21 +3072,21 @@ const GradingModal: React.FC<GradingModalProps> = ({
                         setPendingManualMultiFileMatches([]);
                         setIsApplyingManualMultiFileMatches(false);
                     }}
-                    className="text-sm text-gray-600 hover:text-gray-800 flex items-center gap-1 mb-4"
+                    className="text-sm text-m3-on-surface-variant hover:text-m3-on-surface flex items-center gap-1.5 mb-4 font-medium transition-colors"
                 >
-                    <ArrowLeft size={16} /> Quay lai
+                    <Icon name="arrow_back" className="text-base" /> Quay lại
                 </button>
 
-                <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="mb-6 p-5 bg-m3-surface-container rounded-2xl border border-m3-outline-variant/60">
                     <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                         <div>
-                            <label className="block text-sm font-semibold text-gray-800">
+                            <label className="block text-sm font-semibold text-m3-on-surface">
                                 Chọn các bài tập cần chấm
                             </label>
-                            <p className="text-xs text-gray-600 mt-1">
+                            <p className="text-xs text-m3-on-surface-variant mt-1">
                                 Đang chọn {multiAssignmentDraftIds.length}/{autoAssignments.length} bài tự động
                             </p>
-                            <p className="text-xs text-emerald-700 mt-1">
+                            <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 font-medium">
                                 Đã chốt {multiAssignmentIds.length} bài để hiển thị trong bảng chấm điểm
                             </p>
                         </div>
@@ -3092,7 +3095,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                 type="button"
                                 onClick={handleSelectAllAutoAssignments}
                                 disabled={isSelectingAssignments || autoAssignments.length === 0}
-                                className="px-3 py-1.5 text-xs rounded-md border border-blue-200 text-blue-700 bg-white hover:bg-blue-50 disabled:opacity-50"
+                                className="px-3 py-1.5 text-xs font-medium rounded-xl border border-m3-primary/30 text-m3-primary bg-m3-surface hover:bg-m3-primary/10 transition-colors disabled:opacity-50"
                             >
                                 Chọn tất cả
                             </button>
@@ -3100,7 +3103,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                 type="button"
                                 onClick={handleClearAutoAssignments}
                                 disabled={isSelectingAssignments || multiAssignmentDraftIds.length === 0}
-                                className="px-3 py-1.5 text-xs rounded-md border border-gray-300 text-gray-700 bg-white hover:bg-gray-100 disabled:opacity-50"
+                                className="px-3 py-1.5 text-xs font-medium rounded-xl border border-m3-outline-variant text-m3-on-surface bg-m3-surface hover:bg-m3-surface-container-high transition-colors disabled:opacity-50"
                             >
                                 Bỏ chọn
                             </button>
@@ -3108,7 +3111,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                 type="button"
                                 onClick={handleCommitMultiAssignmentSelection}
                                 disabled={isSelectingAssignments || !hasPendingMultiAssignmentSelectionChanges}
-                                className="px-3 py-1.5 text-xs rounded-md border border-emerald-200 text-emerald-700 bg-white hover:bg-emerald-50 disabled:opacity-50"
+                                className="px-3.5 py-1.5 text-xs font-medium rounded-xl border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 bg-m3-surface hover:bg-emerald-500/10 transition-colors disabled:opacity-50"
                             >
                                 Chốt danh sách
                             </button>
@@ -3116,18 +3119,17 @@ const GradingModal: React.FC<GradingModalProps> = ({
                     </div>
 
                     <div className="mt-3 relative">
-                        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                        <Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-m3-on-surface-variant text-base" />
                         <input
                             value={multiAssignmentQuery}
                             onChange={(e) => setMultiAssignmentQuery(e.target.value)}
                             placeholder="Tìm theo tên bài tập, mô tả, đường dẫn API..."
-                            className="w-full border border-gray-300 rounded-md pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
+                            className="w-full border border-m3-outline-variant bg-m3-surface-container-lowest text-m3-on-surface rounded-xl pl-9 pr-3 py-2 text-sm focus:outline-hidden focus:border-m3-primary"
                         />
                     </div>
 
-                    
                     <div className="mt-3">
-                        <p className="mb-2 text-xs font-semibold text-gray-700">
+                        <p className="mb-2 text-xs font-semibold text-m3-on-surface-variant">
                             Chọn nhanh theo phần
                         </p>
                         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
@@ -3148,16 +3150,16 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                         type="button"
                                         onClick={() => handleToggleQuickPracticeSelection(practiceCode)}
                                         disabled={isSelectingAssignments || !hasAssignments}
-                                        className={`flex items-center justify-between rounded-md border px-3 py-2 text-left text-xs transition ${
+                                        className={`flex items-center justify-between rounded-xl border px-3 py-2 text-left text-xs transition ${
                                             isAllSelected
-                                                ? 'border-blue-300 bg-blue-50 text-blue-800'
+                                                ? 'border-m3-primary/40 bg-m3-primary/15 text-m3-primary font-semibold'
                                                 : isPartiallySelected
-                                                    ? 'border-amber-300 bg-amber-50 text-amber-800'
-                                                    : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                                                    ? 'border-amber-500/40 bg-amber-500/15 text-amber-800 dark:text-amber-200 font-semibold'
+                                                    : 'border-m3-outline-variant/60 bg-m3-surface text-m3-on-surface hover:bg-m3-surface-container-high'
                                         } ${isSelectingAssignments || !hasAssignments ? 'cursor-not-allowed opacity-60' : ''}`}
                                     >
                                         <span className="font-semibold">{practice.label}</span>
-                                        <span className="rounded-full bg-white/80 px-2 py-0.5 text-[11px] font-medium">
+                                        <span className="rounded-full bg-m3-surface-container px-2 py-0.5 text-[11px] font-medium text-m3-on-surface">
                                             {selectedCount}/{totalCount}
                                         </span>
                                     </button>
@@ -3167,13 +3169,13 @@ const GradingModal: React.FC<GradingModalProps> = ({
                     </div>
 
                     {isSelectingAssignments && (
-                        <div className="mt-2 text-xs text-blue-600 flex items-center gap-1">
-                            <Loader2 size={13} className="animate-spin" />
+                        <div className="mt-2 text-xs text-m3-primary flex items-center gap-1.5 font-medium">
+                            <ProgressIndicator variant="circular" shape="wavy" size={14} aria-label="Loading" />
                             Đang chốt danh sách bài tập...
                         </div>
                     )}
                     {!isSelectingAssignments && hasPendingMultiAssignmentSelectionChanges && (
-                        <div className="mt-2 text-xs text-amber-700">
+                        <div className="mt-2 text-xs text-amber-700 dark:text-amber-300">
                             Bạn vừa thay đổi danh sách chọn. Bấm <span className="font-semibold">Chốt danh sách</span> để áp dụng vào bảng chấm điểm.
                         </div>
                     )}
@@ -3187,29 +3189,29 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                     type="button"
                                     onClick={() => handleToggleMultiAssignmentSelection(assignment.id)}
                                     disabled={isSelectingAssignments}
-                                    className={`text-left rounded-md border p-3 transition ${
+                                    className={`text-left rounded-xl border p-3.5 transition ${
                                         isSelected
-                                            ? 'border-blue-400 bg-blue-50'
-                                            : 'border-gray-200 bg-white hover:border-gray-300'
+                                            ? 'border-m3-primary/50 bg-m3-primary/10 text-m3-on-surface'
+                                            : 'border-m3-outline-variant/60 bg-m3-surface hover:border-m3-primary/30'
                                     } ${isSelectingAssignments ? 'opacity-60 cursor-not-allowed' : ''}`}
                                 >
                                     <div className="flex items-start justify-between gap-3">
                                         <div>
-                                            <p className="text-sm font-medium text-gray-800">{assignment.name}</p>
+                                            <p className="text-sm font-medium text-m3-on-surface">{assignment.name}</p>
                                             {assignment.description && (
-                                                <p className="text-xs text-gray-500 mt-1 line-clamp-2">{assignment.description}</p>
+                                                <p className="text-xs text-m3-on-surface-variant mt-1 line-clamp-2">{assignment.description}</p>
                                             )}
                                             {assignment.gradingApiEndpoint && (
-                                                <p className="text-[11px] text-gray-500 mt-1">{assignment.gradingApiEndpoint}</p>
+                                                <p className="text-[11px] text-m3-on-surface-variant/70 mt-1">{assignment.gradingApiEndpoint}</p>
                                             )}
                                         </div>
                                         <div className="flex flex-col items-end gap-1">
-                                            <span className="text-[11px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
+                                            <span className="text-[11px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 font-medium">
                                                 /{assignment.maxScore}
                                             </span>
                                             {isSelected && (
-                                                <span className="inline-flex items-center gap-1 text-[11px] text-blue-700">
-                                                    <Check size={12} />
+                                                <span className="inline-flex items-center gap-1 text-[11px] text-m3-primary font-medium">
+                                                    <Icon name="check" className="text-sm" />
                                                     Đã chọn
                                                 </span>
                                             )}
@@ -3221,18 +3223,18 @@ const GradingModal: React.FC<GradingModalProps> = ({
                     </div>
 
                     {filteredAutoAssignments.length === 0 && (
-                        <div className="mt-3 text-sm text-gray-500">
+                        <div className="mt-3 text-sm text-m3-on-surface-variant">
                             Không tìm thấy bài tập phù hợp với từ khóa "{multiAssignmentQuery}".
                         </div>
                     )}
                 </div>
 
                 {pendingManualMultiFileMatches.length > 0 && (
-                    <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 p-3">
+                    <div className="mb-4 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4">
                         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                             <div>
-                                <p className="text-sm font-semibold text-amber-900">File cần chọn tay</p>
-                                <p className="text-xs text-amber-800">
+                                <p className="text-sm font-semibold text-amber-900 dark:text-amber-100">File cần chọn tay</p>
+                                <p className="text-xs text-amber-800 dark:text-amber-200">
                                     {pendingManualMultiFileMatches.length} file chưa xác định được cột bài tập.
                                 </p>
                             </div>
@@ -3241,7 +3243,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                     type="button"
                                     onClick={handleApplyAllPendingManualMultiFileMatches}
                                     disabled={isApplyingManualMultiFileMatches}
-                                    className="rounded-md border border-emerald-300 bg-white px-3 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-50 disabled:opacity-50"
+                                    className="rounded-xl border border-emerald-500/30 bg-m3-surface px-3 py-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/10 transition-colors disabled:opacity-50"
                                 >
                                     {isApplyingManualMultiFileMatches ? 'Đang gán...' : 'Gán tất cả đã chọn'}
                                 </button>
@@ -3249,7 +3251,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                     type="button"
                                     onClick={() => setPendingManualMultiFileMatches([])}
                                     disabled={isApplyingManualMultiFileMatches}
-                                    className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+                                    className="rounded-xl border border-m3-outline-variant bg-m3-surface px-3 py-1.5 text-xs font-medium text-m3-on-surface hover:bg-m3-surface-container-high transition-colors disabled:opacity-50"
                                 >
                                     Xóa danh sách
                                 </button>
@@ -3262,12 +3264,12 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                 return (
                                     <div
                                         key={item.id}
-                                        className="rounded-md border border-amber-200 bg-white p-2"
+                                        className="rounded-xl border border-amber-500/20 bg-m3-surface p-3"
                                     >
-                                        <p className="text-xs font-medium text-gray-800">
+                                        <p className="text-xs font-medium text-m3-on-surface">
                                             {index + 1}. {item.file.name} - {studentName}
                                         </p>
-                                        <p className="mt-1 text-[11px] text-amber-800">{item.reason}</p>
+                                        <p className="mt-1 text-[11px] text-amber-800 dark:text-amber-200">{item.reason}</p>
                                         <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
                                             <select
                                                 value={item.selectedAssignmentId}
@@ -3278,7 +3280,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                                     )
                                                 }
                                                 disabled={isApplyingManualMultiFileMatches}
-                                                className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-xs sm:w-72"
+                                                className="w-full rounded-xl border border-m3-outline-variant bg-m3-surface-container-lowest text-m3-on-surface px-2.5 py-1.5 text-xs sm:w-72 focus:outline-hidden focus:border-m3-primary"
                                             >
                                                 <option value="">-- Chọn cột bài tập --</option>
                                                 {item.candidateAssignmentIds.map((candidateId) => (
@@ -3295,7 +3297,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                                         isApplyingManualMultiFileMatches
                                                         || !item.selectedAssignmentId
                                                     }
-                                                    className="rounded-md border border-blue-300 bg-blue-50 px-2.5 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100 disabled:opacity-50"
+                                                    className="rounded-xl border border-m3-primary/30 bg-m3-primary/10 px-3 py-1.5 text-xs font-medium text-m3-primary hover:bg-m3-primary/20 transition-colors disabled:opacity-50"
                                                 >
                                                     Gán file
                                                 </button>
@@ -3303,7 +3305,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                                     type="button"
                                                     onClick={() => handleRemovePendingManualMultiFileMatch(item.id)}
                                                     disabled={isApplyingManualMultiFileMatches}
-                                                    className="rounded-md border border-gray-300 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+                                                    className="rounded-xl border border-m3-outline-variant bg-m3-surface px-3 py-1.5 text-xs font-medium text-m3-on-surface hover:bg-m3-surface-container-high transition-colors disabled:opacity-50"
                                                 >
                                                     Bỏ
                                                 </button>
@@ -3316,13 +3318,13 @@ const GradingModal: React.FC<GradingModalProps> = ({
                     </div>
                 )}
 
-                <div className="sticky top-0 z-30 mb-4 rounded-md border border-gray-200 bg-gray-50 p-3 shadow-sm">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                <div className="sticky top-0 z-30 mb-4 rounded-2xl border border-m3-outline-variant/60 bg-m3-surface-container p-3.5 shadow-sm">
+                    <label className="block text-sm font-medium text-m3-on-surface mb-2">
                         Tìm học sinh và cuộn tới vị trí trong bảng
                     </label>
                     <div className="flex flex-col sm:flex-row gap-2">
                         <div className="relative flex-1">
-                            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                            <Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-m3-on-surface-variant text-base" />
                             <input
                                 value={studentSearchQuery}
                                 onChange={(e) => {
@@ -3339,63 +3341,63 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                     }
                                 }}
                                 placeholder="Nhập tên học sinh..."
-                                className="w-full rounded-md border border-gray-300 pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
+                                className="w-full rounded-xl border border-m3-outline-variant bg-m3-surface-container-lowest text-m3-on-surface pl-9 pr-3 py-2 text-sm focus:outline-hidden focus:border-m3-primary"
                             />
                         </div>
                         <div className="flex gap-2">
                             <button
                                 type="button"
                                 onClick={() => moveToMatchedStudent(-1)}
-                                className="inline-flex items-center justify-center gap-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
+                                className="inline-flex items-center justify-center gap-1 rounded-xl border border-m3-outline-variant bg-m3-surface px-3 py-2 text-sm font-medium text-m3-on-surface hover:bg-m3-surface-container-high transition-colors"
                             >
                                 Trước
                             </button>
                             <button
                                 type="button"
                                 onClick={scrollToStudentByKeyword}
-                                className="inline-flex items-center justify-center gap-1 rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-m3-primary px-3.5 py-2 text-sm font-medium text-m3-on-primary hover:bg-m3-primary/90 transition-colors"
                             >
-                                <Search size={14} />
+                                <Icon name="search" className="text-sm" />
                                 Tìm / Kế tiếp
                             </button>
                             <button
                                 type="button"
                                 onClick={() => moveToMatchedStudent(1)}
-                                className="inline-flex items-center justify-center gap-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
+                                className="inline-flex items-center justify-center gap-1 rounded-xl border border-m3-outline-variant bg-m3-surface px-3 py-2 text-sm font-medium text-m3-on-surface hover:bg-m3-surface-container-high transition-colors"
                             >
                                 Sau
                             </button>
                         </div>
                     </div>
                     {studentSearchHint && (
-                        <p className="mt-2 text-xs text-blue-700">{studentSearchHint}</p>
+                        <p className="mt-2 text-xs text-m3-primary font-medium">{studentSearchHint}</p>
                     )}
                 </div>
 
                 {selectedAssignments.length > 0 ? (
                     <div
                         data-student-scroll-container="true"
-                        className="max-h-[55vh] overflow-auto rounded-md border border-gray-200"
+                        className="max-h-[55vh] overflow-auto rounded-2xl border border-m3-outline-variant/60 bg-m3-surface"
                     >
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <caption className="caption-top pb-2 text-left text-sm font-semibold text-gray-700">
+                        <table className="min-w-full divide-y divide-m3-outline-variant/30">
+                            <caption className="caption-top px-4 pb-2 text-left text-sm font-semibold text-m3-on-surface">
                                 Bảng chấm điểm nhiều bài tập
                             </caption>
-                            <thead className="sticky top-0 z-10 bg-gray-50">
+                            <thead className="sticky top-0 z-10 bg-m3-surface-container-low">
                                 <tr>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">STT</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Học sinh</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold text-m3-on-surface-variant uppercase tracking-wider">STT</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold text-m3-on-surface-variant uppercase tracking-wider">Học sinh</th>
                                     {selectedAssignments.map((assignment) => (
                                         <th
                                             key={assignment.id}
-                                            className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase"
+                                            className="px-4 py-3 text-center text-xs font-semibold text-m3-on-surface-variant uppercase tracking-wider"
                                         >
                                             {assignment.name} (/{assignment.maxScore})
                                         </th>
                                     ))}
                                 </tr>
                             </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
+                            <tbody className="bg-m3-surface divide-y divide-m3-outline-variant/20">
                                 {gradingStudents.map((student, index) => {
                                     return (
                                         <tr
@@ -3404,12 +3406,12 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                                 if (node) rowRefs.current.set(student.id, node);
                                                 else rowRefs.current.delete(student.id);
                                             }}
-                                            className="hover:bg-gray-50"
+                                            className="hover:bg-m3-surface-container-high/40 transition-colors"
                                         >
-                                            <td className="px-4 py-3 text-sm text-gray-500">{index + 1}</td>
-                                            <td className="px-4 py-3 text-sm font-medium text-gray-900 align-top">
+                                            <td className="px-4 py-3 text-sm text-m3-on-surface-variant">{index + 1}</td>
+                                            <td className="px-4 py-3 text-sm font-medium text-m3-on-surface align-top">
                                                 <div>{student.middleName} {student.firstName}</div>
-                                                <p className="mt-1 text-[11px] text-gray-500">
+                                                <p className="mt-1 text-[11px] text-m3-on-surface-variant/70">
                                                     Kéo nhiều file để tự nhận diện theo mã project (tên file/Title); file không chắc chắn sẽ yêu cầu chọn tay.
                                                 </p>
                                             </td>
@@ -3436,7 +3438,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                                             type="number"
                                                             value={current?.scoreValue ?? ''}
                                                             readOnly
-                                                            className="w-24 border border-gray-300 rounded-md px-2 py-1 text-center bg-gray-50"
+                                                            className="w-24 border border-m3-outline-variant rounded-lg px-2 py-1 text-center bg-m3-surface-container-low text-m3-on-surface"
                                                             min="0"
                                                             max={assignment.maxScore}
                                                             step="0.01"
@@ -3444,10 +3446,10 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                                         />
                                                         {assignment.gradingType === 'auto' && (
                                                             <div
-                                                                className={`mt-2 space-y-1 rounded-md border border-dashed p-2 transition ${
+                                                                className={`mt-2 space-y-1 rounded-xl border border-dashed p-2.5 transition ${
                                                                     multiDragOverCellKey === `${assignment.id}:${student.id}`
-                                                                        ? 'border-blue-500 bg-blue-50'
-                                                                        : 'border-gray-200'
+                                                                        ? 'border-m3-primary bg-m3-primary/10'
+                                                                        : 'border-m3-outline-variant bg-m3-surface-container-low'
                                                                 } ${autoState?.isGrading ? 'opacity-60 cursor-not-allowed' : ''}`}
                                                                 onDragOver={(e) =>
                                                                     handleMultiStudentFileDragOver(
@@ -3481,35 +3483,35 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                                                 />
                                                                 <label
                                                                     htmlFor={`multi-file-${assignment.id}-${student.id}`}
-                                                                    className={`inline-flex px-2 py-1 rounded text-xs border ${
+                                                                    className={`inline-flex px-3 py-1.5 rounded-lg text-xs font-medium border transition ${
                                                                         autoState?.isGrading
-                                                                            ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
-                                                                            : 'bg-blue-50 text-blue-700 border-blue-200 cursor-pointer hover:bg-blue-100'
+                                                                            ? 'bg-m3-surface-container text-m3-on-surface-variant/40 border-m3-outline-variant/40 cursor-not-allowed'
+                                                                            : 'bg-m3-primary/10 text-m3-primary border-m3-primary/20 cursor-pointer hover:bg-m3-primary/20'
                                                                     }`}
                                                                 >
                                                                     {autoState?.studentFile ? 'Đổi file bài làm' : 'Chọn file bài làm'}
                                                                 </label>
-                                                                <p className="text-[11px] text-gray-500">Kéo thả file vào đây</p>
+                                                                <p className="text-[11px] text-m3-on-surface-variant/70">Kéo thả file vào đây</p>
                                                                 {autoState?.studentFile && (
-                                                                    <p className="text-xs text-gray-600 truncate">
+                                                                    <p className="text-xs text-m3-on-surface truncate">
                                                                         {autoState.studentFile.name}
                                                                     </p>
                                                                 )}
                                                                 {autoState?.isGrading && (
-                                                                    <p className="text-xs text-blue-600">Đang chấm...</p>
+                                                                    <p className="text-xs text-m3-primary font-medium">Đang chấm...</p>
                                                                 )}
                                                                 {autoState?.gradingResult && (
-                                                                    <p className="text-xs text-green-600">Đã chấm tự động</p>
+                                                                    <p className="text-xs text-emerald-600 dark:text-emerald-400">Đã chấm tự động</p>
                                                                 )}
                                                                 {autoState?.error && (
-                                                                    <p className="text-xs text-red-600">Lỗi: {autoState.error}</p>
+                                                                    <p className="text-xs text-m3-error">Lỗi: {autoState.error}</p>
                                                                 )}
                                                                 {canUndoCell && (
                                                                     <button
                                                                         type="button"
                                                                         onClick={() => handleUndoMultiStudentFile(assignment.id, student.id)}
                                                                         disabled={Boolean(autoState?.isGrading)}
-                                                                        className="inline-flex items-center gap-1 rounded border border-amber-200 bg-amber-50 px-2 py-1 text-[11px] text-amber-700 hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
+                                                                        className="inline-flex items-center gap-1 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-[11px] text-amber-700 dark:text-amber-300 hover:bg-amber-500/20 disabled:cursor-not-allowed disabled:opacity-60"
                                                                     >
                                                                         Hoàn tác
                                                                     </button>
@@ -3531,7 +3533,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                         </table>
                     </div>
                 ) : (
-                    <div className="text-sm text-gray-500">Chưa chọn bài tập nào.</div>
+                    <div className="text-sm text-m3-on-surface-variant">Chưa chọn bài tập nào.</div>
                 )}
             </div>
         );
@@ -3544,26 +3546,27 @@ const GradingModal: React.FC<GradingModalProps> = ({
                     setChooseMode(null);
                     setEditingAssignment(null);
                 }}
-                className="text-sm text-gray-600 hover:text-gray-800 flex items-center gap-1 mb-4"
+                className="text-sm text-m3-on-surface-variant hover:text-m3-on-surface flex items-center gap-1.5 mb-4 font-medium transition-colors"
             >
-                <ArrowLeft size={16} /> Quay lại
+                <Icon name="arrow_back" className="text-base" /> Quay lại
             </button>
 
-            <div className="mb-3 flex items-center justify-between rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
-                <label className="inline-flex items-center gap-2 text-sm text-slate-700">
+            <div className="mb-3 flex items-center justify-between rounded-2xl border border-m3-outline-variant/60 bg-m3-surface-container-low px-4 py-3">
+                <label className="inline-flex items-center gap-2 text-sm text-m3-on-surface">
                     <input
                         type="checkbox"
                         checked={showInactiveAssignments}
                         onChange={(e) => setShowInactiveAssignments(e.target.checked)}
+                        className="rounded border-m3-outline-variant"
                     />
                     Hiển thị bài tập đã ẩn
                 </label>
-                <span className="text-xs text-slate-500">
+                <span className="text-xs text-m3-on-surface-variant/80">
                     Khi tắt, danh sách chỉ hiển thị bài tập đang dùng.
                 </span>
             </div>
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-md border border-slate-200 bg-white px-3 py-2">
-                <span className="text-sm text-slate-700">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-m3-outline-variant/60 bg-m3-surface px-4 py-3">
+                <span className="text-sm font-medium text-m3-on-surface">
                     Đã chọn {manageSelectedAssignmentIds.length}/{manageableActiveAssignments.length} bài đang dùng
                 </span>
                 <div className="flex flex-wrap items-center gap-2">
@@ -3575,7 +3578,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                             manageableActiveAssignments.length === 0 ||
                             isAllManageActiveSelected
                         }
-                        className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="rounded-xl border border-m3-outline-variant bg-m3-surface px-3 py-1.5 text-xs font-medium text-m3-on-surface hover:bg-m3-surface-container-high transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                     >
                         Chọn tất cả
                     </button>
@@ -3583,7 +3586,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                         type="button"
                         onClick={handleClearManageAssignments}
                         disabled={assignmentSubmitLoading || manageSelectedAssignmentIds.length === 0}
-                        className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="rounded-xl border border-m3-outline-variant bg-m3-surface px-3 py-1.5 text-xs font-medium text-m3-on-surface hover:bg-m3-surface-container-high transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                     >
                         Bỏ chọn
                     </button>
@@ -3591,19 +3594,23 @@ const GradingModal: React.FC<GradingModalProps> = ({
                         type="button"
                         onClick={handleDeactivateSelectedAssignments}
                         disabled={assignmentSubmitLoading || manageSelectedAssignmentIds.length === 0}
-                        className="inline-flex items-center gap-1 rounded-md bg-amber-100 px-3 py-1.5 text-xs font-medium text-amber-800 hover:bg-amber-200 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500/20 px-3.5 py-1.5 text-xs font-medium text-amber-900 dark:text-amber-100 hover:bg-amber-500/30 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                        {assignmentSubmitLoading ? <Loader2 size={14} className="animate-spin" /> : <XCircle size={14} />}
+                        {assignmentSubmitLoading ? (
+                            <ProgressIndicator variant="circular" shape="wavy" size={14} aria-label="Loading" />
+                        ) : (
+                            <Icon name="cancel" className="text-sm" />
+                        )}
                         Bỏ hoạt động đã chọn
                     </button>
                 </div>
             </div>
 
-            <div className="rounded-lg border border-gray-200 overflow-hidden">
-                <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
+            <div className="rounded-2xl border border-m3-outline-variant/60 bg-m3-surface overflow-hidden">
+                <table className="min-w-full divide-y divide-m3-outline-variant/30">
+                    <thead className="bg-m3-surface-container-low">
                         <tr>
-                            <th className="px-3 py-2 text-center text-xs font-semibold text-gray-600 uppercase">
+                            <th className="px-3 py-2.5 text-center text-xs font-semibold text-m3-on-surface-variant uppercase tracking-wider">
                                 <input
                                     type="checkbox"
                                     aria-label="Chọn tất cả bài tập đang dùng"
@@ -3612,78 +3619,78 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                         e.target.checked ? handleSelectAllManageAssignments() : handleClearManageAssignments()
                                     }
                                     disabled={assignmentSubmitLoading || manageableActiveAssignments.length === 0}
-                                    className="h-4 w-4 rounded border-gray-300 disabled:cursor-not-allowed"
+                                    className="h-4 w-4 rounded border-m3-outline-variant disabled:cursor-not-allowed"
                                 />
                             </th>
-                            <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Tên bài tập</th>
-                            <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Loại</th>
-                            <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Endpoint</th>
-                            <th className="px-3 py-2 text-center text-xs font-semibold text-gray-600 uppercase">Điểm tối đa</th>
-                            <th className="px-3 py-2 text-center text-xs font-semibold text-gray-600 uppercase">Trạng thái</th>
-                            <th className="px-3 py-2 text-center text-xs font-semibold text-gray-600 uppercase">Hành động</th>
+                            <th className="px-3 py-2.5 text-left text-xs font-semibold text-m3-on-surface-variant uppercase tracking-wider">Tên bài tập</th>
+                            <th className="px-3 py-2.5 text-left text-xs font-semibold text-m3-on-surface-variant uppercase tracking-wider">Loại</th>
+                            <th className="px-3 py-2.5 text-left text-xs font-semibold text-m3-on-surface-variant uppercase tracking-wider">Endpoint</th>
+                            <th className="px-3 py-2.5 text-center text-xs font-semibold text-m3-on-surface-variant uppercase tracking-wider">Điểm tối đa</th>
+                            <th className="px-3 py-2.5 text-center text-xs font-semibold text-m3-on-surface-variant uppercase tracking-wider">Trạng thái</th>
+                            <th className="px-3 py-2.5 text-center text-xs font-semibold text-m3-on-surface-variant uppercase tracking-wider">Hành động</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100 bg-white">
+                    <tbody className="divide-y divide-m3-outline-variant/20 bg-m3-surface">
                         {assignments.map((assignment) => (
-                            <tr key={assignment.id}>
-                                <td className="px-3 py-2 text-center">
+                            <tr key={assignment.id} className="hover:bg-m3-surface-container-high/40 transition-colors">
+                                <td className="px-3 py-2.5 text-center">
                                     <input
                                         type="checkbox"
                                         aria-label={`Chọn bài tập ${assignment.name}`}
                                         checked={manageSelectedAssignmentIds.includes(assignment.id)}
                                         onChange={() => handleToggleManageAssignmentSelection(assignment)}
                                         disabled={assignmentSubmitLoading || !assignment.isActive}
-                                        className="h-4 w-4 rounded border-gray-300 disabled:cursor-not-allowed"
+                                        className="h-4 w-4 rounded border-m3-outline-variant disabled:cursor-not-allowed"
                                         title={!assignment.isActive ? 'Bài tập đã ẩn' : undefined}
                                     />
                                 </td>
-                                <td className="px-3 py-2 text-sm text-gray-800">
+                                <td className="px-3 py-2.5 text-sm text-m3-on-surface">
                                     <div className="font-medium">{assignment.name}</div>
                                     {assignment.description && (
-                                        <div className="text-xs text-gray-500">{assignment.description}</div>
+                                        <div className="text-xs text-m3-on-surface-variant mt-0.5">{assignment.description}</div>
                                     )}
-                                    <div className="text-[11px] text-slate-500">
+                                    <div className="text-[11px] text-m3-on-surface-variant/70 mt-0.5">
                                         {assignment.examType.toUpperCase()} • {assignment.subject.toUpperCase()}
                                         {assignment.isLockedForPublication ? ' • Đã dùng để tạo lịch thi' : ''}
                                     </div>
                                     {assignment.isPublishable === false && (
-                                        <div className="text-[11px] text-amber-700">
+                                        <div className="text-[11px] text-amber-700 dark:text-amber-300 mt-0.5">
                                             {assignment.publishBlockReason || 'Chưa đủ điều kiện để tạo lịch thi.'}
                                         </div>
                                     )}
                                 </td>
-                                <td className="px-3 py-2 text-sm text-gray-700">{assignment.gradingType === 'auto' ? 'Tự động' : 'Thủ công'}</td>
-                                <td className="px-3 py-2 text-xs text-gray-600">{assignment.gradingApiEndpoint || '-'}</td>
-                                <td className="px-3 py-2 text-sm text-center text-gray-700">{assignment.maxScore}</td>
-                                <td className="px-3 py-2 text-center">
+                                <td className="px-3 py-2.5 text-sm text-m3-on-surface-variant">{assignment.gradingType === 'auto' ? 'Tự động' : 'Thủ công'}</td>
+                                <td className="px-3 py-2.5 text-xs text-m3-on-surface-variant/70">{assignment.gradingApiEndpoint || '-'}</td>
+                                <td className="px-3 py-2.5 text-sm text-center text-m3-on-surface font-medium">{assignment.maxScore}</td>
+                                <td className="px-3 py-2.5 text-center">
                                     <div className="flex flex-col items-center gap-1">
-                                        <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${assignment.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                        <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${assignment.isActive ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300' : 'bg-m3-error/15 text-m3-error'}`}>
                                             {assignment.isActive ? 'Đang dùng' : 'Đã ẩn'}
                                         </span>
                                         {assignment.isPublishable === false && (
-                                            <span className="inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
+                                            <span className="inline-flex rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] font-semibold text-amber-800 dark:text-amber-200">
                                                 Không publish được
                                             </span>
                                         )}
                                     </div>
                                 </td>
-                                <td className="px-3 py-2 text-center">
+                                <td className="px-3 py-2.5 text-center">
                                     <div className="inline-flex gap-2">
                                         <button
                                             type="button"
                                             onClick={() => handleOpenEditAssignment(assignment)}
-                                            className="inline-flex items-center gap-1 rounded-md bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-700 hover:bg-blue-200"
+                                            className="inline-flex items-center gap-1 rounded-xl bg-m3-primary/10 px-2.5 py-1 text-xs font-medium text-m3-primary hover:bg-m3-primary/20 transition-colors"
                                         >
-                                            <Pencil size={12} />
+                                            <Icon name="edit" className="text-xs" />
                                             Sửa
                                         </button>
                                         <button
                                             type="button"
                                             onClick={() => handleDeleteAssignment(assignment)}
                                             disabled={assignmentSubmitLoading}
-                                            className="inline-flex items-center gap-1 rounded-md bg-red-100 px-2.5 py-1 text-xs font-medium text-red-700 hover:bg-red-200 disabled:opacity-60"
+                                            className="inline-flex items-center gap-1 rounded-xl bg-m3-error/10 px-2.5 py-1 text-xs font-medium text-m3-error hover:bg-m3-error/20 transition-colors disabled:opacity-50"
                                         >
-                                            <Trash2 size={12} />
+                                            <Icon name="delete" className="text-xs" />
                                             Xóa
                                         </button>
                                     </div>
@@ -3692,7 +3699,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                         ))}
                         {assignments.length === 0 && (
                             <tr>
-                                <td colSpan={7} className="px-3 py-5 text-center text-sm text-gray-500">
+                                <td colSpan={7} className="px-3 py-5 text-center text-sm text-m3-on-surface-variant">
                                     Chưa có bài tập nào trong lớp này.
                                 </td>
                             </tr>
@@ -3702,13 +3709,13 @@ const GradingModal: React.FC<GradingModalProps> = ({
             </div>
 
             {editingAssignment && (
-                <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 p-4 space-y-3">
-                    <h4 className="text-sm font-semibold text-blue-800">Chỉnh sửa bài tập</h4>
+                <div className="mt-4 rounded-2xl border border-m3-primary/30 bg-m3-surface-container p-5 space-y-4">
+                    <h4 className="text-sm font-semibold text-m3-on-surface">Chỉnh sửa bài tập</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <input
                             value={assignmentEditForm.name || ''}
                             onChange={(e) => setAssignmentEditForm((prev) => ({ ...prev, name: e.target.value }))}
-                            className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+                            className="rounded-xl border border-m3-outline-variant bg-m3-surface-container-lowest text-m3-on-surface px-3 py-2 text-sm focus:outline-hidden focus:border-m3-primary"
                             placeholder="Tên bài tập"
                         />
                         <input
@@ -3718,7 +3725,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                             min={0}
                             max={1000}
                             step={0.01}
-                            className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+                            className="rounded-xl border border-m3-outline-variant bg-m3-surface-container-lowest text-m3-on-surface px-3 py-2 text-sm focus:outline-hidden focus:border-m3-primary"
                             placeholder="Điểm tối đa"
                         />
                         <select
@@ -3734,7 +3741,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                 }))
                             }
                             disabled={Boolean(editingAssignment.isLockedForPublication)}
-                            className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+                            className="rounded-xl border border-m3-outline-variant bg-m3-surface-container-lowest text-m3-on-surface px-3 py-2 text-sm focus:outline-hidden focus:border-m3-primary"
                         >
                             <option value="auto">Tự động</option>
                             <option value="manual">Thủ công</option>
@@ -3745,7 +3752,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                                 setAssignmentEditForm((prev) => ({ ...prev, gradingApiEndpoint: e.target.value }))
                             }
                             disabled={assignmentEditForm.gradingType === 'manual' || Boolean(editingAssignment.isLockedForPublication)}
-                            className="rounded-md border border-gray-300 px-3 py-2 text-sm disabled:bg-gray-100"
+                            className="rounded-xl border border-m3-outline-variant bg-m3-surface-container-lowest text-m3-on-surface px-3 py-2 text-sm disabled:opacity-50 focus:outline-hidden focus:border-m3-primary"
                         >
                             <option value="">-- Chọn đầu chấm điểm --</option>
                             {gradingEndpoints.map((ep) => (
@@ -3758,16 +3765,17 @@ const GradingModal: React.FC<GradingModalProps> = ({
                             value={assignmentEditForm.description || ''}
                             onChange={(e) => setAssignmentEditForm((prev) => ({ ...prev, description: e.target.value }))}
                             rows={2}
-                            className="rounded-md border border-gray-300 px-3 py-2 text-sm md:col-span-2"
+                            className="rounded-xl border border-m3-outline-variant bg-m3-surface-container-lowest text-m3-on-surface px-3 py-2 text-sm md:col-span-2 focus:outline-hidden focus:border-m3-primary"
                             placeholder="Mô tả bài tập"
                         />
-                        <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+                        <label className="inline-flex items-center gap-2 text-sm text-m3-on-surface">
                             <input
                                 type="checkbox"
                                 checked={Boolean(assignmentEditForm.isActive)}
                                 onChange={(e) =>
                                     setAssignmentEditForm((prev) => ({ ...prev, isActive: e.target.checked }))
                                 }
+                                className="rounded border-m3-outline-variant"
                             />
                             Bài tập đang hoạt động
                         </label>
@@ -3776,7 +3784,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                         <button
                             type="button"
                             onClick={() => setEditingAssignment(null)}
-                            className="rounded-md bg-gray-100 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-200"
+                            className="rounded-xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2 text-sm font-medium text-m3-on-surface hover:bg-m3-surface-container-high transition-colors"
                         >
                             Hủy
                         </button>
@@ -3784,9 +3792,13 @@ const GradingModal: React.FC<GradingModalProps> = ({
                             type="button"
                             onClick={handleSaveAssignmentEdit}
                             disabled={assignmentSubmitLoading}
-                            className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700 disabled:opacity-60"
+                            className="inline-flex items-center gap-2 rounded-xl bg-m3-primary px-4 py-2 text-sm font-medium text-m3-on-primary hover:bg-m3-primary/90 transition-colors disabled:opacity-50"
                         >
-                            {assignmentSubmitLoading ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                            {assignmentSubmitLoading ? (
+                                <ProgressIndicator variant="circular" shape="wavy" size={14} aria-label="Saving" />
+                            ) : (
+                                <Icon name="save" className="text-base" />
+                            )}
                             Lưu cập nhật
                         </button>
                     </div>
@@ -3798,18 +3810,22 @@ const GradingModal: React.FC<GradingModalProps> = ({
 
     const isPageMode = displayMode === 'page';
     const containerClassName = isPageMode
-        ? 'bg-white rounded-lg border border-slate-200 shadow-sm w-full flex flex-col'
-        : 'bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col';
+        ? 'bg-m3-surface rounded-3xl border border-m3-outline-variant/60 shadow-xs w-full flex flex-col'
+        : 'bg-m3-surface rounded-4xl border border-m3-outline-variant/60 shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col';
     const bodyClassName = isPageMode
         ? 'flex-1'
         : 'flex-1 overflow-y-auto';
     const content = (
         <div className={containerClassName}>
             {/* HEADER */}
-            <div className="flex justify-between items-center p-6 border-b">
-                <h2 className="text-2xl font-bold text-gray-800">{title}</h2>
-                <button onClick={handleClose} className="text-gray-400 hover:text-gray-600">
-                    <X size={24} />
+            <div className="flex justify-between items-center p-6 border-b border-m3-outline-variant/30">
+                <h2 className="text-2xl font-bold text-m3-on-surface">{title}</h2>
+                <button
+                    onClick={handleClose}
+                    className="p-2 rounded-full text-m3-on-surface-variant hover:text-m3-on-surface hover:bg-m3-surface-container-high transition-colors flex items-center justify-center"
+                    aria-label="Đóng"
+                >
+                    <Icon name="close" className="text-2xl" />
                 </button>
             </div>
 
@@ -3823,10 +3839,10 @@ const GradingModal: React.FC<GradingModalProps> = ({
             </div>
 
             {/* FOOTER */}
-            <div className="flex justify-end gap-2 p-6 border-t">
+            <div className="flex justify-end gap-3 p-6 border-t border-m3-outline-variant/30 bg-m3-surface-container-lowest">
                 <button
                     onClick={handleClose}
-                    className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                    className="px-5 py-2.5 rounded-xl border border-m3-outline-variant text-m3-on-surface hover:bg-m3-surface-container-high transition-colors text-sm font-medium"
                 >
                     {isPageMode ? 'Quay lại' : 'Hủy'}
                 </button>
@@ -3834,16 +3850,16 @@ const GradingModal: React.FC<GradingModalProps> = ({
                     <button
                         onClick={handleSaveAllScores}
                         disabled={loading}
-                        className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-400 flex items-center gap-2"
+                        className="bg-m3-primary text-m3-on-primary px-5 py-2.5 rounded-xl hover:bg-m3-primary/90 disabled:opacity-50 flex items-center gap-2 text-sm font-medium transition-colors"
                     >
                         {loading ? (
                             <>
-                                <Loader2 size={18} className="animate-spin" />
+                                <ProgressIndicator variant="circular" shape="wavy" size={18} aria-label="Loading" />
                                 Đang lưu...
                             </>
                         ) : (
                             <>
-                                <Save size={18} />
+                                <Icon name="save" className="text-base" />
                                 Lưu điểm
                             </>
                         )}
@@ -3854,16 +3870,16 @@ const GradingModal: React.FC<GradingModalProps> = ({
                         onClick={handleSaveMultipleAssignments}
                         disabled={loading || isSelectingAssignments || hasPendingMultiAssignmentSelectionChanges}
                         title={hasPendingMultiAssignmentSelectionChanges ? 'Vui lòng chốt lại danh sách bài tập trước khi lưu.' : undefined}
-                        className="bg-emerald-600 text-white px-4 py-2 rounded-md hover:bg-emerald-700 disabled:bg-gray-400 flex items-center gap-2"
+                        className="bg-emerald-600 text-white px-5 py-2.5 rounded-xl hover:bg-emerald-700 disabled:opacity-50 flex items-center gap-2 text-sm font-medium transition-colors"
                     >
                         {loading ? (
                             <>
-                                <Loader2 size={18} className="animate-spin" />
+                                <ProgressIndicator variant="circular" shape="wavy" size={18} aria-label="Loading" />
                                 Đang lưu...
                             </>
                         ) : (
                             <>
-                                <Save size={18} />
+                                <Icon name="save" className="text-base" />
                                 Lưu nhiều bài
                             </>
                         )}
@@ -3878,7 +3894,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
     }
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
             {content}
         </div>
     );
