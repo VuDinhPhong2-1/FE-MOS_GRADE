@@ -80,6 +80,7 @@ export interface ScheduleComputerRoomSnapshot {
   studentMachineCount: number;
   teacherMachineCount: number;
   brokenMachineCount: number;
+  brokenMachinesDetail?: string;
   availableStudentMachines: number;
   currentClassStudents: number;
   missingMachinesForStudents: number;

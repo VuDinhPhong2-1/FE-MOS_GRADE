@@ -24,7 +24,8 @@ import type {
   XmlRuleValidationResult,
   SpecialCondition,
   SpecialConditionType,
-  PictureBulletConfig
+  PictureBulletConfig,
+  ImageInsertConfig
 } from '../types/xml-grading-rules.types';
 import { notify } from '../utils/notify';
 import PictureBulletEditor from '../components/PictureBulletEditor';
