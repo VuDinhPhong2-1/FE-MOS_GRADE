@@ -31,41 +31,8 @@ const isPendingOrRejectedTeacher = (user: ReturnType<typeof useAuth>['user']) =>
     (user?.teacherApprovalStatus === 'Pending' || user?.teacherApprovalStatus === 'Rejected')
   );
 
-// ============================================================
-// DEV ONLY: Auth bypass — XÓA TRƯỚC KHI COMMIT LÊN MAIN/STAGING
-// Kích hoạt bằng VITE_DEV_BYPASS_AUTH=true trong .env.local
-// ============================================================
-const IS_DEV_BYPASS = import.meta.env.VITE_DEV_BYPASS_AUTH === 'true';
-
-const DevBypassBanner: React.FC = () => {
-  if (!IS_DEV_BYPASS) return null;
-  return (
-    <aside
-      aria-label="Cảnh báo môi trường thử nghiệm"
-      className="fixed bottom-3 right-3 z-50 flex items-center gap-2 rounded-full border border-amber-400 bg-amber-100/90 px-3.5 py-1.5 text-xs font-semibold text-amber-900 shadow-md backdrop-blur"
-    >
-      <span className="h-2 w-2 rounded-full bg-amber-500 animate-ping" />
-      <span>DEV MODE: Auth Bypassed ({import.meta.env.VITE_DEV_MOCK_ROLE || 'Admin'})</span>
-    </aside>
-  );
-};
-// ============================================================
-
 const ProtectedRoute: React.FC = () => {
   const { user, loading } = useAuth();
-
-  // ============================================================
-  // DEV ONLY: Auth bypass
-  // ============================================================
-  if (IS_DEV_BYPASS) {
-    return (
-      <>
-        <Outlet />
-        <DevBypassBanner />
-      </>
-    );
-  }
-  // ============================================================
 
   if (loading) {
     return <div className="min-h-screen bg-slate-100" />;

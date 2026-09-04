@@ -1,5 +1,4 @@
-import { useThemeMode } from '@bug-on/m3-expressive';
-import { Moon, Sun } from 'lucide-react';
+import { useThemeMode, Icon } from '@bug-on/m3-expressive';
 
 interface ThemeToggleProps {
   className?: string;
@@ -15,12 +14,12 @@ export function ThemeToggle({ className = '' }: ThemeToggleProps) {
       onClick={() => setMode(isDark ? 'light' : 'dark')}
       aria-label={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
       title={`Chế độ: ${mode} (${effectiveMode}) - Bấm để đổi`}
-      className={`relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-[var(--md-sys-color-outline-variant)] bg-[var(--md-sys-color-surface-container)] text-[var(--md-sys-color-on-surface)] shadow-sm transition-colors hover:bg-[var(--md-sys-color-surface-container-high)] focus:outline-none ${className}`}
+      className={`relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-m3-outline-variant bg-m3-surface-container text-m3-on-surface shadow-xs transition-colors hover:bg-m3-surface-container-high focus:outline-none ${className}`}
     >
       {isDark ? (
-        <Sun size={17} className="text-amber-400" />
+        <Icon name="light_mode" className="text-amber-400 text-lg" />
       ) : (
-        <Moon size={17} className="text-slate-600" />
+        <Icon name="dark_mode" className="text-m3-on-surface-variant text-lg" />
       )}
     </button>
   );

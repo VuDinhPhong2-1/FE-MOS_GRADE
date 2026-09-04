@@ -66,21 +66,21 @@ export default function Dashboard() {
     },
     ...(isAdmin
       ? [
-          {
-            title: 'Quy tắc chấm XML',
-            description: 'Cấu hình tiêu chuẩn chấm thi tự động bài làm MOS Word, Excel, PowerPoint.',
-            icon: 'rule',
-            path: '/xml-grading-rules',
-            color: 'from-amber-600 to-orange-600',
-          },
-          {
-            title: 'Phân quyền người dùng',
-            description: 'Quản lý tài khoản giáo viên, trạng thái phê duyệt và vai trò hệ thống.',
-            icon: 'manage_accounts',
-            path: '/permissions',
-            color: 'from-violet-600 to-purple-600',
-          },
-        ]
+        {
+          title: 'Quy tắc chấm XML',
+          description: 'Cấu hình tiêu chuẩn chấm thi tự động bài làm MOS Word, Excel, PowerPoint.',
+          icon: 'rule',
+          path: '/xml-grading-rules',
+          color: 'from-amber-600 to-orange-600',
+        },
+        {
+          title: 'Phân quyền người dùng',
+          description: 'Quản lý tài khoản giáo viên, trạng thái phê duyệt và vai trò hệ thống.',
+          icon: 'manage_accounts',
+          path: '/permissions',
+          color: 'from-violet-600 to-purple-600',
+        },
+      ]
       : []),
   ];
 
@@ -159,9 +159,13 @@ export default function Dashboard() {
           <div className="flex shrink-0 items-center justify-center self-center lg:self-auto">
             <ShapeMedia
               shape="sunny"
-              morphTo="flower"
+              morphTo="verySunny"
               morphOn="hover"
-              className="flex h-36 w-36 sm:h-40 sm:w-40 items-center justify-center bg-white/15 shadow-2xl backdrop-blur-md cursor-pointer transition-transform hover:scale-105"
+              morphOptions={{
+                duration: 0.4,
+                easing: [0.34, 1.56, 0.64, 1]
+              }}
+              className="flex h-36 w-36 sm:h-40 sm:w-40 items-center justify-center bg-white/15 shadow-2xl backdrop-blur-md cursor-pointer"
             >
               <div className="grid place-items-center text-center p-3 text-white">
                 <Icon name="school" className="text-4xl sm:text-5xl" />

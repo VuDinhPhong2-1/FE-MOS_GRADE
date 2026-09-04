@@ -7,4 +7,13 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  server: {
+    proxy: {
+      '/api': {
+        target: 'https://api.mos-grader-app.info.vn',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
 })

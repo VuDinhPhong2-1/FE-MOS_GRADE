@@ -1,6 +1,6 @@
-﻿import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { FC } from 'react';
-import { X, FileDown, Eye, EyeOff } from 'lucide-react';
+import { Icon } from '@bug-on/m3-expressive';
 import type { Assignment } from '../types/assignment.types';
 import type { Student } from '../types/student.types';
 import { exportToExcel, exportToPdf } from '../utils/exportUtils';
@@ -998,18 +998,18 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
     + (isTotalScoreColumnVisible ? 1 : 0)
     + (isOtthPercentageColumnVisible ? 1 : 0);
   const containerClassName = isPageMode
-    ? 'flex w-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm'
-    : 'flex h-[96vh] w-[calc(100vw-0.5rem)] max-w-[1920px] flex-col overflow-hidden rounded-xl bg-white shadow-2xl sm:h-[94vh] sm:w-[calc(100vw-1.5rem)] sm:rounded-2xl';
+    ? 'flex w-full flex-col overflow-hidden rounded-4xl border border-m3-outline-variant/60 bg-m3-surface-container shadow-sm'
+    : 'flex h-[96vh] w-[calc(100vw-0.5rem)] max-w-[1920px] flex-col overflow-hidden rounded-4xl border border-m3-outline-variant/60 bg-m3-surface-container shadow-2xl sm:h-[94vh] sm:w-[calc(100vw-1.5rem)]';
   const content = (
       <div className={containerClassName}>
-        <div className="flex items-center justify-between border-b border-slate-200 bg-gradient-to-r from-slate-50 to-blue-50 px-4 py-4 sm:px-6 sm:py-5">
+        <div className="flex items-center justify-between border-b border-m3-outline-variant bg-linear-to-r from-m3-surface-container-high to-m3-surface-container px-4 py-4 sm:px-6 sm:py-5">
           <div className="flex items-center gap-3">
-            <div className="grid h-10 w-10 place-items-center rounded-xl bg-blue-600 font-bold text-white">
+            <div className="grid h-10 w-10 place-items-center rounded-2xl bg-m3-primary font-bold text-m3-on-primary">
               BD
             </div>
             <div>
-              <h2 className="text-xl font-extrabold text-slate-800">{headerTitle}</h2>
-              <p className="text-sm text-slate-500">
+              <h2 className="text-xl font-extrabold text-m3-on-surface">{headerTitle}</h2>
+              <p className="text-sm text-m3-on-surface-variant">
                 {sortedDisplayRows.length}
                 {(searchTerm || showOnlyExamStudents) ? `/${filteredStudentCount}` : ''}
                 {' '}học sinh hiển thị, tổng lớp {students.length}, {assignments.length} bài tập, hiện {visibleScoreColumnCount}/
@@ -1017,8 +1017,12 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
-            <X size={24} />
+          <button
+            onClick={onClose}
+            className="grid h-9 w-9 place-items-center rounded-full text-m3-on-surface-variant transition-colors hover:bg-m3-surface-container-highest hover:text-m3-on-surface"
+            aria-label="Đóng"
+          >
+            <Icon name="close" className="text-2xl" />
           </button>
         </div>
 
@@ -1055,39 +1059,39 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsClassificationColumnVisible((prev) => !prev)}
-                  className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition ${
+                  className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold text-white shadow-xs transition ${
                     isClassificationColumnVisible
-                      ? 'bg-gradient-to-r from-fuchsia-600 to-violet-600 hover:from-fuchsia-700 hover:to-violet-700'
-                      : 'bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700'
+                      ? 'bg-linear-to-r from-fuchsia-600 to-violet-600 hover:from-fuchsia-700 hover:to-violet-700'
+                      : 'bg-linear-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700'
                   }`}
                 >
-                  {isClassificationColumnVisible ? <EyeOff size={14} /> : <Eye size={14} />}
+                  {isClassificationColumnVisible ? <Icon name="visibility_off" className="text-sm" /> : <Icon name="visibility" className="text-sm" />}
                   {isClassificationColumnVisible ? 'Ẩn cột xếp loại' : 'Hiện cột xếp loại'}
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setIsTotalScoreColumnVisible((prev) => !prev)}
-                  className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition ${
+                  className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold text-white shadow-xs transition ${
                     isTotalScoreColumnVisible
-                      ? 'bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700'
-                      : 'bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700'
+                      ? 'bg-linear-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700'
+                      : 'bg-linear-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700'
                   }`}
                 >
-                  {isTotalScoreColumnVisible ? <EyeOff size={14} /> : <Eye size={14} />}
+                  {isTotalScoreColumnVisible ? <Icon name="visibility_off" className="text-sm" /> : <Icon name="visibility" className="text-sm" />}
                   {isTotalScoreColumnVisible ? 'Ẩn cột tổng điểm 3 Practice' : 'Hiện cột tổng điểm 3 Practice'}
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setIsOtthPercentageColumnVisible((prev) => !prev)}
-                  className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition ${
+                  className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold text-white shadow-xs transition ${
                     isOtthPercentageColumnVisible
-                      ? 'bg-gradient-to-r from-cyan-600 to-sky-600 hover:from-cyan-700 hover:to-sky-700'
-                      : 'bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700'
+                      ? 'bg-linear-to-r from-cyan-600 to-sky-600 hover:from-cyan-700 hover:to-sky-700'
+                      : 'bg-linear-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700'
                   }`}
                 >
-                  {isOtthPercentageColumnVisible ? <EyeOff size={14} /> : <Eye size={14} />}
+                  {isOtthPercentageColumnVisible ? <Icon name="visibility_off" className="text-sm" /> : <Icon name="visibility" className="text-sm" />}
                   {isOtthPercentageColumnVisible ? 'Ẩn cột tỷ lệ đạt OTTH' : 'Hiện cột tỷ lệ đạt OTTH'}
                 </button>
 
@@ -1196,7 +1200,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
                             : 'border-slate-300 bg-slate-100 text-slate-600 hover:bg-slate-200'
                         }`}
                       >
-                        {isVisible ? <EyeOff size={12} /> : <Eye size={12} />}
+                        {isVisible ? <Icon name="visibility_off" className="text-xs" /> : <Icon name="visibility" className="text-xs" />}
                         {isVisible ? 'Ẩn' : 'Hiện'}
                       </button>
                     </div>
@@ -1510,22 +1514,22 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
           </div>
         </div>
 
-        <div className="flex flex-col items-center justify-end gap-2 border-t border-slate-200 bg-slate-50 p-3 sm:flex-row sm:p-4">
+        <div className="flex flex-col items-center justify-end gap-2.5 border-t border-m3-outline-variant bg-m3-surface-container-high p-3 sm:flex-row sm:p-4">
           <button
             onClick={handleExportExcel}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-white hover:bg-green-700 sm:w-auto"
+            className="flex w-full items-center justify-center gap-2 rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-xs transition-opacity hover:opacity-95 sm:w-auto"
           >
-            <FileDown size={18} /> Xuất Excel
+            <Icon name="download" className="text-lg" /> Xuất Excel
           </button>
           <button
             onClick={handleExportPdf}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-white hover:bg-red-700 sm:w-auto"
+            className="flex w-full items-center justify-center gap-2 rounded-full bg-rose-600 px-5 py-2.5 text-sm font-semibold text-white shadow-xs transition-opacity hover:opacity-95 sm:w-auto"
           >
-            <FileDown size={18} /> Xuất PDF
+            <Icon name="download" className="text-lg" /> Xuất PDF
           </button>
           <button
             onClick={onClose}
-            className="w-full rounded-lg bg-slate-200 px-4 py-2 text-slate-800 hover:bg-slate-300 sm:w-auto"
+            className="w-full rounded-full border border-m3-outline-variant bg-m3-surface-container px-5 py-2.5 text-sm font-semibold text-m3-on-surface transition-colors hover:bg-m3-surface-container-highest sm:w-auto"
           >
             {isPageMode ? 'Quay lại' : 'Đóng'}
           </button>
@@ -1538,7 +1542,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-1 sm:p-3 backdrop-blur-[1px]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-1 sm:p-3 backdrop-blur-xs">
       {content}
     </div>
   );

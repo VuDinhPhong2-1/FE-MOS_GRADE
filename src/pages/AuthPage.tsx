@@ -204,6 +204,10 @@ export default function AuthPage() {
               shape="cookie4Sided"
               morphTo="cookie12Sided"
               morphOn="hover"
+              morphOptions={{
+                duration: 0.4,
+                easing: [0.34, 1.56, 0.64, 1]
+              }}
               className="flex h-32 w-32 lg:h-36 lg:w-36 items-center justify-center bg-white/15 backdrop-blur-md shadow-xl cursor-pointer"
             >
               <div className="grid place-items-center text-center p-3">

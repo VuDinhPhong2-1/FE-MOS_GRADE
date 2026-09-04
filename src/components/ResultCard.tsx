@@ -1,6 +1,6 @@
 import React from 'react';
 import type { GradingResult } from '../types';
-import { CheckCircle, XCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { Icon } from '@bug-on/m3-expressive';
 import { clsx } from 'clsx';
 import { stripGradingGuideSection } from '../utils/gradingText';
 
@@ -18,43 +18,43 @@ const ResultCard: React.FC<Props> = ({ result }) => {
   };
 
   return (
-    <div className="mt-6 overflow-hidden rounded-lg border border-gray-200 bg-white shadow">
-      <div className="border-b border-gray-200 bg-gray-50 p-6">
-        <h2 className="text-xl font-bold text-gray-800">
+    <div className="mt-6 overflow-hidden rounded-4xl border border-m3-outline-variant/60 bg-m3-surface-container shadow-xs">
+      <div className="border-b border-m3-outline-variant bg-m3-surface-container-high p-6">
+        <h2 className="text-xl font-bold text-m3-on-surface">
           {result.projectName} ({result.projectId})
         </h2>
         <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4">
-          <div className="rounded-md bg-blue-50 p-3">
-            <p className="text-sm text-blue-600">Tổng điểm</p>
-            <p className="text-2xl font-bold text-blue-700">
+          <div className="rounded-2xl border border-m3-outline-variant/40 bg-m3-primary-container/30 p-3.5">
+            <p className="text-xs font-semibold text-m3-primary">Tổng điểm</p>
+            <p className="text-2xl font-bold text-m3-primary">
               {result.totalScore} / {result.maxScore}
             </p>
           </div>
-          <div className="rounded-md bg-indigo-50 p-3">
-            <p className="text-sm text-indigo-600">Tỷ lệ</p>
-            <p className="text-2xl font-bold text-indigo-700">{result.percentage}%</p>
+          <div className="rounded-2xl border border-m3-outline-variant/40 bg-m3-secondary-container/30 p-3.5">
+            <p className="text-xs font-semibold text-m3-secondary">Tỷ lệ</p>
+            <p className="text-2xl font-bold text-m3-secondary">{result.percentage}%</p>
           </div>
-          <div className={clsx('rounded-md p-3', result.percentage >= 70 ? 'bg-green-50' : 'bg-yellow-50')}>
-            <p className={clsx('text-sm', result.percentage >= 70 ? 'text-green-600' : 'text-yellow-600')}>
+          <div className={clsx('rounded-2xl border border-m3-outline-variant/40 p-3.5', result.percentage >= 70 ? 'bg-emerald-500/10' : 'bg-amber-500/10')}>
+            <p className={clsx('text-xs font-semibold', result.percentage >= 70 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400')}>
               Trạng thái
             </p>
             <p
               className={clsx(
                 'text-2xl font-bold',
-                result.percentage >= 70 ? 'text-green-700' : 'text-yellow-700'
+                result.percentage >= 70 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'
               )}
             >
               {result.status}
             </p>
           </div>
-          <div className="rounded-md bg-gray-100 p-3">
-            <p className="text-sm text-gray-500">Ngày chấm</p>
-            <p className="mt-1 text-sm font-medium">{new Date(result.gradedAt).toLocaleString('vi-VN')}</p>
+          <div className="rounded-2xl border border-m3-outline-variant/40 bg-m3-surface-container-highest p-3.5">
+            <p className="text-xs font-semibold text-m3-on-surface-variant">Ngày chấm</p>
+            <p className="mt-1 text-sm font-medium text-m3-on-surface">{new Date(result.gradedAt).toLocaleString('vi-VN')}</p>
           </div>
         </div>
       </div>
 
-      <div className="divide-y divide-gray-100">
+      <div className="divide-y divide-m3-outline-variant/40">
         {result.taskResults.map((task, index) => {
           const taskKey = `${task.taskId}-${index}`;
           const errors = (task.errors || [])
@@ -65,28 +65,28 @@ const ResultCard: React.FC<Props> = ({ result }) => {
             .filter(Boolean);
 
           return (
-            <div key={taskKey} className="bg-white">
+            <div key={taskKey} className="bg-m3-surface-container">
               <div
-                className="flex cursor-pointer items-center justify-between p-4 transition hover:bg-gray-50"
+                className="flex cursor-pointer items-center justify-between p-4 transition-colors hover:bg-m3-surface-container-high"
                 onClick={() => toggleTask(taskKey)}
               >
                 <div className="flex items-center gap-3">
                   {task.isPassed ? (
-                    <CheckCircle className="h-5 w-5 text-green-500" />
+                    <Icon name="check_circle" className="text-emerald-500 text-xl" />
                   ) : (
-                    <XCircle className="h-5 w-5 text-red-500" />
+                    <Icon name="cancel" className="text-rose-500 text-xl" />
                   )}
                   <div>
-                    <p className="font-medium text-gray-800">
+                    <p className="font-medium text-m3-on-surface">
                       {task.taskId}: {task.taskName}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
-                  <span className={clsx('font-bold', task.score === task.maxScore ? 'text-green-600' : 'text-red-600')}>
+                  <span className={clsx('font-bold', task.score === task.maxScore ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400')}>
                     {task.score}/{task.maxScore}
                   </span>
-                  {expandedTasks.includes(taskKey) ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                  {expandedTasks.includes(taskKey) ? <Icon name="expand_less" className="text-lg text-m3-on-surface-variant" /> : <Icon name="expand_more" className="text-lg text-m3-on-surface-variant" />}
                 </div>
               </div>
 
@@ -94,18 +94,18 @@ const ResultCard: React.FC<Props> = ({ result }) => {
                 <div className="px-12 pb-4 pt-0 text-sm">
                   {errors.length > 0 && (
                     <div className="mb-2">
-                      <p className="mb-1 font-semibold text-red-600">Lỗi sai:</p>
-                      <ul className="list-disc space-y-1 pl-5 text-red-500">
+                      <p className="mb-1 font-semibold text-rose-600 dark:text-rose-400">Lỗi sai:</p>
+                      <ul className="list-disc space-y-1 pl-5 text-rose-500 dark:text-rose-300">
                         {errors.map((err, idx) => (
-                          <li key={idx}>{err.replace('â’ ', '')}</li>
+                          <li key={idx}>{err.replace('â ’ ', '')}</li>
                         ))}
                       </ul>
                     </div>
                   )}
                   {details.length > 0 && (
                     <div>
-                      <p className="mb-1 font-semibold text-green-600">Chi tiết đúng:</p>
-                      <ul className="list-disc space-y-1 pl-5 text-green-500">
+                      <p className="mb-1 font-semibold text-emerald-600 dark:text-emerald-400">Chi tiết đúng:</p>
+                      <ul className="list-disc space-y-1 pl-5 text-emerald-500 dark:text-emerald-300">
                         {details.map((detail, idx) => (
                           <li key={idx}>{detail.replace('âœ“ ', '')}</li>
                         ))}

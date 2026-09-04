@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { X, AlertOctagon, AlertTriangle, Lightbulb } from 'lucide-react';
+import { Icon } from '@bug-on/m3-expressive';
 import { notifyEventName, type NotifyPayload } from '../utils/notify';
 
 const ErrorModal: React.FC = () => {
@@ -28,31 +28,31 @@ const ErrorModal: React.FC = () => {
   const message = (payload.message || '').trim();
 
   return (
-    <div className="fixed inset-0 z-[11000] flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/40" onClick={() => setOpen(false)} />
+    <div className="fixed inset-0 z-[11000] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-xs transition-opacity" onClick={() => setOpen(false)} />
 
-      <div className="relative w-[min(92vw,720px)] max-h-[86vh] overflow-auto rounded-lg border bg-white p-6 shadow-2xl">
-        <div className="flex items-start gap-3">
-          <div className="rounded-full bg-rose-50 p-2 text-rose-700">
-            <AlertOctagon size={22} />
+      <div className="relative w-[min(94vw,720px)] max-h-[86vh] overflow-auto rounded-4xl border border-m3-outline-variant/60 bg-m3-surface-container-high p-6 text-m3-on-surface shadow-2xl transition-all">
+        <div className="flex items-start gap-3.5">
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-m3-error-container text-m3-on-error-container">
+            <Icon name="error" className="text-2xl" />
           </div>
 
           <div className="min-w-0 flex-1">
             <div className="flex items-baseline justify-between gap-3">
-              <h3 className="text-lg font-semibold text-rose-800">{payload.title ?? 'Lỗi'}</h3>
+              <h3 className="text-xl font-bold text-m3-error">{payload.title ?? 'Lỗi'}</h3>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="rounded p-1 text-current/70 transition hover:bg-black/5"
+                className="grid h-8 w-8 place-items-center rounded-full text-m3-on-surface-variant hover:bg-m3-surface-container-highest hover:text-m3-on-surface transition-colors"
                 aria-label="Đóng"
               >
-                <X />
+                <Icon name="close" className="text-lg" />
               </button>
             </div>
 
-            <div className="mt-3 space-y-3 text-sm">
+            <div className="mt-3.5 space-y-3 text-sm">
               {message && (
-                <div className="whitespace-pre-wrap rounded-lg border border-rose-100 bg-rose-50/60 p-3 font-medium text-rose-700">
+                <div className="whitespace-pre-wrap rounded-2xl border border-m3-error/20 bg-m3-error-container/40 p-3.5 font-medium text-m3-on-error-container">
                   {message}
                 </div>
               )}
@@ -60,21 +60,21 @@ const ErrorModal: React.FC = () => {
               {issues.map((issue, idx) => (
                 <div
                   key={`${idx}-${issue.heading}-${issue.message}`}
-                  className="rounded-lg border border-orange-100 bg-orange-50/40 p-3"
+                  className="rounded-2xl border border-m3-outline-variant/50 bg-m3-surface-container p-3.5"
                 >
-                  <div className="flex items-start gap-2">
-                    <AlertTriangle size={18} className="mt-0.5 shrink-0 text-orange-600" />
+                  <div className="flex items-start gap-2.5">
+                    <Icon name="warning" className="mt-0.5 shrink-0 text-amber-500 text-lg" />
                     <div className="min-w-0 flex-1 space-y-1">
-                      <div className="whitespace-pre-wrap font-semibold text-sky-700">
+                      <div className="whitespace-pre-wrap font-semibold text-m3-primary">
                         {issue.heading}
                       </div>
-                      <div className="whitespace-pre-wrap font-medium text-orange-600">
+                      <div className="whitespace-pre-wrap font-medium text-amber-600 dark:text-amber-400">
                         {issue.message}
                       </div>
 
                       {issue.fixAction && (
-                        <div className="flex items-start gap-2 pt-1 text-emerald-700">
-                          <Lightbulb size={17} className="mt-0.5 shrink-0" />
+                        <div className="flex items-start gap-2 pt-1 text-emerald-600 dark:text-emerald-400">
+                          <Icon name="lightbulb" className="mt-0.5 shrink-0 text-base" />
                           <span className="whitespace-pre-wrap font-medium">
                             Hướng dẫn sửa: {issue.fixAction}
                           </span>
@@ -86,7 +86,7 @@ const ErrorModal: React.FC = () => {
               ))}
             </div>
 
-            <div className="mt-4 flex justify-end gap-2">
+            <div className="mt-5 flex flex-wrap justify-end gap-2.5">
               <button
                 type="button"
                 onClick={() => {
@@ -99,14 +99,14 @@ const ErrorModal: React.FC = () => {
                     [payload.title ?? 'Lỗi', message, combined].filter(Boolean).join('\n\n')
                   );
                 }}
-                className="rounded bg-slate-100 px-3 py-1 text-sm text-slate-700 hover:bg-slate-200"
+                className="rounded-full border border-m3-outline-variant bg-m3-surface-container px-4 py-2 text-xs font-semibold text-m3-on-surface transition-colors hover:bg-m3-surface-container-highest"
               >
                 Sao chép nội dung
               </button>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="rounded bg-rose-600 px-3 py-1 text-sm text-white hover:bg-rose-700"
+                className="rounded-full bg-m3-error px-5 py-2 text-xs font-semibold text-m3-on-error shadow-xs transition-opacity hover:opacity-90"
               >
                 Đóng
               </button>
