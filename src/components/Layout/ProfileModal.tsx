@@ -16,7 +16,7 @@ interface ProfileFormState {
   avatar: string;
 }
 
-const ProfileModal = ({ isOpen, onClose, onAvatarPreview }: ProfileModalProps) => {
+export const ProfileModal = ({ isOpen, onClose, onAvatarPreview }: ProfileModalProps) => {
   const { user, getAccessToken, updateUser } = useAuth();
   const [form, setForm] = useState<ProfileFormState>({
     fullName: '',
@@ -34,7 +34,6 @@ const ProfileModal = ({ isOpen, onClose, onAvatarPreview }: ProfileModalProps) =
     };
     setForm(initial);
     if (onAvatarPreview) onAvatarPreview(initial.avatar || '');
-    // clear preview when modal closes
     return () => {
       if (onAvatarPreview) onAvatarPreview('');
     };
@@ -73,26 +72,28 @@ const ProfileModal = ({ isOpen, onClose, onAvatarPreview }: ProfileModalProps) =
   };
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-slate-900/50 p-3 backdrop-blur-[1px]">
-      <div className="app-card w-full max-w-xl overflow-hidden">
-        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+    <div className="fixed inset-0 z-50 grid place-items-center bg-[var(--md-sys-color-scrim)]/40 p-4 backdrop-blur-[2px]">
+      <div className="w-full max-w-lg overflow-hidden rounded-3xl border border-[var(--md-sys-color-outline-variant)] bg-[var(--md-sys-color-surface-container-high)] text-[var(--md-sys-color-on-surface)] shadow-2xl transition-all">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-[var(--md-sys-color-outline-variant)] px-6 py-5">
           <div>
-            <h3 className="text-lg font-bold text-slate-900">Chỉnh sửa tài khoản</h3>
-            <p className="text-xs text-slate-500">Cập nhật hồ sơ cá nhân của bạn</p>
+            <h3 className="text-lg font-bold text-[var(--md-sys-color-on-surface)]">Chỉnh sửa tài khoản</h3>
+            <p className="text-xs text-[var(--md-sys-color-on-surface-variant)]">Cập nhật hồ sơ cá nhân của bạn</p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-slate-200 p-2 text-slate-500 hover:bg-slate-50 hover:text-slate-700"
+            className="grid h-9 w-9 place-items-center rounded-full border border-[var(--md-sys-color-outline-variant)] text-[var(--md-sys-color-on-surface-variant)] transition-colors hover:bg-[var(--md-sys-color-surface-container-highest)] hover:text-[var(--md-sys-color-on-surface)]"
             aria-label="Đóng hộp thoại"
           >
             <X size={18} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 p-5">
-          <div className="grid gap-1">
-            <label htmlFor="profile-username" className="text-sm font-semibold text-slate-700">
+        {/* Form Body */}
+        <form onSubmit={handleSubmit} className="space-y-4 p-6">
+          <div className="grid gap-1.5">
+            <label htmlFor="profile-username" className="text-xs font-semibold text-[var(--md-sys-color-on-surface-variant)]">
               Tên đăng nhập
             </label>
             <input
@@ -100,12 +101,12 @@ const ProfileModal = ({ isOpen, onClose, onAvatarPreview }: ProfileModalProps) =
               type="text"
               readOnly
               value={user.username}
-              className="w-full cursor-not-allowed bg-slate-100 px-3 py-2 text-slate-500"
+              className="w-full cursor-not-allowed opacity-70 px-3.5 py-2.5 text-sm"
             />
           </div>
 
-          <div className="grid gap-1">
-            <label htmlFor="profile-email" className="text-sm font-semibold text-slate-700">
+          <div className="grid gap-1.5">
+            <label htmlFor="profile-email" className="text-xs font-semibold text-[var(--md-sys-color-on-surface-variant)]">
               Thư điện tử
             </label>
             <input
@@ -113,12 +114,12 @@ const ProfileModal = ({ isOpen, onClose, onAvatarPreview }: ProfileModalProps) =
               type="text"
               readOnly
               value={user.email || ''}
-              className="w-full cursor-not-allowed bg-slate-100 px-3 py-2 text-slate-500"
+              className="w-full cursor-not-allowed opacity-70 px-3.5 py-2.5 text-sm"
             />
           </div>
 
-          <div className="grid gap-1">
-            <label htmlFor="profile-fullname" className="text-sm font-semibold text-slate-700">
+          <div className="grid gap-1.5">
+            <label htmlFor="profile-fullname" className="text-xs font-semibold text-[var(--md-sys-color-on-surface-variant)]">
               Họ và tên
             </label>
             <input
@@ -127,13 +128,13 @@ const ProfileModal = ({ isOpen, onClose, onAvatarPreview }: ProfileModalProps) =
               value={form.fullName}
               onChange={(event) => setForm((prev) => ({ ...prev, fullName: event.target.value }))}
               placeholder="Ví dụ: Vũ Đình Phong"
-              className="w-full px-3 py-2"
+              className="w-full px-3.5 py-2.5 text-sm"
               maxLength={120}
             />
           </div>
 
-          <div className="grid gap-1">
-            <label htmlFor="profile-phone" className="text-sm font-semibold text-slate-700">
+          <div className="grid gap-1.5">
+            <label htmlFor="profile-phone" className="text-xs font-semibold text-[var(--md-sys-color-on-surface-variant)]">
               Số điện thoại
             </label>
             <input
@@ -142,13 +143,13 @@ const ProfileModal = ({ isOpen, onClose, onAvatarPreview }: ProfileModalProps) =
               value={form.phoneNumber}
               onChange={(event) => setForm((prev) => ({ ...prev, phoneNumber: event.target.value }))}
               placeholder="Ví dụ: 0909xxxxxx"
-              className="w-full px-3 py-2"
+              className="w-full px-3.5 py-2.5 text-sm"
               maxLength={25}
             />
           </div>
 
-          <div className="grid gap-1">
-            <label htmlFor="profile-avatar" className="text-sm font-semibold text-slate-700">
+          <div className="grid gap-1.5">
+            <label htmlFor="profile-avatar" className="text-xs font-semibold text-[var(--md-sys-color-on-surface-variant)]">
               Ảnh đại diện (URL)
             </label>
             <input
@@ -161,21 +162,26 @@ const ProfileModal = ({ isOpen, onClose, onAvatarPreview }: ProfileModalProps) =
                 if (onAvatarPreview) onAvatarPreview(next || '');
               }}
               placeholder="https://..."
-              className="w-full px-3 py-2"
+              className="w-full px-3.5 py-2.5 text-sm"
               maxLength={500}
             />
           </div>
 
-          <div className="flex justify-end gap-2 border-t border-slate-200 pt-4">
+          {/* Footer actions */}
+          <div className="flex justify-end gap-2.5 border-t border-[var(--md-sys-color-outline-variant)] pt-4">
             <button
               type="button"
               onClick={onClose}
-              className="app-btn-secondary px-4 py-2 text-sm"
+              className="app-btn-secondary px-5 py-2.5 text-sm"
               disabled={saving}
             >
               Hủy
             </button>
-            <button type="submit" className="app-btn-primary inline-flex items-center gap-2 px-4 py-2 text-sm" disabled={saving}>
+            <button
+              type="submit"
+              className="app-btn-primary inline-flex items-center gap-2 px-5 py-2.5 text-sm"
+              disabled={saving}
+            >
               {saving ? <Loader2 size={16} className="animate-spin" /> : null}
               Lưu thay đổi
             </button>

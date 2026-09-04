@@ -1,6 +1,7 @@
-﻿import { clsx } from 'clsx';
-import { ChevronDown, LogOut, type LucideIcon } from 'lucide-react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { clsx } from 'clsx';
+import { ChevronDown, ChevronRight, LogOut, type LucideIcon } from 'lucide-react';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
 export interface SidebarNavItem {
@@ -15,86 +16,35 @@ export interface SidebarNavItem {
   }>;
 }
 
-interface NavItemProps {
-  label: string;
-  icon: LucideIcon;
-  path: string;
-  onClick?: () => void;
-}
-
-const NavItem = ({ label, icon: Icon, path, onClick }: NavItemProps) => (
-  <NavLink
-    to={path}
-    onClick={onClick}
-    className={({ isActive }) =>
-      clsx(
-        'mx-2 flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all',
-        isActive
-          ? 'bg-white/24 !text-white shadow-[0_6px_16px_rgba(15,23,42,0.24)]'
-          : '!text-slate-100 hover:bg-white/14 hover:!text-white'
-      )
-    }
-  >
-    <Icon size={18} />
-    <span>{label}</span>
-  </NavLink>
-);
-
-interface NavDropdownProps {
-  item: SidebarNavItem;
-  onNavigate?: () => void;
-}
-
-const NavDropdown = ({ item, onNavigate }: NavDropdownProps) => (
-  <div className="mx-2">
-    <NavLink
-      to={item.path}
-      onClick={onNavigate}
-      className={({ isActive }) =>
-        clsx(
-          'flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all',
-          isActive
-            ? 'bg-white/24 !text-white shadow-[0_6px_16px_rgba(15,23,42,0.24)]'
-            : '!text-slate-100 hover:bg-white/14 hover:!text-white'
-        )
-      }
-    >
-      <item.icon size={18} />
-      <span className="min-w-0 flex-1 truncate">{item.label}</span>
-      <ChevronDown size={16} className="text-slate-100/80" />
-    </NavLink>
-
-    <div className="mt-1 space-y-1 pl-8">
-      {item.children?.map((child) => (
-        <NavLink
-          key={child.id}
-          to={child.path}
-          onClick={onNavigate}
-          className={({ isActive }) =>
-            clsx(
-              'block rounded-lg px-3 py-2 text-sm transition-all',
-              isActive
-                ? 'bg-white/18 font-semibold !text-white'
-                : '!text-slate-200/90 hover:bg-white/10 hover:!text-white'
-            )
-          }
-        >
-          {child.label}
-        </NavLink>
-      ))}
-    </div>
-  </div>
-);
-
 interface SidebarProps {
   isOpen: boolean;
   navItems: SidebarNavItem[];
   onNavigate?: () => void;
 }
 
-const Sidebar = ({ isOpen, navItems, onNavigate }: SidebarProps) => {
+export const Sidebar = ({ isOpen, navItems, onNavigate }: SidebarProps) => {
   const { logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Lưu trạng thái mở dropdown của các menu có children
+  const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>(() => {
+    const initialState: Record<string, boolean> = {};
+    navItems.forEach((item) => {
+      if (item.children?.length) {
+        // Tự động mở nếu route hiện tại đang nằm trong children
+        const isChildActive = item.children.some((child) => location.pathname.startsWith(child.path));
+        initialState[item.id] = isChildActive;
+      }
+    });
+    return initialState;
+  });
+
+  const toggleDropdown = (id: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setOpenDropdowns((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
 
   const handleLogout = () => {
     const confirmed = window.confirm('Bạn có chắc chắn muốn đăng xuất không?');
@@ -107,43 +57,137 @@ const Sidebar = ({ isOpen, navItems, onNavigate }: SidebarProps) => {
   return (
     <aside
       className={clsx(
-        'fixed inset-y-0 left-0 z-40 flex w-64 flex-shrink-0 transform flex-col border-r border-blue-900/30 bg-gradient-to-b from-slate-900 via-blue-900 to-blue-950 shadow-2xl transition-all duration-300 lg:relative lg:translate-x-0',
-        isOpen ? 'translate-x-0' : '-translate-x-full lg:-ml-64'
+        'fixed inset-y-0 left-0 z-40 flex flex-col border-r border-[var(--md-sys-color-outline-variant)] bg-[var(--md-sys-color-surface-container)] text-[var(--md-sys-color-on-surface)] transition-all duration-300 ease-in-out lg:relative',
+        isOpen ? 'w-64 translate-x-0' : 'w-20 -translate-x-full lg:w-20 lg:translate-x-0'
       )}
     >
-      <div className="flex items-center gap-3 border-b border-white/10 px-5 py-5">
-        <div className="grid h-10 w-10 place-items-center rounded-xl bg-white/15 text-lg font-extrabold text-white">
+      {/* App Header / Brand */}
+      <div className="flex h-16 items-center gap-3 border-b border-[var(--md-sys-color-outline-variant)] px-4">
+        <div className="grid h-10 w-10 flex-shrink-0 place-items-center rounded-2xl bg-[var(--md-sys-color-primary)] text-base font-extrabold text-[var(--md-sys-color-on-primary)] shadow-sm">
           M
         </div>
-      <div className="min-w-0">
-        <h1 className="truncate text-lg font-extrabold text-white">MOS Grader</h1>
-        <p className="text-xs text-slate-200/95">Hệ thống chấm điểm MOS</p>
-      </div>
+        {isOpen && (
+          <div className="min-w-0 flex-1 overflow-hidden transition-opacity duration-200">
+            <h1 className="truncate text-base font-extrabold text-[var(--md-sys-color-on-surface)]">MOS Grader</h1>
+            <p className="truncate text-xs text-[var(--md-sys-color-on-surface-variant)]">Hệ thống chấm điểm</p>
+          </div>
+        )}
       </div>
 
-      <nav className="mt-4 flex-1 space-y-1">
-        {navItems.map((item) =>
-          item.children?.length ? (
-            <NavDropdown key={item.id} item={item} onNavigate={onNavigate} />
-          ) : (
-            <NavItem
+      {/* Navigation Items */}
+      <nav className="flex-1 space-y-1 overflow-y-auto px-2 py-3">
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const hasChildren = Boolean(item.children?.length);
+          const isDropdownOpen = Boolean(openDropdowns[item.id]);
+          const isParentActive =
+            location.pathname === item.path ||
+            Boolean(item.children?.some((child) => location.pathname.startsWith(child.path)));
+
+          if (hasChildren) {
+            return (
+              <div key={item.id} className="space-y-1">
+                <div
+                  title={!isOpen ? item.label : undefined}
+                  className={clsx(
+                    'group relative flex cursor-pointer items-center rounded-2xl px-3 py-2.5 text-sm font-medium transition-colors',
+                    isParentActive
+                      ? 'bg-[var(--md-sys-color-secondary-container)] text-[var(--md-sys-color-on-secondary-container)] font-semibold'
+                      : 'text-[var(--md-sys-color-on-surface-variant)] hover:bg-[var(--md-sys-color-surface-container-high)] hover:text-[var(--md-sys-color-on-surface)]'
+                  )}
+                  onClick={(e) => {
+                    if (isOpen) {
+                      toggleDropdown(item.id, e);
+                    } else {
+                      navigate(item.children![0].path);
+                      onNavigate?.();
+                    }
+                  }}
+                >
+                  <div className="grid h-8 w-8 place-items-center flex-shrink-0">
+                    <Icon size={20} />
+                  </div>
+
+                  {isOpen && (
+                    <>
+                      <span className="ml-2 min-w-0 flex-1 truncate">{item.label}</span>
+                      <button
+                        type="button"
+                        onClick={(e) => toggleDropdown(item.id, e)}
+                        className="p-1 text-[var(--md-sys-color-on-surface-variant)] hover:text-[var(--md-sys-color-on-surface)]"
+                      >
+                        {isDropdownOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                      </button>
+                    </>
+                  )}
+                </div>
+
+                {/* Sub-items khi sidebar mở */}
+                {isOpen && isDropdownOpen && (
+                  <div className="ml-7 space-y-1 border-l border-[var(--md-sys-color-outline-variant)] pl-3">
+                    {item.children?.map((child) => (
+                      <NavLink
+                        key={child.id}
+                        to={child.path}
+                        onClick={onNavigate}
+                        className={({ isActive }) =>
+                          clsx(
+                            'block rounded-xl px-3 py-2 text-xs font-medium transition-colors',
+                            isActive
+                              ? 'bg-[var(--md-sys-color-primary-container)] text-[var(--md-sys-color-on-primary-container)] font-semibold'
+                              : 'text-[var(--md-sys-color-on-surface-variant)] hover:bg-[var(--md-sys-color-surface-container-high)] hover:text-[var(--md-sys-color-on-surface)]'
+                          )
+                        }
+                      >
+                        {child.label}
+                      </NavLink>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          }
+
+          // Single item
+          return (
+            <NavLink
               key={item.id}
-              label={item.label}
-              icon={item.icon}
-              path={item.path}
+              to={item.path}
               onClick={onNavigate}
-            />
-          )
-        )}
+              title={!isOpen ? item.label : undefined}
+              className={({ isActive }) =>
+                clsx(
+                  'group flex items-center rounded-2xl px-3 py-2.5 text-sm font-medium transition-colors',
+                  isActive
+                    ? 'bg-[var(--md-sys-color-secondary-container)] text-[var(--md-sys-color-on-secondary-container)] font-semibold'
+                    : 'text-[var(--md-sys-color-on-surface-variant)] hover:bg-[var(--md-sys-color-surface-container-high)] hover:text-[var(--md-sys-color-on-surface)]'
+                )
+              }
+            >
+              <div className="grid h-8 w-8 place-items-center flex-shrink-0">
+                <Icon size={20} />
+              </div>
+              {isOpen && <span className="ml-2 min-w-0 flex-1 truncate">{item.label}</span>}
+            </NavLink>
+          );
+        })}
       </nav>
 
-      <div className="border-t border-white/10 p-4">
+      {/* Footer / Logout */}
+      <div className="border-t border-[var(--md-sys-color-outline-variant)] p-2">
         <button
+          type="button"
           onClick={handleLogout}
-          className="flex w-full items-center gap-3 rounded-xl border border-red-300/35 bg-red-500/20 px-4 py-3 text-left text-red-50 transition hover:bg-red-500/28"
+          title={!isOpen ? 'Đăng xuất' : undefined}
+          className={clsx(
+            'flex w-full items-center rounded-2xl px-3 py-2.5 text-sm font-medium text-[var(--md-sys-color-error)] transition-colors hover:bg-[var(--md-sys-color-error-container)]/30',
+            !isOpen && 'justify-center'
+          )}
         >
-          <LogOut size={18} />
-          <span className="font-medium">Đăng xuất</span>
+          <div className="grid h-8 w-8 place-items-center flex-shrink-0">
+            <LogOut size={20} />
+          </div>
+          {isOpen && <span className="ml-2 truncate font-semibold">Đăng xuất</span>}
         </button>
       </div>
     </aside>
