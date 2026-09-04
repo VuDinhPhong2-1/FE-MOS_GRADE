@@ -1,8 +1,10 @@
 @import "tailwindcss" source(none);
+@import "@bug-on/m3-expressive/index.css";
+@import "@bug-on/m3-expressive/typography.css";
 @source "../src/{App,main}.tsx";
 @source "../src/context/AuthContext.tsx";
 @source "../src/pages/{AuthPage,ClassGradingPage,Classlist,ClassScoreboardPage,Dashboard,GradingView,PermissionManagement,PublicExamPage,SchoolList,StudentList,TeacherSchedule}.tsx";
-@source "../src/components/{ClassAnalyticsPanel,ErrorModal,GradingModal,LocalAgentCompactPanel,LocalAgentPanel,ResultCard,ToastCenter,ViewAllScoresModal}.tsx";
+@source "../src/components/{ClassAnalyticsPanel,ErrorModal,GradingModal,LocalAgentCompactPanel,LocalAgentPanel,ResultCard,ThemeToggle,ToastCenter,ViewAllScoresModal}.tsx";
 @source "../src/components/Layout/{Header,Layout,ProfileModal,Sidebar}.tsx";
 
 :root {
@@ -35,8 +37,8 @@ body,
 
 body {
   margin: 0;
-  font-family: "Be Vietnam Pro", "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue",
-    sans-serif;
+  font-family: "Google Sans Flex", "Be Vietnam Pro", system-ui, -apple-system, sans-serif;
+  font-variation-settings: "ROND" 100;
   color: var(--text-main);
   background:
     radial-gradient(1100px 500px at -5% -15%, #dbeafe 0%, transparent 60%),

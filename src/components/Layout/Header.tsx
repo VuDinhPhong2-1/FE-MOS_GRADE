@@ -1,7 +1,8 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { Menu, Settings2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import ProfileModal from './ProfileModal';
+import ThemeToggle from '../ThemeToggle';
 
 interface HeaderProps {
   onToggleSidebar: () => void;
@@ -32,6 +33,8 @@ const Header = ({ onToggleSidebar, fullName = 'Giáo viên' }: HeaderProps) => {
         </button>
 
         <div className="ml-auto flex min-w-0 items-center gap-3">
+          <ThemeToggle />
+
           <div className="hidden text-sm text-slate-600 sm:block">
             Xin chào, <span className="font-semibold text-slate-900">{displayName}</span>
           </div>
