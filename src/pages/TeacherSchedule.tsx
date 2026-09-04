@@ -1569,7 +1569,7 @@ const TeacherSchedule = () => {
                         {resolveSchoolNameForSchedule(item) || <span className="text-m3-on-surface-variant/40">Chưa gán trường</span>}
                       </td>
                       <td className="px-3 py-3 text-m3-on-surface">{item.roomName || '-'}</td>
-                      <td className="max-w-[260px] truncate px-3 py-3 text-m3-on-surface-variant">{item.notes || '-'}</td>
+                      <td className="max-w-65 truncate px-3 py-3 text-m3-on-surface-variant">{item.notes || '-'}</td>
                       <td className="px-3 py-3">
                         <span
                           className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${item.isActive ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300' : 'bg-m3-surface-container-highest text-m3-on-surface-variant'
@@ -1628,7 +1628,7 @@ const TeacherSchedule = () => {
 
       {attendanceOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 p-0 backdrop-blur-xs sm:grid sm:place-items-center sm:p-4">
-          <div className="flex h-[100dvh] w-full flex-col overflow-hidden rounded-none border border-m3-outline-variant/60 bg-m3-surface-container shadow-2xl sm:h-auto sm:max-h-[94vh] sm:max-w-5xl sm:rounded-4xl">
+          <div className="flex h-dvh w-full flex-col overflow-hidden rounded-none border border-m3-outline-variant/60 bg-m3-surface-container shadow-2xl sm:h-auto sm:max-h-[94vh] sm:max-w-5xl sm:rounded-4xl">
             <div
               className="shrink-0 border-b border-m3-outline-variant/60 bg-m3-surface-container-high px-4 py-4 sm:px-6 shadow-xs"
               style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }}
@@ -1820,7 +1820,7 @@ const TeacherSchedule = () => {
                                 <button
                                   type="button"
                                   onClick={() => toggleAttendanceStatus(student.studentId)}
-                                  className={`min-w-[104px] rounded-lg px-3 py-2 text-sm font-semibold ${isAbsent
+                                  className={`min-w-26 rounded-lg px-3 py-2 text-sm font-semibold ${isAbsent
                                     ? 'border border-rose-300 bg-rose-100 text-rose-700'
                                     : 'border border-emerald-300 bg-emerald-100 text-emerald-700'
                                     }`}
@@ -1892,7 +1892,7 @@ const TeacherSchedule = () => {
                                     <button
                                       type="button"
                                       onClick={() => toggleAttendanceStatus(student.studentId)}
-                                      className={`min-w-[116px] rounded-lg px-3 py-2 text-sm font-semibold ${isAbsent
+                                      className={`min-w-29 rounded-lg px-3 py-2 text-sm font-semibold ${isAbsent
                                         ? 'border border-rose-300 bg-rose-100 text-rose-700'
                                         : 'border border-emerald-300 bg-emerald-100 text-emerald-700'
                                         }`}
@@ -1904,7 +1904,7 @@ const TeacherSchedule = () => {
                                     <input
                                       value={draft.note}
                                       onChange={(event) => updateAttendanceNote(student.studentId, event.target.value)}
-                                      className="w-full min-w-[240px] px-2 py-1.5 text-sm"
+                                      className="w-full min-w-60 px-2 py-1.5 text-sm"
                                       placeholder="Ghi chú..."
                                     />
                                   </td>
@@ -1999,7 +1999,7 @@ const TeacherSchedule = () => {
                         </label>
                         <label className="grid gap-1 text-sm sm:col-span-2">
                           <span>Nội dung dạy</span>
-                          <textarea value={reportsDraft.professional.teachingContent} onChange={(e) => updateProfessionalReportField('teachingContent', e.target.value)} className="min-h-[78px] px-3 py-2" />
+                          <textarea value={reportsDraft.professional.teachingContent} onChange={(e) => updateProfessionalReportField('teachingContent', e.target.value)} className="min-h-19.5 px-3 py-2" />
                         </label>
                         <label className="grid gap-1 text-sm">
                           <span>Số tiết dự kiến</span>
@@ -2093,7 +2093,7 @@ const TeacherSchedule = () => {
                         </label>
                         <label className="grid gap-1 text-sm sm:col-span-2">
                           <span>Danh sách vi phạm</span>
-                          <textarea value={reportsDraft.endLesson.violationListSummary} onChange={(e) => updateEndLessonReportField('violationListSummary', e.target.value)} className="min-h-[78px] px-3 py-2" />
+                          <textarea value={reportsDraft.endLesson.violationListSummary} onChange={(e) => updateEndLessonReportField('violationListSummary', e.target.value)} className="min-h-19.5 px-3 py-2" />
                         </label>
                       </div>
                     </div>
@@ -2131,7 +2131,7 @@ const TeacherSchedule = () => {
 
       {roomManagerOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 p-0 backdrop-blur-xs sm:grid sm:place-items-center sm:p-4">
-          <div className="flex h-[100dvh] w-full flex-col overflow-hidden rounded-none border border-m3-outline-variant/60 bg-m3-surface-container shadow-2xl sm:h-auto sm:max-h-[94vh] sm:max-w-7xl sm:rounded-4xl">
+          <div className="flex h-dvh w-full flex-col overflow-hidden rounded-none border border-m3-outline-variant/60 bg-m3-surface-container shadow-2xl sm:h-auto sm:max-h-[94vh] sm:max-w-7xl sm:rounded-4xl">
             <div
               className="border-b border-m3-outline-variant/60 bg-m3-surface-container-high px-4 py-4 sm:px-6 shadow-xs"
               style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top))' }}
@@ -2189,7 +2189,7 @@ const TeacherSchedule = () => {
                                 setRoomManagerSchoolId(nextSchoolId);
                                 resetRoomForm(nextSchoolId);
                               }}
-                              className="min-w-[260px] w-full appearance-none rounded-xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2.5 pr-9 text-m3-on-surface focus:border-m3-primary focus:outline-hidden"
+                              className="min-w-65 w-full appearance-none rounded-xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2.5 pr-9 text-m3-on-surface focus:border-m3-primary focus:outline-hidden"
                             >
                               <option value="">-- Chọn trường --</option>
                               {schools.map((item) => (
@@ -2388,8 +2388,8 @@ const TeacherSchedule = () => {
                   </div>
                 </div>
 
-                <form onSubmit={handleSaveRoom} className="app-card flex min-h-[640px] flex-col overflow-hidden border-slate-200/80 bg-white shadow-sm">
-                  <div className="border-b border-slate-200 bg-gradient-to-r from-slate-50 to-blue-50/40 px-4 py-4">
+                <form onSubmit={handleSaveRoom} className="app-card flex min-h-160 flex-col overflow-hidden border-slate-200/80 bg-white shadow-sm">
+                  <div className="border-b border-slate-200 bg-linear-to-r from-slate-50 to-blue-50/40 px-4 py-4">
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <h4 className="text-base font-bold text-slate-900">
@@ -2449,7 +2449,7 @@ const TeacherSchedule = () => {
                         <Icon name="build" className="text-base text-m3-primary" />
                         <h5 className="text-sm font-bold text-m3-on-surface">Cấu hình thiết bị</h5>
                       </div>
-                      <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(108px,1fr))]">
+                      <div className="grid gap-3 grid-cols-[repeat(auto-fit,minmax(108px,1fr))]">
                         <label className="grid min-w-0 gap-1.5 text-sm">
                           <span className="font-medium leading-snug text-m3-on-surface">Số máy HS</span>
                           <input
@@ -2513,7 +2513,7 @@ const TeacherSchedule = () => {
                             }))
                           }
                           placeholder="Ví dụ: PC 32 hỏng màn hình, PC 15 mất chuột..."
-                          className="min-h-[70px] w-full rounded-xl border border-m3-outline-variant bg-m3-surface-container px-3.5 py-2.5 text-m3-on-surface focus:border-m3-primary focus:outline-hidden"
+                          className="min-h-17.5 w-full rounded-xl border border-m3-outline-variant bg-m3-surface-container px-3.5 py-2.5 text-m3-on-surface focus:border-m3-primary focus:outline-hidden"
                         />
                         <span className="text-xs text-m3-on-surface-variant">
                           Mô tả cụ thể từng máy hỏng — không ảnh hưởng tới số lượng máy lỗi ở trên.
@@ -2526,7 +2526,7 @@ const TeacherSchedule = () => {
                         <Icon name="auto_awesome" className="text-base text-m3-primary" />
                         <h5 className="text-sm font-bold text-m3-on-surface">Tình trạng trước giờ học</h5>
                       </div>
-                      <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(170px,1fr))]">
+                      <div className="grid gap-3 grid-cols-[repeat(auto-fit,minmax(170px,1fr))]">
                         <label className="grid min-w-0 gap-1.5 text-sm">
                           <span className="flex items-start gap-1.5 font-medium leading-snug text-m3-on-surface">
                             <Icon name="desktop_windows" className="mt-0.5 shrink-0 text-sm text-m3-on-surface-variant/60" />
@@ -2593,7 +2593,7 @@ const TeacherSchedule = () => {
                         <Icon name="power_settings_new" className="text-base text-m3-primary" />
                         <h5 className="text-sm font-bold text-m3-on-surface">Tình trạng sau giờ học</h5>
                       </div>
-                      <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(170px,1fr))]">
+                      <div className="grid gap-3 grid-cols-[repeat(auto-fit,minmax(170px,1fr))]">
                         <label className="grid min-w-0 gap-1.5 text-sm">
                           <span className="font-medium leading-snug text-m3-on-surface">Đã tắt thiết bị điện</span>
                           <input
@@ -2694,7 +2694,7 @@ const TeacherSchedule = () => {
 
       {formOpen && (
         <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-xs sm:grid sm:place-items-center sm:p-4">
-          <div className="flex h-[100dvh] w-full flex-col overflow-hidden rounded-none border border-m3-outline-variant/60 bg-m3-surface-container shadow-2xl sm:h-auto sm:max-h-[92vh] sm:max-w-2xl sm:rounded-4xl">
+          <div className="flex h-dvh w-full flex-col overflow-hidden rounded-none border border-m3-outline-variant/60 bg-m3-surface-container shadow-2xl sm:h-auto sm:max-h-[92vh] sm:max-w-2xl sm:rounded-4xl">
             {/* Header */}
             <div
               className="shrink-0 border-b border-m3-outline-variant/60 bg-m3-surface-container-high px-5 py-4 shadow-xs"
@@ -2948,7 +2948,7 @@ const TeacherSchedule = () => {
                     <textarea
                       value={form.notes}
                       onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))}
-                      className="min-h-[80px] rounded-xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2.5 text-sm text-m3-on-surface focus:border-m3-primary focus:outline-hidden"
+                      className="min-h-20 rounded-xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2.5 text-sm text-m3-on-surface focus:border-m3-primary focus:outline-hidden"
                       placeholder="Ghi chú thêm..."
                     />
                   </label>
