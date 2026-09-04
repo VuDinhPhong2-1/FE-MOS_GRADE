@@ -1138,7 +1138,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
             </div>
 
             <div className="mb-3 flex flex-wrap items-center gap-3">
-              <div className="flex-1 min-w-[200px] max-w-[400px]">
+              <div className="flex-1 min-w-50 max-w-100">
                 <input
                   type="text"
                   placeholder="Tìm kiếm tên học sinh..."
@@ -1194,7 +1194,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
                       <button
                         type="button"
                         onClick={() => handleTogglePracticeGroupDisplay(practice.code)}
-                        className={`inline-flex min-w-[64px] items-center justify-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold transition ${
+                        className={`inline-flex min-w-16 items-center justify-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold transition ${
                           isVisible
                             ? 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
                             : 'border-slate-300 bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -1211,12 +1211,12 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
           </div>
 
           <div id="score-table" className="relative overflow-hidden rounded-2xl border border-slate-200 shadow-lg shadow-slate-900/5">
-            <div className="flex items-center justify-between border-b border-slate-700 bg-gradient-to-r from-slate-800 to-slate-700 px-4 py-2.5 text-sm font-semibold text-white">
+            <div className="flex items-center justify-between border-b border-slate-700 bg-linear-to-r from-slate-800 to-slate-700 px-4 py-2.5 text-sm font-semibold text-white">
               <span>Bảng điểm lớp {titleClassName}</span>
               <span className="text-xs font-medium text-slate-200">Nhấn badge lỗi để xem chi tiết</span>
             </div>
-            <div className="min-h-[18rem] max-h-[calc(100vh-20rem)] overflow-auto">
-              <table className="w-full min-w-[1940px] border-separate border-spacing-0 text-sm text-slate-700">
+            <div className="min-h-72 max-h-[calc(100vh-20rem)] overflow-auto">
+              <table className="w-full min-w-485 border-separate border-spacing-0 text-sm text-slate-700">
                 <thead className="z-20">
                   <tr className="border-b border-slate-700 bg-slate-800">
                     <th
@@ -1241,7 +1241,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
                       return (
                         <th
                           key={assignment.id}
-                          className="sticky top-0 z-40 min-w-[140px] border-r border-slate-700 bg-slate-800 px-3 py-3 text-center text-xs font-bold text-slate-100"
+                          className="sticky top-0 z-40 min-w-35 border-r border-slate-700 bg-slate-800 px-3 py-3 text-center text-xs font-bold text-slate-100"
                         >
                           <div title={assignment.name}>{assignment.name}</div>
                           <div className="text-[11px] font-normal text-slate-300">(tối đa {assignment.maxScore})</div>
@@ -1249,7 +1249,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
                       );
                     })}
                     {isClassificationColumnVisible && (
-                      <th className="sticky top-0 z-40 min-w-[130px] border-r border-slate-700 bg-slate-800 px-3 py-3 text-center text-xs font-bold uppercase tracking-wide text-slate-100">
+                      <th className="sticky top-0 z-40 min-w-32.5 border-r border-slate-700 bg-slate-800 px-3 py-3 text-center text-xs font-bold uppercase tracking-wide text-slate-100">
                         Xếp loại
                       </th>
                     )}
@@ -1265,7 +1265,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
                         completionVisible ? (
                         <th
                             key={`${practice.code}-completion-sub`}
-                            className={`sticky top-0 z-40 min-w-[112px] border-l border-slate-700 px-3 py-3 text-center text-xs font-bold uppercase tracking-wide ${theme.completionHeader}`}
+                            className={`sticky top-0 z-40 min-w-28 border-l border-slate-700 px-3 py-3 text-center text-xs font-bold uppercase tracking-wide ${theme.completionHeader}`}
                           >
                             {getPracticeCompletionHeaderLabel(practice)}
                           </th>
@@ -1273,7 +1273,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
                         scoreVisible ? (
                           <th
                             key={`${practice.code}-score-sub`}
-                            className={`sticky top-0 z-40 min-w-[132px] border-r border-slate-700 px-3 py-3 text-right text-xs font-bold uppercase tracking-wide ${theme.scoreHeader}`}
+                            className={`sticky top-0 z-40 min-w-33 border-r border-slate-700 px-3 py-3 text-right text-xs font-bold uppercase tracking-wide ${theme.scoreHeader}`}
                           >
                             {getPracticeScoreHeaderLabel(practice)}
                           </th>
@@ -1281,19 +1281,19 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
                       ];
                     })}
                     {isTotalScoreColumnVisible && (
-                      <th className="sticky top-0 z-40 min-w-[140px] border-l border-slate-700 bg-blue-200 px-4 py-3 text-right text-xs font-bold uppercase tracking-wide text-blue-900">
+                      <th className="sticky top-0 z-40 min-w-35 border-l border-slate-700 bg-blue-200 px-4 py-3 text-right text-xs font-bold uppercase tracking-wide text-blue-900">
                         Tổng điểm 3 Practice
                       </th>
                     )}
                     {isOtthPercentageColumnVisible && (
-                      <th className="sticky top-0 z-40 min-w-[130px] border-l border-slate-700 bg-cyan-200 px-4 py-3 text-center text-xs font-bold uppercase tracking-wide text-cyan-900">
+                      <th className="sticky top-0 z-40 min-w-32.5 border-l border-slate-700 bg-cyan-200 px-4 py-3 text-center text-xs font-bold uppercase tracking-wide text-cyan-900">
                         Tỷ lệ đạt OTTH
                       </th>
                     )}
-                    <th className="sticky top-0 z-40 min-w-[130px] border-l border-slate-700 bg-emerald-200 px-4 py-3 text-center text-xs font-bold uppercase tracking-wide text-emerald-900">
+                    <th className="sticky top-0 z-40 min-w-32.5 border-l border-slate-700 bg-emerald-200 px-4 py-3 text-center text-xs font-bold uppercase tracking-wide text-emerald-900">
                       Tỷ lệ đạt ôn thi
                     </th>
-                    <th className="sticky top-0 z-40 min-w-[220px] border-l border-slate-700 bg-slate-800 px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-100">
+                    <th className="sticky top-0 z-40 min-w-55 border-l border-slate-700 bg-slate-800 px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-100">
                       Ghi chú
                     </th>
                   </tr>
@@ -1342,7 +1342,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
                             className="border-r border-slate-100 px-3 py-3 text-center align-top"
                           >
                             <div
-                              className={`mx-auto inline-flex min-w-[62px] items-center justify-center rounded-full border px-2.5 py-1 text-xs font-bold ${getScorePillClass(score, maxScore)}`}
+                              className={`mx-auto inline-flex min-w-15.5 items-center justify-center rounded-full border px-2.5 py-1 text-xs font-bold ${getScorePillClass(score, maxScore)}`}
                             >
                               {formatScore(score)}
                             </div>
@@ -1388,7 +1388,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
                                   event.target.value as CompetencyLevel
                                 )
                               }
-                              className={`h-8 min-w-[86px] rounded-full border px-3 text-center text-xs font-bold outline-none ${
+                              className={`h-8 min-w-21.5 rounded-full border px-3 text-center text-xs font-bold outline-none ${
                                 row.classification
                                   ? classificationClassMap[row.classification]
                                   : 'border-slate-300 bg-white text-slate-600'
@@ -1474,7 +1474,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
                       </td>
 
                       <td className="border-l border-slate-300 px-4 py-3 text-left text-slate-600">
-                        <div className="max-w-[260px] space-y-1">
+                        <div className="max-w-65 space-y-1">
                           <textarea
                             value={row.notes}
                             onChange={(event) => handleNotesChange(row.id, event.target.value)}

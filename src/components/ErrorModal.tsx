@@ -28,7 +28,7 @@ const ErrorModal: React.FC = () => {
   const message = (payload.message || '').trim();
 
   return (
-    <div className="fixed inset-0 z-[11000] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-11000 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-xs transition-opacity" onClick={() => setOpen(false)} />
 
       <div className="relative w-[min(94vw,720px)] max-h-[86vh] overflow-auto rounded-4xl border border-m3-outline-variant/60 bg-m3-surface-container-high p-6 text-m3-on-surface shadow-2xl transition-all">
