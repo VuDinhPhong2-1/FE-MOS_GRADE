@@ -1,4 +1,4 @@
-﻿/* eslint-disable react-refresh/only-export-components */
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { jwtDecode } from 'jwt-decode';
@@ -58,9 +58,27 @@ const getInitialUser = (): User | null => {
   }
 };
 
+// ============================================================
+// DEV ONLY: Auth bypass — XÓA TRƯỚC KHI COMMIT LÊN MAIN/STAGING
+// Kích hoạt bằng VITE_DEV_BYPASS_AUTH=true trong .env.local
+// ============================================================
+const IS_DEV_BYPASS = import.meta.env.VITE_DEV_BYPASS_AUTH === 'true';
+const DEV_MOCK_USER: User = {
+  userId: 'dev-mock-admin-id',
+  username: 'dev_admin',
+  email: 'dev@mosgrader.local',
+  role: import.meta.env.VITE_DEV_MOCK_ROLE || 'Admin',
+  fullName: 'Developer (Dev Mode)',
+  teacherApprovalStatus: 'Approved',
+};
+// ============================================================
+
 export const AuthProvider = ({ children }: AuthProviderProps) => {
-  const [user, setUser] = useState<User | null>(() => getInitialUser());
-  const [loading, setLoading] = useState<boolean>(true);
+  const [user, setUser] = useState<User | null>(() => {
+    if (IS_DEV_BYPASS) return DEV_MOCK_USER;
+    return getInitialUser();
+  });
+  const [loading, setLoading] = useState<boolean>(() => !IS_DEV_BYPASS);
 
   const refreshPromiseRef = useRef<Promise<string | null> | null>(null);
   const proactiveTimerRef = useRef<number | null>(null);
@@ -369,6 +387,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   useEffect(() => {
     let mounted = true;
+
+    // ============================================================
+    // DEV ONLY: Auth bypass — Không gọi backend refresh/me khi đang ở dev bypass mode
+    // ============================================================
+    if (IS_DEV_BYPASS) {
+      setLoading(false);
+      return;
+    }
+    // ============================================================
 
     const initializeSession = async () => {
       const savedUser = getInitialUser();

@@ -17,6 +17,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@bug-on/m3-expressive": "^1.3.3",
     "@react-oauth/google": "^0.13.4",
     "@tailwindcss/vite": "^4.1.18",
     "axios": "^1.13.2",
