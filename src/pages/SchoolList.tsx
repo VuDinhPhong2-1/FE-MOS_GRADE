@@ -1,11 +1,10 @@
-﻿// src/pages/SchoolList.tsx
+// src/pages/SchoolList.tsx
 import { useState, useEffect, useCallback, type FormEvent, type ChangeEvent } from 'react';
-import { Plus, X, Building2, Loader2, RefreshCw, Trash2, Edit } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
+import { Button, Icon, ProgressIndicator } from '@bug-on/m3-expressive';
 import ClassList from './Classlist';
 import { schoolService } from '../services/school.service';
-import type { School } from '../types';
-import type { CreateSchoolRequest } from '../types';
+import type { School, CreateSchoolRequest } from '../types';
 import { useAuth } from '../context/AuthContext';
 
 const SchoolList = () => {
@@ -48,7 +47,7 @@ const SchoolList = () => {
   }, [getAccessToken]);
 
   useEffect(() => {
-    fetchSchools();
+    void fetchSchools();
   }, [fetchSchools]);
 
   useEffect(() => {
@@ -168,9 +167,9 @@ const SchoolList = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-        <span className="ml-2 text-gray-600">Đang tải...</span>
+      <div className="flex h-64 flex-col items-center justify-center gap-3">
+        <ProgressIndicator variant="circular" shape="wavy" size={36} aria-label="Đang tải danh sách trường" />
+        <span className="text-sm font-medium text-m3-on-surface-variant">Đang tải danh sách trường học...</span>
       </div>
     );
   }
@@ -179,158 +178,239 @@ const SchoolList = () => {
     <div>
       {!selectedSchool ? (
         <>
+          {/* Header Bar */}
           <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <h1 className="app-section-title flex items-center gap-2 text-xl sm:text-2xl">
-              <Building2 className="text-blue-600" />
-              Quản lý trường học
-            </h1>
-            <div className="flex flex-col sm:flex-row gap-2">
-              <button
+            <div>
+              <h1 className="flex items-center gap-2.5 text-2xl font-black tracking-tight text-m3-on-surface sm:text-3xl">
+                <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-m3-primary/10 text-m3-primary">
+                  <Icon name="apartment" className="text-2xl" />
+                </span>
+                Quản lý trường học
+              </h1>
+              <p className="mt-1 text-xs text-m3-on-surface-variant">
+                Danh sách các trường và cơ sở đào tạo trong hệ thống MOS Grader
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2.5">
+              <Button
+                colorStyle="outlined"
+                size="md"
                 onClick={fetchSchools}
-                className="app-btn-secondary flex items-center justify-center gap-2 px-4 py-2"
               >
-                <RefreshCw size={18} />
-                Làm mới
-              </button>
-              <button
+                <div className="flex items-center gap-2">
+                  <Icon name="refresh" className="text-lg" />
+                  <span>Làm mới</span>
+                </div>
+              </Button>
+              <Button
+                colorStyle="filled"
+                size="md"
                 onClick={handleOpenAddModal}
-                className="app-btn-primary flex items-center justify-center gap-2 px-4 py-2"
               >
-                <Plus size={18} />
-                Thêm trường
-              </button>
+                <div className="flex items-center gap-2">
+                  <Icon name="add" className="text-lg" />
+                  <span>Thêm trường</span>
+                </div>
+              </Button>
             </div>
           </div>
 
           {error && (
-            <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg">
-              ⚠️ {error}
+            <div className="mb-6 flex items-center gap-3 rounded-2xl border border-m3-error bg-m3-error-container p-4 text-xs font-medium text-m3-on-error-container">
+              <Icon name="warning" className="text-xl shrink-0" />
+              <span>{error}</span>
             </div>
           )}
 
-          <div className="app-card overflow-x-auto">
-            <table className="min-w-[520px] w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">STT</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tên trường</th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Chức năng</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {schools.length === 0 ? (
-                  <tr>
-                    <td colSpan={3} className="px-6 py-8 text-center text-gray-500">
-                      Chưa có trường nào. Hãy thêm trường mới!
-                    </td>
+          {/* Table Container in M3 Style */}
+          <div className="overflow-hidden rounded-3xl border border-m3-outline-variant/60 bg-m3-surface-container shadow-xs">
+            <div className="overflow-x-auto">
+              <table className="min-w-[560px] w-full border-collapse text-left">
+                <thead>
+                  <tr className="border-b border-m3-outline-variant/60 bg-m3-surface-container-high text-xs font-bold uppercase tracking-wider text-m3-on-surface-variant">
+                    <th className="w-16 px-6 py-4">STT</th>
+                    <th className="px-6 py-4">Mã trường</th>
+                    <th className="px-6 py-4">Tên trường</th>
+                    <th className="w-36 px-6 py-4 text-center">Thao tác</th>
                   </tr>
-                ) : (
-                  schools.map((sch, index) => (
-                    <tr
-                      key={sch.id}
-                      className="cursor-pointer hover:bg-gray-50 focus-within:bg-blue-50"
-                      onClick={() => handleSelectSchool(sch)}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter' || event.key === ' ') {
-                          event.preventDefault();
-                          handleSelectSchool(sch);
-                        }
-                      }}
-                      role="button"
-                      tabIndex={0}
-                      aria-label={`Xem lớp học của trường ${sch.name}`}
-                      title="Bấm để xem lớp học"
-                    >
-                      <td className="px-6 py-4 text-sm text-gray-900">{index + 1}</td>
-                      <td className="px-6 py-4 text-sm text-gray-900">{sch.name}</td>
-                      <td className="px-6 py-4 text-center">
-                        <div className="flex items-center justify-center gap-2">
-                          <button
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              handleOpenEditModal(sch);
-                            }}
-                            className="p-1 text-green-600 hover:bg-green-100 rounded"
-                            title="Sửa trường"
-                          >
-                            <Edit size={18} />
-                          </button>
-                          {canDeleteSchool && (
-                            <button
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                void handleDelete(sch.id, sch.name);
-                              }}
-                              className="p-1 text-red-600 hover:bg-red-100 rounded"
-                              title="Xóa trường"
-                            >
-                              <Trash2 size={18} />
-                            </button>
-                          )}
+                </thead>
+                <tbody className="divide-y divide-m3-outline-variant/40 text-sm">
+                  {schools.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="px-6 py-12 text-center">
+                        <div className="mx-auto flex max-w-xs flex-col items-center justify-center gap-3 text-center">
+                          <div className="flex h-14 w-14 items-center justify-center rounded-3xl bg-m3-surface-container-high text-m3-on-surface-variant">
+                            <Icon name="domain_disabled" className="text-3xl" />
+                          </div>
+                          <div>
+                            <p className="font-bold text-m3-on-surface">Chưa có trường nào</p>
+                            <p className="mt-1 text-xs text-m3-on-surface-variant">
+                              Hãy bấm nút "Thêm trường" để bắt đầu thiết lập cơ sở đầu tiên.
+                            </p>
+                          </div>
+                          <Button colorStyle="filled" size="sm" onClick={handleOpenAddModal}>
+                            <div className="flex items-center gap-1.5">
+                              <Icon name="add" className="text-base" />
+                              <span>Thêm trường mới</span>
+                            </div>
+                          </Button>
                         </div>
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ) : (
+                    schools.map((sch, index) => (
+                      <tr
+                        key={sch.id}
+                        className="group cursor-pointer transition-colors hover:bg-m3-surface-container-high/60 focus-within:bg-m3-primary/5"
+                        onClick={() => handleSelectSchool(sch)}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            handleSelectSchool(sch);
+                          }
+                        }}
+                        role="button"
+                        tabIndex={0}
+                        aria-label={`Xem lớp học của trường ${sch.name}`}
+                        title="Bấm để xem danh sách lớp"
+                      >
+                        <td className="px-6 py-4 font-semibold text-m3-on-surface-variant">
+                          {index + 1}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="inline-flex items-center rounded-full bg-m3-surface px-2.5 py-0.5 text-xs font-bold text-m3-primary border border-m3-outline-variant/50">
+                            {sch.code || '---'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-col">
+                            <span className="font-bold text-m3-on-surface group-hover:text-m3-primary transition-colors">
+                              {sch.name}
+                            </span>
+                            {sch.address && (
+                              <span className="text-xs text-m3-on-surface-variant line-clamp-1">
+                                {sch.address}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <div
+                            className="flex items-center justify-center gap-1"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEditModal(sch)}
+                              className="flex h-8 w-8 items-center justify-center rounded-full text-m3-on-surface-variant transition-colors hover:bg-m3-surface hover:text-m3-primary"
+                              title="Chỉnh sửa trường"
+                              aria-label="Chỉnh sửa"
+                            >
+                              <Icon name="edit" className="text-base" />
+                            </button>
+                            {canDeleteSchool && (
+                              <button
+                                type="button"
+                                onClick={() => void handleDelete(sch.id, sch.name)}
+                                className="flex h-8 w-8 items-center justify-center rounded-full text-m3-on-surface-variant transition-colors hover:bg-m3-error-container hover:text-m3-on-error-container"
+                                title="Xóa trường"
+                                aria-label="Xóa"
+                              >
+                                <Icon name="delete" className="text-base" />
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => handleSelectSchool(sch)}
+                              className="flex h-8 w-8 items-center justify-center rounded-full text-m3-primary transition-colors hover:bg-m3-surface"
+                              title="Xem danh sách lớp"
+                              aria-label="Xem lớp"
+                            >
+                              <Icon name="chevron_right" className="text-base" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
 
+          {/* Modal Dialog for Add / Edit School in M3 Style */}
           {showModal && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 backdrop-blur-[1px]">
-              <div className="app-card w-full max-w-lg max-h-[90vh] overflow-y-auto">
-                <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b">
-                  <h2 className="text-lg sm:text-xl font-semibold">
-                    {editingSchool ? 'Chỉnh sửa trường' : 'Thêm trường mới'}
-                  </h2>
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
+              <div className="w-full max-w-xl overflow-hidden rounded-4xl border border-m3-outline-variant/60 bg-m3-surface-container p-6 shadow-2xl animate-in fade-in zoom-in-95 max-h-[90vh] flex flex-col">
+                {/* Modal Header */}
+                <div className="flex items-center justify-between border-b border-m3-outline-variant/50 pb-4">
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-m3-primary/10 text-m3-primary">
+                      <Icon name={editingSchool ? 'edit_square' : 'domain_add'} className="text-xl" />
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-bold text-m3-on-surface">
+                        {editingSchool ? 'Chỉnh sửa trường học' : 'Thêm trường học mới'}
+                      </h2>
+                      <p className="text-xs text-m3-on-surface-variant">
+                        Nhập các thông tin cơ sở đào tạo vào hệ thống
+                      </p>
+                    </div>
+                  </div>
                   <button
+                    type="button"
                     onClick={() => setShowModal(false)}
-                    className="p-1 hover:bg-gray-100 rounded"
+                    className="flex h-9 w-9 items-center justify-center rounded-full text-m3-on-surface-variant hover:bg-m3-surface"
+                    aria-label="Đóng"
                   >
-                    <X size={24} />
+                    <Icon name="close" className="text-xl" />
                   </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4">
+                {/* Modal Body */}
+                <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto pt-4 space-y-4 pr-1">
                   {error && (
-                    <div className="p-3 bg-red-100 text-red-700 rounded text-sm">
-                      ⚠️ {error}
+                    <div className="rounded-2xl border border-m3-error bg-m3-error-container p-3 text-xs font-medium text-m3-on-error-container">
+                      {error}
                     </div>
                   )}
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Tên trường <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleChange}
-                      required
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="VD: Trường THPT ABC"
-                    />
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                      <label className="mb-1.5 block text-xs font-bold text-m3-on-surface-variant">
+                        Tên trường <span className="text-m3-error">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleChange}
+                        required
+                        className="w-full rounded-2xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2.5 text-sm text-m3-on-surface outline-none focus:border-m3-primary focus:ring-2 focus:ring-m3-primary/20"
+                        placeholder="VD: Trường THPT Chu Văn An"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-1.5 block text-xs font-bold text-m3-on-surface-variant">
+                        Mã trường <span className="text-m3-error">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="code"
+                        value={formData.code}
+                        onChange={handleChange}
+                        required
+                        className="w-full rounded-2xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2.5 text-sm text-m3-on-surface outline-none focus:border-m3-primary focus:ring-2 focus:ring-m3-primary/20"
+                        placeholder="VD: CVA-HN"
+                      />
+                    </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Mã trường <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="code"
-                      value={formData.code}
-                      onChange={handleChange}
-                      required
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="VD: THPT-ABC"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Spreadsheet ID Google Sheet
+                    <label className="mb-1.5 block text-xs font-bold text-m3-on-surface-variant">
+                      Spreadsheet ID Google Sheet (Điểm danh / Kết quả)
                     </label>
                     <input
                       type="text"
@@ -338,124 +418,122 @@ const SchoolList = () => {
                       value={formData.attendanceSpreadsheetId || ''}
                       onChange={handleChange}
                       disabled={!canEditAttendanceSpreadsheetId}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                        canEditAttendanceSpreadsheetId ? '' : 'cursor-not-allowed bg-gray-100 text-gray-500'
+                      className={`w-full rounded-2xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2.5 text-sm text-m3-on-surface outline-none focus:border-m3-primary focus:ring-2 focus:ring-m3-primary/20 ${
+                        canEditAttendanceSpreadsheetId ? '' : 'cursor-not-allowed opacity-60 bg-m3-surface-container-high'
                       }`}
-                      placeholder="Dán SpreadsheetId hoặc URL Google Sheet"
+                      placeholder="Dán Spreadsheet ID hoặc link Google Sheet"
                     />
-                    <p className="mt-1 text-xs text-gray-500">
+                    <p className="mt-1 text-xs text-m3-on-surface-variant">
                       {canEditAttendanceSpreadsheetId
-                        ? 'Mỗi trường có 1 Google Sheet riêng. Lớp mới sẽ tự kế thừa từ trường.'
-                        : 'Chỉ Admin mới được thay đổi Spreadsheet ID Google Sheet.'}
+                        ? 'Mỗi trường có 1 Google Sheet riêng. Lớp học mới tạo sẽ tự động kế thừa.'
+                        : 'Chỉ tài khoản Admin mới có quyền cập nhật Spreadsheet ID.'}
                     </p>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Địa chỉ</label>
+                    <label className="mb-1.5 block text-xs font-bold text-m3-on-surface-variant">
+                      Địa chỉ
+                    </label>
                     <input
                       type="text"
                       name="address"
                       value={formData.address}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="VD: 123 Đường ABC, Quận XYZ"
+                      className="w-full rounded-2xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2.5 text-sm text-m3-on-surface outline-none focus:border-m3-primary focus:ring-2 focus:ring-m3-primary/20"
+                      placeholder="VD: Số 10 Thụy Khuê, Tây Hồ, Hà Nội"
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Số điện thoại</label>
+                      <label className="mb-1.5 block text-xs font-bold text-m3-on-surface-variant">
+                        Số điện thoại
+                      </label>
                       <input
                         type="tel"
                         name="phoneNumber"
                         value={formData.phoneNumber}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="VD: 024-12345678"
+                        className="w-full rounded-2xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2.5 text-sm text-m3-on-surface outline-none focus:border-m3-primary focus:ring-2 focus:ring-m3-primary/20"
+                        placeholder="VD: 024-38234567"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Thư điện tử</label>
+                      <label className="mb-1.5 block text-xs font-bold text-m3-on-surface-variant">
+                        Email liên hệ
+                      </label>
                       <input
                         type="email"
                         name="email"
                         value={formData.email}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="VD: info@school.edu.vn"
+                        className="w-full rounded-2xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2.5 text-sm text-m3-on-surface outline-none focus:border-m3-primary focus:ring-2 focus:ring-m3-primary/20"
+                        placeholder="VD: lienhe@cva.edu.vn"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Website</label>
+                    <label className="mb-1.5 block text-xs font-bold text-m3-on-surface-variant">
+                      Website
+                    </label>
                     <input
                       type="url"
                       name="website"
                       value={formData.website}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="VD: https://school.edu.vn"
+                      className="w-full rounded-2xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2.5 text-sm text-m3-on-surface outline-none focus:border-m3-primary focus:ring-2 focus:ring-m3-primary/20"
+                      placeholder="VD: https://thptchuvanan.edu.vn"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả</label>
+                    <label className="mb-1.5 block text-xs font-bold text-m3-on-surface-variant">
+                      Mô tả ghi chú
+                    </label>
                     <textarea
                       name="description"
                       value={formData.description}
                       onChange={handleChange}
-                      rows={3}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="Mô tả ngắn về trường..."
+                      rows={2}
+                      className="w-full rounded-2xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2.5 text-sm text-m3-on-surface outline-none focus:border-m3-primary focus:ring-2 focus:ring-m3-primary/20 resize-none"
+                      placeholder="Thông tin ghi chú thêm về trường..."
                     />
                   </div>
 
-                  <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-4 border-t">
-                    <button
+                  {/* Modal Footer */}
+                  <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-m3-outline-variant/50">
+                    <Button
+                      colorStyle="text"
                       type="button"
                       onClick={() => setShowModal(false)}
-                      className="w-full sm:w-auto px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
+                      disabled={isSubmitting}
                     >
                       Hủy
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      colorStyle="filled"
                       type="submit"
                       disabled={isSubmitting}
-                      className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
+                      loading={isSubmitting}
                     >
-                      {isSubmitting ? (
-                        <>
-                          <Loader2 size={18} className="animate-spin" />
-                          Đang lưu...
-                        </>
-                      ) : editingSchool ? (
-                        <>
-                          <Edit size={18} />
-                          Cập nhật
-                        </>
-                      ) : (
-                        <>
-                          <Plus size={18} />
-                          Thêm trường
-                        </>
-                      )}
-                    </button>
+                      {editingSchool ? 'Lưu thay đổi' : 'Thêm trường'}
+                    </Button>
                   </div>
                 </form>
               </div>
             </div>
           )}
-
         </>
       ) : (
         <div className="space-y-4">
           <button
-            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50"
+            type="button"
             onClick={handleBackToSchools}
+            className="inline-flex items-center gap-2 rounded-full border border-m3-outline-variant bg-m3-surface px-4 py-2 text-xs font-bold text-m3-on-surface shadow-xs transition-all hover:bg-m3-surface-container hover:shadow-sm"
           >
-            <span aria-hidden>←</span>
-            Quay lại danh sách trường
+            <Icon name="arrow_back" className="text-base" />
+            <span>Quay lại danh sách trường</span>
           </button>
           <ClassList selectedSchool={selectedSchool} />
         </div>
