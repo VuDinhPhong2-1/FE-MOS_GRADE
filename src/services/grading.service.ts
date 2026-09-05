@@ -3,7 +3,6 @@ import type { CreateGradingTestBugNoteRequest, GradingTestBugNote } from '../typ
 import { authFetch } from './auth-fetch';
 import { API_BASE_URL, API_ORIGIN } from '../config/api';
 
-
 interface GradingRequestMeta {
   classId: string;
   assignmentId: string;
@@ -19,35 +18,47 @@ interface GradingTestProject {
 
 const jsonHeaders = { 'Content-Type': 'application/json' };
 
-const buildGradingUrl = (gradingEndpoint: string): string => {
-  const raw = gradingEndpoint.trim();
-  if (!raw) {
-    throw new Error('Đường dẫn chấm điểm đang trống');
+/**
+ * Tách gradingApiEndpoint dạng "excel/project09" thành subject + projectCode
+ * để gọi route mới: /api/admin/xml-grading-rules/grade/{subject}/{projectCode}
+ */
+const splitSubjectAndProjectCode = (gradingEndpoint: string): { subject: string; projectCode: string } => {
+  const normalized = gradingEndpoint
+    .trim()
+    .replace(/\\/g, '/')
+    .replace(/^\/+/, '')
+    .toLowerCase();
+
+  const match = normalized.match(/^(excel|word|ppt)\/(project\d{1,2})$/);
+  if (!match) {
+    throw new Error(`gradingApiEndpoint không đúng định dạng subject/projectCode: ${gradingEndpoint}`);
   }
 
-  if (/^https?:\/\//i.test(raw)) {
-    return raw;
-  }
-
-  if (raw.startsWith('/api/')) {
-    return `${API_ORIGIN}${raw}`;
-  }
-
-  if (raw.startsWith('api/')) {
-    return `${API_ORIGIN}/${raw}`;
-  }
-
-  if (raw.startsWith('/grading/')) {
-    return `${API_BASE_URL}${raw}`;
-  }
-
-  if (raw.startsWith('grading/')) {
-    return `${API_BASE_URL}/${raw}`;
-  }
-
-  const normalized = raw.replace(/^\/+/, '');
-  return `${API_BASE_URL}/grading/${normalized}`;
+  return { subject: match[1], projectCode: match[2] };
 };
+
+const parseErrorMessage = async (response: Response): Promise<string> => {
+  const contentType = response.headers.get('content-type') || '';
+
+  if (contentType.includes('application/json')) {
+    const data = await response.json().catch(() => null);
+    if (data && typeof data.message === 'string' && data.message.trim()) {
+      return data.message;
+    }
+    if (data && typeof data.error === 'string' && data.error.trim()) {
+      return data.error;
+    }
+  }
+
+  const text = await response.text().catch(() => '');
+  if (text.trim()) {
+    return text.trim();
+  }
+
+  return `HTTP ${response.status}: Không thể chấm điểm`;
+};
+
+// ===== Giữ nguyên các helper phục vụ gradeForTesting (route /grading-test/..., không đổi) =====
 
 const inferLegacyFileType = (projectCode: string, studentFile?: File): 'excel' | 'word' => {
   const normalizedCode = projectCode.trim().toLowerCase();
@@ -86,7 +97,6 @@ const normalizeProjectCode = (
     normalized = normalized.slice('grading/'.length);
   }
 
-  // Handle both old format (project05) and new format (project05-excel, project05-word)
   let match = normalized.match(/^project(\d{1,2})-(excel|word)$/);
   if (match) {
     const projectNumber = Number.parseInt(match[1], 10);
@@ -100,7 +110,6 @@ const normalizeProjectCode = (
     };
   }
 
-  // Fallback to old format for backward compatibility
   if (normalized.startsWith('excel/')) {
     normalized = normalized.slice('excel/'.length);
   }
@@ -117,50 +126,29 @@ const normalizeProjectCode = (
 
   return {
     projectNumber: `project${projectNumber.toString().padStart(2, '0')}`,
-    // Old format `project05` is ambiguous, infer subject from selection/file.
     fileType: inferLegacyFileType(raw, studentFile),
   };
 };
 
-const parseErrorMessage = async (response: Response): Promise<string> => {
-  const contentType = response.headers.get('content-type') || '';
-
-  if (contentType.includes('application/json')) {
-    const data = await response.json().catch(() => null);
-    if (data && typeof data.message === 'string' && data.message.trim()) {
-      return data.message;
-    }
-    if (data && typeof data.error === 'string' && data.error.trim()) {
-      return data.error;
-    }
-  }
-
-  const text = await response.text().catch(() => '');
-  if (text.trim()) {
-    return text.trim();
-  }
-
-  return `HTTP ${response.status}: Không thể chấm điểm`;
-};
-
 export const gradingService = {
+  /**
+   * ĐÃ SỬA: gọi XmlGradingRulesController thay vì route /grading/... cũ.
+   * Chữ ký hàm giữ nguyên (kể cả tham số meta không dùng nữa) để không phải
+   * sửa GradingModal.tsx / StudentList.tsx.
+   */
   async gradeByEndpoint(
     gradingEndpoint: string,
     studentFile: File,
     getAccessToken: (forceRefresh?: boolean) => Promise<string | null>,
-    meta?: GradingRequestMeta
+    _meta?: GradingRequestMeta
   ): Promise<GradingResult> {
-    const formData = new FormData();
-    formData.append('studentFile', studentFile);
+    const { subject, projectCode } = splitSubjectAndProjectCode(gradingEndpoint);
 
-    if (meta) {
-      formData.append('classId', meta.classId);
-      formData.append('assignmentId', meta.assignmentId);
-      formData.append('studentId', meta.studentId);
-    }
+    const formData = new FormData();
+    formData.append('file', studentFile); // đúng tên param IFormFile file trong XmlGradingRulesController
 
     const response = await authFetch(
-      buildGradingUrl(gradingEndpoint),
+      `${API_ORIGIN}/api/admin/xml-grading-rules/grade/${subject}/${projectCode}`,
       {
         method: 'POST',
         body: formData,
@@ -180,8 +168,10 @@ export const gradingService = {
     getAccessToken: (forceRefresh?: boolean) => Promise<string | null>,
     meta?: GradingRequestMeta
   ): Promise<GradingResult> {
-    return gradingService.gradeByEndpoint('/grading/excel/project09', studentFile, getAccessToken, meta);
+    return gradingService.gradeByEndpoint('excel/project09', studentFile, getAccessToken, meta);
   },
+
+  // ===== Không đổi: vẫn dùng route /grading-test/... riêng =====
 
   async gradeForTesting(
     projectCode: string,
@@ -192,7 +182,6 @@ export const gradingService = {
     const formData = new FormData();
     formData.append('studentFile', studentFile);
 
-    // Route all test grading through grading-test endpoints.
     const endpoint = fileType === 'word'
       ? `${API_BASE_URL}/grading-test/word/${projectNumber}`
       : `${API_BASE_URL}/grading-test/excel/${projectNumber}`;
