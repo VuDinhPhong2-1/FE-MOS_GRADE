@@ -323,11 +323,11 @@ const PictureBulletEditor = ({
         </p>
 
         {previewUrl ? (
-          <div className="relative flex items-center justify-center rounded-xl border border-slate-200 bg-white p-2.5">
+          <div className="relative flex h-64 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white p-2.5">
             <img
               src={previewUrl}
               alt="Picture bullet preview"
-              className="max-h-[500px] max-w-[500px] object-contain"
+              className="h-full w-full object-contain"
             />
 
             {uploading && (

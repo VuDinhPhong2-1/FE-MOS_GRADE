@@ -331,11 +331,11 @@ const InsertedImageEditor = ({
         </p>
 
         {previewUrl ? (
-          <div className="relative flex min-h-[500px] max-h-[500px] w-full items-center justify-center rounded-xl border border-slate-200 bg-white p-2.5">
+          <div className="relative flex h-64 w-full items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white p-2.5">
             <img
               src={previewUrl}
               alt="Inserted image preview"
-              className="max-h-[500px] max-w-[500px] object-contain"
+              className="h-full w-full object-contain"
             />
 
             {uploading && (
