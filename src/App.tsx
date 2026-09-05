@@ -23,6 +23,7 @@ import XmlGradingRulesPage from './pages/XmlGradingRulesPage';
 import PublicExamPage from './pages/PublicExamPage';
 import AccountStatusPage from './pages/AccountStatusPage';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { hasPermission } from './utils/permissions';
 
 const isPendingOrRejectedTeacher = (user: ReturnType<typeof useAuth>['user']) =>
   user?.role === 'PendingTeacher' ||
@@ -46,6 +47,28 @@ const ApprovedTeacherRoute: React.FC = () => {
 
   if (isPendingOrRejectedTeacher(user)) {
     return <Navigate to="/account-status" replace />;
+  }
+
+  return <Outlet />;
+};
+
+// Route riêng bảo vệ trang XML rules theo permission thay vì chỉ theo role.
+const XmlRulesRoute: React.FC = () => {
+  const { user } = useAuth();
+
+  if (!hasPermission(user, 'xmlrules.view')) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <Outlet />;
+};
+
+// Route riêng bảo vệ trang Phân quyền — vẫn giữ Admin-only vì đây là trang cấp phát quyền.
+const AdminOnlyRoute: React.FC = () => {
+  const { user } = useAuth();
+
+  if (user?.role !== 'Admin') {
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <Outlet />;
@@ -81,9 +104,20 @@ const AppLayout: React.FC = () => {
     );
   }
 
+  // 👇 Đổi từ role === 'Admin' sang check permission 'xmlrules.view'
+  if (hasPermission(user, 'xmlrules.view')) {
+    navItems.push({
+      id: 'xml-grading-rules',
+      label: 'XML Rules chấm điểm',
+      icon: FileCode2,
+      path: '/admin/xml-grading-rules',
+    });
+  }
+
+  // Trang Phân quyền vẫn chỉ dành cho Admin — đây là nơi cấp phát permissions
+  // cho người khác nên không nên mở theo permission thường.
   if (user?.role === 'Admin') {
     navItems.push(
-      { id: 'xml-grading-rules', label: 'XML Rules chấm điểm', icon: FileCode2, path: '/admin/xml-grading-rules' },
       { id: 'permissions', label: 'Phân quyền', icon: ShieldCheck, path: '/permissions' }
     );
   }
@@ -106,20 +140,29 @@ function App() {
           <Route path="/account-status" element={<AccountStatusPage />} />
           <Route element={<ApprovedTeacherRoute />}>
             <Route element={<AppLayout />}>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/schools" element={<SchoolList />} />
-            <Route path="/schedule" element={<TeacherSchedule />} />
-            <Route path="/assignments" element={<Navigate to="/assignments/exam" replace />} />
-            <Route path="/assignments/filters" element={<Navigate to="/assignments/exam" replace />} />
-            <Route path="/assignments/list" element={<Navigate to="/assignments/exam" replace />} />
-            <Route path="/assignments/form" element={<Navigate to="/assignments/exam" replace />} />
-            <Route path="/assignments/exam" element={<AssignmentManagementPage section="exam" />} />
-            <Route path="/admin/xml-grading-rules" element={<XmlGradingRulesPage />} />
-            <Route path="/permissions" element={<PermissionManagement />} />
-            <Route path="/grading" element={<GradingView />} />
-            <Route path="/grading/class/:classId" element={<ClassGradingPage />} />
-            <Route path="/scores/class/:classId" element={<ClassScoreboardPage />} />
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/schools" element={<SchoolList />} />
+              <Route path="/schedule" element={<TeacherSchedule />} />
+              <Route path="/assignments" element={<Navigate to="/assignments/exam" replace />} />
+              <Route path="/assignments/filters" element={<Navigate to="/assignments/exam" replace />} />
+              <Route path="/assignments/list" element={<Navigate to="/assignments/exam" replace />} />
+              <Route path="/assignments/form" element={<Navigate to="/assignments/exam" replace />} />
+              <Route path="/assignments/exam" element={<AssignmentManagementPage section="exam" />} />
+
+              {/* XML Rules: bảo vệ theo permission 'xmlrules.view' */}
+              <Route element={<XmlRulesRoute />}>
+                <Route path="/admin/xml-grading-rules" element={<XmlGradingRulesPage />} />
+              </Route>
+
+              {/* Phân quyền: vẫn Admin-only */}
+              <Route element={<AdminOnlyRoute />}>
+                <Route path="/permissions" element={<PermissionManagement />} />
+              </Route>
+
+              <Route path="/grading" element={<GradingView />} />
+              <Route path="/grading/class/:classId" element={<ClassGradingPage />} />
+              <Route path="/scores/class/:classId" element={<ClassScoreboardPage />} />
             </Route>
           </Route>
         </Route>

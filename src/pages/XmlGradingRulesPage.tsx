@@ -30,6 +30,7 @@ import type {
 import { notify } from '../utils/notify';
 import PictureBulletEditor from '../components/PictureBulletEditor';
 import InsertedImageEditor from '../components/InsertedImageEditor'; 
+import { hasPermission } from '../utils/permissions';
 
 const compareModes: XmlCompareMode[] = ['xmlContainsNormalized', 'xmlContains', 'xmlEquivalentWholeFile', 'exactStringContains'];
 const matchPolicies: XmlMatchPolicy[] = ['all', 'any', 'ordered'];
@@ -127,7 +128,7 @@ const XmlGradingRulesPage = () => {
     selectedRef.current = selected;
   }, [selected]);
 
-  const canUsePage = user?.role === 'Admin';
+  const canUsePage = hasPermission(user, 'xmlrules.view');
 
   const loadRuleSets = useCallback(async () => {
     setLoading(true);
