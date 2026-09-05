@@ -18,6 +18,7 @@ import type {
 import { notify } from '../utils/notify';
 import PictureBulletEditor from '../components/PictureBulletEditor';
 import InsertedImageEditor from '../components/InsertedImageEditor';
+import { hasPermission } from '../utils/permissions';
 
 const compareModes: XmlCompareMode[] = ['xmlContainsNormalized', 'xmlContains', 'xmlEquivalentWholeFile', 'exactStringContains'];
 const matchPolicies: XmlMatchPolicy[] = ['all', 'any', 'ordered'];
@@ -115,7 +116,7 @@ const XmlGradingRulesPage = () => {
     selectedRef.current = selected;
   }, [selected]);
 
-  const canUsePage = user?.role === 'Admin';
+  const canUsePage = hasPermission(user, 'xmlrules.view');
 
   const loadRuleSets = useCallback(async () => {
     setLoading(true);
@@ -513,7 +514,7 @@ const XmlGradingRulesPage = () => {
 
 
   const toggleProject = (index: number) =>
-    setExpandedProjects((prev) => ({ ...prev, [index]: !(prev[index] ?? true) }));
+    setExpandedProjects((prev) => ({ ...prev, [index]: !(prev[index] ?? false) }));
 
   const toggleTask = (key: string) =>
     setExpandedTasks((prev) => ({ ...prev, [key]: !(prev[key] ?? false) }));
@@ -803,7 +804,7 @@ const XmlGradingRulesPage = () => {
 
                 <div className="space-y-4">
                   {selected.projects.map((project, pi) => {
-                    const projectExpanded = expandedProjects[pi] ?? true;
+                    const projectExpanded = expandedProjects[pi] ?? false;
                     return (
                       <div key={pi} className="group overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition hover:border-slate-300 hover:shadow-md p-4">
                         {/* Project header */}
