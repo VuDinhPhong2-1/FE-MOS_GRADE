@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Icon, ProgressIndicator, ShapeMedia } from '@bug-on/m3-expressive';
 import { useAuth } from '../context/AuthContext';
+import { usePageHeader } from '../context/PageActionsContext';
 import { schoolService } from '../services/school.service';
 
 interface DashboardStats {
@@ -12,6 +13,10 @@ interface DashboardStats {
 export default function Dashboard() {
   const { user, getAccessToken } = useAuth();
   const navigate = useNavigate();
+
+  usePageHeader({
+    title: 'Trang chủ',
+  });
   const [stats, setStats] = useState<DashboardStats>({
     schoolCount: null,
     isLoading: true,
@@ -120,7 +125,6 @@ export default function Dashboard() {
         <div className="relative z-10 flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
           <div className="max-w-2xl space-y-3">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold backdrop-blur-sm">
-              <Icon name="sparkles" className="text-sm" />
               <span>Hệ thống chấm điểm MOS Grader Pro</span>
             </div>
             <h1 className="text-2xl font-black tracking-tight sm:text-3xl lg:text-4xl">
@@ -181,7 +185,7 @@ export default function Dashboard() {
         {/* Card 1: Trường học */}
         <div
           onClick={() => navigate('/schools')}
-          className="group relative cursor-pointer overflow-hidden rounded-3xl border border-m3-outline-variant/60 bg-m3-surface-container p-5 transition-all duration-200 hover:-translate-y-1 hover:bg-m3-surface-container-high hover:shadow-md"
+          className="group relative cursor-pointer overflow-hidden rounded-3xl bg-m3-surface-container p-5 shadow-xs transition-all duration-200 hover:-translate-y-1 hover:bg-m3-surface-container-high hover:shadow-md"
         >
           <div className="flex items-center justify-between">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400">
@@ -211,7 +215,7 @@ export default function Dashboard() {
         {/* Card 2: Chấm điểm tự động */}
         <div
           onClick={() => navigate('/schools')}
-          className="group relative cursor-pointer overflow-hidden rounded-3xl border border-m3-outline-variant/60 bg-m3-surface-container p-5 transition-all duration-200 hover:-translate-y-1 hover:bg-m3-surface-container-high hover:shadow-md"
+          className="group relative cursor-pointer overflow-hidden rounded-3xl bg-m3-surface-container p-5 shadow-xs transition-all duration-200 hover:-translate-y-1 hover:bg-m3-surface-container-high hover:shadow-md"
         >
           <div className="flex items-center justify-between">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400">
@@ -235,7 +239,7 @@ export default function Dashboard() {
         {/* Card 3: Ca coi thi */}
         <div
           onClick={() => navigate('/teacher-schedule')}
-          className="group relative cursor-pointer overflow-hidden rounded-3xl border border-m3-outline-variant/60 bg-m3-surface-container p-5 transition-all duration-200 hover:-translate-y-1 hover:bg-m3-surface-container-high hover:shadow-md"
+          className="group relative cursor-pointer overflow-hidden rounded-3xl bg-m3-surface-container p-5 shadow-xs transition-all duration-200 hover:-translate-y-1 hover:bg-m3-surface-container-high hover:shadow-md"
         >
           <div className="flex items-center justify-between">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400">
@@ -257,7 +261,7 @@ export default function Dashboard() {
         </div>
 
         {/* Card 4: Vai trò & Trạng thái */}
-        <div className="relative overflow-hidden rounded-3xl border border-m3-outline-variant/60 bg-m3-surface-container p-5">
+        <div className="relative overflow-hidden rounded-3xl bg-m3-surface-container p-5 shadow-xs">
           <div className="flex items-center justify-between">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-violet-500/10 text-violet-600 dark:bg-violet-500/20 dark:text-violet-400">
               <Icon name="badge" className="text-2xl" />
@@ -291,7 +295,7 @@ export default function Dashboard() {
             <div
               key={action.path}
               onClick={() => navigate(action.path)}
-              className="group flex flex-col justify-between cursor-pointer rounded-3xl border border-m3-outline-variant/50 bg-m3-surface-container p-6 transition-all duration-200 hover:-translate-y-1 hover:border-m3-primary/50 hover:bg-m3-surface-container-high hover:shadow-md"
+              className="group flex flex-col justify-between cursor-pointer rounded-3xl bg-m3-surface-container p-6 shadow-xs transition-all duration-200 hover:-translate-y-1 hover:bg-m3-surface-container-high hover:shadow-md"
             >
               <div>
                 <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-m3-surface text-m3-primary shadow-xs group-hover:scale-110 transition-transform">
@@ -314,7 +318,7 @@ export default function Dashboard() {
       </section>
 
       {/* Standard MOS Grader Workflow Guide */}
-      <section className="rounded-4xl border border-m3-outline-variant/60 bg-m3-surface-container p-6 sm:p-8">
+      <section className="rounded-4xl bg-m3-surface-container p-6 sm:p-8 shadow-xs">
         <div className="mb-6 flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-m3-primary/10 text-m3-primary">
             <Icon name="hub" className="text-xl" />
@@ -329,7 +333,7 @@ export default function Dashboard() {
           {workflowSteps.map((ws) => (
             <div
               key={ws.step}
-              className="relative rounded-3xl border border-m3-outline-variant/40 bg-m3-surface p-5 transition-all hover:bg-m3-surface-container-low"
+              className="relative rounded-3xl bg-m3-surface-container-low p-5 transition-all hover:bg-m3-surface-container-high"
             >
               <div className="flex items-center justify-between">
                 <span className="text-2xl font-black text-m3-primary/50">{ws.step}</span>

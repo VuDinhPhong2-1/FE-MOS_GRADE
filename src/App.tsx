@@ -4,6 +4,7 @@ import Layout from './components/Layout/Layout';
 import type { SidebarNavItem } from './components/Layout/Sidebar';
 import RouteLoadingFallback from './components/RouteLoadingFallback';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { PageActionsProvider } from './context/PageActionsContext';
 import { hasPermission } from './utils/permissions';
 
 // Lazy-loaded page components for optimal bundle splitting
@@ -110,7 +111,7 @@ const AppLayout: React.FC = () => {
   }
 
   return (
-    <Layout navItems={navItems} userName={user?.fullName}>
+    <Layout navItems={navItems}>
       <Suspense fallback={<RouteLoadingFallback />}>
         <Outlet />
       </Suspense>
@@ -121,45 +122,47 @@ const AppLayout: React.FC = () => {
 function App() {
   return (
     <AuthProvider>
-      <Suspense fallback={<RouteLoadingFallback />}>
-        <Routes>
-          <Route path="/login" element={<AuthPage />} />
-          <Route path="/exam/:token" element={<PublicExamPage />} />
+      <PageActionsProvider>
+        <Suspense fallback={<RouteLoadingFallback />}>
+          <Routes>
+            <Route path="/login" element={<AuthPage />} />
+            <Route path="/exam/:token" element={<PublicExamPage />} />
 
-          <Route element={<ProtectedRoute />}>
-            <Route path="/account-status" element={<AccountStatusPage />} />
-            <Route element={<ApprovedTeacherRoute />}>
-              <Route element={<AppLayout />}>
-                <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/schools" element={<SchoolList />} />
-                <Route path="/schedule" element={<TeacherSchedule />} />
-                <Route path="/assignments" element={<Navigate to="/assignments/exam" replace />} />
-                <Route path="/assignments/filters" element={<Navigate to="/assignments/exam" replace />} />
-                <Route path="/assignments/list" element={<Navigate to="/assignments/exam" replace />} />
-                <Route path="/assignments/form" element={<Navigate to="/assignments/exam" replace />} />
-                <Route path="/assignments/exam" element={<AssignmentManagementPage section="exam" />} />
+            <Route element={<ProtectedRoute />}>
+              <Route path="/account-status" element={<AccountStatusPage />} />
+              <Route element={<ApprovedTeacherRoute />}>
+                <Route element={<AppLayout />}>
+                  <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/schools" element={<SchoolList />} />
+                  <Route path="/schedule" element={<TeacherSchedule />} />
+                  <Route path="/assignments" element={<Navigate to="/assignments/exam" replace />} />
+                  <Route path="/assignments/filters" element={<Navigate to="/assignments/exam" replace />} />
+                  <Route path="/assignments/list" element={<Navigate to="/assignments/exam" replace />} />
+                  <Route path="/assignments/form" element={<Navigate to="/assignments/exam" replace />} />
+                  <Route path="/assignments/exam" element={<AssignmentManagementPage section="exam" />} />
 
-                {/* XML Rules: bảo vệ theo permission 'xmlrules.view' */}
-                <Route element={<XmlRulesRoute />}>
-                  <Route path="/admin/xml-grading-rules" element={<XmlGradingRulesPage />} />
+                  {/* XML Rules: bảo vệ theo permission 'xmlrules.view' */}
+                  <Route element={<XmlRulesRoute />}>
+                    <Route path="/admin/xml-grading-rules" element={<XmlGradingRulesPage />} />
+                  </Route>
+
+                  {/* Phân quyền: vẫn Admin-only */}
+                  <Route element={<AdminOnlyRoute />}>
+                    <Route path="/permissions" element={<PermissionManagement />} />
+                  </Route>
+
+                  <Route path="/grading" element={<GradingView />} />
+                  <Route path="/grading/class/:classId" element={<ClassGradingPage />} />
+                  <Route path="/scores/class/:classId" element={<ClassScoreboardPage />} />
                 </Route>
-
-                {/* Phân quyền: vẫn Admin-only */}
-                <Route element={<AdminOnlyRoute />}>
-                  <Route path="/permissions" element={<PermissionManagement />} />
-                </Route>
-
-                <Route path="/grading" element={<GradingView />} />
-                <Route path="/grading/class/:classId" element={<ClassGradingPage />} />
-                <Route path="/scores/class/:classId" element={<ClassScoreboardPage />} />
               </Route>
             </Route>
-          </Route>
 
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
-      </Suspense>
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          </Routes>
+        </Suspense>
+      </PageActionsProvider>
     </AuthProvider>
   );
 }

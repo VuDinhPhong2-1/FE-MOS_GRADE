@@ -2535,14 +2535,14 @@ const GradingModal: React.FC<GradingModalProps> = ({
                             ? 'Chưa có bài tập tự động đang hoạt động. Hãy vào Quản lý bài tập để kích hoạt.'
                             : undefined
                     }
-                    className="border border-emerald-500/40 bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 px-8 py-4 rounded-2xl text-base font-semibold hover:bg-emerald-500/30 flex items-center justify-center gap-3 shadow-xs transition disabled:cursor-not-allowed disabled:opacity-50"
+                    className="bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 px-8 py-4 rounded-2xl text-base font-semibold hover:bg-emerald-500/30 flex items-center justify-center gap-3 shadow-xs transition disabled:cursor-not-allowed disabled:opacity-50"
                 >
                     <Icon name="save" className="text-2xl" />
                     Chấm nhiều bài tự động
                 </button>
                 <button
                     onClick={() => setChooseMode('manage')}
-                    className="border border-amber-500/40 bg-amber-500/20 text-amber-900 dark:text-amber-200 px-8 py-4 rounded-2xl text-base font-semibold hover:bg-amber-500/30 flex items-center justify-center gap-3 shadow-xs transition"
+                    className="bg-amber-500/20 text-amber-900 dark:text-amber-200 px-8 py-4 rounded-2xl text-base font-semibold hover:bg-amber-500/30 flex items-center justify-center gap-3 shadow-xs transition"
                 >
                     <Icon name="edit" className="text-2xl" />
                     Quản lý bài tập
@@ -2555,12 +2555,12 @@ const GradingModal: React.FC<GradingModalProps> = ({
         <div className="flex-1 overflow-y-auto p-6 bg-m3-surface">
             <button
                 onClick={() => setChooseMode(null)}
-                className="rounded-xl border border-m3-outline-variant bg-m3-surface px-3 py-1.5 text-xs font-semibold text-m3-on-surface hover:bg-m3-surface-container-high transition inline-flex items-center gap-1.5 mb-4"
+                className="rounded-xl bg-m3-surface-container-high px-3 py-1.5 text-xs font-semibold text-m3-on-surface hover:bg-m3-surface-container-highest transition inline-flex items-center gap-1.5 mb-4 shadow-xs"
             >
                 <Icon name="arrow_back" className="text-base" /> Quay lại
             </button>
 
-            <div className="p-5 bg-m3-surface-container rounded-3xl border border-m3-outline-variant/60 shadow-xs">
+            <div className="p-5 bg-m3-surface-container-high rounded-3xl shadow-xs">
                 <h3 className="font-bold mb-4 text-lg text-m3-on-surface font-md3-expressive">Tạo nhanh bài tập theo môn và phần</h3>
 
                 <div className="mb-3">
@@ -2768,7 +2768,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
         return (
             <div
                 data-student-scroll-container="true"
-                className="max-h-[55vh] overflow-auto rounded-2xl border border-m3-outline-variant/60 bg-m3-surface"
+                className="max-h-[55vh] overflow-auto rounded-2xl bg-m3-surface shadow-xs"
             >
                 <table className="min-w-full divide-y divide-m3-outline-variant/30">
                     <caption className="caption-top px-4 pb-2 text-left text-sm font-semibold text-m3-on-surface">
@@ -2944,7 +2944,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                 </select>
             </div>
 
-            <div className="sticky top-0 z-30 mb-4 rounded-2xl border border-m3-outline-variant/60 bg-m3-surface-container p-3.5 shadow-sm">
+            <div className="sticky top-0 z-30 mb-4 rounded-2xl bg-m3-surface-container-high p-3.5 shadow-sm">
                 <label className="block text-sm font-medium text-m3-on-surface mb-2">
                     Tìm học sinh và cuộn tới vị trí trong bảng
                 </label>
@@ -3077,7 +3077,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                     <Icon name="arrow_back" className="text-base" /> Quay lại
                 </button>
 
-                <div className="mb-6 p-5 bg-m3-surface-container rounded-2xl border border-m3-outline-variant/60">
+                <div className="mb-6 p-5 bg-m3-surface-container-high rounded-2xl shadow-xs">
                     <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                         <div>
                             <label className="block text-sm font-semibold text-m3-on-surface">
@@ -3318,7 +3318,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                     </div>
                 )}
 
-                <div className="sticky top-0 z-30 mb-4 rounded-2xl border border-m3-outline-variant/60 bg-m3-surface-container p-3.5 shadow-sm">
+                <div className="sticky top-0 z-30 mb-4 rounded-2xl bg-m3-surface-container-high p-3.5 shadow-sm">
                     <label className="block text-sm font-medium text-m3-on-surface mb-2">
                         Tìm học sinh và cuộn tới vị trí trong bảng
                     </label>
@@ -3377,7 +3377,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                 {selectedAssignments.length > 0 ? (
                     <div
                         data-student-scroll-container="true"
-                        className="max-h-[55vh] overflow-auto rounded-2xl border border-m3-outline-variant/60 bg-m3-surface"
+                        className="max-h-[55vh] overflow-auto rounded-2xl bg-m3-surface shadow-xs"
                     >
                         <table className="min-w-full divide-y divide-m3-outline-variant/30">
                             <caption className="caption-top px-4 pb-2 text-left text-sm font-semibold text-m3-on-surface">
@@ -3551,7 +3551,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                 <Icon name="arrow_back" className="text-base" /> Quay lại
             </button>
 
-            <div className="mb-3 flex items-center justify-between rounded-2xl border border-m3-outline-variant/60 bg-m3-surface-container-low px-4 py-3">
+            <div className="mb-3 flex items-center justify-between rounded-2xl bg-m3-surface-container-high px-4 py-3 shadow-xs">
                 <label className="inline-flex items-center gap-2 text-sm text-m3-on-surface">
                     <input
                         type="checkbox"
@@ -3565,7 +3565,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                     Khi tắt, danh sách chỉ hiển thị bài tập đang dùng.
                 </span>
             </div>
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-m3-outline-variant/60 bg-m3-surface px-4 py-3">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-m3-surface-container px-4 py-3 shadow-xs">
                 <span className="text-sm font-medium text-m3-on-surface">
                     Đã chọn {manageSelectedAssignmentIds.length}/{manageableActiveAssignments.length} bài đang dùng
                 </span>
@@ -3606,7 +3606,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
                 </div>
             </div>
 
-            <div className="rounded-2xl border border-m3-outline-variant/60 bg-m3-surface overflow-hidden">
+            <div className="rounded-2xl bg-m3-surface overflow-hidden shadow-xs">
                 <table className="min-w-full divide-y divide-m3-outline-variant/30">
                     <thead className="bg-m3-surface-container-low">
                         <tr>
@@ -3810,19 +3810,19 @@ const GradingModal: React.FC<GradingModalProps> = ({
 
     const isPageMode = displayMode === 'page';
     const containerClassName = isPageMode
-        ? 'bg-m3-surface rounded-3xl border border-m3-outline-variant/60 shadow-xs w-full flex flex-col'
-        : 'bg-m3-surface rounded-4xl border border-m3-outline-variant/60 shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col';
+        ? 'bg-m3-surface-container rounded-3xl shadow-xs w-full flex flex-col'
+        : 'bg-m3-surface-container rounded-4xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col';
     const bodyClassName = isPageMode
         ? 'flex-1'
         : 'flex-1 overflow-y-auto';
     const content = (
         <div className={containerClassName}>
             {/* HEADER */}
-            <div className="flex justify-between items-center p-6 border-b border-m3-outline-variant/30">
+            <div className="flex justify-between items-center p-6 bg-m3-surface-container-high">
                 <h2 className="text-2xl font-bold text-m3-on-surface">{title}</h2>
                 <button
                     onClick={handleClose}
-                    className="p-2 rounded-full text-m3-on-surface-variant hover:text-m3-on-surface hover:bg-m3-surface-container-high transition-colors flex items-center justify-center"
+                    className="p-2 rounded-full text-m3-on-surface-variant hover:text-m3-on-surface hover:bg-m3-surface-container transition-colors flex items-center justify-center"
                     aria-label="Đóng"
                 >
                     <Icon name="close" className="text-2xl" />
@@ -3839,10 +3839,10 @@ const GradingModal: React.FC<GradingModalProps> = ({
             </div>
 
             {/* FOOTER */}
-            <div className="flex justify-end gap-3 p-6 border-t border-m3-outline-variant/30 bg-m3-surface-container-lowest">
+            <div className="flex justify-end gap-3 p-6 bg-m3-surface-container-high">
                 <button
                     onClick={handleClose}
-                    className="px-5 py-2.5 rounded-xl border border-m3-outline-variant text-m3-on-surface hover:bg-m3-surface-container-high transition-colors text-sm font-medium"
+                    className="px-5 py-2.5 rounded-full bg-m3-surface-container-highest text-m3-on-surface hover:bg-m3-surface-container transition-colors text-sm font-medium shadow-xs"
                 >
                     {isPageMode ? 'Quay lại' : 'Hủy'}
                 </button>

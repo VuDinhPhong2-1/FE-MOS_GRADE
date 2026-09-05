@@ -1,10 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import {
-  Image as ImageIcon,
-  Loader2,
-  Upload,
-  X
-} from 'lucide-react';
+import { Icon, ProgressIndicator } from '@bug-on/m3-expressive';
 
 import type {
   PictureBulletConfig
@@ -202,7 +197,7 @@ const PictureBulletEditor = ({
       {/* Header */}
       <div className="flex items-start gap-3">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-100 text-violet-600">
-          <ImageIcon size={17} />
+          <Icon name="image" variant="rounded" size={17} />
         </div>
 
         <div className="min-w-0">
@@ -242,9 +237,9 @@ const PictureBulletEditor = ({
               className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 bg-white px-4 py-3 text-xs font-semibold text-slate-600 transition hover:border-violet-300 hover:bg-violet-50 hover:text-violet-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {uploading ? (
-                <Loader2 size={15} className="animate-spin" />
+                <ProgressIndicator variant="circular" shape="wavy" showTrack size={15} aria-label="Đang tải lên..." />
               ) : (
-                <Upload size={15} />
+                <Icon name="upload" variant="rounded" size={15} />
               )}
 
               {uploading
@@ -268,7 +263,7 @@ const PictureBulletEditor = ({
                 className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-slate-400 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-60"
                 title="Xóa hình"
               >
-                <X size={13} />
+                <Icon name="close" variant="rounded" size={13} />
               </button>
             </div>
           )}
@@ -332,7 +327,7 @@ const PictureBulletEditor = ({
 
             {uploading && (
               <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-white/70">
-                <Loader2 size={16} className="animate-spin text-violet-600" />
+                <ProgressIndicator variant="circular" shape="wavy" showTrack size={16} aria-label="Đang tải lên..." className="text-violet-600" />
               </div>
             )}
 
@@ -343,13 +338,13 @@ const PictureBulletEditor = ({
               className="absolute right-1.5 top-1.5 inline-flex h-6 w-6 items-center justify-center rounded-lg bg-white text-slate-400 shadow-sm ring-1 ring-slate-200 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-60"
               title="Xóa hình"
             >
-              <X size={12} />
+              <Icon name="close" variant="rounded" size={12} />
             </button>
           </div>
         ) : (
           <div className="flex min-h-16 items-center justify-center rounded-xl border border-dashed border-slate-200 bg-white">
             <div className="text-center">
-              <ImageIcon size={18} className="mx-auto text-slate-300" />
+              <Icon name="image" variant="rounded" size={18} className="mx-auto text-slate-300" />
 
               <p className="mt-1.5 text-[11px] text-slate-400">
                 Chưa chọn hình ảnh

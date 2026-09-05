@@ -31,7 +31,7 @@ const ErrorModal: React.FC = () => {
     <div className="fixed inset-0 z-11000 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-xs transition-opacity" onClick={() => setOpen(false)} />
 
-      <div className="relative w-[min(94vw,720px)] max-h-[86vh] overflow-auto rounded-4xl border border-m3-outline-variant/60 bg-m3-surface-container-high p-6 text-m3-on-surface shadow-2xl transition-all">
+      <div className="relative w-[min(94vw,720px)] max-h-[86vh] overflow-auto rounded-4xl bg-m3-surface-container-high p-6 text-m3-on-surface shadow-2xl transition-all">
         <div className="flex items-start gap-3.5">
           <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-m3-error-container text-m3-on-error-container">
             <Icon name="error" className="text-2xl" />
@@ -52,7 +52,7 @@ const ErrorModal: React.FC = () => {
 
             <div className="mt-3.5 space-y-3 text-sm">
               {message && (
-                <div className="whitespace-pre-wrap rounded-2xl border border-m3-error/20 bg-m3-error-container/40 p-3.5 font-medium text-m3-on-error-container">
+                <div className="whitespace-pre-wrap rounded-2xl bg-m3-error-container/50 p-3.5 font-medium text-m3-on-error-container shadow-2xs">
                   {message}
                 </div>
               )}
@@ -60,7 +60,7 @@ const ErrorModal: React.FC = () => {
               {issues.map((issue, idx) => (
                 <div
                   key={`${idx}-${issue.heading}-${issue.message}`}
-                  className="rounded-2xl border border-m3-outline-variant/50 bg-m3-surface-container p-3.5"
+                  className="rounded-2xl bg-m3-surface-container p-3.5 shadow-2xs"
                 >
                   <div className="flex items-start gap-2.5">
                     <Icon name="warning" className="mt-0.5 shrink-0 text-amber-500 text-lg" />
@@ -99,14 +99,14 @@ const ErrorModal: React.FC = () => {
                     [payload.title ?? 'Lỗi', message, combined].filter(Boolean).join('\n\n')
                   );
                 }}
-                className="rounded-full border border-m3-outline-variant bg-m3-surface-container px-4 py-2 text-xs font-semibold text-m3-on-surface transition-colors hover:bg-m3-surface-container-highest"
+                className="rounded-full bg-m3-surface-container px-4 py-2 text-xs font-semibold text-m3-on-surface transition-colors hover:bg-m3-surface-container-highest shadow-xs cursor-pointer"
               >
                 Sao chép nội dung
               </button>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="rounded-full bg-m3-error px-5 py-2 text-xs font-semibold text-m3-on-error shadow-xs transition-opacity hover:opacity-90"
+                className="rounded-full bg-m3-error px-5 py-2 text-xs font-semibold text-m3-on-error shadow-xs transition-opacity hover:opacity-90 cursor-pointer"
               >
                 Đóng
               </button>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Play, RefreshCw, RotateCcw, Send, SkipForward } from "lucide-react";
+import { Icon, ProgressIndicator } from "@bug-on/m3-expressive";
 import { localAgentService } from "../services/local-agent.service";
 import type { LocalAgentState } from "../types/local-agent.types";
 
@@ -70,7 +70,7 @@ export function LocalAgentPanel({
   }, []);
 
   return (
-    <section className="mt-6 rounded-lg border border-sky-200 bg-gradient-to-br from-sky-50 to-white p-5 shadow-sm">
+    <section className="mt-6 rounded-lg border border-sky-200 bg-linear-to-br from-sky-50 to-white p-5 shadow-sm">
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold text-slate-800">Local Agent</h2>
@@ -85,7 +85,11 @@ export function LocalAgentPanel({
           disabled={loadingAction !== null}
           className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          <RefreshCw size={16} className={loadingAction === "refresh" ? "animate-spin" : ""} />
+          {loadingAction === "refresh" ? (
+            <ProgressIndicator variant="circular" shape="wavy" showTrack size={16} aria-label="Đang làm mới..." />
+          ) : (
+            <Icon name="refresh" variant="rounded" size={16} />
+          )}
           Làm mới state
         </button>
       </div>
@@ -141,7 +145,7 @@ export function LocalAgentPanel({
           }
           className="inline-flex items-center justify-center gap-2 rounded-md bg-sky-600 px-3 py-2 text-sm font-semibold text-white hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-slate-400"
         >
-          <Play size={16} />
+          <Icon name="play_arrow" variant="rounded" size={16} />
           Start exam
         </button>
 
@@ -157,7 +161,7 @@ export function LocalAgentPanel({
           }
           className="inline-flex items-center justify-center gap-2 rounded-md bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-400"
         >
-          <Send size={16} />
+          <Icon name="send" variant="rounded" size={16} />
           Submit
         </button>
 
@@ -173,7 +177,7 @@ export function LocalAgentPanel({
           }
           className="inline-flex items-center justify-center gap-2 rounded-md bg-amber-600 px-3 py-2 text-sm font-semibold text-white hover:bg-amber-700 disabled:cursor-not-allowed disabled:bg-slate-400"
         >
-          <Send size={16} />
+          <Icon name="send" variant="rounded" size={16} />
           Force submit
         </button>
 
@@ -189,7 +193,7 @@ export function LocalAgentPanel({
           }
           className="inline-flex items-center justify-center gap-2 rounded-md bg-violet-600 px-3 py-2 text-sm font-semibold text-white hover:bg-violet-700 disabled:cursor-not-allowed disabled:bg-slate-400"
         >
-          <RotateCcw size={16} />
+          <Icon name="restart_alt" variant="rounded" size={16} />
           Restart
         </button>
 
@@ -205,7 +209,7 @@ export function LocalAgentPanel({
           }
           className="inline-flex items-center justify-center gap-2 rounded-md bg-slate-700 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
         >
-          <SkipForward size={16} />
+          <Icon name="skip_next" variant="rounded" size={16} />
           Next project
         </button>
       </div>

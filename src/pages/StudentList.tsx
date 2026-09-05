@@ -8,26 +8,7 @@ import studentService from '../services/student.service';
 import { assignmentService } from '../services/assignment.service';
 import { useAuth } from '../context/AuthContext';
 import ClassAnalyticsPanel from '../components/ClassAnalyticsPanel';
-import {
-  Upload,
-  FileCheck2,
-  Eye,
-  Save,
-  RefreshCw,
-  Pencil,
-  X,
-  Loader2,
-  CheckCircle2,
-  XCircle,
-  Search,
-  UserPlus,
-  Trash2,
-  ClipboardPaste,
-  Sparkles,
-  Users,
-  UserCheck,
-  UserX,
-} from 'lucide-react';
+import { Icon, ProgressIndicator } from '@bug-on/m3-expressive';
 
 type EditStudentForm = {
   middleName: string;
@@ -524,12 +505,12 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
         prev.map((item) =>
           item.id === student.id
             ? {
-                ...item,
-                competencyLevel: (updatedStudent.competencyLevel ?? level) as '' | 'A' | 'B' | 'C' | 'D',
-                notes: updatedStudent.notes ?? item.notes,
-                status: updatedStudent.status ?? item.status,
-                thi: updatedStudent.thi ?? item.thi ?? false,
-              }
+              ...item,
+              competencyLevel: (updatedStudent.competencyLevel ?? level) as '' | 'A' | 'B' | 'C' | 'D',
+              notes: updatedStudent.notes ?? item.notes,
+              status: updatedStudent.status ?? item.status,
+              thi: updatedStudent.thi ?? item.thi ?? false,
+            }
             : item
         )
       );
@@ -570,9 +551,9 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
         prev.map((item) =>
           item.id === student.id
             ? {
-                ...item,
-                thi: resolvedExamState,
-              }
+              ...item,
+              thi: resolvedExamState,
+            }
             : item
         )
       );
@@ -763,13 +744,13 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
         </div>
       )}
 
-      <section className="app-card relative overflow-hidden px-4 py-4 sm:px-6 sm:py-5">
+      <section className="relative overflow-hidden rounded-3xl bg-m3-surface-container px-4 py-4 sm:px-6 sm:py-5 shadow-xs text-m3-on-surface">
         <div className="pointer-events-none absolute -right-12 -top-16 h-40 w-40 rounded-full bg-sky-200/70 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-20 left-1/3 h-40 w-40 rounded-full bg-emerald-200/60 blur-3xl" />
         <div className="relative flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
           <div className="space-y-3">
             <div className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-sky-700">
-              <Sparkles size={14} />
+              <Icon name="auto_awesome" variant="rounded" size={14} />
               Không gian lớp học
             </div>
             <div>
@@ -782,33 +763,33 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
             </div>
             <div className="flex flex-wrap gap-2">
               <div className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white/90 px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm">
-                <Users size={14} />
+                <Icon name="group" variant="rounded" size={14} />
                 Tổng {students.length} học sinh
               </div>
               <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 shadow-sm">
-                <UserCheck size={14} />
+                <Icon name="how_to_reg" variant="rounded" size={14} />
                 Hoạt động {activeStudents.length}
               </div>
               <div className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700 shadow-sm">
-                <UserX size={14} />
+                <Icon name="person_off" variant="rounded" size={14} />
                 Ngừng {inactiveStudentsCount}
               </div>
               {studentNewList.length > 0 && (
                 <div className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 shadow-sm">
-                  <Save size={14} />
+                  <Icon name="save" variant="rounded" size={14} />
                   Chưa lưu {studentNewList.length}
                 </div>
               )}
             </div>
           </div>
 
-          <div className="grid w-full gap-2 sm:grid-cols-2 xl:w-auto xl:min-w-[640px]">
+          <div className="grid w-full gap-2 sm:grid-cols-2 xl:w-auto xl:min-w-160">
             {!readOnly && (
               <button
                 onClick={handleOpenAddStudentModal}
                 className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-600/25 transition hover:-translate-y-0.5 hover:bg-emerald-700"
               >
-                <UserPlus size={18} />
+                <Icon name="person_add" variant="rounded" size={18} />
                 Thêm học sinh
               </button>
             )}
@@ -819,7 +800,7 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
                 className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/25 transition hover:-translate-y-0.5 hover:bg-blue-700 disabled:translate-y-0 disabled:cursor-not-allowed disabled:bg-slate-400 disabled:shadow-none"
                 title="Chấm điểm cho học sinh đang hoạt động"
               >
-                <FileCheck2 size={18} />
+                <Icon name="fact_check" variant="rounded" size={18} />
                 Chấm điểm cho lớp
               </button>
             )}
@@ -831,7 +812,11 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
                 className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-sky-600/25 transition hover:-translate-y-0.5 hover:bg-sky-700 disabled:translate-y-0 disabled:cursor-not-allowed disabled:bg-slate-400 disabled:shadow-none"
                 title="Đồng bộ xếp loại và ghi chú học sinh lên Google Sheet"
               >
-                <RefreshCw size={18} className={isStudentMetadataSyncing ? 'animate-spin' : ''} />
+                {isStudentMetadataSyncing ? (
+                  <ProgressIndicator variant="circular" shape="wavy" showTrack size={18} aria-label="Đang đồng bộ..." />
+                ) : (
+                  <Icon name="refresh" variant="rounded" size={18} />
+                )}
                 {isStudentMetadataSyncing ? 'Đang đồng bộ...' : 'Đồng bộ XL + ghi chú GG Sheet'}
               </button>
             )}
@@ -839,7 +824,7 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
               onClick={handleOpenViewScoresModal}
               className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50"
             >
-              <Eye size={18} />
+              <Icon name="visibility" variant="rounded" size={18} />
               Xem bảng điểm lớp
             </button>
           </div>
@@ -848,10 +833,10 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
 
       <ClassAnalyticsPanel classId={selectedClass.id} assignments={assignments} />
 
-      <section className="app-card-soft p-3 sm:p-4">
+      <section className="rounded-2xl bg-m3-surface-container-low p-3 sm:p-4 text-m3-on-surface">
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(260px,auto)]">
           <div className="relative">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Icon name="search" variant="rounded" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               value={searchKeyword}
               onChange={(event) => setSearchKeyword(event.target.value)}
@@ -876,7 +861,11 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
             className="inline-flex items-center gap-2 rounded-xl bg-slate-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
             title="Tải lại danh sách"
           >
-            <RefreshCw size={18} className={isLoading ? 'animate-spin' : ''} />
+            {isLoading ? (
+              <ProgressIndicator variant="circular" shape="wavy" showTrack size={18} aria-label="Đang tải lại..." />
+            ) : (
+              <Icon name="refresh" variant="rounded" size={18} />
+            )}
             Tải lại
           </button>
 
@@ -894,7 +883,7 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
                 htmlFor="import-excel"
                 className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
               >
-                <Upload size={18} /> Nhập Excel
+                <Icon name="upload" variant="rounded" size={18} /> Nhập Excel
               </label>
 
               <button
@@ -902,7 +891,7 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
                 onClick={handleOpenPasteModal}
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
               >
-                <ClipboardPaste size={18} /> Dán từ Excel
+                <Icon name="content_paste" variant="rounded" size={18} /> Dán từ Excel
               </button>
 
               {studentNewList.length > 0 && (
@@ -911,7 +900,7 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
                   disabled={isLoading}
                   className="inline-flex items-center gap-2 rounded-xl bg-cyan-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-cyan-700 disabled:cursor-not-allowed disabled:bg-slate-400"
                 >
-                  <Save size={18} />
+                  <Icon name="save" variant="rounded" size={18} />
                   {isLoading ? 'Đang lưu...' : 'Lưu danh sách'}
                 </button>
               )}
@@ -920,13 +909,13 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
         </div>
       </section>
 
-      <section className="app-card overflow-hidden">
+      <section className="overflow-hidden rounded-3xl bg-m3-surface-container shadow-xs text-m3-on-surface">
         <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-3">
           <span className="text-sm font-semibold text-slate-700">Danh sách học sinh</span>
           <span className="text-xs text-slate-500">Bảng dữ liệu chi tiết theo từng học sinh</span>
         </div>
         <div className="overflow-x-auto">
-          <table className="min-w-[980px] w-full text-xs sm:text-sm">
+          <table className="min-w-245 w-full text-xs sm:text-sm">
             <thead className="sticky top-0 z-10 bg-slate-900">
               <tr>
                 <th className="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-100 sm:px-6">STT</th>
@@ -985,9 +974,8 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
                   return (
                     <tr
                       key={st.id}
-                      className={`transition-colors ${
-                        isActive ? 'hover:bg-sky-50/70' : 'bg-rose-50/70 hover:bg-rose-100/70'
-                      }`}
+                      className={`transition-colors ${isActive ? 'hover:bg-sky-50/70' : 'bg-rose-50/70 hover:bg-rose-100/70'
+                        }`}
                     >
                       <td className="px-3 py-4 text-slate-500 sm:px-6">{index + 1}</td>
                       <td className="px-3 py-4 font-medium text-slate-900 sm:px-6">{st.middleName}</td>
@@ -1003,9 +991,8 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
                                 event.target.value as '' | 'A' | 'B' | 'C' | 'D'
                               )
                             }
-                            className={`w-[72px] rounded-full border px-2 py-1 text-center text-xs font-semibold outline-none transition ${competencyBadgeClass(st.competencyLevel)} ${
-                              inlineSavingStudentId === st.id ? 'cursor-not-allowed opacity-70' : 'hover:brightness-95'
-                            }`}
+                            className={`w-18 rounded-full border px-2 py-1 text-center text-xs font-semibold outline-none transition ${competencyBadgeClass(st.competencyLevel)} ${inlineSavingStudentId === st.id ? 'cursor-not-allowed opacity-70' : 'hover:brightness-95'
+                              }`}
                             title={st.id.startsWith('temp-') ? 'Học sinh tạm, sẽ lưu cùng danh sách học sinh.' : 'Cập nhật nhanh năng lực'}
                           >
                             <option value="">--</option>
@@ -1021,17 +1008,16 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
                         </div>
                       </td>
                       <td className="px-3 py-4 text-slate-700 sm:px-6">
-                        <div className="max-w-[260px] truncate" title={st.notes || ''}>
+                        <div className="max-w-65 truncate" title={st.notes || ''}>
                           {st.notes?.trim() || '--'}
                         </div>
                       </td>
                       <td className="px-3 py-4 text-center sm:px-6">
                         <span
-                          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${
-                            isActive ? 'bg-emerald-100 text-emerald-700 ring-emerald-200' : 'bg-rose-100 text-rose-700 ring-rose-200'
-                          }`}
+                          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${isActive ? 'bg-emerald-100 text-emerald-700 ring-emerald-200' : 'bg-rose-100 text-rose-700 ring-rose-200'
+                            }`}
                         >
-                          {isActive ? <CheckCircle2 size={13} /> : <XCircle size={13} />}
+                          {isActive ? <Icon name="check_circle" variant="rounded" size={13} /> : <Icon name="cancel" variant="rounded" size={13} />}
                           {isActive ? 'Hoạt động' : 'Ngừng'}
                         </span>
                       </td>
@@ -1042,30 +1028,28 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
                           aria-checked={st.thi ?? false}
                           onClick={() => handleInlineExamToggle(st)}
                           disabled={readOnly || inlineSavingStudentId === st.id}
-                          className={`inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-xs font-semibold transition ${
-                            st.thi
-                              ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                              : 'border-slate-200 bg-slate-100 text-slate-600'
-                          } ${
-                            readOnly || inlineSavingStudentId === st.id
+                          className={`inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-xs font-semibold transition ${st.thi
+                            ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                            : 'border-slate-200 bg-slate-100 text-slate-600'
+                            } ${readOnly || inlineSavingStudentId === st.id
                               ? 'cursor-not-allowed opacity-60'
                               : 'hover:brightness-95'
-                          }`}
+                            }`}
                           title={st.thi ? 'Click to switch to Not Taking Exam' : 'Click to switch to Taking Exam'}
                         >
                           <span
-                            className={`relative h-4 w-8 rounded-full transition ${
-                              st.thi ? 'bg-emerald-500' : 'bg-slate-400'
-                            }`}
+                            className={`relative h-4 w-8 rounded-full transition ${st.thi ? 'bg-emerald-500' : 'bg-slate-400'
+                              }`}
                           >
                             <span
-                              className={`absolute top-0.5 h-3 w-3 rounded-full bg-white shadow transition ${
-                                st.thi ? 'left-4' : 'left-0.5'
-                              }`}
+                              className={`absolute top-0.5 h-3 w-3 rounded-full bg-white shadow transition ${st.thi ? 'left-4' : 'left-0.5'
+                                }`}
                             />
                           </span>
                           <span>{st.thi ? 'Taking Exam' : 'Not Taking Exam'}</span>
-                          {inlineSavingStudentId === st.id && <Loader2 size={12} className="animate-spin" />}
+                          {inlineSavingStudentId === st.id && (
+                            <ProgressIndicator variant="circular" shape="wavy" showTrack size={12} aria-label="Đang lưu..." />
+                          )}
                         </button>
                       </td>
                       <td className="px-3 py-4 text-center sm:px-6">
@@ -1077,7 +1061,7 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
                               disabled={st.id.startsWith('temp-')}
                               className="inline-flex items-center gap-1 rounded-lg bg-blue-100 px-3 py-1.5 text-xs font-medium text-blue-700 transition hover:bg-blue-200 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
                             >
-                              <Pencil size={14} />
+                              <Icon name="edit" variant="rounded" size={14} />
                               Sửa
                             </button>
                             <button
@@ -1085,7 +1069,7 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
                               onClick={() => handleDeleteStudent(st)}
                               className="inline-flex items-center gap-1 rounded-lg bg-rose-100 px-3 py-1.5 text-xs font-medium text-rose-700 transition hover:bg-rose-200"
                             >
-                              <Trash2 size={14} />
+                              <Icon name="delete" variant="rounded" size={14} />
                               Xóa
                             </button>
                           </div>
@@ -1113,7 +1097,7 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
                 className="rounded p-1 text-gray-500 hover:bg-gray-100"
                 disabled={isAddSubmitting}
               >
-                <X size={18} />
+                <Icon name="close" variant="rounded" size={18} />
               </button>
             </div>
 
@@ -1220,7 +1204,7 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
                 >
                   {isAddSubmitting ? (
                     <>
-                      <Loader2 size={15} className="animate-spin" />
+                      <ProgressIndicator variant="circular" shape="wavy" showTrack size={15} aria-label="Đang thêm..." />
                       Đang thêm...
                     </>
                   ) : (
@@ -1243,7 +1227,7 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
                 onClick={() => setIsPasteModalOpen(false)}
                 className="rounded p-1 text-gray-500 hover:bg-gray-100"
               >
-                <X size={18} />
+                <Icon name="close" variant="rounded" size={18} />
               </button>
             </div>
 
@@ -1295,7 +1279,7 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
                 className="rounded p-1 text-gray-500 hover:bg-gray-100"
                 disabled={isEditSubmitting}
               >
-                <X size={18} />
+                <Icon name="close" variant="rounded" size={18} />
               </button>
             </div>
 
@@ -1406,7 +1390,7 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
                 >
                   {isEditSubmitting ? (
                     <>
-                      <Loader2 size={15} className="animate-spin" />
+                      <ProgressIndicator variant="circular" shape="wavy" showTrack size={15} aria-label="Đang lưu..." />
                       Đang lưu...
                     </>
                   ) : (

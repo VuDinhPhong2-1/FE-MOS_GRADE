@@ -34,9 +34,6 @@ export default defineConfig({
             ) {
               return 'vendor-excel';
             }
-            if (id.includes('lucide-react')) {
-              return 'vendor-icons';
-            }
             if (id.includes('axios') || id.includes('jwt-decode')) {
               return 'vendor-core';
             }

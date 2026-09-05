@@ -21,7 +21,7 @@ const AccountStatusPage: React.FC = () => {
         />
       </div>
 
-      <section className="relative z-10 w-full max-w-lg overflow-hidden rounded-4xl border border-m3-outline-variant/60 bg-m3-surface-container p-8 text-center shadow-xl">
+      <section className="relative z-10 w-full max-w-lg overflow-hidden rounded-4xl bg-m3-surface-container p-8 text-center shadow-xl">
         {/* Status Badge Icon */}
         <div
           className={`mx-auto flex h-20 w-20 items-center justify-center rounded-3xl ${
@@ -47,7 +47,7 @@ const AccountStatusPage: React.FC = () => {
         </p>
 
         {user?.teacherApprovalNote && (
-          <div className="mt-5 rounded-2xl border border-m3-outline-variant/60 bg-m3-surface p-4 text-left text-xs">
+          <div className="mt-5 rounded-2xl bg-m3-surface-container-high p-4 text-left text-xs">
             <div className="flex items-center gap-1.5 font-bold text-m3-on-surface">
               <Icon name="feedback" className="text-base text-m3-primary" />
               <span>Ghi chú từ Quản trị viên</span>
@@ -58,7 +58,7 @@ const AccountStatusPage: React.FC = () => {
           </div>
         )}
 
-        <div className="mt-6 space-y-2 rounded-2xl border border-m3-outline-variant/40 bg-m3-surface/60 p-4 text-left text-xs text-m3-on-surface-variant">
+        <div className="mt-6 space-y-2 rounded-2xl bg-m3-surface-container-low p-4 text-left text-xs text-m3-on-surface-variant">
           <div className="flex items-center justify-between">
             <span className="font-semibold text-m3-on-surface">Họ và tên:</span>
             <span>{user?.fullName || user?.username}</span>

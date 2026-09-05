@@ -18,23 +18,23 @@ const ResultCard: React.FC<Props> = ({ result }) => {
   };
 
   return (
-    <div className="mt-6 overflow-hidden rounded-4xl border border-m3-outline-variant/60 bg-m3-surface-container shadow-xs">
-      <div className="border-b border-m3-outline-variant bg-m3-surface-container-high p-6">
+    <div className="mt-6 overflow-hidden rounded-4xl bg-m3-surface-container shadow-xs">
+      <div className="bg-m3-surface-container-high p-6">
         <h2 className="text-xl font-bold text-m3-on-surface">
           {result.projectName} ({result.projectId})
         </h2>
         <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4">
-          <div className="rounded-2xl border border-m3-outline-variant/40 bg-m3-primary-container/30 p-3.5">
+          <div className="rounded-2xl bg-m3-primary-container/40 p-3.5 shadow-2xs">
             <p className="text-xs font-semibold text-m3-primary">Tổng điểm</p>
             <p className="text-2xl font-bold text-m3-primary">
               {result.totalScore} / {result.maxScore}
             </p>
           </div>
-          <div className="rounded-2xl border border-m3-outline-variant/40 bg-m3-secondary-container/30 p-3.5">
+          <div className="rounded-2xl bg-m3-secondary-container/40 p-3.5 shadow-2xs">
             <p className="text-xs font-semibold text-m3-secondary">Tỷ lệ</p>
             <p className="text-2xl font-bold text-m3-secondary">{result.percentage}%</p>
           </div>
-          <div className={clsx('rounded-2xl border border-m3-outline-variant/40 p-3.5', result.percentage >= 70 ? 'bg-emerald-500/10' : 'bg-amber-500/10')}>
+          <div className={clsx('rounded-2xl p-3.5 shadow-2xs', result.percentage >= 70 ? 'bg-emerald-500/15' : 'bg-amber-500/15')}>
             <p className={clsx('text-xs font-semibold', result.percentage >= 70 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400')}>
               Trạng thái
             </p>
@@ -47,7 +47,7 @@ const ResultCard: React.FC<Props> = ({ result }) => {
               {result.status}
             </p>
           </div>
-          <div className="rounded-2xl border border-m3-outline-variant/40 bg-m3-surface-container-highest p-3.5">
+          <div className="rounded-2xl bg-m3-surface-container-highest p-3.5 shadow-2xs">
             <p className="text-xs font-semibold text-m3-on-surface-variant">Ngày chấm</p>
             <p className="mt-1 text-sm font-medium text-m3-on-surface">{new Date(result.gradedAt).toLocaleString('vi-VN')}</p>
           </div>

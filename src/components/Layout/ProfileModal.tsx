@@ -1,6 +1,21 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Icon, ProgressIndicator } from '@bug-on/m3-expressive';
+import {
+  Dialog,
+  DialogPortal,
+  DialogOverlay,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogBody,
+  DialogFooter,
+  DialogClose,
+  Button,
+  IconButton,
+  Icon,
+  TextField,
+} from '@bug-on/m3-expressive';
 import { useAuth } from '../../context/AuthContext';
 import { authService } from '../../services/auth.service';
 import { notify } from '../../utils/notify';
@@ -45,7 +60,7 @@ export const ProfileModal = ({ isOpen, onClose, onAvatarPreview }: ProfileModalP
     };
   }, [isOpen, user, onAvatarPreview]);
 
-  if (!isOpen || !user) return null;
+  if (!user) return null;
 
   const handleLogout = () => {
     onClose();
@@ -85,154 +100,196 @@ export const ProfileModal = ({ isOpen, onClose, onAvatarPreview }: ProfileModalP
   };
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4 backdrop-blur-xs">
-      <div className="w-full max-w-lg overflow-hidden rounded-4xl border border-m3-outline-variant/60 bg-m3-surface-container-high text-m3-on-surface shadow-2xl transition-all">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-m3-outline-variant px-6 py-5">
-          <div>
-            <h3 className="text-lg font-bold text-m3-on-surface">Chỉnh sửa tài khoản</h3>
-            <p className="text-xs text-m3-on-surface-variant">Cập nhật hồ sơ cá nhân của bạn</p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="grid h-9 w-9 place-items-center rounded-full border border-m3-outline-variant text-m3-on-surface-variant transition-colors hover:bg-m3-surface-container-highest hover:text-m3-on-surface cursor-pointer"
-            aria-label="Đóng hộp thoại"
-          >
-            <Icon name="close" className="text-lg" />
-          </button>
-        </div>
-
-        {/* Form Body */}
-        <form onSubmit={handleSubmit} className="space-y-4 p-6">
-          <div className="grid gap-1.5">
-            <label htmlFor="profile-username" className="text-xs font-semibold text-m3-on-surface-variant">
-              Tên đăng nhập
-            </label>
-            <input
-              id="profile-username"
-              type="text"
-              readOnly
-              value={user.username}
-              className="w-full cursor-not-allowed rounded-xl border border-m3-outline-variant/60 bg-m3-surface-container px-3.5 py-2.5 text-sm opacity-70 text-m3-on-surface"
-            />
-          </div>
-
-          <div className="grid gap-1.5">
-            <label htmlFor="profile-email" className="text-xs font-semibold text-m3-on-surface-variant">
-              Thư điện tử
-            </label>
-            <input
-              id="profile-email"
-              type="text"
-              readOnly
-              value={user.email || ''}
-              className="w-full cursor-not-allowed rounded-xl border border-m3-outline-variant/60 bg-m3-surface-container px-3.5 py-2.5 text-sm opacity-70 text-m3-on-surface"
-            />
-          </div>
-
-          <div className="grid gap-1.5">
-            <label htmlFor="profile-fullname" className="text-xs font-semibold text-m3-on-surface-variant">
-              Họ và tên
-            </label>
-            <input
-              id="profile-fullname"
-              type="text"
-              value={form.fullName}
-              onChange={(event) => setForm((prev) => ({ ...prev, fullName: event.target.value }))}
-              placeholder="Ví dụ: Vũ Đình Phong"
-              className="w-full rounded-xl border border-m3-outline-variant bg-m3-surface-container px-3.5 py-2.5 text-sm text-m3-on-surface focus:border-m3-primary focus:outline-none"
-              maxLength={120}
-            />
-          </div>
-
-          <div className="grid gap-1.5">
-            <label htmlFor="profile-phone" className="text-xs font-semibold text-m3-on-surface-variant">
-              Số điện thoại
-            </label>
-            <input
-              id="profile-phone"
-              type="text"
-              value={form.phoneNumber}
-              onChange={(event) => setForm((prev) => ({ ...prev, phoneNumber: event.target.value }))}
-              placeholder="Ví dụ: 0909xxxxxx"
-              className="w-full rounded-xl border border-m3-outline-variant bg-m3-surface-container px-3.5 py-2.5 text-sm text-m3-on-surface focus:border-m3-primary focus:outline-none"
-              maxLength={25}
-            />
-          </div>
-
-          <div className="grid gap-1.5">
-            <label htmlFor="profile-avatar" className="text-xs font-semibold text-m3-on-surface-variant">
-              Ảnh đại diện (URL)
-            </label>
-            <input
-              id="profile-avatar"
-              type="text"
-              value={form.avatar}
-              onChange={(event) => {
-                const next = event.target.value;
-                setForm((prev) => ({ ...prev, avatar: next }));
-                if (onAvatarPreview) onAvatarPreview(next || '');
-              }}
-              placeholder="https://..."
-              className="w-full rounded-xl border border-m3-outline-variant bg-m3-surface-container px-3.5 py-2.5 text-sm text-m3-on-surface focus:border-m3-primary focus:outline-none"
-              maxLength={500}
-            />
-          </div>
-
-          {/* Footer actions */}
-          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-m3-outline-variant pt-4">
-            {confirmLogout ? (
-              <div className="inline-flex items-center gap-2 rounded-full border border-m3-error/50 bg-m3-error-container/30 px-3 py-1.5 text-xs font-semibold text-m3-error animate-in fade-in zoom-in duration-150">
-                <span>Xác nhận đăng xuất?</span>
-                <button
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogPortal open={isOpen}>
+        <DialogOverlay />
+        <DialogContent
+          hideCloseButton
+          className="flex max-h-[90vh] w-[calc(100%-2rem)] max-w-lg flex-col overflow-hidden rounded-4xl bg-m3-surface-container-high p-0 text-m3-on-surface shadow-2xl"
+        >
+          <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 pt-5 pb-3">
+              <DialogHeader className="mb-0 gap-0.5">
+                <DialogTitle className="text-lg font-bold text-m3-on-surface">
+                  Chỉnh sửa tài khoản
+                </DialogTitle>
+                <DialogDescription className="text-xs text-m3-on-surface-variant">
+                  Cập nhật hồ sơ cá nhân của bạn
+                </DialogDescription>
+              </DialogHeader>
+              <DialogClose asChild>
+                <IconButton
                   type="button"
-                  onClick={handleLogout}
-                  className="rounded-full bg-m3-error px-3 py-1 text-xs font-bold text-m3-on-error transition-opacity hover:opacity-90 cursor-pointer shadow-xs"
+                  size="sm"
+                  colorStyle="standard"
+                  aria-label="Đóng hộp thoại"
+                  onClick={onClose}
                 >
-                  Đồng ý
-                </button>
-                <button
+                  <Icon name="close" />
+                </IconButton>
+              </DialogClose>
+            </div>
+
+            {/* Body */}
+            <DialogBody className="flex flex-1 flex-col gap-5 overflow-y-auto px-6 pt-2 pb-6 pr-5">
+              {/* Avatar Preview & Profile Summary Card */}
+              <div className="flex items-center gap-4 rounded-xl bg-m3-surface-container p-3 mb-4">
+                <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full bg-m3-surface-container-highest ring-2 ring-m3-outline-variant/30">
+                  {form.avatar ? (
+                    <img
+                      src={form.avatar}
+                      alt={form.fullName || user.username}
+                      className="h-full w-full object-cover"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLElement).style.display = 'none';
+                      }}
+                    />
+                  ) : (
+                    <div className="grid h-full w-full place-items-center text-m3-primary">
+                      <Icon name="account_circle" size={40} />
+                    </div>
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-bold text-m3-on-surface">
+                    {form.fullName || user.fullName || user.username}
+                  </div>
+                  <div className="truncate text-xs text-m3-on-surface-variant">
+                    {user.email || 'Chưa có email'}
+                  </div>
+                  <div className="mt-1 inline-flex items-center gap-1 rounded-md bg-m3-primary/10 px-2 py-0.5 text-[11px] font-semibold text-m3-primary">
+                    <Icon name="verified_user" className="text-xs" />
+                    <span>{user.role || 'Người dùng'}</span>
+                  </div>
+                </div>
+              </div>
+
+              <TextField
+                variant="outlined"
+                label="Tên đăng nhập"
+                readOnly
+                fullWidth
+                value={user.username}
+                supportingText="Tên tài khoản không thể thay đổi"
+                leadingIcon={<Icon name="person" />}
+                className="pt-2.5"
+              />
+
+              <TextField
+                variant="outlined"
+                label="Thư điện tử"
+                readOnly
+                fullWidth
+                value={user.email || ''}
+                supportingText="Địa chỉ thư điện tử định danh"
+                leadingIcon={<Icon name="mail" />}
+                className="pt-2.5"
+              />
+
+              <TextField
+                variant="outlined"
+                label="Họ và tên"
+                placeholder="Ví dụ: Vũ Đình Phong"
+                fullWidth
+                maxLength={120}
+                value={form.fullName}
+                onChange={(value: string) => setForm((prev) => ({ ...prev, fullName: value }))}
+                leadingIcon={<Icon name="badge" />}
+                className="pt-2.5"
+              />
+
+              <TextField
+                variant="outlined"
+                type="tel"
+                label="Số điện thoại"
+                placeholder="Ví dụ: 0909xxxxxx"
+                fullWidth
+                maxLength={25}
+                value={form.phoneNumber}
+                onChange={(value: string) => setForm((prev) => ({ ...prev, phoneNumber: value }))}
+                leadingIcon={<Icon name="call" />}
+                className="pt-2.5"
+              />
+
+              <TextField
+                variant="outlined"
+                label="Ảnh đại diện (URL)"
+                placeholder="https://..."
+                fullWidth
+                maxLength={500}
+                value={form.avatar}
+                onChange={(value: string) => {
+                  setForm((prev) => ({ ...prev, avatar: value }));
+                  if (onAvatarPreview) onAvatarPreview(value || '');
+                }}
+                leadingIcon={<Icon name="image" />}
+                className="pt-2.5"
+              />
+            </DialogBody>
+
+            {/* Footer */}
+            <DialogFooter className="mt-0 flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-m3-outline-variant/30 px-6 py-4 sm:flex-row sm:space-x-0">
+              {confirmLogout ? (
+                <div className="inline-flex items-center gap-2 rounded-full bg-m3-error-container/40 px-3 py-1.5 text-xs font-semibold text-m3-error animate-in fade-in zoom-in duration-150">
+                  <span>Xác nhận đăng xuất?</span>
+                  <Button
+                    type="button"
+                    size="xs"
+                    colorStyle="filled"
+                    onClick={handleLogout}
+                    className="bg-m3-error text-m3-on-error hover:bg-m3-error/90 shadow-xs"
+                  >
+                    Đồng ý
+                  </Button>
+                  <Button
+                    type="button"
+                    size="xs"
+                    colorStyle="tonal"
+                    onClick={() => setConfirmLogout(false)}
+                  >
+                    Hủy
+                  </Button>
+                </div>
+              ) : (
+                <Button
                   type="button"
-                  onClick={() => setConfirmLogout(false)}
-                  className="rounded-full border border-m3-outline-variant bg-m3-surface-container px-2.5 py-1 text-xs font-medium text-m3-on-surface transition-colors hover:bg-m3-surface-container-highest cursor-pointer"
+                  colorStyle="text"
+                  size="sm"
+                  onClick={() => setConfirmLogout(true)}
+                  icon={<Icon name="logout" className="text-base" />}
+                  className="text-m3-error hover:bg-m3-error/8 active:bg-m3-error/12"
+                >
+                  Đăng xuất
+                </Button>
+              )}
+
+              <div className="flex items-center gap-2.5">
+                <Button
+                  type="button"
+                  colorStyle="tonal"
+                  size="sm"
+                  onClick={onClose}
+                  disabled={saving}
                 >
                   Hủy
-                </button>
+                </Button>
+                <Button
+                  type="submit"
+                  colorStyle="filled"
+                  size="sm"
+                  loading={saving}
+                  loadingVariant="circular"
+                  disabled={saving}
+                >
+                  Lưu thay đổi
+                </Button>
               </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setConfirmLogout(true)}
-                className="inline-flex items-center gap-2 rounded-full border border-m3-error/40 bg-m3-error-container/20 px-4 py-2.5 text-sm font-semibold text-m3-error transition-colors hover:bg-m3-error-container/40 cursor-pointer"
-              >
-                <Icon name="logout" className="text-base" />
-                Đăng xuất
-              </button>
-            )}
-
-            <div className="flex items-center gap-2.5">
-              <button
-                type="button"
-                onClick={onClose}
-                className="rounded-full border border-m3-outline-variant px-5 py-2.5 text-sm font-semibold text-m3-on-surface transition-colors hover:bg-m3-surface-container-highest cursor-pointer"
-                disabled={saving}
-              >
-                Hủy
-              </button>
-              <button
-                type="submit"
-                className="inline-flex items-center gap-2 rounded-full bg-m3-primary px-5 py-2.5 text-sm font-semibold text-m3-on-primary transition-opacity hover:opacity-90 disabled:opacity-50 cursor-pointer"
-                disabled={saving}
-              >
-                {saving ? <ProgressIndicator variant="circular" shape="wavy" size={16} aria-label="Đang lưu" /> : null}
-                Lưu thay đổi
-              </button>
-            </div>
-          </div>
-        </form>
-      </div>
-    </div>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </DialogPortal>
+    </Dialog>
   );
 };
 

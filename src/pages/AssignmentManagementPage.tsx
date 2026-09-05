@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Button, Icon, ProgressIndicator } from '@bug-on/m3-expressive';
 import { useAuth } from '../context/AuthContext';
+import { usePageHeader } from '../context/PageActionsContext';
 import { assignmentService } from '../services/assignment.service';
 import { classService } from '../services/class.service';
 import { examPublicationService } from '../services/exam-publication.service';
@@ -797,13 +798,28 @@ const AssignmentManagementPage = ({ section = 'all' }: AssignmentManagementPageP
     }
   };
 
+  usePageHeader({
+    title: 'Quản lý bài tập',
+    subtitle: 'Tạo, chỉnh sửa, lưu trữ hoặc xóa bài tập cho từng lớp theo chuẩn MOS',
+    actions: [
+      {
+        id: 'reload-assignments',
+        label: isAnyLoading ? 'Đang tải...' : 'Tải lại',
+        icon: 'refresh',
+        colorStyle: 'outlined',
+        onClick: handleReloadData,
+        disabled: isAnyLoading,
+      },
+    ],
+  }, [handleReloadData, isAnyLoading]);
+
   return (
     <div className="space-y-5">
       {showFiltersPanel && (
         <details
           open={section === 'filters' || isClassPanelOpen}
           onToggle={(event) => setIsClassPanelOpen(event.currentTarget.open)}
-          className="group rounded-3xl border border-m3-outline-variant/60 bg-m3-surface-container shadow-xs"
+          className="group rounded-3xl bg-m3-surface-container shadow-xs"
         >
           <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-4">
             <div>
@@ -816,43 +832,13 @@ const AssignmentManagementPage = ({ section = 'all' }: AssignmentManagementPageP
           </summary>
 
           <div className="border-t border-m3-outline-variant/40 px-6 pb-6 pt-5">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-              <div>
-                <div className="inline-flex items-center gap-2 rounded-full bg-m3-primary/10 px-3 py-1 text-xs font-semibold text-m3-primary">
-                  <Icon name="assignment" className="text-base" />
-                  Quản lý bài tập
-                </div>
-                <h1 className="mt-3 text-2xl font-black text-m3-on-surface">Bài tập theo lớp</h1>
-                <p className="mt-2 max-w-3xl text-xs leading-relaxed text-m3-on-surface-variant">
-                  Tạo, chỉnh sửa, lưu trữ hoặc xóa bài tập cho từng lớp. Hệ thống tự động chuẩn hóa endpoint chấm điểm theo tiêu chuẩn bài thi MOS.
-                </p>
-              </div>
-
-              <Button
-                colorStyle="outlined"
-                size="sm"
-                type="button"
-                onClick={handleReloadData}
-                disabled={isAnyLoading}
-              >
-                <div className="flex items-center gap-1.5">
-                  {isAnyLoading ? (
-                    <ProgressIndicator variant="circular" shape="wavy" size={16} aria-label="Đang tải" />
-                  ) : (
-                    <Icon name="refresh" className="text-base" />
-                  )}
-                  <span>Tải lại</span>
-                </div>
-              </Button>
-            </div>
-
-            <div className="mt-6 grid gap-4 md:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-3">
               <label className="block">
                 <span className="text-xs font-bold text-m3-on-surface-variant">Lớp học</span>
                 <select
                   value={selectedClassId}
                   onChange={(event) => setSelectedClassId(event.target.value)}
-                  className="mt-1.5 w-full rounded-2xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2.5 text-sm text-m3-on-surface outline-none transition focus:border-m3-primary focus:ring-2 focus:ring-m3-primary/20"
+                  className="mt-1.5 w-full rounded-2xl bg-m3-surface-container-high px-3.5 py-2.5 text-sm text-m3-on-surface outline-none transition focus:ring-2 focus:ring-m3-primary/30"
                   disabled={isLoadingClasses}
                 >
                   {classes.length === 0 ? (
@@ -873,7 +859,7 @@ const AssignmentManagementPage = ({ section = 'all' }: AssignmentManagementPageP
                   value={searchKeyword}
                   onChange={(event) => setSearchKeyword(event.target.value)}
                   placeholder="Tìm theo tên, mô tả, project hoặc endpoint..."
-                  className="mt-1.5 w-full rounded-2xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2.5 text-sm text-m3-on-surface outline-none transition focus:border-m3-primary focus:ring-2 focus:ring-m3-primary/20"
+                  className="mt-1.5 w-full rounded-2xl bg-m3-surface-container-high px-3.5 py-2.5 text-sm text-m3-on-surface outline-none transition focus:ring-2 focus:ring-m3-primary/30"
                 />
               </label>
             </div>
@@ -888,7 +874,7 @@ const AssignmentManagementPage = ({ section = 'all' }: AssignmentManagementPageP
                 Đang hoạt động: <strong className="text-emerald-600 dark:text-emerald-400">{activeCount}</strong>/
                 {assignments.length}
               </span>
-              <label className="ml-auto inline-flex items-center gap-2 rounded-full border border-m3-outline-variant/40 bg-m3-surface px-3 py-1.5 text-xs text-m3-on-surface">
+              <label className="ml-auto inline-flex items-center gap-2 rounded-full bg-m3-surface-container-high px-3 py-1.5 text-xs text-m3-on-surface shadow-xs">
                 <input
                   type="checkbox"
                   checked={includeInactive}
@@ -920,7 +906,7 @@ const AssignmentManagementPage = ({ section = 'all' }: AssignmentManagementPageP
         <details
           open={section === 'exam' || isExamPanelOpen}
           onToggle={(event) => setIsExamPanelOpen(event.currentTarget.open)}
-          className="group rounded-3xl border border-m3-outline-variant/60 bg-m3-surface-container shadow-xs"
+          className="group rounded-3xl bg-m3-surface-container shadow-xs"
         >
           <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-4">
             <div>
@@ -949,13 +935,13 @@ const AssignmentManagementPage = ({ section = 'all' }: AssignmentManagementPageP
                   Chọn học sinh và bài tập đã publish để tạo token cho Local Agent / trang thi.
                 </p>
               </div>
-              <div className="rounded-2xl border border-m3-outline-variant/40 bg-m3-surface px-4 py-2 text-xs text-m3-on-surface-variant">
+              <div className="rounded-2xl bg-m3-surface-container-high px-4 py-2 text-xs text-m3-on-surface-variant shadow-xs">
                 Đã chọn <strong className="text-m3-on-surface font-bold">{selectedStudentIds.length}</strong> học sinh •{' '}
                 <strong className="text-m3-on-surface font-bold">{selectedExamAssignments.length}</strong> bài tập
               </div>
             </div>
 
-            <section className="mt-5 rounded-3xl border border-m3-outline-variant/40 bg-m3-surface p-4">
+            <section className="mt-5 rounded-3xl bg-m3-surface-container-low p-4 shadow-xs">
               <div className="grid gap-4 lg:grid-cols-[1fr_280px] lg:items-end">
                 <div>
                   <div className="inline-flex items-center gap-2 rounded-full bg-m3-surface-container px-3 py-1 text-xs font-semibold text-m3-primary">
@@ -1150,7 +1136,7 @@ const AssignmentManagementPage = ({ section = 'all' }: AssignmentManagementPageP
           <details
             open={section === 'list' || isAssignmentListPanelOpen}
             onToggle={(event) => setIsAssignmentListPanelOpen(event.currentTarget.open)}
-            className="group rounded-3xl border border-m3-outline-variant/60 bg-m3-surface-container shadow-xs"
+            className="group rounded-3xl bg-m3-surface-container shadow-xs"
           >
             <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-4">
               <div>
@@ -1160,7 +1146,7 @@ const AssignmentManagementPage = ({ section = 'all' }: AssignmentManagementPageP
                 </p>
               </div>
               <div className="flex items-center gap-3">
-                <span className="hidden rounded-full bg-m3-surface px-3 py-1 text-xs font-semibold text-m3-on-surface border border-m3-outline-variant/50 sm:inline">
+                <span className="hidden rounded-full bg-m3-surface-container-high px-3 py-1 text-xs font-semibold text-m3-on-surface shadow-xs sm:inline">
                   {filteredAssignments.length} bài tập
                 </span>
                 <Icon name="expand_more" className="text-xl text-m3-on-surface-variant transition-transform duration-200 group-open:rotate-180" />
@@ -1177,7 +1163,7 @@ const AssignmentManagementPage = ({ section = 'all' }: AssignmentManagementPageP
                 </div>
               </div>
 
-              <section className="mx-6 mt-4 rounded-3xl border border-m3-outline-variant/40 bg-m3-surface p-4">
+              <section className="mx-6 mt-4 rounded-3xl bg-m3-surface-container-low p-4 shadow-xs">
                 <div className="grid gap-4 lg:grid-cols-[1fr_280px] lg:items-end">
                   <div>
                     <div className="inline-flex items-center gap-1.5 rounded-full bg-m3-surface-container px-3 py-1 text-xs font-semibold text-m3-primary">
@@ -1339,7 +1325,7 @@ const AssignmentManagementPage = ({ section = 'all' }: AssignmentManagementPageP
           <details
             open={section === 'form' || isAssignmentFormPanelOpen}
             onToggle={(event) => setIsAssignmentFormPanelOpen(event.currentTarget.open)}
-            className="group rounded-3xl border border-m3-outline-variant/60 bg-m3-surface-container shadow-xs"
+            className="group rounded-3xl bg-m3-surface-container shadow-xs"
           >
             <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-4">
               <div>
@@ -1378,7 +1364,7 @@ const AssignmentManagementPage = ({ section = 'all' }: AssignmentManagementPageP
                 )}
               </div>
 
-              <section className="mt-4 rounded-3xl border border-m3-outline-variant/40 bg-m3-surface p-4">
+              <section className="mt-4 rounded-3xl bg-m3-surface-container-low p-4 shadow-xs">
                 <div className="grid gap-4 lg:grid-cols-[1fr_280px] lg:items-end">
                   <div>
                     <div className="inline-flex items-center gap-1.5 rounded-full bg-m3-surface-container px-3 py-1 text-xs font-semibold text-m3-primary">

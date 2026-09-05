@@ -998,11 +998,11 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
     + (isTotalScoreColumnVisible ? 1 : 0)
     + (isOtthPercentageColumnVisible ? 1 : 0);
   const containerClassName = isPageMode
-    ? 'flex w-full flex-col overflow-hidden rounded-4xl border border-m3-outline-variant/60 bg-m3-surface-container shadow-sm'
-    : 'flex h-[96vh] w-[calc(100vw-0.5rem)] max-w-[1920px] flex-col overflow-hidden rounded-4xl border border-m3-outline-variant/60 bg-m3-surface-container shadow-2xl sm:h-[94vh] sm:w-[calc(100vw-1.5rem)]';
+    ? 'flex w-full flex-col overflow-hidden rounded-4xl bg-m3-surface-container shadow-sm'
+    : 'flex h-[96vh] w-[calc(100vw-0.5rem)] max-w-[1920px] flex-col overflow-hidden rounded-4xl bg-m3-surface-container shadow-2xl sm:h-[94vh] sm:w-[calc(100vw-1.5rem)]';
   const content = (
       <div className={containerClassName}>
-        <div className="flex items-center justify-between border-b border-m3-outline-variant bg-linear-to-r from-m3-surface-container-high to-m3-surface-container px-4 py-4 sm:px-6 sm:py-5">
+        <div className="flex items-center justify-between bg-linear-to-r from-m3-surface-container-high to-m3-surface-container px-4 py-4 sm:px-6 sm:py-5">
           <div className="flex items-center gap-3">
             <div className="grid h-10 w-10 place-items-center rounded-2xl bg-m3-primary font-bold text-m3-on-primary">
               BD
@@ -1514,7 +1514,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
           </div>
         </div>
 
-        <div className="flex flex-col items-center justify-end gap-2.5 border-t border-m3-outline-variant bg-m3-surface-container-high p-3 sm:flex-row sm:p-4">
+        <div className="flex flex-col items-center justify-end gap-2.5 bg-m3-surface-container-high p-3 sm:flex-row sm:p-4">
           <button
             onClick={handleExportExcel}
             className="flex w-full items-center justify-center gap-2 rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-xs transition-opacity hover:opacity-95 sm:w-auto"
@@ -1529,7 +1529,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
           </button>
           <button
             onClick={onClose}
-            className="w-full rounded-full border border-m3-outline-variant bg-m3-surface-container px-5 py-2.5 text-sm font-semibold text-m3-on-surface transition-colors hover:bg-m3-surface-container-highest sm:w-auto"
+            className="w-full rounded-full bg-m3-surface-container-highest px-5 py-2.5 text-sm font-semibold text-m3-on-surface shadow-xs transition-colors hover:bg-m3-surface-container sm:w-auto"
           >
             {isPageMode ? 'Quay lại' : 'Đóng'}
           </button>

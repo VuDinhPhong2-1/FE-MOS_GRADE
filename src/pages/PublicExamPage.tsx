@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { Play, RefreshCw } from 'lucide-react';
+import { Icon, ProgressIndicator } from '@bug-on/m3-expressive';
 import { localAgentService } from '../services/local-agent.service';
 import { publicExamService } from '../services/public-exam.service';
 import type { LocalAgentState } from '../types/local-agent.types';
@@ -111,19 +111,19 @@ export function PublicExamPage() {
   const agentStateMatchesToken = Boolean(agentState?.sessionId && agentState.publicationToken === token);
   const agentStateMatchesSelectedStudent = Boolean(
     agentStateMatchesToken &&
-      selectedStudent &&
-      agentState?.studentId &&
-      agentState.studentId === selectedStudent.id
+    selectedStudent &&
+    agentState?.studentId &&
+    agentState.studentId === selectedStudent.id
   );
   const canResumeCurrentStudent = Boolean(
     agentStateMatchesSelectedStudent &&
-      agentState?.hasRecoverableSession &&
-      !agentState?.isCompleted
+    agentState?.hasRecoverableSession &&
+    !agentState?.isCompleted
   );
   const canContinueCurrentStudent = Boolean(
     canResumeCurrentStudent &&
-      agentState?.workingFileExists &&
-      agentState.resumeMode !== 'missing_working_file'
+    agentState?.workingFileExists &&
+    agentState.resumeMode !== 'missing_working_file'
   );
   const needsRecreateCurrentStudent = Boolean(
     canResumeCurrentStudent && !agentState?.workingFileExists
@@ -221,8 +221,8 @@ export function PublicExamPage() {
           </p>
         </div>
 
-        <section className="app-card overflow-hidden">
-          <div className="bg-gradient-to-r from-sky-600 via-cyan-600 to-emerald-500 px-6 py-5 text-white">
+        <section className="overflow-hidden rounded-3xl bg-m3-surface-container shadow-xs text-m3-on-surface">
+          <div className="bg-linear-to-r from-sky-600 via-cyan-600 to-emerald-500 px-6 py-5 text-white">
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/80">Public Exam</p>
             <h2 className="mt-2 text-2xl font-bold">{publication?.name || 'Dang tai ca thi...'}</h2>
           </div>
@@ -230,7 +230,7 @@ export function PublicExamPage() {
           <div className="space-y-5 px-6 py-6">
             {loading && (
               <div className="flex items-center gap-3 rounded-xl border border-sky-100 bg-sky-50 px-4 py-3 text-sm text-sky-800">
-                <RefreshCw size={16} className="animate-spin" />
+                <ProgressIndicator variant="circular" shape="wavy" showTrack size={16} aria-label="Đang tải thông tin ca thi..." />
                 Dang tai thong tin ca thi...
               </div>
             )}
@@ -244,17 +244,17 @@ export function PublicExamPage() {
             {publication && !loading && (
               <>
                 <div className="grid gap-3 md:grid-cols-3">
-                  <div className="app-card-soft px-4 py-3">
-                    <p className="text-xs uppercase tracking-wide text-slate-500">So hoc sinh</p>
-                    <p className="mt-1 text-xl font-bold text-slate-900">{publication.students.length}</p>
+                  <div className="rounded-2xl bg-m3-surface-container-low px-4 py-3 text-m3-on-surface">
+                    <p className="text-xs uppercase tracking-wide text-m3-on-surface-variant">So hoc sinh</p>
+                    <p className="mt-1 text-xl font-bold text-m3-on-surface">{publication.students.length}</p>
                   </div>
-                  <div className="app-card-soft px-4 py-3">
-                    <p className="text-xs uppercase tracking-wide text-slate-500">So project</p>
-                    <p className="mt-1 text-xl font-bold text-slate-900">{publication.projectCount}</p>
+                  <div className="rounded-2xl bg-m3-surface-container-low px-4 py-3 text-m3-on-surface">
+                    <p className="text-xs uppercase tracking-wide text-m3-on-surface-variant">So project</p>
+                    <p className="mt-1 text-xl font-bold text-m3-on-surface">{publication.projectCount}</p>
                   </div>
-                  <div className="app-card-soft px-4 py-3">
-                    <p className="text-xs uppercase tracking-wide text-slate-500">Thoi luong</p>
-                    <p className="mt-1 text-xl font-bold text-slate-900">
+                  <div className="rounded-2xl bg-m3-surface-container-low px-4 py-3 text-m3-on-surface">
+                    <p className="text-xs uppercase tracking-wide text-m3-on-surface-variant">Thoi luong</p>
+                    <p className="mt-1 text-xl font-bold text-m3-on-surface">
                       {publication.durationMinutes ? `${publication.durationMinutes} phut` : 'Khong gioi han'}
                     </p>
                   </div>
@@ -305,7 +305,11 @@ export function PublicExamPage() {
                     disabled={!selectedStudent || loadingAction !== null}
                     className="inline-flex items-center justify-center gap-2 rounded-xl bg-sky-600 px-5 py-3 text-sm font-semibold text-white hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-slate-400"
                   >
-                    {loadingAction === 'start' ? <RefreshCw size={16} className="animate-spin" /> : <Play size={16} />}
+                    {loadingAction === 'start' ? (
+                      <ProgressIndicator variant="circular" shape="wavy" showTrack size={16} aria-label="Đang bắt đầu..." />
+                    ) : (
+                      <Icon name="play_arrow" variant="rounded" size={16} />
+                    )}
                     {loadingAction === 'start' ? 'Dang start exam...' : 'Start exam'}
                   </button>
 
@@ -316,7 +320,11 @@ export function PublicExamPage() {
                       disabled={!selectedStudent || loadingAction !== null}
                       className="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 px-5 py-3 text-sm font-semibold text-emerald-800 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      <RefreshCw size={16} className={loadingAction === 'load-saved-state' ? 'animate-spin' : ''} />
+                      {loadingAction === 'load-saved-state' ? (
+                        <ProgressIndicator variant="circular" shape="wavy" showTrack size={16} aria-label="Đang tải..." />
+                      ) : (
+                        <Icon name="refresh" variant="rounded" size={16} />
+                      )}
                       {loadingAction === 'load-saved-state'
                         ? 'Dang tai bai cu...'
                         : 'Dung lai bai cu tren may nay'}
@@ -330,7 +338,11 @@ export function PublicExamPage() {
                       disabled={loadingAction !== null}
                       className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-400"
                     >
-                      {loadingAction === 'continue' ? <RefreshCw size={16} className="animate-spin" /> : <Play size={16} />}
+                      {loadingAction === 'continue' ? (
+                        <ProgressIndicator variant="circular" shape="wavy" showTrack size={16} aria-label="Đang tiếp tục..." />
+                      ) : (
+                        <Icon name="play_arrow" variant="rounded" size={16} />
+                      )}
                       {loadingAction === 'continue' ? 'Dang tiep tuc...' : 'Tiep tuc bai thi'}
                     </button>
                   )}
@@ -342,7 +354,11 @@ export function PublicExamPage() {
                       disabled={loadingAction !== null}
                       className="inline-flex items-center justify-center gap-2 rounded-xl border border-amber-300 bg-amber-50 px-5 py-3 text-sm font-semibold text-amber-800 hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      <RefreshCw size={16} className={loadingAction === 'restart' || loadingAction === 'recreate' ? 'animate-spin' : ''} />
+                      {loadingAction === 'restart' || loadingAction === 'recreate' ? (
+                        <ProgressIndicator variant="circular" shape="wavy" showTrack size={16} aria-label="Đang xử lý..." />
+                      ) : (
+                        <Icon name="refresh" variant="rounded" size={16} />
+                      )}
                       {needsRecreateCurrentStudent
                         ? (loadingAction === 'recreate' ? 'Dang tao lai file...' : 'Tao lai file project hien tai')
                         : (loadingAction === 'restart' ? 'Dang lam lai project...' : 'Lam lai project hien tai')}
@@ -355,7 +371,11 @@ export function PublicExamPage() {
                     disabled={loadingAction !== null}
                     className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    <RefreshCw size={16} className={loadingAction === 'refresh' ? 'animate-spin' : ''} />
+                    {loadingAction === 'refresh' ? (
+                      <ProgressIndicator variant="circular" shape="wavy" showTrack size={16} aria-label="Đang làm mới..." />
+                    ) : (
+                      <Icon name="refresh" variant="rounded" size={16} />
+                    )}
                     Refresh
                   </button>
                 </div>

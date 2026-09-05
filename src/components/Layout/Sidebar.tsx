@@ -4,6 +4,7 @@ import {
   NavigationRail,
   NavigationRailItem,
   ShapeMedia,
+  Text,
 } from '@bug-on/m3-expressive';
 import ThemeToggle from '../ThemeToggle';
 
@@ -18,9 +19,10 @@ export interface SidebarNavItem {
 interface SidebarProps {
   navItems: SidebarNavItem[];
   onNavigate?: () => void;
+  onOpenSettings?: () => void;
 }
 
-export const Sidebar = ({ navItems, onNavigate }: SidebarProps) => {
+export const Sidebar = ({ navItems, onNavigate, onOpenSettings }: SidebarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -38,7 +40,7 @@ export const Sidebar = ({ navItems, onNavigate }: SidebarProps) => {
   };
 
   return (
-    <aside className="relative hidden h-full flex-col border-r border-m3-outline-variant bg-m3-surface text-m3-on-surface lg:flex">
+    <aside className="relative hidden h-full flex-col bg-m3-surface-container-low text-m3-on-surface lg:flex">
       <NavigationRail
         variant="collapsed"
         header={
@@ -48,24 +50,35 @@ export const Sidebar = ({ navItems, onNavigate }: SidebarProps) => {
             morphOn="hover"
             morphOptions={{
               duration: 0.4,
-              easing: [0.34, 1.56, 0.64, 1]
+              easing: [0.34, 1.56, 0.64, 1],
             }}
-            className="flex size-10 items-center justify-center bg-m3-primary text-m3-on-primary"
+            className="flex size-14 items-center justify-center bg-m3-primary"
           >
-            <span className="text-lg font-extrabold">M</span>
+            <Text variant="title-lg" className="font-extrabold text-m3-on-primary">
+              M
+            </Text>
           </ShapeMedia>
         }
         footer={
-          <div className="flex w-full flex-col items-center justify-center border-t border-m3-outline-variant/60 pt-3 pb-2">
+          <div className="flex w-full flex-col items-center justify-center gap-2 pt-3 pb-2">
+            <button
+              type="button"
+              onClick={onOpenSettings}
+              className="flex h-10 w-10 items-center justify-center rounded-full text-m3-on-surface-variant transition-colors hover:bg-m3-surface-container-high hover:text-m3-on-surface"
+              aria-label="Cài đặt tài khoản"
+              title="Cài đặt tài khoản"
+            >
+              <Icon name="settings" className="text-xl" />
+            </button>
             <ThemeToggle className="h-10 w-10" />
           </div>
         }
-        className="h-full bg-m3-surface"
+        className="h-full bg-m3-surface-container-low"
       >
         {navItems.map((item) => (
           <NavigationRailItem
             key={item.id}
-            icon={<Icon name={item.icon} />}
+            icon={<Icon name={item.icon} variant="rounded" animateFill />}
             label={item.label}
             selected={isPathActive(item.path)}
             onClick={() => {

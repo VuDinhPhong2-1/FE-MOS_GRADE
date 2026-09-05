@@ -1,11 +1,12 @@
 // src/pages/SchoolList.tsx
-import { useState, useEffect, useCallback, type FormEvent, type ChangeEvent } from 'react';
+import { useState, useEffect, useCallback, type FormEvent } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Button, Icon, ProgressIndicator } from '@bug-on/m3-expressive';
+import { Button, Icon, ProgressIndicator, TextField } from '@bug-on/m3-expressive';
 import ClassList from './Classlist';
 import { schoolService } from '../services/school.service';
 import type { School, CreateSchoolRequest } from '../types';
 import { useAuth } from '../context/AuthContext';
+import { usePageHeader } from '../context/PageActionsContext';
 
 const SchoolList = () => {
   const { getAccessToken, user } = useAuth();
@@ -77,8 +78,8 @@ const SchoolList = () => {
     setSelectedSchool(null);
   };
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleFieldValueChange = (field: keyof CreateSchoolRequest) => (value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleOpenAddModal = () => {
@@ -165,6 +166,39 @@ const SchoolList = () => {
     }
   };
 
+  usePageHeader({
+    title: selectedSchool ? selectedSchool.name : 'Quản lý trường học',
+    subtitle: selectedSchool
+      ? 'Danh sách lớp học trực thuộc'
+      : 'Danh sách các trường và cơ sở đào tạo trong hệ thống MOS Grader',
+    actions: selectedSchool
+      ? [
+          {
+            id: 'back-to-schools',
+            label: 'Quay lại danh sách',
+            icon: 'arrow_back',
+            colorStyle: 'outlined',
+            onClick: handleBackToSchools,
+          },
+        ]
+      : [
+          {
+            id: 'refresh-schools',
+            label: 'Làm mới',
+            icon: 'refresh',
+            colorStyle: 'outlined',
+            onClick: fetchSchools,
+          },
+          {
+            id: 'add-school',
+            label: 'Thêm trường',
+            icon: 'add',
+            colorStyle: 'filled',
+            onClick: handleOpenAddModal,
+          },
+        ],
+  }, [selectedSchool, fetchSchools]);
+
   if (isLoading) {
     return (
       <div className="flex h-64 flex-col items-center justify-center gap-3">
@@ -178,43 +212,7 @@ const SchoolList = () => {
     <div>
       {!selectedSchool ? (
         <>
-          {/* Header Bar */}
-          <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h1 className="flex items-center gap-2.5 text-2xl font-black tracking-tight text-m3-on-surface sm:text-3xl">
-                <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-m3-primary/10 text-m3-primary">
-                  <Icon name="apartment" className="text-2xl" />
-                </span>
-                Quản lý trường học
-              </h1>
-              <p className="mt-1 text-xs text-m3-on-surface-variant">
-                Danh sách các trường và cơ sở đào tạo trong hệ thống MOS Grader
-              </p>
-            </div>
 
-            <div className="flex flex-wrap items-center gap-2.5">
-              <Button
-                colorStyle="outlined"
-                size="md"
-                onClick={fetchSchools}
-              >
-                <div className="flex items-center gap-2">
-                  <Icon name="refresh" className="text-lg" />
-                  <span>Làm mới</span>
-                </div>
-              </Button>
-              <Button
-                colorStyle="filled"
-                size="md"
-                onClick={handleOpenAddModal}
-              >
-                <div className="flex items-center gap-2">
-                  <Icon name="add" className="text-lg" />
-                  <span>Thêm trường</span>
-                </div>
-              </Button>
-            </div>
-          </div>
 
           {error && (
             <div className="mb-6 flex items-center gap-3 rounded-2xl border border-m3-error bg-m3-error-container p-4 text-xs font-medium text-m3-on-error-container">
@@ -224,7 +222,7 @@ const SchoolList = () => {
           )}
 
           {/* Table Container in M3 Style */}
-          <div className="overflow-hidden rounded-3xl border border-m3-outline-variant/60 bg-m3-surface-container shadow-xs">
+          <div className="overflow-hidden rounded-3xl bg-m3-surface-container shadow-xs">
             <div className="overflow-x-auto">
               <table className="min-w-140 w-full border-collapse text-left">
                 <thead>
@@ -279,7 +277,7 @@ const SchoolList = () => {
                           {index + 1}
                         </td>
                         <td className="px-6 py-4">
-                          <span className="inline-flex items-center rounded-full bg-m3-surface px-2.5 py-0.5 text-xs font-bold text-m3-primary border border-m3-outline-variant/50">
+                          <span className="inline-flex items-center rounded-full bg-m3-surface-container-high px-2.5 py-0.5 text-xs font-bold text-m3-primary shadow-xs">
                             {sch.code || '---'}
                           </span>
                         </td>
@@ -342,9 +340,9 @@ const SchoolList = () => {
           {/* Modal Dialog for Add / Edit School in M3 Style */}
           {showModal && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
-              <div className="w-full max-w-xl overflow-hidden rounded-4xl border border-m3-outline-variant/60 bg-m3-surface-container p-6 shadow-2xl animate-in fade-in zoom-in-95 max-h-[90vh] flex flex-col">
+              <div className="w-full max-w-xl overflow-hidden rounded-4xl bg-m3-surface-container-high p-6 shadow-2xl animate-in fade-in zoom-in-95 max-h-[90vh] flex flex-col text-m3-on-surface">
                 {/* Modal Header */}
-                <div className="flex items-center justify-between border-b border-m3-outline-variant/50 pb-4">
+                <div className="flex items-center justify-between pb-4">
                   <div className="flex items-center gap-2.5">
                     <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-m3-primary/10 text-m3-primary">
                       <Icon name={editingSchool ? 'edit_square' : 'domain_add'} className="text-xl" />
@@ -361,7 +359,7 @@ const SchoolList = () => {
                   <button
                     type="button"
                     onClick={() => setShowModal(false)}
-                    className="flex h-9 w-9 items-center justify-center rounded-full text-m3-on-surface-variant hover:bg-m3-surface"
+                    className="flex h-9 w-9 items-center justify-center rounded-full text-m3-on-surface-variant hover:bg-m3-surface-container-highest"
                     aria-label="Đóng"
                   >
                     <Icon name="close" className="text-xl" />
@@ -369,139 +367,111 @@ const SchoolList = () => {
                 </div>
 
                 {/* Modal Body */}
-                <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto pt-4 space-y-4 pr-1">
+                <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto pt-2 space-y-4 pr-1">
                   {error && (
-                    <div className="rounded-2xl border border-m3-error bg-m3-error-container p-3 text-xs font-medium text-m3-on-error-container">
+                    <div className="rounded-2xl bg-m3-error-container p-3 text-xs font-medium text-m3-on-error-container shadow-xs">
                       {error}
                     </div>
                   )}
 
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div>
-                      <label className="mb-1.5 block text-xs font-bold text-m3-on-surface-variant">
-                        Tên trường <span className="text-m3-error">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        name="name"
-                        value={formData.name}
-                        onChange={handleChange}
-                        required
-                        className="w-full rounded-2xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2.5 text-sm text-m3-on-surface outline-none focus:border-m3-primary focus:ring-2 focus:ring-m3-primary/20"
-                        placeholder="VD: Trường THPT Chu Văn An"
-                      />
-                    </div>
+                    <TextField
+                      variant="outlined"
+                      label="Tên trường *"
+                      placeholder="VD: Trường THPT Chu Văn An"
+                      required
+                      fullWidth
+                      leadingIcon={<Icon name="apartment" />}
+                      value={formData.name}
+                      onChange={handleFieldValueChange('name')}
+                    />
 
-                    <div>
-                      <label className="mb-1.5 block text-xs font-bold text-m3-on-surface-variant">
-                        Mã trường <span className="text-m3-error">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        name="code"
-                        value={formData.code}
-                        onChange={handleChange}
-                        required
-                        className="w-full rounded-2xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2.5 text-sm text-m3-on-surface outline-none focus:border-m3-primary focus:ring-2 focus:ring-m3-primary/20"
-                        placeholder="VD: CVA-HN"
-                      />
-                    </div>
+                    <TextField
+                      variant="outlined"
+                      label="Mã trường *"
+                      placeholder="VD: CVA-HN"
+                      required
+                      fullWidth
+                      leadingIcon={<Icon name="tag" />}
+                      value={formData.code}
+                      onChange={handleFieldValueChange('code')}
+                    />
                   </div>
 
                   <div>
-                    <label className="mb-1.5 block text-xs font-bold text-m3-on-surface-variant">
-                      Spreadsheet ID Google Sheet (Điểm danh / Kết quả)
-                    </label>
-                    <input
-                      type="text"
-                      name="attendanceSpreadsheetId"
-                      value={formData.attendanceSpreadsheetId || ''}
-                      onChange={handleChange}
-                      disabled={!canEditAttendanceSpreadsheetId}
-                      className={`w-full rounded-2xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2.5 text-sm text-m3-on-surface outline-none focus:border-m3-primary focus:ring-2 focus:ring-m3-primary/20 ${canEditAttendanceSpreadsheetId ? '' : 'cursor-not-allowed opacity-60 bg-m3-surface-container-high'
-                        }`}
+                    <TextField
+                      variant="outlined"
+                      label="Spreadsheet ID Google Sheet (Điểm danh / Kết quả)"
                       placeholder="Dán Spreadsheet ID hoặc link Google Sheet"
+                      disabled={!canEditAttendanceSpreadsheetId}
+                      fullWidth
+                      leadingIcon={<Icon name="table_chart" />}
+                      value={formData.attendanceSpreadsheetId || ''}
+                      onChange={handleFieldValueChange('attendanceSpreadsheetId')}
+                      supportingText={
+                        canEditAttendanceSpreadsheetId
+                          ? 'Mỗi trường có 1 Google Sheet riêng. Lớp học mới tạo sẽ tự động kế thừa.'
+                          : 'Chỉ tài khoản Admin mới có quyền cập nhật Spreadsheet ID.'
+                      }
                     />
-                    <p className="mt-1 text-xs text-m3-on-surface-variant">
-                      {canEditAttendanceSpreadsheetId
-                        ? 'Mỗi trường có 1 Google Sheet riêng. Lớp học mới tạo sẽ tự động kế thừa.'
-                        : 'Chỉ tài khoản Admin mới có quyền cập nhật Spreadsheet ID.'}
-                    </p>
                   </div>
 
-                  <div>
-                    <label className="mb-1.5 block text-xs font-bold text-m3-on-surface-variant">
-                      Địa chỉ
-                    </label>
-                    <input
-                      type="text"
-                      name="address"
-                      value={formData.address}
-                      onChange={handleChange}
-                      className="w-full rounded-2xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2.5 text-sm text-m3-on-surface outline-none focus:border-m3-primary focus:ring-2 focus:ring-m3-primary/20"
-                      placeholder="VD: Số 10 Thụy Khuê, Tây Hồ, Hà Nội"
-                    />
-                  </div>
+                  <TextField
+                    variant="outlined"
+                    label="Địa chỉ"
+                    placeholder="VD: Số 10 Thụy Khuê, Tây Hồ, Hà Nội"
+                    fullWidth
+                    leadingIcon={<Icon name="location_on" />}
+                    value={formData.address || ''}
+                    onChange={handleFieldValueChange('address')}
+                  />
 
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div>
-                      <label className="mb-1.5 block text-xs font-bold text-m3-on-surface-variant">
-                        Số điện thoại
-                      </label>
-                      <input
-                        type="tel"
-                        name="phoneNumber"
-                        value={formData.phoneNumber}
-                        onChange={handleChange}
-                        className="w-full rounded-2xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2.5 text-sm text-m3-on-surface outline-none focus:border-m3-primary focus:ring-2 focus:ring-m3-primary/20"
-                        placeholder="VD: 024-38234567"
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1.5 block text-xs font-bold text-m3-on-surface-variant">
-                        Email liên hệ
-                      </label>
-                      <input
-                        type="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleChange}
-                        className="w-full rounded-2xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2.5 text-sm text-m3-on-surface outline-none focus:border-m3-primary focus:ring-2 focus:ring-m3-primary/20"
-                        placeholder="VD: lienhe@cva.edu.vn"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="mb-1.5 block text-xs font-bold text-m3-on-surface-variant">
-                      Website
-                    </label>
-                    <input
-                      type="url"
-                      name="website"
-                      value={formData.website}
-                      onChange={handleChange}
-                      className="w-full rounded-2xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2.5 text-sm text-m3-on-surface outline-none focus:border-m3-primary focus:ring-2 focus:ring-m3-primary/20"
-                      placeholder="VD: https://thptchuvanan.edu.vn"
+                    <TextField
+                      variant="outlined"
+                      type="tel"
+                      label="Số điện thoại"
+                      placeholder="VD: 024-38234567"
+                      fullWidth
+                      leadingIcon={<Icon name="call" />}
+                      value={formData.phoneNumber || ''}
+                      onChange={handleFieldValueChange('phoneNumber')}
+                    />
+                    <TextField
+                      variant="outlined"
+                      type="email"
+                      label="Email liên hệ"
+                      placeholder="VD: lienhe@cva.edu.vn"
+                      fullWidth
+                      leadingIcon={<Icon name="mail" />}
+                      value={formData.email || ''}
+                      onChange={handleFieldValueChange('email')}
                     />
                   </div>
 
-                  <div>
-                    <label className="mb-1.5 block text-xs font-bold text-m3-on-surface-variant">
-                      Mô tả ghi chú
-                    </label>
-                    <textarea
-                      name="description"
-                      value={formData.description}
-                      onChange={handleChange}
-                      rows={2}
-                      className="w-full rounded-2xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2.5 text-sm text-m3-on-surface outline-none focus:border-m3-primary focus:ring-2 focus:ring-m3-primary/20 resize-none"
-                      placeholder="Thông tin ghi chú thêm về trường..."
-                    />
-                  </div>
+                  <TextField
+                    variant="outlined"
+                    type="url"
+                    label="Website"
+                    placeholder="VD: https://thptchuvanan.edu.vn"
+                    fullWidth
+                    leadingIcon={<Icon name="language" />}
+                    value={formData.website || ''}
+                    onChange={handleFieldValueChange('website')}
+                  />
+
+                  <TextField
+                    variant="outlined"
+                    label="Mô tả ghi chú"
+                    placeholder="Thông tin ghi chú thêm về trường..."
+                    fullWidth
+                    leadingIcon={<Icon name="notes" />}
+                    value={formData.description || ''}
+                    onChange={handleFieldValueChange('description')}
+                  />
 
                   {/* Modal Footer */}
-                  <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-m3-outline-variant/50">
+                  <div className="flex items-center justify-end gap-2.5 pt-4">
                     <Button
                       colorStyle="text"
                       type="button"
@@ -529,7 +499,7 @@ const SchoolList = () => {
           <button
             type="button"
             onClick={handleBackToSchools}
-            className="inline-flex items-center gap-2 rounded-full border border-m3-outline-variant bg-m3-surface px-4 py-2 text-xs font-bold text-m3-on-surface shadow-xs transition-all hover:bg-m3-surface-container hover:shadow-sm"
+            className="inline-flex items-center gap-2 rounded-full bg-m3-surface-container px-4 py-2 text-xs font-bold text-m3-on-surface shadow-xs transition-all hover:bg-m3-surface-container-high hover:shadow-sm"
           >
             <Icon name="arrow_back" className="text-base" />
             <span>Quay lại danh sách trường</span>

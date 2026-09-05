@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Icon, ProgressIndicator } from '@bug-on/m3-expressive';
 
 import { useAuth } from '../context/AuthContext';
+import { usePageHeader } from '../context/PageActionsContext';
 import { classService } from '../services/class.service';
 import { computerRoomService } from '../services/computer-room.service';
 import { schoolService } from '../services/school.service';
@@ -1332,25 +1333,45 @@ const TeacherSchedule = () => {
     }
   };
 
+  usePageHeader({
+    title: 'Lịch dạy trong tuần',
+    subtitle: 'Quản lý lịch giảng dạy, phòng máy và điểm danh theo tuần',
+    actions: [
+      {
+        id: 'create-schedule',
+        label: 'Thêm lịch',
+        icon: 'add',
+        colorStyle: 'filled',
+        onClick: openCreate,
+      },
+      {
+        id: 'manage-rooms',
+        label: 'Quản lý phòng máy',
+        icon: 'desktop_windows',
+        colorStyle: 'tonal',
+        onClick: openRoomManager,
+      },
+      {
+        id: 'copy-next-week',
+        label: copying ? 'Đang sao chép...' : 'Sao chép tuần sau',
+        icon: 'content_copy',
+        colorStyle: 'tonal',
+        onClick: handleCopyToNextWeek,
+        disabled: copying || loading,
+      },
+    ],
+  }, [openCreate, openRoomManager, handleCopyToNextWeek, copying, loading]);
+
   return (
     <div className="min-h-full space-y-5 bg-slate-50/60 p-1 sm:p-2">
-      <section className="rounded-3xl border border-m3-outline-variant/60 bg-m3-surface-container p-0 shadow-xs overflow-hidden">
-        <div className="flex flex-col gap-4 p-4 sm:p-5 lg:flex-row lg:items-center">
-          <div className="flex min-w-0 items-center gap-3">
-            <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-linear-to-br from-m3-primary to-m3-primary/80 text-m3-on-primary shadow-md">
-              <Icon name="calendar_month" className="text-2xl" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold tracking-tight text-m3-on-surface sm:text-2xl font-md3-expressive">Lịch dạy trong tuần</h2>
-              <p className="mt-1 text-sm text-m3-on-surface-variant">Quản lý lịch giảng dạy, phòng máy và điểm danh theo tuần.</p>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2 lg:ml-auto">
+      <section className="rounded-3xl bg-m3-surface-container p-0 shadow-xs overflow-hidden">
+        {/* Toolbar điều hướng tuần */}
+        <div className="flex flex-wrap items-center justify-between gap-3 p-3 sm:p-4">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={() => shiftWeek(-7)}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-m3-outline-variant bg-m3-surface px-3 py-2 text-sm font-medium text-m3-on-surface transition hover:bg-m3-surface-container-high"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-m3-surface-container-high px-3 py-1.5 text-sm font-medium text-m3-on-surface transition hover:bg-m3-surface-container-highest shadow-xs"
             >
               <Icon name="chevron_left" className="text-base" />
               Tuần trước
@@ -1360,51 +1381,24 @@ const TeacherSchedule = () => {
               type="date"
               value={weekStart}
               onChange={(event) => setWeekStart(toYmd(getWeekStart(new Date(`${event.target.value}T00:00:00`))))}
-              className="rounded-xl border border-m3-outline-variant bg-m3-surface px-3 py-2 text-sm text-m3-on-surface transition focus:border-m3-primary focus:outline-hidden"
+              className="rounded-xl bg-m3-surface-container-high px-3 py-1.5 text-sm text-m3-on-surface transition focus:ring-2 focus:ring-m3-primary/30 outline-none shadow-xs"
             />
 
             <button
               type="button"
               onClick={() => shiftWeek(7)}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-m3-outline-variant bg-m3-surface px-3 py-2 text-sm font-medium text-m3-on-surface transition hover:bg-m3-surface-container-high"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-m3-surface-container-high px-3 py-1.5 text-sm font-medium text-m3-on-surface transition hover:bg-m3-surface-container-highest shadow-xs"
             >
               Tuần sau
               <Icon name="chevron_right" className="text-base" />
             </button>
+          </div>
 
-            <button
-              type="button"
-              onClick={openCreate}
-              className="inline-flex items-center gap-2 rounded-xl bg-m3-primary px-4 py-2 text-sm font-semibold text-m3-on-primary shadow-xs transition hover:bg-m3-primary/90"
-            >
-              <Icon name="add" className="text-base" />
-              Thêm lịch
-            </button>
-
-            <button
-              type="button"
-              onClick={openRoomManager}
-              className="inline-flex items-center gap-2 rounded-xl border border-m3-outline-variant bg-m3-surface px-4 py-2 text-sm font-medium text-m3-on-surface transition hover:bg-m3-surface-container-high"
-            >
-              <Icon name="desktop_windows" className="text-base" />
-              Quản lý phòng máy
-            </button>
-
-            <button
-              type="button"
-              onClick={handleCopyToNextWeek}
-              disabled={copying || loading}
-              className="inline-flex items-center gap-2 rounded-xl border border-m3-outline-variant bg-m3-surface px-4 py-2 text-sm font-medium text-m3-on-surface transition hover:bg-m3-surface-container-high disabled:opacity-50"
-            >
-              <Icon name="content_copy" className="text-base" />
-              {copying ? 'Đang sao chép...' : 'Sao chép tuần sau'}
-            </button>
+          <div className="rounded-xl border border-m3-primary/20 bg-m3-primary/5 px-3 py-1.5 text-xs font-semibold text-m3-primary">
+            Tuần: <strong>{formatDateViFromYmd(weekStart)}</strong> đến <strong>{formatDateViFromYmd(weekEnd)}</strong>
           </div>
         </div>
 
-        <div className="mx-4 mb-4 rounded-2xl border border-m3-primary/20 bg-m3-primary/5 px-4 py-3 text-sm text-m3-primary sm:mx-5 sm:mb-5">
-          Tuần đang xem: <strong>{formatDateViFromYmd(weekStart)}</strong> đến <strong>{formatDateViFromYmd(weekEnd)}</strong>
-        </div>
 
         {selectedScheduleIds.length > 0 && (
           <div className="mx-4 mb-4 flex flex-col gap-3 rounded-2xl border border-m3-primary/30 bg-m3-primary/10 px-4 py-3 text-sm text-m3-on-surface sm:mx-5 sm:mb-5 sm:flex-row sm:items-center sm:justify-between">
@@ -1446,7 +1440,7 @@ const TeacherSchedule = () => {
         )}
       </section>
 
-      <section className="rounded-3xl border border-m3-outline-variant/60 bg-m3-surface-container overflow-hidden shadow-xs">
+      <section className="rounded-3xl bg-m3-surface-container overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead className="sticky top-0 z-10 border-b border-m3-outline-variant/60 bg-m3-surface-container-high text-m3-on-surface-variant backdrop-blur-xs">
@@ -1628,7 +1622,7 @@ const TeacherSchedule = () => {
 
       {attendanceOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 p-0 backdrop-blur-xs sm:grid sm:place-items-center sm:p-4">
-          <div className="flex h-dvh w-full flex-col overflow-hidden rounded-none border border-m3-outline-variant/60 bg-m3-surface-container shadow-2xl sm:h-auto sm:max-h-[94vh] sm:max-w-5xl sm:rounded-4xl">
+          <div className="flex h-dvh w-full flex-col overflow-hidden rounded-none bg-m3-surface-container shadow-2xl sm:h-auto sm:max-h-[94vh] sm:max-w-5xl sm:rounded-4xl">
             <div
               className="shrink-0 border-b border-m3-outline-variant/60 bg-m3-surface-container-high px-4 py-4 sm:px-6 shadow-xs"
               style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }}
@@ -2110,7 +2104,7 @@ const TeacherSchedule = () => {
                 <button
                   type="button"
                   onClick={closeAttendance}
-                  className="app-btn-secondary w-full px-4 py-2 text-sm sm:w-auto"
+                  className="inline-flex items-center justify-center rounded-xl bg-m3-surface-container-high px-4 py-2 text-sm font-semibold text-m3-on-surface shadow-xs transition-colors hover:bg-m3-surface-container-highest w-full sm:w-auto"
                   disabled={attendanceSaving}
                 >
                   Hủy
@@ -2118,7 +2112,7 @@ const TeacherSchedule = () => {
                 <button
                   type="button"
                   onClick={() => void handleSaveAttendance()}
-                  className="app-btn-primary w-full px-4 py-2 text-sm sm:w-auto"
+                  className="inline-flex items-center justify-center rounded-xl bg-m3-primary px-4 py-2 text-sm font-semibold text-m3-on-primary shadow-xs hover:bg-m3-primary/90 transition-all w-full sm:w-auto"
                   disabled={attendanceSaving || attendanceLoading || !attendanceData}
                 >
                   {attendanceSaving ? 'Đang lưu...' : 'Lưu điểm danh & báo cáo'}
@@ -2131,7 +2125,7 @@ const TeacherSchedule = () => {
 
       {roomManagerOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 p-0 backdrop-blur-xs sm:grid sm:place-items-center sm:p-4">
-          <div className="flex h-dvh w-full flex-col overflow-hidden rounded-none border border-m3-outline-variant/60 bg-m3-surface-container shadow-2xl sm:h-auto sm:max-h-[94vh] sm:max-w-7xl sm:rounded-4xl">
+          <div className="flex h-dvh w-full flex-col overflow-hidden rounded-none bg-m3-surface-container shadow-2xl sm:h-auto sm:max-h-[94vh] sm:max-w-7xl sm:rounded-4xl">
             <div
               className="border-b border-m3-outline-variant/60 bg-m3-surface-container-high px-4 py-4 sm:px-6 shadow-xs"
               style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top))' }}
@@ -2176,7 +2170,7 @@ const TeacherSchedule = () => {
             <div className="min-h-0 flex-1 overflow-y-auto bg-m3-surface p-4 sm:p-6">
               <div className="grid gap-5 xl:grid-cols-[minmax(0,1.25fr)_400px]">
                 <div className="space-y-4">
-                  <div className="rounded-3xl border border-m3-outline-variant/60 bg-m3-surface-container p-4 sm:p-5 shadow-xs">
+                  <div className="rounded-3xl bg-m3-surface-container-high p-4 sm:p-5 shadow-xs">
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                       <div className="flex-1">
                         <label className="grid gap-1.5 text-sm">
@@ -2244,7 +2238,7 @@ const TeacherSchedule = () => {
                     </div>
                   </div>
 
-                  <div className="rounded-3xl border border-m3-outline-variant/60 bg-m3-surface-container overflow-hidden shadow-xs">
+                  <div className="rounded-3xl bg-m3-surface-container-high overflow-hidden shadow-xs">
                     <div className="flex items-center justify-between border-b border-m3-outline-variant/60 bg-m3-surface-container-high px-4 py-3">
                       <div>
                         <h4 className="text-base font-bold text-m3-on-surface">Danh sách phòng máy</h4>
@@ -2388,7 +2382,7 @@ const TeacherSchedule = () => {
                   </div>
                 </div>
 
-                <form onSubmit={handleSaveRoom} className="app-card flex min-h-160 flex-col overflow-hidden border-slate-200/80 bg-white shadow-sm">
+                <form onSubmit={handleSaveRoom} className="flex min-h-160 flex-col overflow-hidden rounded-3xl bg-m3-surface-container shadow-xs">
                   <div className="border-b border-slate-200 bg-linear-to-r from-slate-50 to-blue-50/40 px-4 py-4">
                     <div className="flex items-start justify-between gap-3">
                       <div>

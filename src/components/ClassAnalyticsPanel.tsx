@@ -59,7 +59,7 @@ const ClassAnalyticsPanel = ({ classId, assignments }: ClassAnalyticsPanelProps)
   const weakTaskChartRows = useMemo(() => mapWeakTasksToBarChart(weakTasks), [weakTasks]);
 
   return (
-    <section className="relative overflow-hidden rounded-4xl border border-m3-outline-variant/60 bg-m3-surface-container p-4 sm:p-6 shadow-sm">
+    <section className="relative overflow-hidden rounded-4xl bg-m3-surface-container p-4 sm:p-6 shadow-xs">
       <div className="pointer-events-none absolute -left-12 -top-12 h-28 w-28 rounded-full bg-m3-primary/10 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-12 right-1/4 h-24 w-24 rounded-full bg-m3-tertiary/10 blur-3xl" />
 
@@ -79,7 +79,7 @@ const ClassAnalyticsPanel = ({ classId, assignments }: ClassAnalyticsPanelProps)
             <select
               value={projectEndpoint}
               onChange={(e) => setProjectEndpoint(e.target.value)}
-              className="rounded-xl border border-m3-outline-variant bg-m3-surface-container-high px-3 py-2 text-sm text-m3-on-surface shadow-xs outline-none"
+              className="rounded-xl bg-m3-surface-container-high px-3 py-2 text-sm text-m3-on-surface shadow-xs outline-none focus:ring-2 focus:ring-m3-primary/30"
             >
               <option value="">Tất cả dự án</option>
               {endpointOptions.map((ep) => (
@@ -91,7 +91,7 @@ const ClassAnalyticsPanel = ({ classId, assignments }: ClassAnalyticsPanelProps)
             <select
               value={top}
               onChange={(e) => setTop(Number(e.target.value))}
-              className="rounded-xl border border-m3-outline-variant bg-m3-surface-container-high px-3 py-2 text-sm text-m3-on-surface shadow-xs outline-none"
+              className="rounded-xl bg-m3-surface-container-high px-3 py-2 text-sm text-m3-on-surface shadow-xs outline-none focus:ring-2 focus:ring-m3-primary/30"
             >
               <option value={5}>Top 5 câu sai nhiều</option>
               <option value={10}>Top 10 câu sai nhiều</option>
@@ -100,19 +100,19 @@ const ClassAnalyticsPanel = ({ classId, assignments }: ClassAnalyticsPanelProps)
           </div>
         </div>
 
-        <div className="mb-4 rounded-2xl border border-m3-primary/20 bg-m3-primary-container/30 px-3.5 py-2.5 text-xs text-m3-on-primary-container">
+        <div className="mb-4 rounded-2xl bg-m3-primary-container/40 px-3.5 py-2.5 text-xs text-m3-on-primary-container shadow-2xs">
           Các chỉ số bên dưới được tính theo <strong>lượt chấm</strong> (mỗi lần nộp/chấm lại được tính là 1 lượt).
         </div>
 
         {error && (
-          <div className="mb-4 flex items-center gap-2 rounded-2xl border border-m3-error/30 bg-m3-error-container/40 p-3.5 text-sm text-m3-on-error-container">
+          <div className="mb-4 flex items-center gap-2 rounded-2xl bg-m3-error-container/40 p-3.5 text-sm text-m3-on-error-container shadow-2xs">
             <Icon name="error" className="text-lg text-m3-error" />
             {error}
           </div>
         )}
 
         {loading ? (
-          <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-m3-outline-variant/40 bg-m3-surface-container-low px-4 py-8 text-sm text-m3-on-surface-variant">
+          <div className="flex flex-col items-center justify-center gap-3 rounded-2xl bg-m3-surface-container-low px-4 py-8 text-sm text-m3-on-surface-variant">
             <ProgressIndicator variant="circular" shape="wavy" size={28} aria-label="Đang tải dữ liệu phân tích..." />
             <span>Đang tải dữ liệu phân tích...</span>
           </div>
@@ -120,7 +120,7 @@ const ClassAnalyticsPanel = ({ classId, assignments }: ClassAnalyticsPanelProps)
           <>
             <div className="mb-5 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
               <div
-                className="rounded-2xl border border-m3-outline-variant/40 bg-linear-to-br from-m3-primary-container/30 to-m3-surface-container-high p-4 shadow-xs"
+                className="rounded-2xl bg-linear-to-br from-m3-primary-container/30 to-m3-surface-container-high p-4 shadow-2xs"
                 title="Trung bình % của tất cả lượt chấm trong lớp"
               >
                 <div className="text-xs font-medium text-m3-on-surface-variant">Điểm TB theo lượt chấm</div>
@@ -128,7 +128,7 @@ const ClassAnalyticsPanel = ({ classId, assignments }: ClassAnalyticsPanelProps)
                 <div className="mt-1 text-[11px] text-m3-on-surface-variant/70">TB % của tất cả lượt chấm</div>
               </div>
               <div
-                className="rounded-2xl border border-m3-outline-variant/40 bg-linear-to-br from-emerald-500/10 to-m3-surface-container-high p-4 shadow-xs"
+                className="rounded-2xl bg-linear-to-br from-emerald-500/10 to-m3-surface-container-high p-4 shadow-2xs"
                 title="Tỷ lệ lượt chấm có điểm từ 60% trở lên"
               >
                 <div className="text-xs font-medium text-m3-on-surface-variant">Tỷ lệ đạt (&gt;= 60%)</div>
@@ -136,7 +136,7 @@ const ClassAnalyticsPanel = ({ classId, assignments }: ClassAnalyticsPanelProps)
                 <div className="mt-1 text-[11px] text-m3-on-surface-variant/70">Số lượt đạt / tổng lượt</div>
               </div>
               <div
-                className="rounded-2xl border border-m3-outline-variant/40 bg-linear-to-br from-amber-500/10 to-m3-surface-container-high p-4 shadow-xs"
+                className="rounded-2xl bg-linear-to-br from-amber-500/10 to-m3-surface-container-high p-4 shadow-2xs"
                 title="Tỷ lệ lượt chấm dưới 40%"
               >
                 <div className="text-xs font-medium text-m3-on-surface-variant">Tỷ lệ cảnh báo (&lt; 40%)</div>

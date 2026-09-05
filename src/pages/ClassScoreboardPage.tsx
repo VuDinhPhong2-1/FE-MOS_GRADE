@@ -3,6 +3,7 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Icon, ProgressIndicator } from '@bug-on/m3-expressive';
 import ViewAllScoresModal from '../components/ViewAllScoresModal';
 import { useAuth } from '../context/AuthContext';
+import { usePageHeader } from '../context/PageActionsContext';
 import studentService from '../services/student.service';
 import { assignmentService } from '../services/assignment.service';
 import { scoreService } from '../services/score.service';
@@ -131,11 +132,25 @@ const ClassScoreboardPage = () => {
 
   const classDisplayName = locationState?.className || classInfo?.name || classId || 'Lớp học';
 
+  usePageHeader({
+    title: `Bảng điểm: ${classDisplayName}`,
+    subtitle: `${students.length} học sinh · ${assignments.length} bài tập`,
+    actions: [
+      {
+        id: 'back-to-classes',
+        label: 'Quay lại',
+        icon: 'arrow_back',
+        colorStyle: 'outlined',
+        onClick: handleBack,
+      },
+    ],
+  }, [classDisplayName, students.length, assignments.length, handleBack]);
+
   if (isLoading) {
     return (
       <div className="flex h-64 flex-col items-center justify-center gap-3">
-        <ProgressIndicator variant="circular" shape="wavy" size={36} aria-label="Đang tải bảng điểm" />
-        <span className="text-sm font-medium text-m3-on-surface-variant">Đang tải dữ liệu bảng điểm lớp...</span>
+        <ProgressIndicator variant="circular" shape="wavy" size={36} aria-label="Đang tải bảng điểm lớp" />
+        <span className="text-sm font-medium text-m3-on-surface-variant">Đang tải bảng điểm lớp...</span>
       </div>
     );
   }
@@ -143,15 +158,7 @@ const ClassScoreboardPage = () => {
   if (error) {
     return (
       <div className="space-y-4">
-        <button
-          type="button"
-          onClick={handleBack}
-          className="inline-flex items-center gap-2 rounded-full border border-m3-outline-variant bg-m3-surface px-4 py-2 text-xs font-bold text-m3-on-surface shadow-xs transition-all hover:bg-m3-surface-container hover:shadow-sm"
-        >
-          <Icon name="arrow_back" className="text-base" />
-          <span>Quay lại</span>
-        </button>
-        <div className="flex items-center gap-3 rounded-2xl border border-m3-error bg-m3-error-container p-4 text-xs font-medium text-m3-on-error-container">
+        <div className="flex items-center gap-3 rounded-2xl bg-m3-error-container p-4 text-xs font-medium text-m3-on-error-container shadow-xs">
           <Icon name="warning" className="text-xl shrink-0" />
           <span>{error}</span>
         </div>
@@ -162,15 +169,7 @@ const ClassScoreboardPage = () => {
   if (!canManageClass) {
     return (
       <div className="space-y-4">
-        <button
-          type="button"
-          onClick={handleBack}
-          className="inline-flex items-center gap-2 rounded-full border border-m3-outline-variant bg-m3-surface px-4 py-2 text-xs font-bold text-m3-on-surface shadow-xs transition-all hover:bg-m3-surface-container hover:shadow-sm"
-        >
-          <Icon name="arrow_back" className="text-base" />
-          <span>Quay lại</span>
-        </button>
-        <div className="flex items-center gap-3 rounded-2xl border border-amber-300 bg-amber-50 dark:bg-amber-950/30 p-4 text-xs font-medium text-amber-800 dark:text-amber-200">
+        <div className="flex items-center gap-3 rounded-2xl bg-amber-500/15 p-4 text-xs font-medium text-amber-700 dark:text-amber-300 shadow-xs">
           <Icon name="lock" className="text-xl shrink-0" />
           <span>Bạn chỉ có quyền xem lớp này, không có quyền mở bảng điểm đầy đủ.</span>
         </div>
@@ -180,25 +179,6 @@ const ClassScoreboardPage = () => {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <button
-          type="button"
-          onClick={handleBack}
-          className="inline-flex items-center gap-2 rounded-full border border-m3-outline-variant bg-m3-surface px-4 py-2 text-xs font-bold text-m3-on-surface shadow-xs transition-all hover:bg-m3-surface-container hover:shadow-sm"
-        >
-          <Icon name="arrow_back" className="text-base" />
-          <span>Quay lại danh sách học sinh</span>
-        </button>
-        <div className="inline-flex items-center gap-2 rounded-full bg-m3-surface-container px-4 py-1.5 text-xs text-m3-on-surface-variant border border-m3-outline-variant/40">
-          <span>Lớp:</span>
-          <span className="font-bold text-m3-on-surface">{classDisplayName}</span>
-          <span className="opacity-40">|</span>
-          <span>{students.length} học sinh</span>
-          <span className="opacity-40">|</span>
-          <span className="font-medium text-m3-primary">{assignments.length} bài tập</span>
-        </div>
-      </div>
-
       <ViewAllScoresModal
         isOpen
         onClose={handleBack}
