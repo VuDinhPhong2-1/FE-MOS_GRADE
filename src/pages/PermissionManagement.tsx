@@ -113,6 +113,22 @@ const PERMISSION_INFO_MAP: Record<string, PermissionInfo> = {
     label: 'Quản lý cấu hình hệ thống',
     description: 'Cho phép thay đổi cấu hình hệ thống.',
   },
+  'xmlrules.view': {
+    label: 'Xem cấu hình chấm điểm XML',
+    description: 'Cho phép xem danh sách rule/điều kiện chấm điểm XML.',
+  },
+  'xmlrules.create': {
+    label: 'Tạo cấu hình chấm điểm XML',
+    description: 'Cho phép tạo mới bộ rule chấm điểm XML.',
+  },
+  'xmlrules.edit': {
+    label: 'Sửa cấu hình chấm điểm XML',
+    description: 'Cho phép chỉnh sửa rule/điều kiện chấm điểm XML.',
+  },
+  'xmlrules.delete': {
+    label: 'Xóa cấu hình chấm điểm XML',
+    description: 'Cho phép xóa rule/bộ chấm điểm XML.',
+  },
 };
 
 const getPermissionInfo = (permission: string): PermissionInfo => {
@@ -360,18 +376,16 @@ const PermissionManagement: React.FC = () => {
         <button
           type="button"
           onClick={() => setActiveTab('requests')}
-          className={`rounded-xl px-4 py-2 text-sm font-semibold ${
-            activeTab === 'requests' ? 'bg-blue-600 text-white shadow-sm' : 'bg-white text-slate-700 hover:bg-slate-50'
-          }`}
+          className={`rounded-xl px-4 py-2 text-sm font-semibold ${activeTab === 'requests' ? 'bg-blue-600 text-white shadow-sm' : 'bg-white text-slate-700 hover:bg-slate-50'
+            }`}
         >
           Yêu cầu giáo viên
         </button>
         <button
           type="button"
           onClick={() => setActiveTab('permissions')}
-          className={`rounded-xl px-4 py-2 text-sm font-semibold ${
-            activeTab === 'permissions' ? 'bg-blue-600 text-white shadow-sm' : 'bg-white text-slate-700 hover:bg-slate-50'
-          }`}
+          className={`rounded-xl px-4 py-2 text-sm font-semibold ${activeTab === 'permissions' ? 'bg-blue-600 text-white shadow-sm' : 'bg-white text-slate-700 hover:bg-slate-50'
+            }`}
         >
           Phân quyền đã duyệt
         </button>
@@ -419,13 +433,12 @@ const PermissionManagement: React.FC = () => {
                         <div className="flex flex-wrap items-center gap-2">
                           <h4 className="text-base font-bold text-slate-900">{request.fullName || request.username}</h4>
                           <span
-                            className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
-                              status === 'Approved'
+                            className={`rounded-full px-2 py-0.5 text-xs font-semibold ${status === 'Approved'
                                 ? 'bg-emerald-50 text-emerald-700'
                                 : status === 'Rejected'
                                   ? 'bg-rose-50 text-rose-700'
                                   : 'bg-amber-50 text-amber-700'
-                            }`}
+                              }`}
                           >
                             {getStatusLabel(status)}
                           </span>
@@ -521,11 +534,10 @@ const PermissionManagement: React.FC = () => {
                       key={teacher.userId}
                       type="button"
                       onClick={() => selectTeacher(teacher.userId)}
-                      className={`w-full rounded-lg border px-3 py-2 text-left transition ${
-                        isSelected
+                      className={`w-full rounded-lg border px-3 py-2 text-left transition ${isSelected
                           ? 'border-blue-300 bg-blue-50 text-blue-800'
                           : 'border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50/40'
-                      }`}
+                        }`}
                     >
                       <div className="truncate text-sm font-semibold">{teacher.fullName || teacher.username}</div>
                       <div className="truncate text-xs text-slate-500">{teacher.email || teacher.username}</div>
@@ -574,11 +586,10 @@ const PermissionManagement: React.FC = () => {
                     return (
                       <div
                         key={permission}
-                        className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm ${
-                          checked
+                        className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm ${checked
                             ? 'border-blue-200 bg-blue-50 text-blue-800'
                             : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-                        }`}
+                          }`}
                       >
                         <label className="flex min-w-0 flex-1 cursor-pointer items-start gap-2">
                           <input
