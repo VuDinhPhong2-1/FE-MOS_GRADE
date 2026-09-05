@@ -526,7 +526,7 @@ const XmlGradingRulesPage = () => {
 
 
   const toggleProject = (index: number) =>
-    setExpandedProjects((prev) => ({ ...prev, [index]: !(prev[index] ?? true) }));
+    setExpandedProjects((prev) => ({ ...prev, [index]: !(prev[index] ?? false) }));
 
   const toggleTask = (key: string) =>
     setExpandedTasks((prev) => ({ ...prev, [key]: !(prev[key] ?? false) }));
@@ -813,7 +813,7 @@ const XmlGradingRulesPage = () => {
 
                 <div className="space-y-4">
                   {selected.projects.map((project, pi) => {
-                    const projectExpanded = expandedProjects[pi] ?? true;
+                    const projectExpanded = expandedProjects[pi] ?? false;
                     return (
                       <div key={pi} className="group overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition hover:border-slate-300 hover:shadow-md p-4">
                         {/* Project header */}
