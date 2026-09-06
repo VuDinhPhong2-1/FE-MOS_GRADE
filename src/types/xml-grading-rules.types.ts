@@ -1,6 +1,6 @@
 import type { GradingResult } from './grading.types';
 
-export type XmlCompareMode = 'xmlContains' | 'xmlContainsNormalized' | 'xmlEquivalentWholeFile' | 'exactStringContains';
+export type XmlCompareMode = 'xmlContains' | 'xmlContainsNormalized' | 'xmlEquivalentWholeFile' | 'exactStringContains' | 'xmlMinOccurrences';
 export type XmlMatchPolicy = 'all' | 'any' | 'ordered';
 
 export interface XmlConditionFeedback {
@@ -21,6 +21,7 @@ export interface XmlGradingCondition {
   ignoreAttributes: string[];
   compareMode: XmlCompareMode;
   matchPolicy: XmlMatchPolicy;
+  minOccurrences?: number;
   feedback: XmlConditionFeedback;
   stopTaskIfFailed: boolean;
 }

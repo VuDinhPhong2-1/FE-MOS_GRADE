@@ -21,7 +21,7 @@ import PictureBulletEditor from '../components/PictureBulletEditor';
 import InsertedImageEditor from '../components/InsertedImageEditor';
 import { hasPermission } from '../utils/permissions';
 
-const compareModes: XmlCompareMode[] = ['xmlContainsNormalized', 'xmlContains', 'xmlEquivalentWholeFile', 'exactStringContains'];
+const compareModes: XmlCompareMode[] = ['xmlContainsNormalized', 'xmlContains', 'xmlMinOccurrences', 'xmlEquivalentWholeFile', 'exactStringContains'];
 const matchPolicies: XmlMatchPolicy[] = ['all', 'any', 'ordered'];
 
 const compareModesLabels: Record<XmlCompareMode, string> = {
@@ -30,6 +30,9 @@ const compareModesLabels: Record<XmlCompareMode, string> = {
 
   'xmlContains':
     'Tìm đúng đoạn XML đã nhập, chỉ bỏ khoảng trắng đầu và cuối',
+
+  'xmlMinOccurrences':
+    'Dem so lan xuat hien toi thieu sau khi chuan hoa XML',
 
   'xmlEquivalentWholeFile':
     'Đọc XML và so sánh toàn bộ cấu trúc, không phụ thuộc format',
@@ -122,6 +125,7 @@ const prepareCondition = (condition: XmlGradingCondition): XmlGradingCondition =
     }))
     .filter((variant) => variant.expectedValues.length > 0),
   ignoreAttributes: (condition.ignoreAttributes ?? []).map((value) => value.trim()).filter(Boolean),
+  minOccurrences: condition.minOccurrences && condition.minOccurrences > 0 ? condition.minOccurrences : undefined,
 });
 
 const XmlGradingRulesPage = () => {
@@ -1447,6 +1451,24 @@ const XmlGradingRulesPage = () => {
                                                             className={cx(inputClass, 'resize-y font-mono')}
                                                           />
                                                         </label>
+                                                        {condition.compareMode === 'xmlMinOccurrences' && (
+                                                          <label className="mt-3 block text-xs font-semibold text-slate-600">
+                                                            Min occurrences
+                                                            <input
+                                                              type="number"
+                                                              min={1}
+                                                              step={1}
+                                                              value={condition.minOccurrences ?? ''}
+                                                              onChange={(e) =>
+                                                                mutateCondition(pi, ti, ci, {
+                                                                  minOccurrences: e.target.value ? Number(e.target.value) : undefined,
+                                                                })
+                                                              }
+                                                              placeholder="30"
+                                                              className={inputClass}
+                                                            />
+                                                          </label>
+                                                        )}
                                                         <label className="mt-3 flex items-center gap-2 text-xs font-medium text-slate-600">
                                                           <input
                                                             type="checkbox"
