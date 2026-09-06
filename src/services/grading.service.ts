@@ -142,6 +142,7 @@ export const gradingService = {
     getAccessToken: (forceRefresh?: boolean) => Promise<string | null>,
     _meta?: GradingRequestMeta
   ): Promise<GradingResult> {
+    void _meta;
     const { subject, projectCode } = splitSubjectAndProjectCode(gradingEndpoint);
 
     const formData = new FormData();
