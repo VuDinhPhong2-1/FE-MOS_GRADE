@@ -1596,8 +1596,8 @@ const XmlGradingRulesPage = () => {
           </div>
 
           {/* Sticky action bar: Save ngay tại vị trí đang nhập, không cần cuộn về đầu trang. */}
-          <div className="sticky bottom-4 z-30 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-m3-outline-variant/60 bg-m3-surface/90 px-4 py-3.5 shadow-xl backdrop-blur-xl">
-            <div className="flex min-w-0 items-center gap-2 text-xs text-m3-on-surface-variant">
+          <div className="sticky bottom-4 z-30 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-m3-outline-variant/60 bg-m3-surface/90 px-4 py-3.5 shadow-xl backdrop-blur-xl p-4">
+            <div className="flex min-w-0 items-center gap-2 text-xs text-m3-on-surface-variant ">
               <span className={cx(
                 'h-2 w-2 shrink-0 rounded-full',
                 saving ? 'animate-pulse bg-m3-primary' : saveError ? 'bg-m3-error' : 'bg-emerald-500'
@@ -1619,7 +1619,7 @@ const XmlGradingRulesPage = () => {
                 disabled={saving}
                 className="inline-flex items-center gap-2 rounded-xl border border-m3-outline-variant bg-m3-surface-container px-3.5 py-2.5 text-sm font-bold text-m3-primary transition hover:bg-m3-surface-container-high disabled:opacity-50"
               >
-                <Icon name="check_circle" className="text-base" /> Validate
+                <Icon name="check_circle" className="text-base " /> Validate
               </button>
               <button
                 type="button"
