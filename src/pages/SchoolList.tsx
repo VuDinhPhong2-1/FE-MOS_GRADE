@@ -350,7 +350,7 @@ const SchoolList = () => {
           onClick: handleOpenAddModal,
         },
       ],
-  }, [selectedSchool, handleBackToSchools, fetchSchools, handleOpenAddModal, isLoading]);
+  }, [selectedSchool, isLoading]);
 
   if (isLoading && schools.length === 0) {
     return (

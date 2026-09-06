@@ -97,12 +97,26 @@ interface GradeResultView {
   taskResults?: GradeTaskResultView[];
 }
 
-const expectedVariantsForEdit = (condition: XmlGradingCondition) =>
-  condition.expectedVariants?.length ? condition.expectedVariants : [{ expectedValues: [''] }];
+type LegacyXmlGradingCondition = XmlGradingCondition & {
+  expectedValues?: string[];
+};
+
+const expectedVariantsForEdit = (condition: XmlGradingCondition) => {
+  const legacyCondition = condition as LegacyXmlGradingCondition;
+  const rawVariants = condition.expectedVariants?.length
+    ? condition.expectedVariants
+    : legacyCondition.expectedValues?.length
+      ? [{ expectedValues: legacyCondition.expectedValues }]
+      : [{ expectedValues: [''] }];
+
+  return rawVariants.map((variant) => ({
+    expectedValues: Array.isArray(variant?.expectedValues) ? variant.expectedValues : [''],
+  }));
+};
 
 const prepareCondition = (condition: XmlGradingCondition): XmlGradingCondition => ({
   ...condition,
-  expectedVariants: (condition.expectedVariants ?? [])
+  expectedVariants: expectedVariantsForEdit(condition)
     .map((variant) => ({
       expectedValues: (variant.expectedValues ?? []).map((value) => value.trim()).filter(Boolean),
     }))
@@ -360,6 +374,20 @@ const XmlGradingRulesPage = () => {
   const toggleSpecialCondition = (key: string) =>
     setExpandedSpecialConditions((prev) => ({ ...prev, [key]: !(prev[key] ?? true) }));
 
+  usePageHeader({
+    title: 'XML Grading Rules',
+    subtitle: `Quản lý ruleset · project · task · điều kiện chấm (${selected.isActive ? 'ACTIVE' : 'INACTIVE'})`,
+    actions: [
+      {
+        id: 'create-ruleset',
+        label: 'Tạo ruleset',
+        icon: 'add',
+        colorStyle: 'filled',
+        onClick: () => setSelected(emptyRuleSet()),
+      },
+    ],
+  }, [selected.isActive]);
+
   if (!canUsePage) {
     return <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-amber-800">Chỉ tài khoản Admin được quản lý XML grading rules.</div>;
   }
@@ -564,20 +592,6 @@ const XmlGradingRulesPage = () => {
 
   const iconButtonClass =
     'inline-flex h-9 w-9 items-center justify-center rounded-full bg-m3-surface-container-high text-m3-on-surface-variant transition-colors hover:bg-m3-surface-container-highest hover:text-m3-on-surface shadow-xs';
-
-  usePageHeader({
-    title: 'XML Grading Rules',
-    subtitle: `Quản lý ruleset · project · task · điều kiện chấm (${selected.isActive ? 'ACTIVE' : 'INACTIVE'})`,
-    actions: [
-      {
-        id: 'create-ruleset',
-        label: 'Tạo ruleset',
-        icon: 'add',
-        colorStyle: 'filled',
-        onClick: () => setSelected(emptyRuleSet()),
-      },
-    ],
-  }, [selected.isActive]);
 
   return (
     <div className="min-h-full space-y-5 bg-m3-surface pb-10">
@@ -1230,7 +1244,7 @@ const XmlGradingRulesPage = () => {
                                                     <label className="mt-3 block text-xs font-semibold text-slate-600">
                                                       Giá trị cần tìm trong XML
                                                       <textarea
-                                                        value={(condition.expectedVariants ?? [{ expectedValues: [''] }])[0].expectedValues.join('\n')}
+                                                        value={expectedVariantsForEdit(condition)[0].expectedValues.join('\n')}
                                                         onChange={(e) => {
                                                           const variants = expectedVariantsForEdit(condition);
                                                           mutateCondition(pi, ti, ci, {
