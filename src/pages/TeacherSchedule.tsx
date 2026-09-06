@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Icon, ProgressIndicator } from '@bug-on/m3-expressive';
 
 import { useAuth } from '../context/AuthContext';
@@ -547,7 +547,7 @@ const TeacherSchedule = () => {
     };
   }, [roomForm.brokenMachineCount, roomForm.studentMachineCount, roomForm.teacherMachineCount]);
 
-  const resolveSchoolNameForSchedule = (item: ScheduleItem): string => {
+  const resolveSchoolNameForSchedule = useCallback((item: ScheduleItem): string => {
     if (item.schoolId && schoolNameById.has(item.schoolId)) {
       return schoolNameById.get(item.schoolId) || '';
     }
@@ -560,7 +560,7 @@ const TeacherSchedule = () => {
     }
 
     return '';
-  };
+  }, [classById, schoolNameById]);
 
   const attendanceSchoolName = useMemo(() => {
     if (!attendanceData) return '';
@@ -584,7 +584,7 @@ const TeacherSchedule = () => {
       updatedAt: undefined,
     };
     return resolveSchoolNameForSchedule(fakeSchedule);
-  }, [attendanceData, classById, schoolNameById]);
+  }, [attendanceData, resolveSchoolNameForSchedule]);
 
   const filteredAttendanceStudents = useMemo(() => {
     if (!attendanceData) return [];

@@ -59,7 +59,7 @@ const Layout = ({ children, navItems }: LayoutProps) => {
 
         {/* Khung hiển thị nội dung chính - Bo tròn rounded-3xl, scroll bên trong */}
         <div className="min-h-0 flex-1 px-2.5 sm:px-4 lg:pl-0 lg:pr-5 pb-2.5 sm:pb-4 lg:pb-5 pt-1 overflow-hidden flex flex-col">
-          <div className="flex-1 min-h-0 rounded-m3-xl bg-m3-surface-container-lowest dark:bg-m3-surface text-m3-on-surface overflow-hidden flex flex-col">
+          <div className="flex-1 min-h-0 rounded-m3-xl-inc bg-m3-surface-container-lowest dark:bg-m3-surface text-m3-on-surface overflow-hidden flex flex-col">
             <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-36 sm:pb-40 lg:pb-8">
               {children}
             </div>

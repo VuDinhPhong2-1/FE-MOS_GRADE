@@ -35,7 +35,7 @@ createRoot(document.getElementById('root')!).render(
       enableSnackbar
     >
       <GoogleOAuthProvider clientId={googleClientId}>
-        <BrowserRouter>
+        <BrowserRouter useTransitions={false}>
           <App />
           <ToastCenter />
           <ErrorModal />

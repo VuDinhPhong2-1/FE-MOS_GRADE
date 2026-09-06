@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useEffect, useMemo, type ReactNode } from 'react';
 
 export interface PageAction {
@@ -59,10 +60,12 @@ export const usePageHeader = (
       subtitle: pageConfig.subtitle,
       actions: pageConfig.actions,
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, deps);
 
+  useEffect(() => {
     return () => {
       setConfig({});
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, deps);
+  }, [setConfig]);
 };

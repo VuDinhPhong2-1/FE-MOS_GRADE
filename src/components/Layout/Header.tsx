@@ -1,4 +1,4 @@
-import { Icon, Button } from '@bug-on/m3-expressive';
+import { Icon, Button, IconButton } from '@bug-on/m3-expressive';
 import { usePageActionsContext } from '../../context/PageActionsContext';
 import ThemeToggle from '../ThemeToggle';
 
@@ -12,11 +12,7 @@ const Header = ({ onOpenProfile }: HeaderProps) => {
 
   return (
     <header
-      className="sticky top-0 z-20 flex items-center justify-between gap-3 bg-transparent px-3 py-2 transition-colors sm:px-5"
-      style={{
-        minHeight: 'calc(3.75rem + env(safe-area-inset-top))',
-        paddingTop: 'calc(0.5rem + env(safe-area-inset-top))',
-      }}
+      className="sticky top-0 z-20 flex items-center justify-between gap-3 bg-transparent p-4 transition-colors sm:px-5 min-h-20"
     >
       {/* Left side: Mobile Brand Icon M + Page Title & Subtitle */}
       <div className="flex min-w-0 items-center gap-3">
@@ -66,18 +62,19 @@ const Header = ({ onOpenProfile }: HeaderProps) => {
         )}
 
         {/* ThemeToggle: hiển thị ở Header trên mobile, ẩn trên desktop (vì đã có ở Navigation Rail) */}
-        <ThemeToggle className="lg:hidden" />
+        <ThemeToggle className='lg:hidden' />
 
         {/* Mobile Settings: trên desktop đã có nút Settings trong Sidebar, trên mobile hiển thị icon button settings ở Header */}
-        <button
-          type="button"
+        <IconButton
+          colorStyle="filled"
+          size='md'
           onClick={onOpenProfile}
-          className="relative inline-flex h-9 w-9 items-center justify-center rounded-full bg-m3-surface-container text-m3-on-surface-variant shadow-xs transition-colors hover:bg-m3-surface-container-high hover:text-m3-on-surface focus:outline-none cursor-pointer lg:hidden"
           aria-label="Cài đặt tài khoản"
           title="Cài đặt tài khoản"
+          className='lg:hidden'
         >
-          <Icon name="settings" className="text-lg" />
-        </button>
+          <Icon name="settings" size={24} variant='rounded' />
+        </IconButton>
       </div>
     </header>
   );

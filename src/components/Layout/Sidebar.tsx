@@ -1,6 +1,7 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Icon,
+  IconButton,
   NavigationRail,
   NavigationRailItem,
   ShapeMedia,
@@ -61,19 +62,18 @@ export const Sidebar = ({ navItems, onNavigate, onOpenSettings }: SidebarProps) 
         }
         footer={
           <div className="flex w-full flex-col items-center justify-center gap-2 pt-3 pb-2">
-            <button
-              type="button"
+            <IconButton
               onClick={onOpenSettings}
-              className="flex h-10 w-10 items-center justify-center rounded-full text-m3-on-surface-variant transition-colors hover:bg-m3-surface-container-high hover:text-m3-on-surface"
               aria-label="Cài đặt tài khoản"
               title="Cài đặt tài khoản"
+              size='md'
             >
-              <Icon name="settings" className="text-xl" />
-            </button>
-            <ThemeToggle className="h-10 w-10" />
+              <Icon name="settings" size={24} variant='rounded' />
+            </IconButton>
+            <ThemeToggle />
           </div>
         }
-        className="h-full bg-m3-surface-container-low"
+        className="bg-m3-surface-container-low py-4"
       >
         {navItems.map((item) => (
           <NavigationRailItem

@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, useMemo } from 'react';
 import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import Layout from './components/Layout/Layout';
 import type { SidebarNavItem } from './components/Layout/Sidebar';
@@ -73,41 +73,44 @@ const AdminOnlyRoute: React.FC = () => {
 const AppLayout: React.FC = () => {
   const { user } = useAuth();
 
+  const navItems = useMemo<SidebarNavItem[]>(() => {
+    const canUseTeacherFeatures = user?.role === 'Teacher' || user?.role === 'Admin';
+    const items: SidebarNavItem[] = [
+      { id: 'dashboard', label: 'Trang chủ', icon: 'home', path: '/dashboard' },
+    ];
+
+    if (canUseTeacherFeatures) {
+      items.push(
+        { id: 'schools', label: 'Trường', icon: 'school', path: '/schools' },
+        { id: 'schedule', label: 'Lịch', icon: 'calendar_month', path: '/schedule' },
+        { id: 'assignments', label: 'Bài tập', icon: 'assignment', path: '/assignments/exam' },
+        { id: 'grading-test', label: 'Thử nghiệm', icon: 'science', path: '/grading' }
+      );
+    }
+
+    if (hasPermission(user, 'xmlrules.view')) {
+      items.push({
+        id: 'xml-grading-rules',
+        label: 'XML Rules',
+        icon: 'code',
+        path: '/admin/xml-grading-rules',
+      });
+    }
+
+    if (user?.role === 'Admin') {
+      items.push({
+        id: 'permissions',
+        label: 'Phân quyền',
+        icon: 'admin_panel_settings',
+        path: '/permissions',
+      });
+    }
+
+    return items;
+  }, [user]);
+
   if (isPendingOrRejectedTeacher(user)) {
     return <Navigate to="/account-status" replace />;
-  }
-
-  const canUseTeacherFeatures = user?.role === 'Teacher' || user?.role === 'Admin';
-
-  const navItems: SidebarNavItem[] = [
-    { id: 'dashboard', label: 'Trang chủ', icon: 'home', path: '/dashboard' },
-  ];
-
-  if (canUseTeacherFeatures) {
-    navItems.push(
-      { id: 'schools', label: 'Trường', icon: 'school', path: '/schools' },
-      { id: 'schedule', label: 'Lịch', icon: 'calendar_month', path: '/schedule' },
-      { id: 'assignments', label: 'Bài tập', icon: 'assignment', path: '/assignments/exam' },
-      { id: 'grading-test', label: 'Thử nghiệm', icon: 'science', path: '/grading' }
-    );
-  }
-
-  // 👇 Đổi từ role === 'Admin' sang check permission 'xmlrules.view'
-  if (hasPermission(user, 'xmlrules.view')) {
-    navItems.push({
-      id: 'xml-grading-rules',
-      label: 'XML Rules',
-      icon: 'code',
-      path: '/admin/xml-grading-rules',
-    });
-  }
-
-  // Trang Phân quyền vẫn chỉ dành cho Admin — đây là nơi cấp phát permissions
-  // cho người khác nên không nên mở theo permission thường.
-  if (user?.role === 'Admin') {
-    navItems.push(
-      { id: 'permissions', label: 'Phân quyền', icon: 'admin_panel_settings', path: '/permissions' }
-    );
   }
 
   return (

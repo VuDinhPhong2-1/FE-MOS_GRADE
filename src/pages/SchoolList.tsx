@@ -355,7 +355,7 @@ const SchoolList = () => {
   if (isLoading && schools.length === 0) {
     return (
       <div className="flex h-64 flex-col items-center justify-center gap-3">
-        <ProgressIndicator variant="circular" shape="wavy" size={36} aria-label="Đang tải danh sách trường" />
+        <ProgressIndicator variant="circular" shape="wavy" size={64} aria-label="Đang tải danh sách trường" />
         <span className="text-sm font-medium text-m3-on-surface-variant">Đang tải danh sách trường học...</span>
       </div>
     );

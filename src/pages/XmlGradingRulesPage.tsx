@@ -149,6 +149,20 @@ const XmlGradingRulesPage = () => {
     selectedRef.current = selected;
   }, [selected]);
 
+  usePageHeader({
+    title: 'XML Grading Rules',
+    subtitle: `Quản lý ruleset · project · task · điều kiện chấm (${selected.isActive ? 'ACTIVE' : 'INACTIVE'})`,
+    actions: [
+      {
+        id: 'create-ruleset',
+        label: 'Tạo ruleset',
+        icon: 'add',
+        colorStyle: 'filled',
+        onClick: () => setSelected(emptyRuleSet()),
+      },
+    ],
+  }, [selected.isActive]);
+
   const canUsePage = hasPermission(user, 'xmlrules.view');
 
   const loadRuleSets = useCallback(async () => {
@@ -573,20 +587,6 @@ const XmlGradingRulesPage = () => {
   const iconButtonClass =
     'inline-flex h-9 w-9 items-center justify-center rounded-full bg-m3-surface-container-high text-m3-on-surface-variant transition-colors hover:bg-m3-surface-container-highest hover:text-m3-on-surface shadow-xs';
 
-  usePageHeader({
-    title: 'XML Grading Rules',
-    subtitle: `Quản lý ruleset · project · task · điều kiện chấm (${selected.isActive ? 'ACTIVE' : 'INACTIVE'})`,
-    actions: [
-      {
-        id: 'create-ruleset',
-        label: 'Tạo ruleset',
-        icon: 'add',
-        colorStyle: 'filled',
-        onClick: () => setSelected(emptyRuleSet()),
-      },
-    ],
-  }, [selected.isActive]);
-
   return (
     <div className="min-h-full space-y-5 bg-m3-surface pb-10">
       <div className="grid gap-5 xl:grid-cols-[292px_minmax(0,1fr)]">
@@ -704,7 +704,7 @@ const XmlGradingRulesPage = () => {
                 ['Conditions', conditionCount],
                 ['Max score', selectedMaxScore],
               ].map(([label, value]) => (
-                <div key={label} className="group rounded-2xl bg-m3-surface-container-low px-4 py-3 transition hover:-translate-y-0.5 hover:bg-m3-surface-container-high shadow-xs">
+                <div key={label} className="group rounded-2xl bg-m3-surface-container-low px-4 py-3 transition-[border-radius,background-color] duration-300 ease-[cubic-bezier(0.2,0,0,1)] hover:rounded-lg hover:bg-m3-surface-container-high">
                   <p className="text-[10px] font-bold uppercase tracking-wider text-m3-on-surface-variant">{label}</p>
                   <p className="mt-1 text-xl font-black text-m3-on-surface">{value}</p>
                 </div>
