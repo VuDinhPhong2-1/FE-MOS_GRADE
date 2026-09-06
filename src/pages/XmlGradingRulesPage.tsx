@@ -97,9 +97,8 @@ interface GradeResultView {
   taskResults?: GradeTaskResultView[];
 }
 
-const expectedText = (condition: XmlGradingCondition) => {
-  return condition.expectedVariants?.[0]?.expectedValues?.join('\n') ?? '';
-};
+const expectedVariantsForEdit = (condition: XmlGradingCondition) =>
+  condition.expectedVariants?.length ? condition.expectedVariants : [{ expectedValues: [''] }];
 
 const prepareCondition = (condition: XmlGradingCondition): XmlGradingCondition => ({
   ...condition,
@@ -1231,17 +1230,81 @@ const XmlGradingRulesPage = () => {
                                                     <label className="mt-3 block text-xs font-semibold text-slate-600">
                                                       Giá trị cần tìm trong XML
                                                       <textarea
-                                                        value={expectedText(condition)}
-                                                        onChange={(e) =>
+                                                        value={(condition.expectedVariants ?? [{ expectedValues: [''] }])[0].expectedValues.join('\n')}
+                                                        onChange={(e) => {
+                                                          const variants = expectedVariantsForEdit(condition);
                                                           mutateCondition(pi, ti, ci, {
-                                                            expectedVariants: [{ expectedValues: e.target.value.split('\n') }],
-                                                          })
-                                                        }
+                                                            expectedVariants: [
+                                                              { expectedValues: e.target.value.split('\n') },
+                                                              ...variants.slice(1),
+                                                            ],
+                                                          });
+                                                        }}
                                                         rows={3}
                                                         placeholder="Mỗi giá trị một dòng..."
                                                         className={cx(inputClass, 'resize-y font-mono')}
                                                       />
                                                     </label>
+
+                                                    <div className="mt-3 rounded-lg border border-blue-100 bg-white/70 p-3">
+                                                      <div className="mb-2 flex items-center justify-between gap-3">
+                                                        <span className="text-xs font-semibold text-slate-600">
+                                                          Expected variants
+                                                        </span>
+                                                        <button
+                                                          onClick={() => {
+                                                            const variants = expectedVariantsForEdit(condition);
+                                                            mutateCondition(pi, ti, ci, {
+                                                              expectedVariants: [...variants, { expectedValues: [''] }],
+                                                            });
+                                                          }}
+                                                          className="inline-flex items-center gap-1 rounded-lg border border-blue-200 px-2.5 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-50"
+                                                        >
+                                                          <Icon name="add" className="text-sm" /> Them variant
+                                                        </button>
+                                                      </div>
+
+                                                      <div className="space-y-3">
+                                                        {expectedVariantsForEdit(condition).slice(1).map((variant, sliceIndex) => {
+                                                          const variantIndex = sliceIndex + 1;
+                                                          return (
+                                                            <div key={variantIndex} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                                                              <div className="mb-2 flex items-center justify-between gap-3">
+                                                                <span className="rounded-md bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-700">
+                                                                  Variant {variantIndex + 1}
+                                                                </span>
+                                                                <button
+                                                                  onClick={() => {
+                                                                    const variants = expectedVariantsForEdit(condition);
+                                                                    mutateCondition(pi, ti, ci, {
+                                                                      expectedVariants: variants.filter((_, index) => index !== variantIndex),
+                                                                    });
+                                                                  }}
+                                                                  title="Xoa variant"
+                                                                  className="rounded-lg p-1.5 text-red-600 hover:bg-red-50"
+                                                                >
+                                                                  <Icon name="delete" className="text-sm" />
+                                                                </button>
+                                                              </div>
+                                                              <textarea
+                                                                value={variant.expectedValues.join('\n')}
+                                                                onChange={(e) => {
+                                                                  const variants = expectedVariantsForEdit(condition).map((item, index) =>
+                                                                    index === variantIndex
+                                                                      ? { expectedValues: e.target.value.split('\n') }
+                                                                      : item
+                                                                  );
+                                                                  mutateCondition(pi, ti, ci, { expectedVariants: variants });
+                                                                }}
+                                                                rows={3}
+                                                                placeholder="Moi gia tri mot dong..."
+                                                                className={cx(inputClass, 'resize-y font-mono')}
+                                                              />
+                                                            </div>
+                                                          );
+                                                        })}
+                                                      </div>
+                                                    </div>
 
                                                     <div className="mt-3 grid gap-3 md:grid-cols-2">
                                                       <label className="text-xs font-semibold text-slate-600">
