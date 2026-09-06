@@ -75,8 +75,40 @@ const emptyCondition = (): XmlGradingCondition => ({
 
 const cx = (...items: Array<string | false | null | undefined>) => items.filter(Boolean).join(' ');
 
+type LegacyExpectedValueCondition = XmlGradingCondition & {
+  expectedValue?: string | string[];
+};
+
+interface GradeTaskResultView {
+  taskId?: string;
+  taskName?: string;
+  score?: number;
+  maxScore?: number;
+  isPassed?: boolean;
+  details?: string[];
+  errors?: string[];
+  fixActions?: string[];
+}
+
+interface GradeResultView {
+  projectId?: string;
+  projectName?: string;
+  totalScore?: number;
+  maxScore?: number;
+  percentage?: number;
+  isPassed?: boolean;
+  status?: string;
+  taskResults?: GradeTaskResultView[];
+}
+
 const expectedText = (condition: XmlGradingCondition) => {
-  const arr = (condition.expectedValues ?? (Array.isArray((condition as any).expectedValue) ? (condition as any).expectedValue : (condition as any).expectedValue ? [(condition as any).expectedValue] : []));
+  const legacyCondition = condition as LegacyExpectedValueCondition;
+  const arr = condition.expectedValues ??
+    (Array.isArray(legacyCondition.expectedValue)
+      ? legacyCondition.expectedValue
+      : legacyCondition.expectedValue
+        ? [legacyCondition.expectedValue]
+        : []);
   return Array.isArray(arr) ? arr.join('\n') : '';
 };
 
@@ -344,7 +376,7 @@ const XmlGradingRulesPage = () => {
     try {
       await navigator.clipboard.writeText(gradeJson);
       notify.success('Đã sao chép JSON kết quả vào clipboard.');
-    } catch (e) {
+    } catch {
       notify.error('Sao chép thất bại.');
     }
   };
@@ -363,10 +395,10 @@ const XmlGradingRulesPage = () => {
   const renderGradeResult = () => {
     if (!gradeJson) return null;
 
-    let parsed: any = null;
+    let parsed: GradeResultView | null = null;
     try {
-      parsed = JSON.parse(gradeJson);
-    } catch (e) {
+      parsed = JSON.parse(gradeJson) as GradeResultView;
+    } catch {
       parsed = null;
     }
 
@@ -451,8 +483,8 @@ const XmlGradingRulesPage = () => {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {Array.isArray(tasksList) && tasksList.length > 0 ? (
-                    tasksList.map((task: any, idx: number) => {
-                      const taskPassed = task.isPassed ?? (task.score > 0);
+                    tasksList.map((task: GradeTaskResultView, idx: number) => {
+                      const taskPassed = task.isPassed ?? ((task.score ?? 0) > 0);
                       return (
                         <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
                           <td className="px-3 py-3 text-center font-medium text-slate-400">{idx + 1}</td>
@@ -479,7 +511,7 @@ const XmlGradingRulesPage = () => {
                             )}
                             {Array.isArray(task.errors) && task.errors.length > 0 && (
                               <div className="mt-1.5 text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-100 p-1 rounded">
-                                {task.fixActions.join(', ')}
+                                {(task.fixActions ?? []).join(', ')}
                               </div>
                             )}
                           </td>

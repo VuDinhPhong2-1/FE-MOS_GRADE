@@ -83,6 +83,7 @@ export interface SpecialCondition {
   score: number;
 
   config?: PictureBulletConfig;
+  imageInsertConfig?: ImageInsertConfig;
 }
 
 export interface TaskXmlRule {
