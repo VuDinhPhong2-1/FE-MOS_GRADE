@@ -69,15 +69,11 @@ const emptyRuleSet = (): GradingRuleSet => ({ id: '', subject: 'excel', version:
 const emptyProject = (): ProjectXmlRule => ({ projectCode: 'project22', projectName: '', maxScore: 125, tasks: [] });
 const emptyTask = (): TaskXmlRule => ({ taskId: '', taskName: '', maxScore: 1, conditions: [] });
 const emptyCondition = (): XmlGradingCondition => ({
-  conditionId: '', score: 1, sourceFile: 'xl/worksheets/sheet1.xml', expectedValues: [''], compareMode: 'xmlContainsNormalized', matchPolicy: 'all',
+  conditionId: '', score: 1, sourceFile: 'xl/worksheets/sheet1.xml', expectedVariants: [{ expectedValues: [''] }], compareMode: 'xmlContainsNormalized', matchPolicy: 'all',
   feedback: { successDetail: '', errorMessage: '', fixAction: '' }, stopTaskIfFailed: false,
 });
 
 const cx = (...items: Array<string | false | null | undefined>) => items.filter(Boolean).join(' ');
-
-type LegacyExpectedValueCondition = XmlGradingCondition & {
-  expectedValue?: string | string[];
-};
 
 interface GradeTaskResultView {
   taskId?: string;
@@ -102,19 +98,16 @@ interface GradeResultView {
 }
 
 const expectedText = (condition: XmlGradingCondition) => {
-  const legacyCondition = condition as LegacyExpectedValueCondition;
-  const arr = condition.expectedValues ??
-    (Array.isArray(legacyCondition.expectedValue)
-      ? legacyCondition.expectedValue
-      : legacyCondition.expectedValue
-        ? [legacyCondition.expectedValue]
-        : []);
-  return Array.isArray(arr) ? arr.join('\n') : '';
+  return condition.expectedVariants?.[0]?.expectedValues?.join('\n') ?? '';
 };
 
 const prepareCondition = (condition: XmlGradingCondition): XmlGradingCondition => ({
   ...condition,
-  expectedValues: (condition.expectedValues ?? []).map((value) => value.trim()).filter(Boolean),
+  expectedVariants: (condition.expectedVariants ?? [])
+    .map((variant) => ({
+      expectedValues: (variant.expectedValues ?? []).map((value) => value.trim()).filter(Boolean),
+    }))
+    .filter((variant) => variant.expectedValues.length > 0),
 });
 
 const XmlGradingRulesPage = () => {
@@ -1241,7 +1234,7 @@ const XmlGradingRulesPage = () => {
                                                         value={expectedText(condition)}
                                                         onChange={(e) =>
                                                           mutateCondition(pi, ti, ci, {
-                                                            expectedValues: e.target.value.split('\n'),
+                                                            expectedVariants: [{ expectedValues: e.target.value.split('\n') }],
                                                           })
                                                         }
                                                         rows={3}

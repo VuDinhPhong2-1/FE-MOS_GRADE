@@ -9,11 +9,15 @@ export interface XmlConditionFeedback {
   fixAction: string;
 }
 
+export interface XmlExpectedVariant {
+  expectedValues: string[];
+}
+
 export interface XmlGradingCondition {
   conditionId: string;
   score: number;
   sourceFile: string;
-  expectedValues: string[];
+  expectedVariants: XmlExpectedVariant[];
   compareMode: XmlCompareMode;
   matchPolicy: XmlMatchPolicy;
   feedback: XmlConditionFeedback;
