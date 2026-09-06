@@ -7,6 +7,8 @@
 @source "../src/pages/{AuthPage,ClassGradingPage,Classlist,ClassScoreboardPage,Dashboard,GradingView,PermissionManagement,PublicExamPage,SchoolList,StudentList,TeacherSchedule}.tsx";
 @source "../src/components/{ClassAnalyticsPanel,ErrorModal,GradingModal,LocalAgentCompactPanel,LocalAgentPanel,ResultCard,ThemeToggle,ToastCenter,ViewAllScoresModal}.tsx";
 @source "../src/components/Layout/{Header,Layout,ProfileModal,Sidebar}.tsx";
+@source "../src/components/StudentList/**/*.{tsx,ts}";
+@source "../src/components/SchoolList/**/*.{tsx,ts}";
 
 *,
 *::before,

@@ -128,7 +128,7 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="space-y-8 pb-12">
+    <div className="space-y-8">
       {/* Hero Welcome Banner */}
       <Card className="relative overflow-hidden p-8 sm:p-10" variant='filled'>
         <div className="relative z-10 flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">

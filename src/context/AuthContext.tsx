@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { jwtDecode } from 'jwt-decode';
 import type { AuthContextType, User } from '../types/auth.types';
 import { AUTH_API_BASE_URL } from '../config/api';
+import RouteLoadingFallback from '../components/RouteLoadingFallback';
 
 interface JwtPayload {
   exp?: number;
@@ -60,7 +61,19 @@ const getInitialUser = (): User | null => {
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(() => getInitialUser());
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(() => {
+    const savedUser = getInitialUser();
+    const token = localStorage.getItem('accessToken');
+    // Nếu có user session và token còn hạn, sẵn sàng hiển thị ngay không cần block loading
+    if (savedUser && token && !isTokenExpired(token)) {
+      return false;
+    }
+    // Nếu có user nhưng token đã hết hạn, giữ loading để chờ refresh token
+    if (savedUser && localStorage.getItem('refreshToken')) {
+      return true;
+    }
+    return false;
+  });
 
   const refreshPromiseRef = useRef<Promise<string | null> | null>(null);
   const proactiveTimerRef = useRef<number | null>(null);
@@ -402,7 +415,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
       scheduleProactiveRefresh(token);
 
-      // ✅ Chỉ gọi /me nếu có token hợp lệ (refresh thành công hoặc token chưa expire)
+      // ✅ Giải phóng loading ngay sau khi hoàn tất kiểm tra/refresh token
+      // để người dùng thấy giao diện ngay lập tức thay vì phải chờ thêm lượt gọi /me
+      if (mounted) setLoading(false);
+
+      // ✅ Kiểm tra /me ở background để xác nhận tính hợp lệ của tài khoản trên server
       if (!refreshFailed) {
         try {
           const headers: HeadersInit = {};
@@ -426,8 +443,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           console.warn('Không thể kết nối server khi khởi tạo session, giữ session hiện tại.');
         }
       }
-
-      if (mounted) setLoading(false);
     };
 
     void initializeSession();
@@ -446,7 +461,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     <AuthContext.Provider
       value={{ user, login, updateUser, logout, loading, getAccessToken, getRefreshToken }}
     >
-      {!loading && children}
+      {loading ? (
+        <RouteLoadingFallback fullScreen message="Đang khởi tạo phiên làm việc..." />
+      ) : (
+        children
+      )}
     </AuthContext.Provider>
   );
 };

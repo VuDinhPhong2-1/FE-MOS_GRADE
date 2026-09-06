@@ -1,147 +1,68 @@
-import { useState, useEffect, useMemo, useCallback, type ChangeEvent } from 'react';
+import { useState, useMemo, useCallback, type ChangeEvent } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import * as XLSX from 'xlsx';
-import type { Class } from '../types/class.types';
-import type { Assignment } from '../types/assignment.types';
-import type { Student, StudentImportItem } from '../types/student.types';
-import studentService from '../services/student.service';
-import { assignmentService } from '../services/assignment.service';
+import * as XLSX from 'xlsx-js-style';
 import { useAuth } from '../context/AuthContext';
 import ClassAnalyticsPanel from '../components/ClassAnalyticsPanel';
-import { Icon, ProgressIndicator } from '@bug-on/m3-expressive';
-
-type EditStudentForm = {
-  middleName: string;
-  firstName: string;
-  status: string;
-  competencyLevel: '' | 'A' | 'B' | 'C' | 'D';
-  notes: string;
-  thi: boolean;
-  classId: string;
-};
-
-type AddStudentForm = {
-  middleName: string;
-  firstName: string;
-  status: string;
-  competencyLevel: '' | 'A' | 'B' | 'C' | 'D';
-  notes: string;
-  thi: boolean;
-};
-
-const VALID_STATUSES = ['Active', 'Inactive'];
-const VALID_COMPETENCY_LEVELS = ['A', 'B', 'C', 'D'] as const;
-const vietnameseCollator = new Intl.Collator('vi', {
-  sensitivity: 'variant',
-  numeric: true,
-});
-
-interface StudentListProps {
-  selectedClass: Class;
-  readOnly?: boolean;
-}
+import type { Student } from '../types/student.types';
+import {
+  type StudentListProps,
+  type NameSortDirection,
+  type StatusSortDirection,
+  vietnameseCollator,
+  normalizeText,
+  isStudentActive,
+  useStudentData,
+  mapRowsToTempStudents,
+  StudentHeader,
+  StudentToolbar,
+  StudentTable,
+  AddStudentModal,
+  EditStudentModal,
+  PasteStudentModal,
+} from '../components/StudentList';
 
 const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
-  const [students, setStudents] = useState<Student[]>([]);
-  const [assignments, setAssignments] = useState<Assignment[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isStudentMetadataSyncing, setIsStudentMetadataSyncing] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isEditSubmitting, setIsEditSubmitting] = useState(false);
-  const [editingStudent, setEditingStudent] = useState<Student | null>(null);
-  const [editError, setEditError] = useState('');
-  const [flashMessage, setFlashMessage] = useState('');
-  const [editForm, setEditForm] = useState<EditStudentForm>({
-    middleName: '',
-    firstName: '',
-    status: 'Active',
-    competencyLevel: '',
-    notes: '',
-    thi: false,
-    classId: '',
-  });
-  const [initialEditForm, setInitialEditForm] = useState<EditStudentForm>({
-    middleName: '',
-    firstName: '',
-    status: 'Active',
-    competencyLevel: '',
-    notes: '',
-    thi: false,
-    classId: '',
-  });
-  const [searchKeyword, setSearchKeyword] = useState('');
-  const [nameSortDirection, setNameSortDirection] = useState<'none' | 'asc' | 'desc'>('none');
-  const [statusSortDirection, setStatusSortDirection] = useState<'none' | 'active-first' | 'inactive-first'>('none');
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isAddSubmitting, setIsAddSubmitting] = useState(false);
-  const [addError, setAddError] = useState('');
-  const [isPasteModalOpen, setIsPasteModalOpen] = useState(false);
-  const [pasteInput, setPasteInput] = useState('');
-  const [pasteError, setPasteError] = useState('');
-  const [inlineSavingStudentId, setInlineSavingStudentId] = useState<string | null>(null);
-  const [addForm, setAddForm] = useState<AddStudentForm>({
-    middleName: '',
-    firstName: '',
-    status: 'Active',
-    competencyLevel: '',
-    notes: '',
-    thi: false,
-  });
   const { getAccessToken } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const normalizeText = (value?: string) =>
-    (value || '')
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .toLowerCase()
-      .trim();
+  const [searchKeyword, setSearchKeyword] = useState('');
+  const [nameSortDirection, setNameSortDirection] = useState<NameSortDirection>('none');
+  const [statusSortDirection, setStatusSortDirection] = useState<StatusSortDirection>('none');
 
-  const isStudentActive = useCallback((student: Student): boolean => {
-    const normalizedStatus = normalizeText(student.status);
-    if (normalizedStatus) {
-      return normalizedStatus === 'active';
-    }
-    return Boolean(student.isActive);
-  }, []);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingStudent, setEditingStudent] = useState<Student | null>(null);
+  const [isPasteModalOpen, setIsPasteModalOpen] = useState(false);
 
-  const competencyBadgeClass = (level?: string) => {
-    if (level === 'A') return 'bg-emerald-100 text-emerald-700';
-    if (level === 'B') return 'bg-blue-100 text-blue-700';
-    if (level === 'C') return 'bg-amber-100 text-amber-700';
-    if (level === 'D') return 'bg-rose-100 text-rose-700';
-    return 'bg-gray-100 text-gray-600';
-  };
+  const {
+    students,
+    assignments,
+    isLoading,
+    isStudentMetadataSyncing,
+    inlineSavingStudentId,
+    flashMessage,
+    setFlashMessage,
+    studentNewList,
+    activeStudents,
+    inactiveStudentsCount,
+    loadStudents,
+    appendImportedStudents,
+    handleSaveStudents,
+    handleDeleteStudent,
+    handleInlineCompetencyChange,
+    handleInlineExamToggle,
+    handleSyncStudentMetadataToGoogleSheet,
+  } = useStudentData({ selectedClass, readOnly, getAccessToken });
 
-  useEffect(() => {
-    if (selectedClass?.id) {
-      loadStudents();
-      loadAssignments();
-    }
-    // eslint-disable-next-line
-  }, [selectedClass?.id]);
-
-  const handleOpenViewScoresModal = () => {
-    if (!selectedClass?.id) {
-      return;
-    }
-
-    navigate(`/scores/class/${selectedClass.id}`, {
-      state: {
-        className: selectedClass.name,
-        returnPath: `${location.pathname}${location.search}`,
-      },
-    });
-  };
-
-  const studentNewList = students.filter((st) => st.id.startsWith('temp-'));
   const displayedStudents = useMemo(() => {
     const keyword = normalizeText(searchKeyword);
     let list = [...students];
 
     if (keyword) {
-      list = list.filter((st) => normalizeText(`${st.middleName} ${st.firstName}`).includes(keyword));
+      list = list.filter((st) =>
+        normalizeText(`${st.middleName} ${st.firstName}`).includes(keyword)
+      );
     }
 
     if (nameSortDirection === 'asc') {
@@ -163,294 +84,41 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
     }
 
     return list;
-  }, [students, searchKeyword, nameSortDirection, statusSortDirection, isStudentActive]);
+  }, [students, searchKeyword, nameSortDirection, statusSortDirection]);
 
-  const activeStudents = useMemo(
-    () => students.filter((student) => isStudentActive(student)),
-    [students, isStudentActive]
-  );
-  const inactiveStudentsCount = useMemo(
-    () => students.filter((student) => !isStudentActive(student)).length,
-    [students, isStudentActive]
-  );
-
-  const toggleNameSort = () => {
+  const toggleNameSort = useCallback(() => {
     setStatusSortDirection('none');
     setNameSortDirection((prev) => {
       if (prev === 'none') return 'asc';
       if (prev === 'asc') return 'desc';
       return 'none';
     });
-  };
+  }, []);
 
-  const toggleStatusSort = () => {
+  const toggleStatusSort = useCallback(() => {
     setNameSortDirection('none');
     setStatusSortDirection((prev) => {
       if (prev === 'none') return 'active-first';
       if (prev === 'active-first') return 'inactive-first';
       return 'none';
     });
-  };
+  }, []);
 
-  const loadStudents = async () => {
-    setIsLoading(true);
-    try {
-      const data = await studentService.getStudentsByClassId(selectedClass.id, getAccessToken);
-      setStudents(data);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const selectedClassId = selectedClass?.id;
+  const selectedClassName = selectedClass?.name;
+  const returnPath = `${location.pathname}${location.search}`;
 
-  const loadAssignments = async () => {
-    try {
-      const data = await assignmentService.getByClass(selectedClass.id, getAccessToken);
-      setAssignments(data);
-    } catch {
-      setAssignments([]);
-    }
-  };
-
-  const appendImportedStudents = (imported: Student[]) => {
-    setStudents((prev) => {
-      const persisted = prev.filter((student) => !student.id.startsWith('temp-'));
-      return [...persisted, ...imported];
+  const handleOpenViewScoresModal = useCallback(() => {
+    if (!selectedClassId) return;
+    navigate(`/scores/class/${selectedClassId}`, {
+      state: {
+        className: selectedClassName,
+        returnPath,
+      },
     });
-  };
+  }, [selectedClassId, selectedClassName, returnPath, navigate]);
 
-  const detectHeader = (rows: Array<Array<string | number | undefined>>): boolean => {
-    if (rows.length === 0) return false;
-    const normalize = (value: string | number | undefined): string =>
-      String(value ?? '').trim().toLowerCase();
-    const firstCol = normalize(rows[0]?.[0]);
-    const secondCol = normalize(rows[0]?.[1]);
-    return (
-      (firstCol.includes('ho') || firstCol.includes('họ') || firstCol.includes('middle')) &&
-      (secondCol.includes('ten') || secondCol.includes('tên') || secondCol.includes('first'))
-    );
-  };
-
-  const mapRowsToTempStudents = (rows: Array<Array<string | number | undefined>>): Student[] => {
-    const startRowIndex = detectHeader(rows) ? 1 : 0;
-    return rows
-      .slice(startRowIndex)
-      .map((row, index) => {
-        const middleName = String(row[0] ?? '').trim();
-        const firstName = String(row[1] ?? '').trim();
-        if (!firstName) return null;
-        return {
-          id: `temp-${Date.now()}-${index + 1}`,
-          middleName,
-          firstName,
-          status: 'Active',
-          thi: false,
-          isActive: true,
-          gradingApiEndpoint: String(row[2] ?? '').trim(),
-        } as Student;
-      })
-      .filter((student): student is Student => student !== null);
-  };
-
-  const handleFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
-    if (readOnly) {
-      return;
-    }
-
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      const bstr = evt.target?.result;
-      const wb = XLSX.read(bstr, { type: 'binary' });
-      const wsname = wb.SheetNames[0];
-      const ws = wb.Sheets[wsname];
-      const data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' }) as Array<Array<string | number>>;
-      const list = mapRowsToTempStudents(data);
-
-      if (list.length === 0) {
-        setFlashMessage('Không tìm thấy dữ liệu hợp lệ trong file Excel.');
-        return;
-      }
-
-      appendImportedStudents(list);
-      setFlashMessage(`Đã nhận ${list.length} học sinh từ file Excel. Bấm "Lưu danh sách" để lưu.`);
-    };
-
-    reader.readAsBinaryString(file);
-  };
-
-  const parsePastedRows = (rawText: string): string[][] =>
-    rawText
-      .split(/\r?\n/)
-      .filter((line) => line.trim().length > 0)
-      .map((line) => {
-        if (line.includes('\t')) {
-          return line.split('\t').map((cell) => cell.trim());
-        }
-        return line.trim().split(/\s{2,}/).map((cell) => cell.trim());
-      });
-
-  const handleOpenPasteModal = () => {
-    setPasteInput('');
-    setPasteError('');
-    setIsPasteModalOpen(true);
-  };
-
-  const handleImportFromPaste = () => {
-    if (readOnly) {
-      return;
-    }
-
-    if (!pasteInput.trim()) {
-      setPasteError('Bạn chưa dán dữ liệu.');
-      return;
-    }
-
-    const rows = parsePastedRows(pasteInput);
-    const list = mapRowsToTempStudents(rows);
-
-    if (list.length === 0) {
-      setPasteError('Dữ liệu cần có tối thiểu 2 cột: Họ và tên đệm, Tên.');
-      return;
-    }
-
-    appendImportedStudents(list);
-    setIsPasteModalOpen(false);
-    setPasteInput('');
-    setPasteError('');
-    setFlashMessage(`Đã nhận ${list.length} học sinh từ dữ liệu dán. Bấm "Lưu danh sách" để lưu.`);
-  };
-
-  const handleSaveStudents = async () => {
-    if (readOnly) {
-      alert('Bạn chỉ có quyền xem lớp này.');
-      return;
-    }
-
-    const newStudents = students.filter((st) => st.id.startsWith('temp-'));
-    if (newStudents.length === 0) {
-      alert('Không có học sinh mới để lưu!');
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const importItems: StudentImportItem[] = newStudents.map((st) => ({
-        MiddleName: st.middleName,
-        FirstName: st.firstName,
-      }));
-
-      await studentService.bulkImportStudents({
-        Students: importItems,
-        ClassId: selectedClass.id,
-      }, getAccessToken);
-
-      await loadStudents();
-    } catch {
-      alert('Có lỗi xảy ra khi import học sinh!');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleOpenAddStudentModal = () => {
-    if (readOnly) {
-      alert('Bạn chỉ có quyền xem lớp này.');
-      return;
-    }
-
-    setAddForm({
-      middleName: '',
-      firstName: '',
-      status: 'Active',
-      competencyLevel: '',
-      notes: '',
-      thi: false,
-    });
-    setAddError('');
-    setIsAddModalOpen(true);
-  };
-
-  const handleAddStudent = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (readOnly) {
-      setAddError('Bạn chỉ có quyền xem lớp này.');
-      return;
-    }
-
-    const middleName = addForm.middleName.trim();
-    const firstName = addForm.firstName.trim();
-    if (!firstName) {
-      setAddError('Vui lòng nhập tên.');
-      return;
-    }
-    if (!VALID_STATUSES.includes(addForm.status)) {
-      setAddError('Trạng thái không hợp lệ.');
-      return;
-    }
-
-    if (addForm.competencyLevel && !VALID_COMPETENCY_LEVELS.includes(addForm.competencyLevel)) {
-      setAddError('Mức năng lực không hợp lệ.');
-      return;
-    }
-
-    setIsAddSubmitting(true);
-    setAddError('');
-    try {
-      const notes = addForm.notes.trim();
-      await studentService.createStudent(
-        {
-          middleName,
-          firstName,
-          status: addForm.status,
-          competencyLevel: addForm.competencyLevel,
-          notes,
-          thi: addForm.thi,
-          classId: selectedClass.id,
-        },
-        getAccessToken
-      );
-      await loadStudents();
-      setIsAddModalOpen(false);
-      setFlashMessage('Thêm học sinh thành công.');
-    } catch (err) {
-      setAddError(err instanceof Error ? err.message : 'Không thể thêm học sinh.');
-    } finally {
-      setIsAddSubmitting(false);
-    }
-  };
-
-  const handleDeleteStudent = async (student: Student) => {
-    if (readOnly) {
-      alert('Bạn chỉ có quyền xem lớp này.');
-      return;
-    }
-
-    const fullName = `${student.middleName} ${student.firstName}`.trim();
-    if (!confirm(`Bạn có chắc muốn xóa học sinh "${fullName}"?`)) {
-      return;
-    }
-
-    if (student.id.startsWith('temp-')) {
-      setStudents((prev) => prev.filter((st) => st.id !== student.id));
-      setFlashMessage('Đã xóa học sinh tạm khỏi danh sách.');
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      await studentService.deleteStudent(student.id, getAccessToken);
-      await loadStudents();
-      setFlashMessage('Xóa học sinh thành công.');
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'Không thể xóa học sinh.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleGrade = () => {
+  const handleGrade = useCallback(() => {
     if (readOnly) {
       alert('Bạn chỉ có quyền xem lớp này.');
       return;
@@ -461,275 +129,99 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
       return;
     }
 
-    navigate(`/grading/class/${selectedClass.id}`, {
+    if (!selectedClassId) return;
+
+    navigate(`/grading/class/${selectedClassId}`, {
       state: {
-        className: selectedClass.name,
-        returnPath: `${location.pathname}${location.search}`,
+        className: selectedClassName,
+        returnPath,
       },
     });
-  };
+  }, [readOnly, activeStudents.length, selectedClassId, selectedClassName, returnPath, navigate]);
 
-  const handleInlineCompetencyChange = async (student: Student, level: '' | 'A' | 'B' | 'C' | 'D') => {
-    if (readOnly) {
-      return;
-    }
+  const handleFileUpload = useCallback(
+    (e: ChangeEvent<HTMLInputElement>) => {
+      if (readOnly) return;
 
-    if (student.id.startsWith('temp-')) {
-      setStudents((prev) =>
-        prev.map((item) => (item.id === student.id ? { ...item, competencyLevel: level } : item))
-      );
-      return;
-    }
+      const file = e.target.files?.[0];
+      if (!file) return;
 
-    const status = VALID_STATUSES.includes(student.status || '')
-      ? (student.status as string)
-      : (isStudentActive(student) ? 'Active' : 'Inactive');
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        const bstr = evt.target?.result;
+        const wb = XLSX.read(bstr, { type: 'binary' });
+        const wsname = wb.SheetNames[0];
+        const ws = wb.Sheets[wsname];
+        const data = XLSX.utils.sheet_to_json(ws, {
+          header: 1,
+          defval: '',
+        }) as Array<Array<string | number>>;
+        const list = mapRowsToTempStudents(data);
 
-    setInlineSavingStudentId(student.id);
-    try {
-      const updatedStudent = await studentService.updateStudent(
-        student.id,
-        {
-          middleName: student.middleName?.trim() || '',
-          firstName: student.firstName?.trim() || '',
-          status,
-          competencyLevel: level,
-          notes: student.notes?.trim() || '',
-          thi: Boolean(student.thi),
-          classId: student.classId || selectedClass.id,
-        },
-        getAccessToken
-      );
+        if (list.length === 0) {
+          setFlashMessage('Không tìm thấy dữ liệu hợp lệ trong file Excel.');
+          return;
+        }
 
-      setStudents((prev) =>
-        prev.map((item) =>
-          item.id === student.id
-            ? {
-              ...item,
-              competencyLevel: (updatedStudent.competencyLevel ?? level) as '' | 'A' | 'B' | 'C' | 'D',
-              notes: updatedStudent.notes ?? item.notes,
-              status: updatedStudent.status ?? item.status,
-              thi: updatedStudent.thi ?? item.thi ?? false,
-            }
-            : item
-        )
-      );
-      setFlashMessage('Cập nhật năng lực thành công.');
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'Không thể cập nhật năng lực học sinh.');
-    } finally {
-      setInlineSavingStudentId(null);
-    }
-  };
+        appendImportedStudents(list);
+        setFlashMessage(
+          `Đã nhận ${list.length} học sinh từ file Excel. Bấm "Lưu danh sách" để lưu.`
+        );
+      };
 
-  const handleInlineExamToggle = async (student: Student) => {
-    if (readOnly) {
-      return;
-    }
+      reader.readAsBinaryString(file);
+    },
+    [readOnly, appendImportedStudents, setFlashMessage]
+  );
 
-    const nextExamState = !(student.thi ?? false);
+  const handleOpenEditStudent = useCallback(
+    (student: Student) => {
+      if (readOnly) {
+        alert('Bạn chỉ có quyền xem lớp này.');
+        return;
+      }
 
-    if (student.id.startsWith('temp-')) {
-      setStudents((prev) =>
-        prev.map((item) => (item.id === student.id ? { ...item, thi: nextExamState } : item))
-      );
-      return;
-    }
+      if (student.id.startsWith('temp-')) {
+        alert('Học sinh chưa được lưu lên hệ thống, không thể sửa.');
+        return;
+      }
 
-    setInlineSavingStudentId(student.id);
-    try {
-      const updatedStudent = await studentService.updateStudent(
-        student.id,
-        {
-          thi: nextExamState,
-        },
-        getAccessToken
-      );
+      setEditingStudent(student);
+      setIsEditModalOpen(true);
+    },
+    [readOnly]
+  );
 
-      const resolvedExamState = updatedStudent.thi ?? nextExamState;
-      setStudents((prev) =>
-        prev.map((item) =>
-          item.id === student.id
-            ? {
-              ...item,
-              thi: resolvedExamState,
-            }
-            : item
-        )
-      );
-      setFlashMessage('Updated exam status successfully.');
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'Cannot update exam status.');
-    } finally {
-      setInlineSavingStudentId(null);
-    }
-  };
-
-  const handleSyncStudentMetadataToGoogleSheet = async () => {
-    if (readOnly) {
-      alert('Bạn chỉ có quyền xem lớp này.');
-      return;
-    }
-
-    if (studentNewList.length > 0) {
-      alert('Vui lòng lưu danh sách học sinh trước khi đồng bộ Google Sheet.');
-      return;
-    }
-
-    try {
-      setIsStudentMetadataSyncing(true);
-      const result = await studentService.syncStudentMetadataToGoogleSheet(selectedClass.id, getAccessToken);
-      setFlashMessage(result.message || 'Đã đồng bộ xếp loại và ghi chú học sinh lên Google Sheet.');
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'Không thể đồng bộ xếp loại và ghi chú lên Google Sheet.');
-    } finally {
-      setIsStudentMetadataSyncing(false);
-    }
-  };
-
-  useEffect(() => {
-    if (!flashMessage) return;
-    const timer = window.setTimeout(() => setFlashMessage(''), 2500);
-    return () => window.clearTimeout(timer);
-  }, [flashMessage]);
-
-  useEffect(() => {
-    if (!inlineSavingStudentId) return;
-
-    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-      event.preventDefault();
-      event.returnValue = '';
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [inlineSavingStudentId]);
-
-  const handleOpenEditStudent = (student: Student) => {
-    if (readOnly) {
-      alert('Bạn chỉ có quyền xem lớp này.');
-      return;
-    }
-
-    if (student.id.startsWith('temp-')) {
-      alert('Học sinh chưa được lưu lên hệ thống, không thể sửa.');
-      return;
-    }
-
-    const preset: EditStudentForm = {
-      middleName: student.middleName || '',
-      firstName: student.firstName || '',
-      status: VALID_STATUSES.includes(student.status || '')
-        ? (student.status as string)
-        : (student.isActive ? 'Active' : 'Inactive'),
-      competencyLevel: (student.competencyLevel || '') as '' | 'A' | 'B' | 'C' | 'D',
-      notes: student.notes || '',
-      thi: Boolean(student.thi),
-      classId: student.classId || selectedClass.id,
-    };
-    setEditingStudent(student);
-    setEditForm(preset);
-    setInitialEditForm(preset);
-    setEditError('');
-    setIsEditModalOpen(true);
-  };
-
-  const hasUnsavedEditChanges =
-    editForm.middleName !== initialEditForm.middleName ||
-    editForm.firstName !== initialEditForm.firstName ||
-    editForm.status !== initialEditForm.status ||
-    editForm.competencyLevel !== initialEditForm.competencyLevel ||
-    editForm.notes !== initialEditForm.notes ||
-    editForm.thi !== initialEditForm.thi ||
-    editForm.classId !== initialEditForm.classId;
-
-  const handleCloseEditModal = () => {
-    if (isEditSubmitting) return;
-    if (hasUnsavedEditChanges && !confirm('Bạn có thay đổi chưa lưu. Bạn có chắc muốn đóng?')) {
-      return;
-    }
+  const handleCloseEditModal = useCallback(() => {
     setIsEditModalOpen(false);
     setEditingStudent(null);
-    setEditError('');
-  };
+  }, []);
 
-  useEffect(() => {
-    if (!isEditModalOpen || !hasUnsavedEditChanges) return;
-
-    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-      event.preventDefault();
-      event.returnValue = '';
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [isEditModalOpen, hasUnsavedEditChanges]);
-
-  const handleEditFieldChange = (event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name } = event.target;
-    const value =
-      event.target instanceof HTMLInputElement && event.target.type === 'checkbox'
-        ? event.target.checked
-        : event.target.value;
-    setEditError('');
-    setEditForm((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmitEditStudent = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (readOnly) {
-      setEditError('Bạn chỉ có quyền xem lớp này.');
-      return;
-    }
-
-    if (!editingStudent) return;
-
-    const middleName = editForm.middleName.trim();
-    const firstName = editForm.firstName.trim();
-    const status = editForm.status.trim();
-
-    if (!firstName) {
-      setEditError('Vui lòng nhập tên.');
-      return;
-    }
-
-    if (!VALID_STATUSES.includes(status)) {
-      setEditError('Trạng thái không hợp lệ.');
-      return;
-    }
-
-    if (editForm.competencyLevel && !VALID_COMPETENCY_LEVELS.includes(editForm.competencyLevel)) {
-      setEditError('Mức năng lực không hợp lệ.');
-      return;
-    }
-
-    setIsEditSubmitting(true);
-    setEditError('');
-    try {
-      const notes = editForm.notes.trim();
-      await studentService.updateStudent(
-        editingStudent.id,
-        {
-          middleName,
-          firstName,
-          status,
-          competencyLevel: editForm.competencyLevel,
-          notes,
-          thi: editForm.thi,
-          classId: editForm.classId || selectedClass.id,
-        },
-        getAccessToken
-      );
+  const handleEditSuccess = useCallback(
+    async (message: string) => {
       await loadStudents();
-      setIsEditModalOpen(false);
-      setEditingStudent(null);
-      setFlashMessage('Cập nhật học sinh thành công.');
-    } catch (err) {
-      setEditError(err instanceof Error ? err.message : 'Cập nhật học sinh thất bại.');
-    } finally {
-      setIsEditSubmitting(false);
-    }
-  };
+      setFlashMessage(message);
+    },
+    [loadStudents, setFlashMessage]
+  );
+
+  const handleAddSuccess = useCallback(
+    async (message: string) => {
+      await loadStudents();
+      setFlashMessage(message);
+    },
+    [loadStudents, setFlashMessage]
+  );
+
+  const handleImportFromPaste = useCallback(
+    (list: Student[]) => {
+      appendImportedStudents(list);
+      setFlashMessage(
+        `Đã nhận ${list.length} học sinh từ dữ liệu dán. Bấm "Lưu danh sách" để lưu.`
+      );
+    },
+    [appendImportedStudents, setFlashMessage]
+  );
 
   return (
     <div className="mx-auto w-full space-y-4 px-2 pb-4 sm:px-4">
@@ -744,664 +236,85 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
         </div>
       )}
 
-      <section className="relative overflow-hidden rounded-3xl bg-m3-surface-container px-4 py-4 sm:px-6 sm:py-5 shadow-xs text-m3-on-surface">
-        <div className="pointer-events-none absolute -right-12 -top-16 h-40 w-40 rounded-full bg-sky-200/70 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-20 left-1/3 h-40 w-40 rounded-full bg-emerald-200/60 blur-3xl" />
-        <div className="relative flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-          <div className="space-y-3">
-            <div className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-sky-700">
-              <Icon name="auto_awesome" variant="rounded" size={14} />
-              Không gian lớp học
-            </div>
-            <div>
-              <h1 className="text-xl font-extrabold tracking-tight text-slate-900 sm:text-2xl">
-                Bảng danh sách học sinh - {selectedClass.name}
-              </h1>
-              <p className="mt-1 text-sm text-slate-600">
-                Quản lý danh sách, chấm điểm và đồng bộ dữ liệu ngay trên một màn hình.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <div className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white/90 px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm">
-                <Icon name="group" variant="rounded" size={14} />
-                Tổng {students.length} học sinh
-              </div>
-              <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 shadow-sm">
-                <Icon name="how_to_reg" variant="rounded" size={14} />
-                Hoạt động {activeStudents.length}
-              </div>
-              <div className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700 shadow-sm">
-                <Icon name="person_off" variant="rounded" size={14} />
-                Ngừng {inactiveStudentsCount}
-              </div>
-              {studentNewList.length > 0 && (
-                <div className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 shadow-sm">
-                  <Icon name="save" variant="rounded" size={14} />
-                  Chưa lưu {studentNewList.length}
-                </div>
-              )}
-            </div>
-          </div>
+      {/* Hero Header & Action Buttons */}
+      <StudentHeader
+        className={selectedClass.name}
+        totalCount={students.length}
+        activeCount={activeStudents.length}
+        inactiveCount={inactiveStudentsCount}
+        newCount={studentNewList.length}
+        readOnly={readOnly}
+        isStudentMetadataSyncing={isStudentMetadataSyncing}
+        isLoading={isLoading}
+        onOpenAddModal={() => setIsAddModalOpen(true)}
+        onGrade={handleGrade}
+        onSyncMetadata={handleSyncStudentMetadataToGoogleSheet}
+        onOpenViewScores={handleOpenViewScoresModal}
+      />
 
-          <div className="grid w-full gap-2 sm:grid-cols-2 xl:w-auto xl:min-w-160">
-            {!readOnly && (
-              <button
-                onClick={handleOpenAddStudentModal}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-600/25 transition hover:-translate-y-0.5 hover:bg-emerald-700"
-              >
-                <Icon name="person_add" variant="rounded" size={18} />
-                Thêm học sinh
-              </button>
-            )}
-            {!readOnly && (
-              <button
-                onClick={handleGrade}
-                disabled={activeStudents.length === 0}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/25 transition hover:-translate-y-0.5 hover:bg-blue-700 disabled:translate-y-0 disabled:cursor-not-allowed disabled:bg-slate-400 disabled:shadow-none"
-                title="Chấm điểm cho học sinh đang hoạt động"
-              >
-                <Icon name="fact_check" variant="rounded" size={18} />
-                Chấm điểm cho lớp
-              </button>
-            )}
-            {!readOnly && (
-              <button
-                type="button"
-                onClick={handleSyncStudentMetadataToGoogleSheet}
-                disabled={isStudentMetadataSyncing || isLoading}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-sky-600/25 transition hover:-translate-y-0.5 hover:bg-sky-700 disabled:translate-y-0 disabled:cursor-not-allowed disabled:bg-slate-400 disabled:shadow-none"
-                title="Đồng bộ xếp loại và ghi chú học sinh lên Google Sheet"
-              >
-                {isStudentMetadataSyncing ? (
-                  <ProgressIndicator variant="circular" shape="wavy" showTrack size={18} aria-label="Đang đồng bộ..." />
-                ) : (
-                  <Icon name="refresh" variant="rounded" size={18} />
-                )}
-                {isStudentMetadataSyncing ? 'Đang đồng bộ...' : 'Đồng bộ XL + ghi chú GG Sheet'}
-              </button>
-            )}
-            <button
-              onClick={handleOpenViewScoresModal}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50"
-            >
-              <Icon name="visibility" variant="rounded" size={18} />
-              Xem bảng điểm lớp
-            </button>
-          </div>
-        </div>
-      </section>
-
+      {/* Class Analytics Panel */}
       <ClassAnalyticsPanel classId={selectedClass.id} assignments={assignments} />
 
-      <section className="rounded-2xl bg-m3-surface-container-low p-3 sm:p-4 text-m3-on-surface">
-        <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(260px,auto)]">
-          <div className="relative">
-            <Icon name="search" variant="rounded" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              value={searchKeyword}
-              onChange={(event) => setSearchKeyword(event.target.value)}
-              placeholder="Tìm kiếm theo tên học sinh..."
-              className="w-full rounded-xl border border-slate-200 bg-white pl-9 pr-3 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
-            />
-          </div>
-          <div className="flex flex-col justify-center rounded-xl border border-slate-200 bg-white px-3 py-2">
-            <span className="text-sm font-medium text-slate-700">
-              Hiển thị {displayedStudents.length}/{students.length} học sinh
-            </span>
-            <span className="text-xs text-slate-500">
-              Bấm tiêu đề cột <strong>Tên</strong> hoặc <strong>Trạng thái</strong> để sắp xếp
-            </span>
-          </div>
-        </div>
+      {/* Search, Filter & Toolbar Actions */}
+      <StudentToolbar
+        searchKeyword={searchKeyword}
+        onSearchChange={setSearchKeyword}
+        displayedCount={displayedStudents.length}
+        totalCount={students.length}
+        isLoading={isLoading}
+        readOnly={readOnly}
+        newCount={studentNewList.length}
+        onReload={loadStudents}
+        onFileUpload={handleFileUpload}
+        onOpenPasteModal={() => setIsPasteModalOpen(true)}
+        onSaveStudents={handleSaveStudents}
+      />
 
-        <div className="mt-3 flex flex-wrap gap-2">
-          <button
-            onClick={loadStudents}
-            disabled={isLoading}
-            className="inline-flex items-center gap-2 rounded-xl bg-slate-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
-            title="Tải lại danh sách"
-          >
-            {isLoading ? (
-              <ProgressIndicator variant="circular" shape="wavy" showTrack size={18} aria-label="Đang tải lại..." />
-            ) : (
-              <Icon name="refresh" variant="rounded" size={18} />
-            )}
-            Tải lại
-          </button>
+      {/* Main Students Data Table */}
+      <StudentTable
+        displayedStudents={displayedStudents}
+        totalStudentsCount={students.length}
+        isLoading={isLoading}
+        readOnly={readOnly}
+        inlineSavingStudentId={inlineSavingStudentId}
+        nameSortDirection={nameSortDirection}
+        statusSortDirection={statusSortDirection}
+        onToggleNameSort={toggleNameSort}
+        onToggleStatusSort={toggleStatusSort}
+        onCompetencyChange={handleInlineCompetencyChange}
+        onExamToggle={handleInlineExamToggle}
+        onEdit={handleOpenEditStudent}
+        onDelete={handleDeleteStudent}
+      />
 
-          {!readOnly && (
-            <>
-              <input
-                type="file"
-                onChange={handleFileUpload}
-                accept=".xlsx, .xls, .txt"
-                className="hidden"
-                id="import-excel"
-              />
+      {/* Add Student Modal */}
+      <AddStudentModal
+        isOpen={isAddModalOpen}
+        classId={selectedClass.id}
+        readOnly={readOnly}
+        getAccessToken={getAccessToken}
+        onClose={() => setIsAddModalOpen(false)}
+        onSuccess={handleAddSuccess}
+      />
 
-              <label
-                htmlFor="import-excel"
-                className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
-              >
-                <Icon name="upload" variant="rounded" size={18} /> Nhập Excel
-              </label>
+      {/* Edit Student Modal */}
+      <EditStudentModal
+        student={editingStudent}
+        isOpen={isEditModalOpen}
+        classId={selectedClass.id}
+        readOnly={readOnly}
+        getAccessToken={getAccessToken}
+        onClose={handleCloseEditModal}
+        onSuccess={handleEditSuccess}
+      />
 
-              <button
-                type="button"
-                onClick={handleOpenPasteModal}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
-              >
-                <Icon name="content_paste" variant="rounded" size={18} /> Dán từ Excel
-              </button>
-
-              {studentNewList.length > 0 && (
-                <button
-                  onClick={handleSaveStudents}
-                  disabled={isLoading}
-                  className="inline-flex items-center gap-2 rounded-xl bg-cyan-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-cyan-700 disabled:cursor-not-allowed disabled:bg-slate-400"
-                >
-                  <Icon name="save" variant="rounded" size={18} />
-                  {isLoading ? 'Đang lưu...' : 'Lưu danh sách'}
-                </button>
-              )}
-            </>
-          )}
-        </div>
-      </section>
-
-      <section className="overflow-hidden rounded-3xl bg-m3-surface-container shadow-xs text-m3-on-surface">
-        <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-3">
-          <span className="text-sm font-semibold text-slate-700">Danh sách học sinh</span>
-          <span className="text-xs text-slate-500">Bảng dữ liệu chi tiết theo từng học sinh</span>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-245 w-full text-xs sm:text-sm">
-            <thead className="sticky top-0 z-10 bg-slate-900">
-              <tr>
-                <th className="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-100 sm:px-6">STT</th>
-                <th className="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-100 sm:px-6">Họ và tên đệm</th>
-                <th className="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-100 sm:px-6">
-                  <button
-                    type="button"
-                    onClick={toggleNameSort}
-                    className="inline-flex items-center gap-1 text-slate-100 transition hover:text-white"
-                    title="Sắp xếp theo tên"
-                  >
-                    Tên
-                    <span className="text-[10px] text-slate-300">
-                      {nameSortDirection === 'asc' ? '▲' : nameSortDirection === 'desc' ? '▼' : '⇅'}
-                    </span>
-                  </button>
-                </th>
-                <th className="px-3 py-3 text-center text-[11px] font-semibold uppercase tracking-wide text-slate-100 sm:px-6">Năng lực</th>
-                <th className="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-100 sm:px-6">Ghi chú</th>
-                <th className="px-3 py-3 text-center text-[11px] font-semibold uppercase tracking-wide text-slate-100 sm:px-6">
-                  <button
-                    type="button"
-                    onClick={toggleStatusSort}
-                    className="inline-flex items-center gap-1 text-slate-100 transition hover:text-white"
-                    title="Sắp xếp theo trạng thái"
-                  >
-                    Trạng thái
-                    <span className="text-[10px] text-slate-300">
-                      {statusSortDirection === 'active-first' ? '▲' : statusSortDirection === 'inactive-first' ? '▼' : '⇅'}
-                    </span>
-                  </button>
-                </th>
-                <th className="px-3 py-3 text-center text-[11px] font-semibold uppercase tracking-wide text-slate-100 sm:px-6">Exam</th>
-                <th className="px-3 py-3 text-center text-[11px] font-semibold uppercase tracking-wide text-slate-100 sm:px-6">Hành động</th>
-              </tr>
-            </thead>
-
-            <tbody className="divide-y divide-slate-100 bg-white">
-              {isLoading ? (
-                <tr>
-                  <td colSpan={8} className="px-3 py-6 text-center text-slate-500">
-                    Đang tải dữ liệu...
-                  </td>
-                </tr>
-              ) : displayedStudents.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="px-3 py-6 text-center text-slate-500">
-                    {students.length === 0
-                      ? 'Chưa có học sinh nào. Vui lòng nhập file Excel.'
-                      : 'Không có học sinh nào khớp từ khóa tìm kiếm.'}
-                  </td>
-                </tr>
-              ) : (
-                displayedStudents.map((st, index) => {
-                  const isActive = isStudentActive(st);
-                  return (
-                    <tr
-                      key={st.id}
-                      className={`transition-colors ${isActive ? 'hover:bg-sky-50/70' : 'bg-rose-50/70 hover:bg-rose-100/70'
-                        }`}
-                    >
-                      <td className="px-3 py-4 text-slate-500 sm:px-6">{index + 1}</td>
-                      <td className="px-3 py-4 font-medium text-slate-900 sm:px-6">{st.middleName}</td>
-                      <td className="px-3 py-4 font-medium text-slate-900 sm:px-6">{st.firstName}</td>
-                      <td className="px-3 py-4 text-center sm:px-6">
-                        <div className="flex flex-col items-center gap-1">
-                          <select
-                            value={st.competencyLevel || ''}
-                            disabled={readOnly || inlineSavingStudentId === st.id}
-                            onChange={(event) =>
-                              handleInlineCompetencyChange(
-                                st,
-                                event.target.value as '' | 'A' | 'B' | 'C' | 'D'
-                              )
-                            }
-                            className={`w-18 rounded-full border px-2 py-1 text-center text-xs font-semibold outline-none transition ${competencyBadgeClass(st.competencyLevel)} ${inlineSavingStudentId === st.id ? 'cursor-not-allowed opacity-70' : 'hover:brightness-95'
-                              }`}
-                            title={st.id.startsWith('temp-') ? 'Học sinh tạm, sẽ lưu cùng danh sách học sinh.' : 'Cập nhật nhanh năng lực'}
-                          >
-                            <option value="">--</option>
-                            {VALID_COMPETENCY_LEVELS.map((level) => (
-                              <option key={level} value={level}>
-                                {level}
-                              </option>
-                            ))}
-                          </select>
-                          {inlineSavingStudentId === st.id && (
-                            <span className="text-[10px] text-slate-500">Đang lưu...</span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-3 py-4 text-slate-700 sm:px-6">
-                        <div className="max-w-65 truncate" title={st.notes || ''}>
-                          {st.notes?.trim() || '--'}
-                        </div>
-                      </td>
-                      <td className="px-3 py-4 text-center sm:px-6">
-                        <span
-                          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${isActive ? 'bg-emerald-100 text-emerald-700 ring-emerald-200' : 'bg-rose-100 text-rose-700 ring-rose-200'
-                            }`}
-                        >
-                          {isActive ? <Icon name="check_circle" variant="rounded" size={13} /> : <Icon name="cancel" variant="rounded" size={13} />}
-                          {isActive ? 'Hoạt động' : 'Ngừng'}
-                        </span>
-                      </td>
-                      <td className="px-3 py-4 text-center sm:px-6">
-                        <button
-                          type="button"
-                          role="switch"
-                          aria-checked={st.thi ?? false}
-                          onClick={() => handleInlineExamToggle(st)}
-                          disabled={readOnly || inlineSavingStudentId === st.id}
-                          className={`inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-xs font-semibold transition ${st.thi
-                            ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                            : 'border-slate-200 bg-slate-100 text-slate-600'
-                            } ${readOnly || inlineSavingStudentId === st.id
-                              ? 'cursor-not-allowed opacity-60'
-                              : 'hover:brightness-95'
-                            }`}
-                          title={st.thi ? 'Click to switch to Not Taking Exam' : 'Click to switch to Taking Exam'}
-                        >
-                          <span
-                            className={`relative h-4 w-8 rounded-full transition ${st.thi ? 'bg-emerald-500' : 'bg-slate-400'
-                              }`}
-                          >
-                            <span
-                              className={`absolute top-0.5 h-3 w-3 rounded-full bg-white shadow transition ${st.thi ? 'left-4' : 'left-0.5'
-                                }`}
-                            />
-                          </span>
-                          <span>{st.thi ? 'Taking Exam' : 'Not Taking Exam'}</span>
-                          {inlineSavingStudentId === st.id && (
-                            <ProgressIndicator variant="circular" shape="wavy" showTrack size={12} aria-label="Đang lưu..." />
-                          )}
-                        </button>
-                      </td>
-                      <td className="px-3 py-4 text-center sm:px-6">
-                        {!readOnly ? (
-                          <div className="inline-flex items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={() => handleOpenEditStudent(st)}
-                              disabled={st.id.startsWith('temp-')}
-                              className="inline-flex items-center gap-1 rounded-lg bg-blue-100 px-3 py-1.5 text-xs font-medium text-blue-700 transition hover:bg-blue-200 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
-                            >
-                              <Icon name="edit" variant="rounded" size={14} />
-                              Sửa
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteStudent(st)}
-                              className="inline-flex items-center gap-1 rounded-lg bg-rose-100 px-3 py-1.5 text-xs font-medium text-rose-700 transition hover:bg-rose-200"
-                            >
-                              <Icon name="delete" variant="rounded" size={14} />
-                              Xóa
-                            </button>
-                          </div>
-                        ) : (
-                          <span className="text-xs text-slate-400">Chỉ xem</span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="w-full max-w-md rounded-lg bg-white shadow-xl">
-            <div className="flex items-center justify-between border-b px-5 py-4">
-              <h2 className="text-lg font-semibold text-gray-900">Thêm học sinh</h2>
-              <button
-                type="button"
-                onClick={() => setIsAddModalOpen(false)}
-                className="rounded p-1 text-gray-500 hover:bg-gray-100"
-                disabled={isAddSubmitting}
-              >
-                <Icon name="close" variant="rounded" size={18} />
-              </button>
-            </div>
-
-            <form onSubmit={handleAddStudent} className="space-y-4 px-5 py-4">
-              {addError && (
-                <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-                  {addError}
-                </div>
-              )}
-
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">Họ và tên đệm</label>
-                <input
-                  value={addForm.middleName}
-                  onChange={(event) => setAddForm((prev) => ({ ...prev, middleName: event.target.value }))}
-                  disabled={isAddSubmitting}
-                  className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                  placeholder="Nguyễn Văn"
-                />
-              </div>
-
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">Tên</label>
-                <input
-                  value={addForm.firstName}
-                  onChange={(event) => setAddForm((prev) => ({ ...prev, firstName: event.target.value }))}
-                  disabled={isAddSubmitting}
-                  className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                  placeholder="An"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">Trạng thái</label>
-                <select
-                  value={addForm.status}
-                  onChange={(event) => setAddForm((prev) => ({ ...prev, status: event.target.value }))}
-                  disabled={isAddSubmitting}
-                  className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                >
-                  <option value="Active">Hoạt động</option>
-                  <option value="Inactive">Ngừng hoạt động</option>
-                </select>
-              </div>
-
-              <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
-                <label className="inline-flex items-center gap-2 text-sm font-medium text-gray-700">
-                  <input
-                    type="checkbox"
-                    checked={addForm.thi}
-                    onChange={(event) => setAddForm((prev) => ({ ...prev, thi: event.target.checked }))}
-                    disabled={isAddSubmitting}
-                    className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-                  />
-                  Student takes exam
-                </label>
-              </div>
-
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">Đánh giá năng lực</label>
-                <select
-                  value={addForm.competencyLevel}
-                  onChange={(event) =>
-                    setAddForm((prev) => ({ ...prev, competencyLevel: event.target.value as '' | 'A' | 'B' | 'C' | 'D' }))
-                  }
-                  disabled={isAddSubmitting}
-                  className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                >
-                  <option value="">Chưa đánh giá</option>
-                  <option value="A">A</option>
-                  <option value="B">B</option>
-                  <option value="C">C</option>
-                  <option value="D">D</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">Ghi chú</label>
-                <textarea
-                  value={addForm.notes}
-                  onChange={(event) => setAddForm((prev) => ({ ...prev, notes: event.target.value }))}
-                  disabled={isAddSubmitting}
-                  rows={3}
-                  maxLength={500}
-                  className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                  placeholder="Nhận xét thêm về học sinh..."
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 border-t pt-4">
-                <button
-                  type="button"
-                  onClick={() => setIsAddModalOpen(false)}
-                  disabled={isAddSubmitting}
-                  className="rounded-md bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 disabled:opacity-60"
-                >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
-                  disabled={isAddSubmitting}
-                  className="inline-flex items-center gap-2 rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
-                >
-                  {isAddSubmitting ? (
-                    <>
-                      <ProgressIndicator variant="circular" shape="wavy" showTrack size={15} aria-label="Đang thêm..." />
-                      Đang thêm...
-                    </>
-                  ) : (
-                    'Thêm học sinh'
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {isPasteModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="w-full max-w-2xl rounded-lg bg-white shadow-xl">
-            <div className="flex items-center justify-between border-b px-5 py-4">
-              <h2 className="text-lg font-semibold text-gray-900">Dán danh sách học sinh</h2>
-              <button
-                type="button"
-                onClick={() => setIsPasteModalOpen(false)}
-                className="rounded p-1 text-gray-500 hover:bg-gray-100"
-              >
-                <Icon name="close" variant="rounded" size={18} />
-              </button>
-            </div>
-
-            <div className="space-y-3 px-5 py-4">
-              <p className="text-sm text-gray-600">
-                Copy trực tiếp 2 cột từ Excel theo thứ tự: <strong>Họ và tên đệm</strong>, <strong>Tên</strong>, rồi dán vào ô bên dưới.
-              </p>
-              <textarea
-                value={pasteInput}
-                onChange={(event) => setPasteInput(event.target.value)}
-                placeholder={'Ví dụ:\nNinh Hoàng\tAnh\nNguyễn Phan\tAnh'}
-                className="h-64 w-full resize-y rounded-md border border-gray-300 p-3 text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-              />
-              {pasteError && (
-                <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-                  {pasteError}
-                </div>
-              )}
-            </div>
-
-            <div className="flex items-center justify-end gap-2 border-t px-5 py-4">
-              <button
-                type="button"
-                onClick={() => setIsPasteModalOpen(false)}
-                className="rounded-md border px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
-              >
-                Hủy
-              </button>
-              <button
-                type="button"
-                onClick={handleImportFromPaste}
-                className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
-              >
-                Dán và thêm vào danh sách
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {isEditModalOpen && editingStudent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="w-full max-w-md rounded-lg bg-white shadow-xl">
-            <div className="flex items-center justify-between border-b px-5 py-4">
-              <h2 className="text-lg font-semibold text-gray-900">Sửa học sinh</h2>
-              <button
-                type="button"
-                onClick={handleCloseEditModal}
-                className="rounded p-1 text-gray-500 hover:bg-gray-100"
-                disabled={isEditSubmitting}
-              >
-                <Icon name="close" variant="rounded" size={18} />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmitEditStudent} className="space-y-4 px-5 py-4">
-              {editError && (
-                <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-                  {editError}
-                </div>
-              )}
-
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">Họ và tên đệm</label>
-                <input
-                  name="middleName"
-                  value={editForm.middleName}
-                  onChange={handleEditFieldChange}
-                  disabled={isEditSubmitting}
-                  className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                  placeholder="Nguyễn Văn"
-                />
-              </div>
-
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">Tên</label>
-                <input
-                  name="firstName"
-                  value={editForm.firstName}
-                  onChange={handleEditFieldChange}
-                  disabled={isEditSubmitting}
-                  className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                  placeholder="A"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">Trạng thái</label>
-                <select
-                  name="status"
-                  value={editForm.status}
-                  onChange={handleEditFieldChange}
-                  disabled={isEditSubmitting}
-                  className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                >
-                  <option value="Active">Hoạt động</option>
-                  <option value="Inactive">Ngừng hoạt động</option>
-                </select>
-              </div>
-
-              <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
-                <label className="inline-flex items-center gap-2 text-sm font-medium text-gray-700">
-                  <input
-                    type="checkbox"
-                    name="thi"
-                    checked={editForm.thi}
-                    onChange={handleEditFieldChange}
-                    disabled={isEditSubmitting}
-                    className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-                  />
-                  Student takes exam
-                </label>
-              </div>
-
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">Đánh giá năng lực</label>
-                <select
-                  name="competencyLevel"
-                  value={editForm.competencyLevel}
-                  onChange={handleEditFieldChange}
-                  disabled={isEditSubmitting}
-                  className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                >
-                  <option value="">Chưa đánh giá</option>
-                  <option value="A">A</option>
-                  <option value="B">B</option>
-                  <option value="C">C</option>
-                  <option value="D">D</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">Ghi chú</label>
-                <textarea
-                  name="notes"
-                  value={editForm.notes}
-                  onChange={handleEditFieldChange}
-                  disabled={isEditSubmitting}
-                  rows={3}
-                  maxLength={500}
-                  className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                  placeholder="Nhận xét thêm về học sinh..."
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 border-t pt-4">
-                <button
-                  type="button"
-                  onClick={handleCloseEditModal}
-                  disabled={isEditSubmitting}
-                  className="rounded-md bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 disabled:opacity-60"
-                >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
-                  disabled={isEditSubmitting}
-                  className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
-                >
-                  {isEditSubmitting ? (
-                    <>
-                      <ProgressIndicator variant="circular" shape="wavy" showTrack size={15} aria-label="Đang lưu..." />
-                      Đang lưu...
-                    </>
-                  ) : (
-                    'Lưu'
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* Paste From Clipboard / Excel Modal */}
+      <PasteStudentModal
+        isOpen={isPasteModalOpen}
+        readOnly={readOnly}
+        onClose={() => setIsPasteModalOpen(false)}
+        onImportStudents={handleImportFromPaste}
+      />
     </div>
   );
 };

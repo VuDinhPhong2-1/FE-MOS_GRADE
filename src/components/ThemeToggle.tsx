@@ -1,24 +1,44 @@
-import { useThemeMode, Icon, IconButton } from '@bug-on/m3-expressive';
+import { useThemeMode, Icon, IconButton, type ThemeMode } from '@bug-on/m3-expressive';
 
 export function ThemeToggle({ className }: { className?: string }) {
   const { mode, setMode, effectiveMode } = useThemeMode();
-  const isDark = effectiveMode === 'dark';
+
+  const handleToggle = () => {
+    const nextMode: Record<ThemeMode, ThemeMode> = {
+      light: 'dark',
+      dark: 'system',
+      system: 'light',
+    };
+    setMode(nextMode[mode] || 'light');
+  };
+
+  const getIconName = () => {
+    if (mode === 'system') return 'brightness_auto';
+    return mode === 'dark' ? 'dark_mode' : 'light_mode';
+  };
+
+  const getLabel = () => {
+    if (mode === 'system') {
+      return `Chế độ: Hệ thống (${effectiveMode === 'dark' ? 'Tối' : 'Sáng'}) - Bấm để chuyển sang Sáng`;
+    }
+    if (mode === 'dark') {
+      return 'Chế độ: Tối - Bấm để chuyển sang Hệ thống';
+    }
+    return 'Chế độ: Sáng - Bấm để chuyển sang Tối';
+  };
 
   return (
     <IconButton
-      onClick={() => setMode(isDark ? 'light' : 'dark')}
-      aria-label={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-      title={`Chế độ: ${mode} (${effectiveMode}) - Bấm để đổi`}
-      size='md'
+      onClick={handleToggle}
+      aria-label={getLabel()}
+      title={getLabel()}
+      size="md"
       className={className}
     >
-      {isDark ? (
-        <Icon name="light_mode" size={24} variant='rounded' />
-      ) : (
-        <Icon name="dark_mode" size={24} variant='rounded' />
-      )}
+      <Icon name={getIconName()} size={24} variant="rounded" />
     </IconButton>
   );
 }
 
 export default ThemeToggle;
+

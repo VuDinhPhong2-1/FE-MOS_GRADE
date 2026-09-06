@@ -404,7 +404,7 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64 gap-2">
-        <ProgressIndicator variant="circular" shape="wavy" showTrack size={32} aria-label="Đang tải danh sách lớp..." />
+        <ProgressIndicator variant="circular" shape="wavy" size={64} aria-label="Đang tải danh sách lớp..." />
         <span className="text-gray-600">Đang tải danh sách lớp...</span>
       </div>
     );

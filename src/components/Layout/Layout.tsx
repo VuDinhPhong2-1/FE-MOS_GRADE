@@ -58,42 +58,19 @@ const Layout = ({ children, navItems }: LayoutProps) => {
         />
 
         {/* Khung hiển thị nội dung chính - Bo tròn rounded-3xl, scroll bên trong */}
-        <div className="min-h-0 flex-1 px-2.5 sm:px-4 lg:pl-0 lg:pr-5 pb-2.5 sm:pb-4 lg:pb-5 pt-1 overflow-hidden flex flex-col">
+        <div className="min-h-0 flex-1 sm:px-0 lg:pl-0 lg:pr-5 pb-2.5 sm:pb-4 lg:pb-5 pt-1 overflow-hidden flex flex-col">
           <div className="flex-1 min-h-0 rounded-m3-xl-inc bg-m3-surface-container-lowest dark:bg-m3-surface text-m3-on-surface overflow-hidden flex flex-col">
-            <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-36 sm:pb-40 lg:pb-8">
+            <div className="flex-1 min-h-0 overflow-y-auto p-6 pb-24 sm:pb-40 lg:pb-6">
               {children}
             </div>
           </div>
         </div>
 
-        {/* Mobile FAB Menu: Chỉ hiển thị khi có action và trên mobile/tablet (lg:hidden) */}
-        {actions.length > 0 && (
-          <div className="fixed bottom-20 right-4 z-40 lg:hidden">
-            <FABMenu
-              expanded={fabOpen}
-              onToggle={setFabOpen}
-              items={actions.map((act) => ({
-                id: act.id,
-                label: act.label,
-                icon: act.icon ? <Icon name={act.icon} /> : <Icon name="circle" />,
-                onClick: () => {
-                  setFabOpen(false);
-                  act.onClick();
-                },
-                disabled: act.disabled,
-              }))}
-              aria-label="Tùy chọn tác vụ trang"
-              colorVariant="primary"
-              alignment="end"
-            />
-          </div>
-        )}
-
         {/* Mobile Bottom Navigation Bar (MD3 Expressive) */}
         <NavigationBar
           variant="flexible"
           elevated
-          className="lg:hidden bg-m3-surface-container shadow-lg"
+          className="lg:hidden bg-m3-surface-container-low shadow-lg z-30"
           style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
         >
           {mobileNavItems.map((item) => (
@@ -107,6 +84,28 @@ const Layout = ({ children, navItems }: LayoutProps) => {
             />
           ))}
         </NavigationBar>
+
+        {/* Mobile FAB Menu: Chỉ hiển thị khi có action và trên mobile/tablet (lg:hidden) */}
+        {actions.length > 0 && (
+          <FABMenu
+            expanded={fabOpen}
+            onToggle={setFabOpen}
+            className="bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] sm:bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] lg:hidden z-50"
+            items={actions.map((act) => ({
+              id: act.id,
+              label: act.label,
+              icon: act.icon ? <Icon name={act.icon} /> : <Icon name="circle" />,
+              onClick: () => {
+                setFabOpen(false);
+                act.onClick();
+              },
+              disabled: act.disabled,
+            }))}
+            aria-label="Tùy chọn tác vụ trang"
+            colorVariant="primary"
+            alignment="end"
+          />
+        )}
       </main>
 
       {/* Profile Modal dùng chung cho cả Sidebar và Header */}

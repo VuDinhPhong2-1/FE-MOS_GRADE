@@ -1,7 +1,6 @@
-// src/components/GradingModal.optimized.tsx
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Icon, ProgressIndicator } from '@bug-on/m3-expressive';
-import * as XLSX from 'xlsx';
+import * as XLSX from 'xlsx-js-style';
 import { useAuth } from '../context/AuthContext';
 import type { Assignment, GradingEndpointInfo, UpdateAssignmentRequest } from '../types/assignment.types';
 import type { Student } from '../types/student.types';
