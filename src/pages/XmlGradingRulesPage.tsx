@@ -69,15 +69,11 @@ const emptyRuleSet = (): GradingRuleSet => ({ id: '', subject: 'excel', version:
 const emptyProject = (): ProjectXmlRule => ({ projectCode: 'project22', projectName: '', maxScore: 125, tasks: [] });
 const emptyTask = (): TaskXmlRule => ({ taskId: '', taskName: '', maxScore: 1, conditions: [] });
 const emptyCondition = (): XmlGradingCondition => ({
-  conditionId: '', score: 1, sourceFile: 'xl/worksheets/sheet1.xml', expectedValues: [''], compareMode: 'xmlContainsNormalized', matchPolicy: 'all',
+  conditionId: '', score: 1, sourceFile: 'xl/worksheets/sheet1.xml', expectedVariants: [{ expectedValues: [''] }], compareMode: 'xmlContainsNormalized', matchPolicy: 'all',
   feedback: { successDetail: '', errorMessage: '', fixAction: '' }, stopTaskIfFailed: false,
 });
 
 const cx = (...items: Array<string | false | null | undefined>) => items.filter(Boolean).join(' ');
-
-type LegacyExpectedValueCondition = XmlGradingCondition & {
-  expectedValue?: string | string[];
-};
 
 interface GradeTaskResultView {
   taskId?: string;
@@ -101,20 +97,30 @@ interface GradeResultView {
   taskResults?: GradeTaskResultView[];
 }
 
-const expectedText = (condition: XmlGradingCondition) => {
-  const legacyCondition = condition as LegacyExpectedValueCondition;
-  const arr = condition.expectedValues ??
-    (Array.isArray(legacyCondition.expectedValue)
-      ? legacyCondition.expectedValue
-      : legacyCondition.expectedValue
-        ? [legacyCondition.expectedValue]
-        : []);
-  return Array.isArray(arr) ? arr.join('\n') : '';
+type LegacyXmlGradingCondition = XmlGradingCondition & {
+  expectedValues?: string[];
+};
+
+const expectedVariantsForEdit = (condition: XmlGradingCondition) => {
+  const legacyCondition = condition as LegacyXmlGradingCondition;
+  const rawVariants = condition.expectedVariants?.length
+    ? condition.expectedVariants
+    : legacyCondition.expectedValues?.length
+      ? [{ expectedValues: legacyCondition.expectedValues }]
+      : [{ expectedValues: [''] }];
+
+  return rawVariants.map((variant) => ({
+    expectedValues: Array.isArray(variant?.expectedValues) ? variant.expectedValues : [''],
+  }));
 };
 
 const prepareCondition = (condition: XmlGradingCondition): XmlGradingCondition => ({
   ...condition,
-  expectedValues: (condition.expectedValues ?? []).map((value) => value.trim()).filter(Boolean),
+  expectedVariants: expectedVariantsForEdit(condition)
+    .map((variant) => ({
+      expectedValues: (variant.expectedValues ?? []).map((value) => value.trim()).filter(Boolean),
+    }))
+    .filter((variant) => variant.expectedValues.length > 0),
 });
 
 const XmlGradingRulesPage = () => {
@@ -381,6 +387,20 @@ const XmlGradingRulesPage = () => {
   // chưa từng bấm toggle, để không thay đổi hành vi hiển thị hiện tại.
   const toggleSpecialCondition = (key: string) =>
     setExpandedSpecialConditions((prev) => ({ ...prev, [key]: !(prev[key] ?? true) }));
+
+  usePageHeader({
+    title: 'XML Grading Rules',
+    subtitle: `Quản lý ruleset · project · task · điều kiện chấm (${selected.isActive ? 'ACTIVE' : 'INACTIVE'})`,
+    actions: [
+      {
+        id: 'create-ruleset',
+        label: 'Tạo ruleset',
+        icon: 'add',
+        colorStyle: 'filled',
+        onClick: () => setSelected(emptyRuleSet()),
+      },
+    ],
+  }, [selected.isActive]);
 
   if (!canUsePage) {
     return <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-amber-800">Chỉ tài khoản Admin được quản lý XML grading rules.</div>;
@@ -1238,17 +1258,81 @@ const XmlGradingRulesPage = () => {
                                                     <label className="mt-3 block text-xs font-semibold text-slate-600">
                                                       Giá trị cần tìm trong XML
                                                       <textarea
-                                                        value={expectedText(condition)}
-                                                        onChange={(e) =>
+                                                        value={expectedVariantsForEdit(condition)[0].expectedValues.join('\n')}
+                                                        onChange={(e) => {
+                                                          const variants = expectedVariantsForEdit(condition);
                                                           mutateCondition(pi, ti, ci, {
-                                                            expectedValues: e.target.value.split('\n'),
-                                                          })
-                                                        }
+                                                            expectedVariants: [
+                                                              { expectedValues: e.target.value.split('\n') },
+                                                              ...variants.slice(1),
+                                                            ],
+                                                          });
+                                                        }}
                                                         rows={3}
                                                         placeholder="Mỗi giá trị một dòng..."
                                                         className={cx(inputClass, 'resize-y font-mono')}
                                                       />
                                                     </label>
+
+                                                    <div className="mt-3 rounded-lg border border-blue-100 bg-white/70 p-3">
+                                                      <div className="mb-2 flex items-center justify-between gap-3">
+                                                        <span className="text-xs font-semibold text-slate-600">
+                                                          Expected variants
+                                                        </span>
+                                                        <button
+                                                          onClick={() => {
+                                                            const variants = expectedVariantsForEdit(condition);
+                                                            mutateCondition(pi, ti, ci, {
+                                                              expectedVariants: [...variants, { expectedValues: [''] }],
+                                                            });
+                                                          }}
+                                                          className="inline-flex items-center gap-1 rounded-lg border border-blue-200 px-2.5 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-50"
+                                                        >
+                                                          <Icon name="add" className="text-sm" /> Them variant
+                                                        </button>
+                                                      </div>
+
+                                                      <div className="space-y-3">
+                                                        {expectedVariantsForEdit(condition).slice(1).map((variant, sliceIndex) => {
+                                                          const variantIndex = sliceIndex + 1;
+                                                          return (
+                                                            <div key={variantIndex} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                                                              <div className="mb-2 flex items-center justify-between gap-3">
+                                                                <span className="rounded-md bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-700">
+                                                                  Variant {variantIndex + 1}
+                                                                </span>
+                                                                <button
+                                                                  onClick={() => {
+                                                                    const variants = expectedVariantsForEdit(condition);
+                                                                    mutateCondition(pi, ti, ci, {
+                                                                      expectedVariants: variants.filter((_, index) => index !== variantIndex),
+                                                                    });
+                                                                  }}
+                                                                  title="Xoa variant"
+                                                                  className="rounded-lg p-1.5 text-red-600 hover:bg-red-50"
+                                                                >
+                                                                  <Icon name="delete" className="text-sm" />
+                                                                </button>
+                                                              </div>
+                                                              <textarea
+                                                                value={variant.expectedValues.join('\n')}
+                                                                onChange={(e) => {
+                                                                  const variants = expectedVariantsForEdit(condition).map((item, index) =>
+                                                                    index === variantIndex
+                                                                      ? { expectedValues: e.target.value.split('\n') }
+                                                                      : item
+                                                                  );
+                                                                  mutateCondition(pi, ti, ci, { expectedVariants: variants });
+                                                                }}
+                                                                rows={3}
+                                                                placeholder="Moi gia tri mot dong..."
+                                                                className={cx(inputClass, 'resize-y font-mono')}
+                                                              />
+                                                            </div>
+                                                          );
+                                                        })}
+                                                      </div>
+                                                    </div>
 
                                                     <div className="mt-3 grid gap-3 md:grid-cols-2">
                                                       <label className="text-xs font-semibold text-slate-600">
@@ -1596,8 +1680,8 @@ const XmlGradingRulesPage = () => {
           </div>
 
           {/* Sticky action bar: Save ngay tại vị trí đang nhập, không cần cuộn về đầu trang. */}
-          <div className="sticky bottom-4 z-30 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-m3-outline-variant/60 bg-m3-surface/90 px-4 py-3.5 shadow-xl backdrop-blur-xl">
-            <div className="flex min-w-0 items-center gap-2 text-xs text-m3-on-surface-variant">
+          <div className="sticky bottom-4 z-30 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-m3-outline-variant/60 bg-m3-surface/90 px-4 py-3.5 shadow-xl backdrop-blur-xl p-4">
+            <div className="flex min-w-0 items-center gap-2 text-xs text-m3-on-surface-variant ">
               <span className={cx(
                 'h-2 w-2 shrink-0 rounded-full',
                 saving ? 'animate-pulse bg-m3-primary' : saveError ? 'bg-m3-error' : 'bg-emerald-500'
@@ -1619,7 +1703,7 @@ const XmlGradingRulesPage = () => {
                 disabled={saving}
                 className="inline-flex items-center gap-2 rounded-xl border border-m3-outline-variant bg-m3-surface-container px-3.5 py-2.5 text-sm font-bold text-m3-primary transition hover:bg-m3-surface-container-high disabled:opacity-50"
               >
-                <Icon name="check_circle" className="text-base" /> Validate
+                <Icon name="check_circle" className="text-base " /> Validate
               </button>
               <button
                 type="button"

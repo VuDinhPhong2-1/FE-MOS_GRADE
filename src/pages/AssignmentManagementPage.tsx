@@ -811,7 +811,7 @@ const AssignmentManagementPage = ({ section = 'all' }: AssignmentManagementPageP
         disabled: isAnyLoading,
       },
     ],
-  }, [handleReloadData, isAnyLoading]);
+  }, [selectedClassId, includeInactive, isAnyLoading]);
 
   return (
     <div className="space-y-5">

@@ -1360,7 +1360,7 @@ const TeacherSchedule = () => {
         disabled: copying || loading,
       },
     ],
-  }, [openCreate, openRoomManager, handleCopyToNextWeek, copying, loading]);
+  }, [weekStart, form.schoolId, roomManagerSchoolId, schools[0]?.id, schedules, copying, loading]);
 
   return (
     <div className="min-h-full space-y-5 bg-slate-50/60 p-1 sm:p-2">

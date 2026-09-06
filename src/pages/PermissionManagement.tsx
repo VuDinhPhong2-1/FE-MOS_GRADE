@@ -342,7 +342,7 @@ const PermissionManagement: React.FC = () => {
         disabled: loading || requestLoading || saving || Boolean(decidingUserId),
       },
     ],
-  }, [loadTeacherRequests, loadPermissionData, selectedTeacherId, loading, requestLoading, saving, decidingUserId]);
+  }, [isAdmin, requestStatus, selectedTeacherId, loading, requestLoading, saving, decidingUserId]);
 
   if (!isAdmin) {
     return (

@@ -144,7 +144,7 @@ const ClassScoreboardPage = () => {
         onClick: handleBack,
       },
     ],
-  }, [classDisplayName, students.length, assignments.length, handleBack]);
+  }, [classDisplayName, students.length, assignments.length, locationState?.returnPath]);
 
   if (isLoading) {
     return (

@@ -155,7 +155,7 @@ const ClassGradingPage = () => {
         onClick: handleBack,
       },
     ],
-  }, [classDisplayName, students.length, activeStudents.length, handleBack]);
+  }, [classDisplayName, students.length, activeStudents.length, locationState?.returnPath]);
 
   if (isLoading) {
     return (
