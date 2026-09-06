@@ -1,7 +1,7 @@
-﻿import { useState, type ChangeEvent, type FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Loader2, Lock, Mail, User, ShieldCheck } from 'lucide-react';
 import { GoogleLogin, type CredentialResponse } from '@react-oauth/google';
+import { Button, Divider, Icon, ProgressIndicator, ShapeMedia, TextField } from '@bug-on/m3-expressive';
 import { useAuth } from '../context/AuthContext';
 import type { LoginFormData, LoginResponse, RegisterFormData } from '../types/auth.types';
 import { AUTH_API_BASE_URL } from '../config/api';
@@ -15,7 +15,6 @@ export default function AuthPage() {
     password: '',
     email: '',
   });
-  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
@@ -23,13 +22,9 @@ export default function AuthPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const isAuthBusy = isSubmitting || isGoogleSubmitting;
-  const inputGroupClass =
-    'flex min-h-12 items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 shadow-sm transition focus-within:border-blue-400 focus-within:bg-blue-50/30 focus-within:shadow-[0_0_0_3px_rgba(37,99,235,0.12)]';
-  const inputClass =
-    'min-w-0 flex-1 border-0 bg-transparent px-3 py-3 text-sm text-slate-900 shadow-none outline-none placeholder:text-slate-400 focus:border-0 focus:shadow-none disabled:cursor-not-allowed disabled:text-slate-500';
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement>): void => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleFieldChange = (field: keyof RegisterFormData) => (value: string): void => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const parseErrorMessage = async (response: Response): Promise<string> => {
@@ -170,121 +165,176 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden p-4">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_rgba(37,99,235,0.16),_transparent_50%),radial-gradient(ellipse_at_bottom_right,_rgba(16,185,129,0.12),_transparent_45%)]" />
+    <div className="relative flex min-h-screen w-full items-center justify-center overflow-x-hidden bg-m3-surface p-4 text-m3-on-surface transition-colors">
+      {/* Decorative M3 Expressive Background Blur Orbs (Isolated layer to prevent unnecessary scrollbars) */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div
+          className="absolute -left-20 -top-20 h-96 w-96 rounded-full blur-3xl opacity-30"
+          style={{ background: 'var(--md-sys-color-primary)' }}
+        />
+        <div
+          className="absolute -bottom-20 -right-20 h-96 w-96 rounded-full blur-3xl opacity-20"
+          style={{ background: 'var(--md-sys-color-tertiary, #10b981)' }}
+        />
+      </div>
 
-      <div className="relative z-10 grid w-full max-w-5xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_25px_60px_rgba(15,23,42,0.22)] lg:grid-cols-[1.1fr_1fr]">
-        <div className="hidden bg-gradient-to-br from-blue-700 via-indigo-700 to-slate-900 p-10 text-white lg:block">
-          <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide">
-            <ShieldCheck size={15} />
-            MOS Grader Pro
+      <div className="relative z-10 grid w-full max-w-5xl overflow-hidden rounded-4xl bg-m3-surface-container shadow-[0_24px_48px_rgba(0,0,0,0.14)] lg:grid-cols-[1.1fr_1fr]">
+        {/* Left Panel with M3 Expressive ShapeMedia */}
+        <div className="relative hidden flex-col justify-between overflow-hidden bg-linear-to-br from-m3-primary via-m3-primary/90 to-(--md-sys-color-on-primary-container) p-8 lg:p-10 text-m3-on-primary lg:flex rounded-r-4xl">
+          {/* Subtle Background Pattern */}
+          <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,white_1px,transparent_1px)] bg-size-[24px_24px]" />
+
+          <div className="relative z-10">
+            {/* Custom badge preserving left panel contrast with MD3 Material Symbol */}
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-3.5 py-1 text-xs font-semibold tracking-wide backdrop-blur-sm">
+              <Icon name="verified_user" className="text-base" />
+              MOS Grader Pro
+            </div>
+            <h1 className="mt-5 text-3xl font-black leading-tight tracking-tight">
+              Hệ thống quản lý và chấm điểm MOS
+            </h1>
+            <p className="mt-2.5 text-sm opacity-90 leading-relaxed">
+              Theo dõi lớp học, chấm điểm bài tập tự động và tổng hợp kết quả trực quan theo tiêu chuẩn Material Design 3 Expressive.
+            </p>
           </div>
-          <h1 className="text-3xl font-extrabold leading-tight">Hệ thống quản lý và chấm điểm MOS</h1>
-          <p className="mt-4 text-sm text-blue-100/90">
-            Theo dõi lớp học, chấm điểm bài tập tự động và tổng hợp kết quả trực quan trong một giao diện
-            thống nhất.
-          </p>
-          <div className="mt-10 space-y-3 text-sm text-blue-100/90">
-            <div className="rounded-xl border border-white/15 bg-white/10 px-4 py-3">Chấm điểm theo từng dự án và từng học sinh.</div>
-            <div className="rounded-xl border border-white/15 bg-white/10 px-4 py-3">Xuất bảng điểm đẹp, rõ ràng, phục vụ báo cáo.</div>
-            <div className="rounded-xl border border-white/15 bg-white/10 px-4 py-3">Quản lý trường, lớp, học sinh tập trung.</div>
+
+          {/* Center Showcase: Animated M3 ShapeMedia */}
+          <div className="relative z-10 my-4 lg:my-6 flex items-center justify-center">
+            <ShapeMedia
+              shape="cookie4Sided"
+              morphTo="cookie12Sided"
+              morphOn="hover"
+              morphOptions={{
+                duration: 0.4,
+                easing: [0.34, 1.56, 0.64, 1]
+              }}
+              className="flex h-32 w-32 lg:h-36 lg:w-36 items-center justify-center bg-white/15 backdrop-blur-md shadow-xl cursor-pointer"
+            >
+              <div className="grid place-items-center text-center p-3">
+                <span className="text-3xl font-black">MOS</span>
+              </div>
+            </ShapeMedia>
+          </div>
+
+          {/* Bottom Features List */}
+          <div className="relative z-10 space-y-2 text-xs">
+            <div className="rounded-full border border-white/15 bg-white/10 px-4 py-2 backdrop-blur-sm">
+              ✨ Chấm điểm tự động theo từng dự án và từng học sinh
+            </div>
+            <div className="rounded-full border border-white/15 bg-white/10 px-4 py-2 backdrop-blur-sm">
+              📊 Xuất bảng điểm chi tiết, trực quan phục vụ báo cáo
+            </div>
+            <div className="rounded-full border border-white/15 bg-white/10 px-4 py-2 backdrop-blur-sm">
+              🏫 Quản lý trường, lớp, học sinh và phân quyền toàn diện
+            </div>
           </div>
         </div>
 
-        <div className="p-6 sm:p-8 lg:p-10">
-          <h2 className="text-2xl font-extrabold text-slate-900">{isLogin ? 'Đăng nhập' : 'Đăng ký tài khoản'}</h2>
-          <p className="mt-1 text-sm text-slate-500">{isLogin ? 'Chào mừng bạn quay lại MOS Grader.' : 'Tạo tài khoản mới để bắt đầu sử dụng.'}</p>
+        {/* Right Panel: Form Area */}
+        <div className="p-6 sm:p-8 lg:p-8 flex flex-col justify-center bg-m3-surface-container">
+          <div className="mb-3">
+            <h2 className="text-2xl font-black tracking-tight text-m3-on-surface">
+              {isLogin ? 'Đăng nhập' : 'Đăng ký tài khoản'}
+            </h2>
+            <p className="mt-1 text-sm text-m3-on-surface-variant">
+              {isLogin ? 'Chào mừng bạn quay lại MOS Grader.' : 'Tạo tài khoản mới để bắt đầu sử dụng.'}
+            </p>
+          </div>
 
-          {error && <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>}
+          {error && (
+            <div className="mb-4 rounded-2xl border border-m3-error bg-m3-error-container px-4 py-2.5 text-xs font-medium text-m3-on-error-container">
+              {error}
+            </div>
+          )}
 
-          <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             {!isLogin && (
-              <label className="block">
-                <span className="mb-1 block text-sm font-medium text-slate-700">Thư điện tử</span>
-                <div className={inputGroupClass}>
-                  <Mail size={18} className="shrink-0 text-slate-400" />
-                  <input
-                    type="email"
-                    name="email"
-                    placeholder="you@example.com"
-                    required
-                    disabled={isAuthBusy}
-                    className={inputClass}
-                    onChange={handleChange}
-                    value={formData.email}
-                  />
-                </div>
-              </label>
+              <TextField
+                variant="outlined"
+                type="email"
+                name="email"
+                label="Thư điện tử"
+                placeholder="you@example.com"
+                required
+                disabled={isAuthBusy}
+                fullWidth
+                leadingIcon={<Icon name="mail" />}
+                value={formData.email}
+                onChange={handleFieldChange('email')}
+              />
             )}
 
-            <label className="block">
-              <span className="mb-1 block text-sm font-medium text-slate-700">Tên đăng nhập</span>
-              <div className={`${inputGroupClass} no-border`}>
-                <User size={18} className="shrink-0 text-slate-400" />
-                <input
-                  type="text"
-                  name="username"
-                  placeholder="Nhập tên đăng nhập"
-                  required
-                  disabled={isAuthBusy}
-                  className={inputClass}
-                  onChange={handleChange}
-                  value={formData.username}
-                />
-              </div>
-            </label>
-
-            <label className="block">
-              <span className="mb-1 block text-sm font-medium text-slate-700">Mật khẩu</span>
-              <div className={`${inputGroupClass} no-border`}>
-                <Lock size={18} className="shrink-0 text-slate-400" />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  name="password"
-                  placeholder="Nhập mật khẩu"
-                  required
-                  disabled={isAuthBusy}
-                  className={inputClass}
-                  onChange={handleChange}
-                  value={formData.password}
-                />
-                <button
-                  type="button"
-                  disabled={isAuthBusy}
-                  onClick={() => setShowPassword((prev) => !prev)}
-                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
-                  aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
-                >
-                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              </div>
-            </label>
-
-            <button
-              type="submit"
+            <TextField
+              variant="outlined"
+              type="text"
+              name="username"
+              label="Tên đăng nhập"
+              placeholder="Nhập tên đăng nhập"
+              required
               disabled={isAuthBusy}
-              className="app-btn-primary inline-flex w-full items-center justify-center gap-2 px-4 py-2.5 disabled:translate-y-0 disabled:cursor-not-allowed disabled:shadow-none disabled:hover:translate-y-0"
-            >
-              {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : null}
-              {isSubmitting ? (isLogin ? 'Đang đăng nhập...' : 'Đang đăng ký...') : isLogin ? 'Đăng nhập' : 'Đăng ký'}
-            </button>
+              fullWidth
+              leadingIcon={<Icon name="person" />}
+              value={formData.username}
+              onChange={handleFieldChange('username')}
+            />
+
+            <TextField
+              variant="outlined"
+              type="password"
+              name="password"
+              label="Mật khẩu"
+              placeholder="Nhập mật khẩu"
+              required
+              disabled={isAuthBusy}
+              fullWidth
+              leadingIcon={<Icon name="lock" />}
+              trailingIconMode="password-toggle"
+              value={formData.password}
+              onChange={handleFieldChange('password')}
+            />
+
+            <div className="pt-2">
+              <Button
+                colorStyle="filled"
+                type="submit"
+                disabled={isAuthBusy}
+                fullWidth
+                size="md"
+                loading={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <span>{isLogin ? 'Đang đăng nhập...' : 'Đang đăng ký...'}</span>
+                  </div>
+                ) : (
+                  <span>{isLogin ? 'Đăng nhập' : 'Đăng ký'}</span>
+                )}
+              </Button>
+            </div>
 
             {isLogin && hasGoogleClientId && (
               <>
-                <div className="relative my-1">
+                <div className="relative my-3">
                   <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t border-slate-200" />
+                    <Divider shape='wavy' />
                   </div>
                   <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-white px-2 text-slate-400">Hoặc</span>
+                    <span className="bg-m3-surface-container px-3 text-m3-on-surface-variant">
+                      Hoặc
+                    </span>
                   </div>
                 </div>
 
-                <div className="relative flex justify-center rounded-xl border border-slate-200 bg-slate-50 py-2">
+                <div className="relative flex justify-center rounded-2xl border border-m3-outline-variant bg-m3-surface py-2">
                   {isGoogleSubmitting && (
-                    <div className="absolute inset-0 z-10 flex items-center justify-center gap-2 rounded-xl bg-white/85 text-sm font-medium text-slate-700">
-                      <Loader2 size={16} className="animate-spin text-blue-600" />
-                      Đang đăng nhập Google...
+                    <div className="absolute inset-0 z-10 flex items-center justify-center gap-2 rounded-2xl bg-m3-surface/85 text-xs font-semibold text-m3-on-surface">
+                      <ProgressIndicator
+                        variant="circular"
+                        shape="wavy"
+                        size={18}
+                        aria-label="Đang đăng nhập Google"
+                      />
+                      <span>Đang đăng nhập Google...</span>
                     </div>
                   )}
                   <div className={isAuthBusy ? 'pointer-events-none opacity-60' : undefined}>
@@ -295,29 +345,30 @@ export default function AuthPage() {
             )}
 
             {isLogin && !hasGoogleClientId && (
-              <div className="rounded-xl border border-amber-200 bg-amber-50 p-2 text-xs text-amber-700">
+              <div className="rounded-2xl border border-amber-300 bg-amber-50 dark:bg-amber-950/30 p-3 text-xs text-amber-800 dark:text-amber-200">
                 Đăng nhập Google chưa được cấu hình. Đặt biến <code>VITE_GOOGLE_CLIENT_ID</code> trong file <code>.env</code>.
               </div>
             )}
           </form>
 
-          <p className="mt-5 text-center text-sm text-slate-600">
-            {isLogin ? 'Chưa có tài khoản?' : 'Đã có tài khoản?'}
-            <button
+          <div className="mt-6 flex items-center justify-center gap-1 text-xs text-m3-on-surface-variant">
+            <span>{isLogin ? 'Chưa có tài khoản?' : 'Đã có tài khoản?'}</span>
+            <Button
+              colorStyle="text"
               type="button"
               disabled={isAuthBusy}
-              className="ml-1 font-semibold text-blue-600 hover:underline disabled:cursor-not-allowed disabled:text-slate-400 disabled:no-underline"
+              size="sm"
               onClick={() => {
                 setIsLogin(!isLogin);
                 setError('');
-                setShowPassword(false);
               }}
             >
               {isLogin ? 'Đăng ký ngay' : 'Đăng nhập'}
-            </button>
-          </p>
+            </Button>
+          </div>
         </div>
       </div>
     </div>
   );
 }
+

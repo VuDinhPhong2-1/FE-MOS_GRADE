@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Upload, FileSpreadsheet, RefreshCw, Bug, Copy, Trash2 } from 'lucide-react';
+import { Icon, ProgressIndicator } from '@bug-on/m3-expressive';
 import { gradingService } from '../services/grading.service';
 import type { GradingResult } from '../types';
 import type { BugSeverity, CreateGradingTestBugNoteRequest, GradingTestBugNote } from '../types/grading-test-bug-note.types';
@@ -306,11 +306,11 @@ const GradingView = () => {
       severity: bugSeverity,
       scoreSummary: result
         ? {
-            totalScore: result.totalScore,
-            maxScore: result.maxScore,
-            percentage: result.percentage,
-            status: result.status,
-          }
+          totalScore: result.totalScore,
+          maxScore: result.maxScore,
+          percentage: result.percentage,
+          status: result.status,
+        }
         : undefined,
       gradingError: error || undefined,
     };
@@ -411,41 +411,40 @@ const GradingView = () => {
         </div>
 
         <div className="mb-6">
-            <div
-              className={`flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 transition ${
-                isDragOver ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-gray-50 hover:bg-gray-100'
+          <div
+            className={`flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 transition ${isDragOver ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-gray-50 hover:bg-gray-100'
               }`}
-              onDragOver={(e) => {
-                e.preventDefault();
-                e.dataTransfer.dropEffect = 'copy';
-                setIsDragOver(true);
+            onDragOver={(e) => {
+              e.preventDefault();
+              e.dataTransfer.dropEffect = 'copy';
+              setIsDragOver(true);
+            }}
+            onDragLeave={() => setIsDragOver(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setIsDragOver(false);
+              const file = e.dataTransfer.files?.[0] || null;
+              setSelectedFile(file);
+            }}
+          >
+            <input
+              type="file"
+              accept=".xls,.xlsx,.xlsm,.docx,.dotx,.txt"
+              onChange={(e) => {
+                setSelectedFile(e.target.files?.[0] || null);
+                e.target.value = '';
               }}
-              onDragLeave={() => setIsDragOver(false)}
-              onDrop={(e) => {
-                e.preventDefault();
-                setIsDragOver(false);
-                const file = e.dataTransfer.files?.[0] || null;
-                setSelectedFile(file);
-              }}
-            >
-              <input
-                type="file"
-                accept=".xls,.xlsx,.xlsm,.docx,.dotx,.txt"
-                onChange={(e) => {
-                  setSelectedFile(e.target.files?.[0] || null);
-                  e.target.value = '';
-                }}
-                className="hidden"
-                id="student-upload"
-              />
-              <label htmlFor="student-upload" className="cursor-pointer text-center">
-                <FileSpreadsheet className="mx-auto mb-2 h-12 w-12 text-green-600" />
-                <span className="text-sm font-medium text-gray-700">File bai lam hoc sinh (Excel hoac Word)</span>
-                <p className="mt-1 text-xs text-gray-500">Keo tha file .xlsx, .xls, .xlsm, .docx hoac .txt vao day</p>
-                {studentFile && <p className="mt-1 text-xs font-semibold text-green-600">{studentFile.name}</p>}
-              </label>
-            </div>
+              className="hidden"
+              id="student-upload"
+            />
+            <label htmlFor="student-upload" className="cursor-pointer text-center">
+              <Icon name="table_chart" variant="rounded" size={48} className="mx-auto mb-2 text-green-600" />
+              <span className="text-sm font-medium text-gray-700">File bai lam hoc sinh (Excel hoac Word)</span>
+              <p className="mt-1 text-xs text-gray-500">Keo tha file .xlsx, .xls, .xlsm, .docx hoac .txt vao day</p>
+              {studentFile && <p className="mt-1 text-xs font-semibold text-green-600">{studentFile.name}</p>}
+            </label>
           </div>
+        </div>
 
         {error && <div className="mb-4 rounded-md bg-red-100 p-3 text-sm text-red-700">{error}</div>}
 
@@ -454,7 +453,11 @@ const GradingView = () => {
           disabled={loading || loadingProjects || projectOptions.length === 0}
           className="flex w-full items-center justify-center gap-2 rounded-md bg-blue-600 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:bg-gray-400"
         >
-          {loading ? <RefreshCw className="animate-spin" /> : <Upload size={20} />}
+          {loading ? (
+            <ProgressIndicator variant="circular" shape="wavy" showTrack size={20} aria-label="Đang chấm điểm..." />
+          ) : (
+            <Icon name="upload" variant="rounded" size={20} />
+          )}
           {loading ? 'Đang chấm điểm...' : 'Bắt đầu chấm'}
         </button>
       </div>
@@ -469,7 +472,7 @@ const GradingView = () => {
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
           <div>
             <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-800">
-              <Bug size={18} className="text-amber-600" />
+              <Icon name="bug_report" variant="rounded" size={18} className="text-amber-600" />
               Bug Notes
             </h2>
             <p className="text-xs text-slate-500">
@@ -529,7 +532,7 @@ const GradingView = () => {
             {bugActionMessage && <p className="mt-2 text-xs text-slate-600">{bugActionMessage}</p>}
           </div>
 
-          <div className="max-h-[420px] space-y-3 overflow-y-auto pr-1">
+          <div className="max-h-105 space-y-3 overflow-y-auto pr-1">
             {isLoadingBugNotes && (
               <div className="rounded-md border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-500">
                 Dang tai bug notes...
@@ -551,9 +554,8 @@ const GradingView = () => {
                       <p className="text-[11px] text-slate-500">{new Date(note.createdAt).toLocaleString('vi-VN')}</p>
                     </div>
                     <span
-                      className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
-                        severityMeta[note.severity].badgeClass
-                      }`}
+                      className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${severityMeta[note.severity].badgeClass
+                        }`}
                     >
                       {severityMeta[note.severity].label}
                     </span>
@@ -578,7 +580,7 @@ const GradingView = () => {
                       onClick={() => void handleCopyBugNote(note)}
                       className="inline-flex items-center gap-1 rounded border border-slate-300 px-2 py-1 text-xs text-slate-700 hover:bg-slate-100"
                     >
-                      <Copy size={12} />
+                      <Icon name="content_copy" variant="rounded" size={12} />
                       {copiedNoteId === note.id ? 'Da copy' : 'Copy'}
                     </button>
                     <button
@@ -587,7 +589,7 @@ const GradingView = () => {
                       disabled={deletingBugNoteId === note.id}
                       className="inline-flex items-center gap-1 rounded border border-rose-200 px-2 py-1 text-xs text-rose-700 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      <Trash2 size={12} />
+                      <Icon name="delete" variant="rounded" size={12} />
                       {deletingBugNoteId === note.id ? 'Dang xoa...' : 'Xoa'}
                     </button>
                   </div>

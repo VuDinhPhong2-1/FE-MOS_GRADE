@@ -1,25 +1,12 @@
 @import "tailwindcss" source(none);
+@import "@bug-on/m3-tailwind";
+@import "@bug-on/m3-expressive/index.css";
+@import "@bug-on/m3-expressive/typography.css";
 @source "../src/{App,main}.tsx";
 @source "../src/context/AuthContext.tsx";
 @source "../src/pages/{AuthPage,ClassGradingPage,Classlist,ClassScoreboardPage,Dashboard,GradingView,PermissionManagement,PublicExamPage,SchoolList,StudentList,TeacherSchedule}.tsx";
-@source "../src/components/{ClassAnalyticsPanel,ErrorModal,GradingModal,LocalAgentCompactPanel,LocalAgentPanel,ResultCard,ToastCenter,ViewAllScoresModal}.tsx";
+@source "../src/components/{ClassAnalyticsPanel,ErrorModal,GradingModal,LocalAgentCompactPanel,LocalAgentPanel,ResultCard,ThemeToggle,ToastCenter,ViewAllScoresModal}.tsx";
 @source "../src/components/Layout/{Header,Layout,ProfileModal,Sidebar}.tsx";
-
-:root {
-  --bg-page: #f3f6fb;
-  --bg-page-alt: #edf3ff;
-  --surface: #ffffff;
-  --surface-muted: #f8fbff;
-  --text-main: #0f172a;
-  --text-soft: #475569;
-  --border-soft: #dbe5f3;
-  --primary: #2563eb;
-  --primary-strong: #1d4ed8;
-  --success: #059669;
-  --danger: #dc2626;
-  --shadow-card: 0 8px 30px rgba(15, 23, 42, 0.08);
-  --shadow-soft: 0 2px 10px rgba(15, 23, 42, 0.06);
-}
 
 *,
 *::before,
@@ -33,15 +20,17 @@ body,
   min-height: 100%;
 }
 
+html,
+body {
+  overflow-x: hidden;
+}
+
 body {
   margin: 0;
-  font-family: "Be Vietnam Pro", "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue",
-    sans-serif;
-  color: var(--text-main);
-  background:
-    radial-gradient(1100px 500px at -5% -15%, #dbeafe 0%, transparent 60%),
-    radial-gradient(900px 420px at 110% -10%, #d1fae5 0%, transparent 60%),
-    linear-gradient(180deg, var(--bg-page-alt), var(--bg-page));
+  font-family: "Google Sans Flex", "Be Vietnam Pro", system-ui, -apple-system, sans-serif;
+  color: var(--md-sys-color-on-surface);
+  background-color: var(--md-sys-color-surface);
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
 a {
@@ -58,23 +47,6 @@ button:disabled {
   opacity: 0.65;
 }
 
-input,
-select,
-textarea {
-  border: 1px solid var(--border-soft);
-  background: #fff;
-  border-radius: 10px;
-  outline: none;
-  transition: box-shadow 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
-}
-
-input:focus,
-select:focus,
-textarea:focus {
-  border-color: #93c5fd;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
-}
-
 table {
   border-collapse: separate;
   border-spacing: 0;
@@ -82,7 +54,7 @@ table {
 
 th,
 td {
-  border-color: var(--border-soft);
+  border-color: var(--md-sys-color-outline-variant);
 }
 
 ::-webkit-scrollbar {
@@ -95,72 +67,15 @@ td {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #c5d2e6;
+  background: var(--md-sys-color-outline-variant);
   border-radius: 999px;
   border: 2px solid transparent;
   background-clip: content-box;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #9fb5d8;
+  background: var(--md-sys-color-outline);
   border: 2px solid transparent;
   background-clip: content-box;
 }
-
-@layer components {
-  .app-card {
-    border: 1px solid var(--border-soft);
-    border-radius: 16px;
-    background: var(--surface);
-    box-shadow: var(--shadow-card);
-  }
-
-  .app-card-soft {
-    border: 1px solid var(--border-soft);
-    border-radius: 14px;
-    background: var(--surface-muted);
-    box-shadow: var(--shadow-soft);
-  }
-
-  .app-btn-primary {
-    border-radius: 12px;
-    border: 1px solid transparent;
-    background: linear-gradient(135deg, var(--primary), var(--primary-strong));
-    color: #fff;
-    font-weight: 600;
-    box-shadow: 0 8px 20px rgba(37, 99, 235, 0.24);
-  }
-
-  .app-btn-primary:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 10px 24px rgba(37, 99, 235, 0.3);
-  }
-
-  .app-btn-secondary {
-    border-radius: 12px;
-    border: 1px solid var(--border-soft);
-    background: #fff;
-    color: var(--text-soft);
-    font-weight: 600;
-  }
-
-  .app-btn-secondary:hover {
-    border-color: #bfdbfe;
-    background: #f8fbff;
-    color: #1e3a8a;
-  }
-
-  .app-section-title {
-    font-size: 1.5rem;
-    font-weight: 800;
-    letter-spacing: -0.01em;
-    color: #0b1f44;
-  }
-
-  /* Utility to hide input/container border and focus shadow for specific inputs */
-  .no-border {
-    border: none !important;
-    box-shadow: none !important;
-    background: transparent;
-  }
-}
+

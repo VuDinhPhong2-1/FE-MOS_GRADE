@@ -17,6 +17,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@bug-on/m3-expressive": "^1.3.3",
+    "@bug-on/m3-tailwind": "^1.2.2",
+    "@bug-on/m3-tokens": "^1.2.2",
     "@react-oauth/google": "^0.13.4",
     "@tailwindcss/vite": "^4.1.18",
     "axios": "^1.13.2",
@@ -24,7 +27,7 @@
     "html2canvas": "^1.4.1",
     "jspdf": "^4.0.0",
     "jwt-decode": "^4.0.0",
-    "lucide-react": "^0.562.0",
+    "motion": "^13.2.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-export-table-to-excel": "^1.0.6",

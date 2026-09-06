@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { CheckCircle2, Loader2, RefreshCw, Search, ShieldAlert, ShieldCheck, XCircle } from 'lucide-react';
+import { Icon, ProgressIndicator } from '@bug-on/m3-expressive';
 import { useAuth } from '../context/AuthContext';
+import { usePageHeader } from '../context/PageActionsContext';
 import { authService } from '../services/auth.service';
 import type { TeacherApprovalRequest, TeacherSummary } from '../types/auth.types';
 
@@ -325,10 +326,28 @@ const PermissionManagement: React.FC = () => {
     }
   };
 
+  usePageHeader({
+    title: 'Phân quyền giáo viên',
+    subtitle: 'Admin duyệt tài khoản giáo viên mới và chỉnh permissions cho giáo viên đã duyệt',
+    actions: [
+      {
+        id: 'reload-permissions',
+        label: 'Làm mới',
+        icon: 'refresh',
+        colorStyle: 'outlined',
+        onClick: () => {
+          void loadTeacherRequests();
+          void loadPermissionData(selectedTeacherId);
+        },
+        disabled: loading || requestLoading || saving || Boolean(decidingUserId),
+      },
+    ],
+  }, [loadTeacherRequests, loadPermissionData, selectedTeacherId, loading, requestLoading, saving, decidingUserId]);
+
   if (!isAdmin) {
     return (
-      <section className="app-card p-6">
-        <h1 className="app-section-title text-2xl">Phân quyền giáo viên</h1>
+      <section className="rounded-2xl bg-m3-surface-container p-6 shadow-xs text-m3-on-surface">
+        <h1 className="text-2xl font-bold tracking-tight text-m3-on-surface">Phân quyền giáo viên</h1>
         <p className="mt-3 text-sm text-red-600">Chỉ Admin mới có quyền truy cập chức năng này.</p>
       </section>
     );
@@ -336,36 +355,6 @@ const PermissionManagement: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      <section className="app-card p-4 sm:p-5">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex min-w-0 items-center gap-3">
-            <div className="grid h-11 w-11 place-items-center rounded-2xl bg-blue-50 text-blue-700">
-              <ShieldCheck size={22} />
-            </div>
-            <div>
-              <h2 className="app-section-title text-2xl">Phân quyền giáo viên</h2>
-              <p className="text-sm text-slate-500">
-                Admin duyệt tài khoản giáo viên mới và chỉnh permissions cho giáo viên đã duyệt.
-              </p>
-            </div>
-          </div>
-
-          <div className="ml-auto">
-            <button
-              type="button"
-              onClick={() => {
-                void loadTeacherRequests();
-                void loadPermissionData(selectedTeacherId);
-              }}
-              className="app-btn-secondary inline-flex items-center gap-2 px-4 py-2 text-sm"
-              disabled={loading || requestLoading || saving || Boolean(decidingUserId)}
-            >
-              <RefreshCw size={16} className={loading || requestLoading ? 'animate-spin' : ''} />
-              Làm mới
-            </button>
-          </div>
-        </div>
-      </section>
 
       {error && <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
       {success && (
@@ -392,7 +381,7 @@ const PermissionManagement: React.FC = () => {
       </div>
 
       {activeTab === 'requests' ? (
-        <section className="app-card p-4">
+        <section className="rounded-2xl bg-m3-surface-container p-4 shadow-xs text-m3-on-surface">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
               <h3 className="text-lg font-bold text-slate-900">Yêu cầu giáo viên</h3>
@@ -412,7 +401,7 @@ const PermissionManagement: React.FC = () => {
 
           {requestLoading ? (
             <div className="flex items-center gap-2 text-sm text-slate-500">
-              <Loader2 size={16} className="animate-spin" />
+              <ProgressIndicator variant="circular" shape="wavy" showTrack size={16} aria-label="Đang tải yêu cầu" />
               Đang tải yêu cầu...
             </div>
           ) : teacherRequests.length === 0 ? (
@@ -434,10 +423,10 @@ const PermissionManagement: React.FC = () => {
                           <h4 className="text-base font-bold text-slate-900">{request.fullName || request.username}</h4>
                           <span
                             className={`rounded-full px-2 py-0.5 text-xs font-semibold ${status === 'Approved'
-                                ? 'bg-emerald-50 text-emerald-700'
-                                : status === 'Rejected'
-                                  ? 'bg-rose-50 text-rose-700'
-                                  : 'bg-amber-50 text-amber-700'
+                              ? 'bg-emerald-50 text-emerald-700'
+                              : status === 'Rejected'
+                                ? 'bg-rose-50 text-rose-700'
+                                : 'bg-amber-50 text-amber-700'
                               }`}
                           >
                             {getStatusLabel(status)}
@@ -475,7 +464,11 @@ const PermissionManagement: React.FC = () => {
                               disabled={isBusy}
                               className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
                             >
-                              {isBusy ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
+                              {isBusy ? (
+                                <ProgressIndicator variant="circular" shape="wavy" showTrack size={16} aria-label="Đang duyệt" />
+                              ) : (
+                                <Icon name="check_circle" variant="rounded" size={16} />
+                              )}
                               Duyệt
                             </button>
                             <button
@@ -484,7 +477,11 @@ const PermissionManagement: React.FC = () => {
                               disabled={isBusy}
                               className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-rose-600 px-3 py-2 text-sm font-semibold text-white hover:bg-rose-700 disabled:opacity-50"
                             >
-                              {isBusy ? <Loader2 size={16} className="animate-spin" /> : <XCircle size={16} />}
+                              {isBusy ? (
+                                <ProgressIndicator variant="circular" shape="wavy" showTrack size={16} aria-label="Đang từ chối" />
+                              ) : (
+                                <Icon name="cancel" variant="rounded" size={16} />
+                              )}
                               Từ chối
                             </button>
                           </div>
@@ -493,7 +490,11 @@ const PermissionManagement: React.FC = () => {
 
                       {!isPending && (
                         <div className="grid h-10 w-10 place-items-center rounded-xl bg-slate-50 text-slate-500">
-                          {status === 'Approved' ? <CheckCircle2 size={20} /> : <ShieldAlert size={20} />}
+                          {status === 'Approved' ? (
+                            <Icon name="check_circle" variant="rounded" size={20} className="text-emerald-600" />
+                          ) : (
+                            <Icon name="gpp_maybe" variant="rounded" size={20} className="text-amber-600" />
+                          )}
                         </div>
                       )}
                     </div>
@@ -505,9 +506,9 @@ const PermissionManagement: React.FC = () => {
         </section>
       ) : (
         <section className="grid gap-4 lg:grid-cols-[320px_1fr]">
-          <article className="app-card p-4">
+          <article className="rounded-2xl bg-m3-surface-container p-4 shadow-xs text-m3-on-surface">
             <div className="relative mb-3">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Icon name="search" variant="rounded" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 value={teacherKeyword}
                 onChange={(event) => setTeacherKeyword(event.target.value)}
@@ -518,7 +519,7 @@ const PermissionManagement: React.FC = () => {
 
             {loading ? (
               <div className="flex items-center gap-2 text-sm text-slate-500">
-                <Loader2 size={16} className="animate-spin" />
+                <ProgressIndicator variant="circular" shape="wavy" showTrack size={16} aria-label="Đang tải giáo viên" />
                 Đang tải giáo viên...
               </div>
             ) : filteredTeachers.length === 0 ? (
@@ -526,7 +527,7 @@ const PermissionManagement: React.FC = () => {
                 Không có giáo viên phù hợp.
               </div>
             ) : (
-              <div className="max-h-[560px] space-y-2 overflow-y-auto pr-1">
+              <div className="max-h-140 space-y-2 overflow-y-auto pr-1">
                 {filteredTeachers.map((teacher) => {
                   const isSelected = selectedTeacherId === teacher.userId;
                   return (
@@ -535,8 +536,8 @@ const PermissionManagement: React.FC = () => {
                       type="button"
                       onClick={() => selectTeacher(teacher.userId)}
                       className={`w-full rounded-lg border px-3 py-2 text-left transition ${isSelected
-                          ? 'border-blue-300 bg-blue-50 text-blue-800'
-                          : 'border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50/40'
+                        ? 'border-blue-300 bg-blue-50 text-blue-800'
+                        : 'border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50/40'
                         }`}
                     >
                       <div className="truncate text-sm font-semibold">{teacher.fullName || teacher.username}</div>
@@ -548,7 +549,7 @@ const PermissionManagement: React.FC = () => {
             )}
           </article>
 
-          <article className="app-card p-4">
+          <article className="rounded-2xl bg-m3-surface-container p-4 shadow-xs text-m3-on-surface">
             {!selectedTeacher ? (
               <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
                 Chọn giáo viên ở cột trái để chỉnh quyền.
@@ -587,8 +588,8 @@ const PermissionManagement: React.FC = () => {
                       <div
                         key={permission}
                         className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm ${checked
-                            ? 'border-blue-200 bg-blue-50 text-blue-800'
-                            : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                          ? 'border-blue-200 bg-blue-50 text-blue-800'
+                          : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
                           }`}
                       >
                         <label className="flex min-w-0 flex-1 cursor-pointer items-start gap-2">
@@ -628,9 +629,13 @@ const PermissionManagement: React.FC = () => {
                     type="button"
                     onClick={() => void savePermissions()}
                     disabled={saving || loading}
-                    className="app-btn-primary inline-flex items-center gap-2 px-4 py-2 text-sm disabled:opacity-50"
+                    className="inline-flex items-center gap-2 rounded-xl bg-m3-primary px-4 py-2 text-sm font-semibold text-m3-on-primary shadow-xs hover:bg-m3-primary/90 transition-all disabled:opacity-50"
                   >
-                    {saving ? <Loader2 size={16} className="animate-spin" /> : <ShieldCheck size={16} />}
+                    {saving ? (
+                      <ProgressIndicator variant="circular" shape="wavy" showTrack size={16} aria-label="Đang lưu" />
+                    ) : (
+                      <Icon name="verified_user" variant="rounded" size={16} />
+                    )}
                     {saving ? 'Đang lưu...' : 'Lưu phân quyền'}
                   </button>
                 </div>

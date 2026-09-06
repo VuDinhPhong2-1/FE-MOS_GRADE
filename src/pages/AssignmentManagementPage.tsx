@@ -1,19 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import {
-  Archive,
-  BookOpenCheck,
-  ChevronDown,
-  ClipboardList,
-  Edit3,
-  Loader2,
-  Plus,
-  RefreshCw,
-  RotateCcw,
-  Save,
-  Trash2,
-  X,
-} from 'lucide-react';
+import { Button, Icon, ProgressIndicator } from '@bug-on/m3-expressive';
 import { useAuth } from '../context/AuthContext';
+import { usePageHeader } from '../context/PageActionsContext';
 import { assignmentService } from '../services/assignment.service';
 import { classService } from '../services/class.service';
 import { examPublicationService } from '../services/exam-publication.service';
@@ -810,945 +798,961 @@ const AssignmentManagementPage = ({ section = 'all' }: AssignmentManagementPageP
     }
   };
 
+  usePageHeader({
+    title: 'Quản lý bài tập',
+    subtitle: 'Tạo, chỉnh sửa, lưu trữ hoặc xóa bài tập cho từng lớp theo chuẩn MOS',
+    actions: [
+      {
+        id: 'reload-assignments',
+        label: isAnyLoading ? 'Đang tải...' : 'Tải lại',
+        icon: 'refresh',
+        colorStyle: 'outlined',
+        onClick: handleReloadData,
+        disabled: isAnyLoading,
+      },
+    ],
+  }, [handleReloadData, isAnyLoading]);
+
   return (
     <div className="space-y-5">
       {showFiltersPanel && (
-      <details
-        open={section === 'filters' || isClassPanelOpen}
-        onToggle={(event) => setIsClassPanelOpen(event.currentTarget.open)}
-        className="group rounded-3xl border border-slate-200 bg-white shadow-sm"
-      >
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-4">
-          <div>
-            <h2 className="text-lg font-bold text-slate-900">Lớp & bộ lọc</h2>
-            <p className="mt-1 text-sm text-slate-500">
-              Chọn lớp, tìm kiếm bài tập và bật/tắt bài đã lưu trữ.
-            </p>
-          </div>
-          <ChevronDown className="h-5 w-5 text-slate-500 transition group-open:rotate-180" />
-        </summary>
-
-        <div className="border-t border-slate-100 px-6 pb-6 pt-5">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-sm font-semibold text-blue-700">
-              <ClipboardList className="h-4 w-4" />
-              Quản lý bài tập
+        <details
+          open={section === 'filters' || isClassPanelOpen}
+          onToggle={(event) => setIsClassPanelOpen(event.currentTarget.open)}
+          className="group rounded-3xl bg-m3-surface-container shadow-xs"
+        >
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-4">
+            <div>
+              <h2 className="text-lg font-bold text-m3-on-surface">Lớp & bộ lọc</h2>
+              <p className="mt-1 text-xs text-m3-on-surface-variant">
+                Chọn lớp, tìm kiếm bài tập và bật/tắt bài đã lưu trữ.
+              </p>
             </div>
-            <h1 className="mt-3 text-2xl font-bold text-slate-900">Bài tập theo lớp</h1>
-            <p className="mt-2 max-w-3xl text-sm text-slate-600">
-              Tạo, chỉnh sửa, lưu trữ hoặc xóa bài tập cho từng lớp. Trang này dùng lại contract
-              assignment hiện có và tự động chuẩn hóa endpoint chấm điểm giống màn hình chấm điểm.
-            </p>
+            <Icon name="expand_more" className="text-xl text-m3-on-surface-variant transition-transform duration-200 group-open:rotate-180" />
+          </summary>
+
+          <div className="border-t border-m3-outline-variant/40 px-6 pb-6 pt-5">
+            <div className="grid gap-4 md:grid-cols-3">
+              <label className="block">
+                <span className="text-xs font-bold text-m3-on-surface-variant">Lớp học</span>
+                <select
+                  value={selectedClassId}
+                  onChange={(event) => setSelectedClassId(event.target.value)}
+                  className="mt-1.5 w-full rounded-2xl bg-m3-surface-container-high px-3.5 py-2.5 text-sm text-m3-on-surface outline-none transition focus:ring-2 focus:ring-m3-primary/30"
+                  disabled={isLoadingClasses}
+                >
+                  {classes.length === 0 ? (
+                    <option value="">Không có lớp</option>
+                  ) : (
+                    classes.map((classItem) => (
+                      <option key={classItem.id} value={classItem.id}>
+                        {classItem.name}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </label>
+
+              <label className="block md:col-span-2">
+                <span className="text-xs font-bold text-m3-on-surface-variant">Tìm kiếm bài tập</span>
+                <input
+                  value={searchKeyword}
+                  onChange={(event) => setSearchKeyword(event.target.value)}
+                  placeholder="Tìm theo tên, mô tả, project hoặc endpoint..."
+                  className="mt-1.5 w-full rounded-2xl bg-m3-surface-container-high px-3.5 py-2.5 text-sm text-m3-on-surface outline-none transition focus:ring-2 focus:ring-m3-primary/30"
+                />
+              </label>
+            </div>
+
+            <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-m3-on-surface-variant">
+              <span>
+                Lớp đang chọn:{' '}
+                <strong className="text-m3-on-surface">{selectedClass?.name || 'Chưa chọn lớp'}</strong>
+              </span>
+              <span className="hidden text-m3-outline-variant sm:inline">•</span>
+              <span>
+                Đang hoạt động: <strong className="text-emerald-600 dark:text-emerald-400">{activeCount}</strong>/
+                {assignments.length}
+              </span>
+              <label className="ml-auto inline-flex items-center gap-2 rounded-full bg-m3-surface-container-high px-3 py-1.5 text-xs text-m3-on-surface shadow-xs">
+                <input
+                  type="checkbox"
+                  checked={includeInactive}
+                  onChange={(event) => setIncludeInactive(event.target.checked)}
+                  className="h-4 w-4 rounded-sm border-m3-outline-variant text-m3-primary focus:ring-m3-primary"
+                />
+                Hiện bài đã lưu trữ
+              </label>
+            </div>
+
+            {loadError && (
+              <div className="mt-4 flex items-center gap-2 rounded-2xl border border-m3-error bg-m3-error-container p-3 text-xs font-medium text-m3-on-error-container">
+                <Icon name="warning" className="text-base shrink-0" />
+                <span>{loadError}</span>
+              </div>
+            )}
+
+            {studentLoadError && (
+              <div className="mt-4 flex items-center gap-2 rounded-2xl border border-amber-300 bg-amber-50 dark:bg-amber-950/30 p-3 text-xs font-medium text-amber-800 dark:text-amber-200">
+                <Icon name="warning" className="text-base shrink-0" />
+                <span>{studentLoadError}</span>
+              </div>
+            )}
           </div>
-
-          <button
-            type="button"
-            onClick={handleReloadData}
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-            disabled={isAnyLoading}
-          >
-            <RefreshCw
-              className={`h-4 w-4 ${isAnyLoading ? 'animate-spin' : ''}`}
-            />
-            Tải lại
-          </button>
-        </div>
-
-        <div className="mt-6 grid gap-4 md:grid-cols-3">
-          <label className="block">
-            <span className="text-sm font-semibold text-slate-700">Lớp</span>
-            <select
-              value={selectedClassId}
-              onChange={(event) => setSelectedClassId(event.target.value)}
-              className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-              disabled={isLoadingClasses}
-            >
-              {classes.length === 0 ? (
-                <option value="">Không có lớp</option>
-              ) : (
-                classes.map((classItem) => (
-                  <option key={classItem.id} value={classItem.id}>
-                    {classItem.name}
-                  </option>
-                ))
-              )}
-            </select>
-          </label>
-
-          <label className="block md:col-span-2">
-            <span className="text-sm font-semibold text-slate-700">Tìm kiếm</span>
-            <input
-              value={searchKeyword}
-              onChange={(event) => setSearchKeyword(event.target.value)}
-              placeholder="Tìm theo tên, mô tả, project hoặc endpoint..."
-              className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-            />
-          </label>
-        </div>
-
-        <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-slate-600">
-          <span>
-            Lớp đang chọn:{' '}
-            <strong className="text-slate-900">{selectedClass?.name || 'Chưa chọn lớp'}</strong>
-          </span>
-          <span className="hidden text-slate-300 sm:inline">•</span>
-          <span>
-            Đang hoạt động: <strong className="text-emerald-700">{activeCount}</strong>/
-            {assignments.length}
-          </span>
-          <label className="ml-auto inline-flex items-center gap-2 rounded-full bg-slate-50 px-3 py-2">
-            <input
-              type="checkbox"
-              checked={includeInactive}
-              onChange={(event) => setIncludeInactive(event.target.checked)}
-              className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-            />
-            Hiện bài đã lưu trữ
-          </label>
-        </div>
-
-        {loadError && (
-          <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-            {loadError}
-          </div>
-        )}
-
-        {studentLoadError && (
-          <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
-            {studentLoadError}
-          </div>
-        )}
-        </div>
-      </details>
+        </details>
       )}
 
       {showExamPanel && (
-      <details
-        open={section === 'exam' || isExamPanelOpen}
-        onToggle={(event) => setIsExamPanelOpen(event.currentTarget.open)}
-        className="group rounded-3xl border border-blue-100 bg-white shadow-sm"
-      >
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-4">
-          <div>
-            <h2 className="text-lg font-bold text-slate-900">Tạo ca thi</h2>
-            <p className="mt-1 text-sm text-slate-500">
-              Mở khi cần chọn học sinh, bài tập và tạo token thi cho lớp.
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="hidden rounded-full bg-blue-50 px-3 py-1 text-sm font-semibold text-blue-700 sm:inline">
-              {selectedStudentIds.length} học sinh • {selectedExamAssignments.length} bài tập
-            </span>
-            <ChevronDown className="h-5 w-5 text-slate-500 transition group-open:rotate-180" />
-          </div>
-        </summary>
-
-        <div className="border-t border-blue-50 px-6 pb-6 pt-5">
-          <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-sm font-semibold text-blue-700">
-              <BookOpenCheck className="h-4 w-4" />
-              Tạo ca thi
-            </div>
-            <h2 className="mt-3 text-lg font-bold text-slate-900">Tạo ca thi từ bài tập của lớp</h2>
-            <p className="mt-1 text-sm text-slate-500">
-              Chọn học sinh và bài tập đã publish để tạo token cho Local Agent / trang thi.
-            </p>
-          </div>
-          <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
-            Đã chọn <strong className="text-slate-900">{selectedStudentIds.length}</strong> học sinh •{' '}
-            <strong className="text-slate-900">{selectedExamAssignments.length}</strong> bài tập
-          </div>
-        </div>
-
-        <section className="mt-5 rounded-2xl border border-blue-200 bg-blue-50/70 p-4">
-          <div className="grid gap-4 lg:grid-cols-[1fr_280px] lg:items-end">
+        <details
+          open={section === 'exam' || isExamPanelOpen}
+          onToggle={(event) => setIsExamPanelOpen(event.currentTarget.open)}
+          className="group rounded-3xl bg-m3-surface-container shadow-xs"
+        >
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-4">
             <div>
-              <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-semibold text-blue-700">
-                <ClipboardList className="h-4 w-4" />
-                Lớp tạo ca thi
-              </div>
-              <h3 className="mt-3 text-base font-bold text-slate-950">
-                {selectedClass ? selectedClass.name : 'Chưa chọn lớp'}
-              </h3>
-              <p className="mt-1 text-sm text-slate-600">
-                Học sinh và bài tập đưa vào ca thi sẽ lấy từ lớp đang chọn ở đây.
+              <h2 className="text-lg font-bold text-m3-on-surface">Tạo ca thi</h2>
+              <p className="mt-1 text-xs text-m3-on-surface-variant">
+                Mở khi cần chọn học sinh, bài tập và tạo token thi cho lớp.
               </p>
             </div>
-
-            <label className="block">
-              <span className="text-sm font-semibold text-blue-900">Chọn lớp</span>
-              <select
-                value={selectedClassId}
-                onChange={(event) => setSelectedClassId(event.target.value)}
-                className="mt-2 w-full rounded-xl border border-blue-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-                disabled={isLoadingClasses || isCreatingExamPublication}
-              >
-                {classes.length === 0 ? (
-                  <option value="">Không có lớp</option>
-                ) : (
-                  classes.map((classItem) => (
-                    <option key={classItem.id} value={classItem.id}>
-                      {classItem.name}
-                    </option>
-                  ))
-                )}
-              </select>
-            </label>
-          </div>
-
-          {!selectedClassId && (
-            <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
-              Chọn lớp trước khi tạo ca thi.
+            <div className="flex items-center gap-3">
+              <span className="hidden rounded-full bg-m3-primary/10 px-3 py-1 text-xs font-semibold text-m3-primary sm:inline">
+                {selectedStudentIds.length} học sinh • {selectedExamAssignments.length} bài tập
+              </span>
+              <Icon name="expand_more" className="text-xl text-m3-on-surface-variant transition-transform duration-200 group-open:rotate-180" />
             </div>
-          )}
-        </section>
+          </summary>
 
-        <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-          <div className="space-y-4">
-            <label className="block">
-              <span className="text-sm font-semibold text-slate-700">Tên ca thi</span>
-              <input
-                value={examName}
-                onChange={(event) => setExamName(event.target.value)}
-                className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-                placeholder="Ví dụ: Ca thi MOS lớp A"
-              />
-            </label>
+          <div className="border-t border-m3-outline-variant/40 px-6 pb-6 pt-5">
+            <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+              <div>
+                <div className="inline-flex items-center gap-2 rounded-full bg-m3-primary/10 px-3 py-1 text-xs font-semibold text-m3-primary">
+                  <Icon name="event" className="text-base" />
+                  Tạo ca thi
+                </div>
+                <h2 className="mt-3 text-lg font-bold text-m3-on-surface">Tạo ca thi từ bài tập của lớp</h2>
+                <p className="mt-1 text-xs text-m3-on-surface-variant">
+                  Chọn học sinh và bài tập đã publish để tạo token cho Local Agent / trang thi.
+                </p>
+              </div>
+              <div className="rounded-2xl bg-m3-surface-container-high px-4 py-2 text-xs text-m3-on-surface-variant shadow-xs">
+                Đã chọn <strong className="text-m3-on-surface font-bold">{selectedStudentIds.length}</strong> học sinh •{' '}
+                <strong className="text-m3-on-surface font-bold">{selectedExamAssignments.length}</strong> bài tập
+              </div>
+            </div>
 
-            <div>
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-sm font-semibold text-slate-700">Học sinh</span>
-                <label className="inline-flex items-center gap-2 text-sm text-slate-600">
-                  <input
-                    type="checkbox"
-                    checked={selectWholeClass}
-                    onChange={(event) => handleToggleWholeClass(event.target.checked)}
-                    className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                    disabled={isLoadingStudents || students.length === 0}
-                  />
-                  Cả lớp
+            <section className="mt-5 rounded-3xl bg-m3-surface-container-low p-4 shadow-xs">
+              <div className="grid gap-4 lg:grid-cols-[1fr_280px] lg:items-end">
+                <div>
+                  <div className="inline-flex items-center gap-2 rounded-full bg-m3-surface-container px-3 py-1 text-xs font-semibold text-m3-primary">
+                    <Icon name="apartment" className="text-base" />
+                    Lớp tạo ca thi
+                  </div>
+                  <h3 className="mt-2 text-base font-bold text-m3-on-surface">
+                    {selectedClass ? selectedClass.name : 'Chưa chọn lớp'}
+                  </h3>
+                  <p className="mt-1 text-xs text-m3-on-surface-variant">
+                    Học sinh và bài tập đưa vào ca thi sẽ lấy từ lớp đang chọn ở đây.
+                  </p>
+                </div>
+
+                <label className="block">
+                  <span className="text-xs font-bold text-m3-on-surface-variant">Chọn lớp</span>
+                  <select
+                    value={selectedClassId}
+                    onChange={(event) => setSelectedClassId(event.target.value)}
+                    className="mt-1.5 w-full rounded-2xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2.5 text-sm text-m3-on-surface outline-none transition focus:border-m3-primary focus:ring-2 focus:ring-m3-primary/20"
+                    disabled={isLoadingClasses || isCreatingExamPublication}
+                  >
+                    {classes.length === 0 ? (
+                      <option value="">Không có lớp</option>
+                    ) : (
+                      classes.map((classItem) => (
+                        <option key={classItem.id} value={classItem.id}>
+                          {classItem.name}
+                        </option>
+                      ))
+                    )}
+                  </select>
                 </label>
               </div>
 
-              <div className="mt-2 max-h-56 overflow-auto rounded-2xl border border-slate-200 p-3">
-                {isLoadingStudents ? (
-                  <div className="flex items-center gap-2 text-sm text-slate-500">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Đang tải học sinh...
+              {!selectedClassId && (
+                <div className="mt-3 flex items-center gap-2 rounded-2xl border border-amber-300 bg-amber-50 dark:bg-amber-950/30 p-3 text-xs font-medium text-amber-800 dark:text-amber-200">
+                  <Icon name="warning" className="text-base shrink-0" />
+                  <span>Chọn lớp trước khi tạo ca thi.</span>
+                </div>
+              )}
+            </section>
+
+            <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+              <div className="space-y-4">
+                <label className="block">
+                  <span className="text-xs font-bold text-m3-on-surface-variant">Tên ca thi</span>
+                  <input
+                    value={examName}
+                    onChange={(event) => setExamName(event.target.value)}
+                    className="mt-1.5 w-full rounded-2xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2.5 text-sm text-m3-on-surface outline-none transition focus:border-m3-primary focus:ring-2 focus:ring-m3-primary/20"
+                    placeholder="Ví dụ: Ca thi MOS lớp A"
+                  />
+                </label>
+
+                <div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-xs font-bold text-m3-on-surface-variant">Danh sách học sinh</span>
+                    <label className="inline-flex items-center gap-2 text-xs text-m3-on-surface-variant">
+                      <input
+                        type="checkbox"
+                        checked={selectWholeClass}
+                        onChange={(event) => handleToggleWholeClass(event.target.checked)}
+                        className="h-4 w-4 rounded-sm border-m3-outline-variant text-m3-primary focus:ring-m3-primary"
+                        disabled={isLoadingStudents || students.length === 0}
+                      />
+                      Chọn cả lớp
+                    </label>
                   </div>
-                ) : students.length === 0 ? (
-                  <p className="text-sm text-slate-500">Lớp này chưa có học sinh.</p>
-                ) : (
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    {students.map((student) => (
-                      <label key={student.id} className="flex items-center gap-2 rounded-xl px-2 py-1.5 text-sm hover:bg-slate-50">
-                        <input
-                          type="checkbox"
-                          checked={selectedStudentIds.includes(student.id)}
-                          onChange={() => handleToggleStudent(student.id)}
-                          className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                        />
-                        <span className="truncate">{buildStudentDisplayName(student) || student.id}</span>
-                      </label>
-                    ))}
+
+                  <div className="mt-2 max-h-56 overflow-auto rounded-2xl border border-m3-outline-variant/60 bg-m3-surface p-3">
+                    {isLoadingStudents ? (
+                      <div className="flex items-center gap-2 text-xs text-m3-on-surface-variant">
+                        <ProgressIndicator variant="circular" shape="wavy" size={16} aria-label="Đang tải học sinh" />
+                        <span>Đang tải học sinh...</span>
+                      </div>
+                    ) : students.length === 0 ? (
+                      <p className="text-xs text-m3-on-surface-variant">Lớp này chưa có học sinh.</p>
+                    ) : (
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        {students.map((student) => (
+                          <label key={student.id} className="flex items-center gap-2 rounded-xl p-1.5 text-xs hover:bg-m3-surface-container transition-colors">
+                            <input
+                              type="checkbox"
+                              checked={selectedStudentIds.includes(student.id)}
+                              onChange={() => handleToggleStudent(student.id)}
+                              className="h-4 w-4 rounded-sm border-m3-outline-variant text-m3-primary focus:ring-m3-primary"
+                            />
+                            <span className="truncate text-m3-on-surface">{buildStudentDisplayName(student) || student.id}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <span className="text-xs font-bold text-m3-on-surface-variant">Bài tập đưa vào ca thi</span>
+                  <div className="mt-2 max-h-56 overflow-auto rounded-2xl border border-m3-outline-variant/60 bg-m3-surface p-3">
+                    {isLoadingAssignments ? (
+                      <div className="flex items-center gap-2 text-xs text-m3-on-surface-variant">
+                        <ProgressIndicator variant="circular" shape="wavy" size={16} aria-label="Đang tải bài tập" />
+                        <span>Đang tải bài tập...</span>
+                      </div>
+                    ) : publishableExamAssignments.length === 0 ? (
+                      <p className="text-xs text-m3-on-surface-variant">
+                        Lớp này chưa có bài tập đang hoạt động, đã publish và có endpoint chấm điểm.
+                      </p>
+                    ) : (
+                      <div className="space-y-2">
+                        {publishableExamAssignments.map((assignment) => (
+                          <label key={assignment.id} className="flex items-start gap-2 rounded-xl p-1.5 text-xs hover:bg-m3-surface-container transition-colors">
+                            <input
+                              type="checkbox"
+                              checked={selectedExamAssignmentIds.includes(assignment.id)}
+                              onChange={() => handleToggleExamAssignment(assignment.id)}
+                              className="mt-0.5 h-4 w-4 rounded-sm border-m3-outline-variant text-m3-primary focus:ring-m3-primary"
+                            />
+                            <span>
+                              <span className="block font-semibold text-m3-on-surface">{assignment.name}</span>
+                              <span className="block text-[11px] text-m3-on-surface-variant">
+                                {assignment.projectCode || getProjectCodeFromEndpoint(assignment.gradingApiEndpoint) || '—'} •{' '}
+                                {assignment.gradingApiEndpoint}
+                              </span>
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <label className="inline-flex items-center gap-2 text-xs text-m3-on-surface-variant">
+                  <input
+                    type="checkbox"
+                    checked={allowExamHelp}
+                    onChange={(event) => setAllowExamHelp(event.target.checked)}
+                    className="h-4 w-4 rounded-sm border-m3-outline-variant text-m3-primary focus:ring-m3-primary"
+                  />
+                  Cho phép xem trợ giúp trong ca thi
+                </label>
+
+                <Button
+                  colorStyle="filled"
+                  size="md"
+                  type="button"
+                  onClick={() => void handleCreateLocalAgentExam()}
+                  disabled={
+                    isCreatingExamPublication ||
+                    !selectedClassId ||
+                    selectedStudentIds.length === 0 ||
+                    selectedExamAssignmentIds.length === 0
+                  }
+                  loading={isCreatingExamPublication}
+                  fullWidth
+                >
+                  <div className="flex items-center justify-center gap-2">
+                    <Icon name="assignment" className="text-lg" />
+                    <span>Tạo ca thi</span>
+                  </div>
+                </Button>
+
+                {createExamPublicationMessage && (
+                  <div className="rounded-2xl border border-m3-primary/30 bg-m3-primary/10 p-3 text-xs text-m3-primary">
+                    {createExamPublicationMessage}
+                  </div>
+                )}
+
+                {localAgentPublicationToken && (
+                  <div className="rounded-2xl border border-emerald-300 bg-emerald-50 dark:bg-emerald-950/30 p-3 text-xs text-emerald-800 dark:text-emerald-200">
+                    <p>
+                      <strong>Token:</strong> {localAgentPublicationToken}
+                    </p>
+                    <p className="mt-1">
+                      <strong>Link thi:</strong>{' '}
+                      <a className="font-semibold underline" href={`/exam/${localAgentPublicationToken}`} target="_blank" rel="noreferrer">
+                        /exam/{localAgentPublicationToken}
+                      </a>
+                    </p>
                   </div>
                 )}
               </div>
             </div>
           </div>
-
-          <div className="space-y-4">
-            <div>
-              <span className="text-sm font-semibold text-slate-700">Bài tập đưa vào ca thi</span>
-              <div className="mt-2 max-h-56 overflow-auto rounded-2xl border border-slate-200 p-3">
-                {isLoadingAssignments ? (
-                  <div className="flex items-center gap-2 text-sm text-slate-500">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Đang tải bài tập...
-                  </div>
-                ) : publishableExamAssignments.length === 0 ? (
-                  <p className="text-sm text-slate-500">
-                    Lớp này chưa có bài tập đang hoạt động, đã publish và có endpoint chấm điểm.
-                  </p>
-                ) : (
-                  <div className="space-y-2">
-                    {publishableExamAssignments.map((assignment) => (
-                      <label key={assignment.id} className="flex items-start gap-2 rounded-xl px-2 py-1.5 text-sm hover:bg-slate-50">
-                        <input
-                          type="checkbox"
-                          checked={selectedExamAssignmentIds.includes(assignment.id)}
-                          onChange={() => handleToggleExamAssignment(assignment.id)}
-                          className="mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                        />
-                        <span>
-                          <span className="block font-semibold text-slate-800">{assignment.name}</span>
-                          <span className="block text-xs text-slate-500">
-                            {assignment.projectCode || getProjectCodeFromEndpoint(assignment.gradingApiEndpoint) || '—'} •{' '}
-                            {assignment.gradingApiEndpoint}
-                          </span>
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <label className="inline-flex items-center gap-2 text-sm text-slate-600">
-              <input
-                type="checkbox"
-                checked={allowExamHelp}
-                onChange={(event) => setAllowExamHelp(event.target.checked)}
-                className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-              />
-              Cho phép xem trợ giúp trong ca thi
-            </label>
-
-            <button
-              type="button"
-              onClick={() => void handleCreateLocalAgentExam()}
-              disabled={
-                isCreatingExamPublication ||
-                !selectedClassId ||
-                selectedStudentIds.length === 0 ||
-                selectedExamAssignmentIds.length === 0
-              }
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {isCreatingExamPublication ? <Loader2 className="h-4 w-4 animate-spin" /> : <ClipboardList className="h-4 w-4" />}
-              Tạo ca thi
-            </button>
-
-            {createExamPublicationMessage && (
-              <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
-                {createExamPublicationMessage}
-              </div>
-            )}
-
-            {localAgentPublicationToken && (
-              <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-                <p>
-                  <strong>Token:</strong> {localAgentPublicationToken}
-                </p>
-                <p className="mt-1">
-                  <strong>Link thi:</strong>{' '}
-                  <a className="font-semibold underline" href={`/exam/${localAgentPublicationToken}`} target="_blank" rel="noreferrer">
-                    /exam/{localAgentPublicationToken}
-                  </a>
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-        </div>
-      </details>
+        </details>
       )}
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_420px]">
         {showAssignmentListPanel && (
-        <details
-          open={section === 'list' || isAssignmentListPanelOpen}
-          onToggle={(event) => setIsAssignmentListPanelOpen(event.currentTarget.open)}
-          className="group rounded-3xl border border-slate-200 bg-white shadow-sm"
-        >
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-4">
-            <div>
-              <h2 className="text-lg font-bold text-slate-900">Danh sách bài tập</h2>
-              <p className="mt-1 text-sm text-slate-500">
-                Xem, sửa, lưu trữ hoặc xóa bài tập của lớp đang chọn.
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="hidden rounded-full bg-slate-50 px-3 py-1 text-sm font-semibold text-slate-700 sm:inline">
-                {filteredAssignments.length} bài tập
-              </span>
-              <ChevronDown className="h-5 w-5 text-slate-500 transition group-open:rotate-180" />
-            </div>
-          </summary>
-
-          <div className="border-t border-slate-100">
-            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
-            <div>
-              <h2 className="text-lg font-bold text-slate-900">Danh sách bài tập</h2>
-              <p className="text-sm text-slate-500">
-                {filteredAssignments.length} bài tập phù hợp bộ lọc hiện tại
-              </p>
-            </div>
-          </div>
-
-          <section className="mx-6 mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-            <div className="grid gap-4 lg:grid-cols-[1fr_280px] lg:items-end">
+          <details
+            open={section === 'list' || isAssignmentListPanelOpen}
+            onToggle={(event) => setIsAssignmentListPanelOpen(event.currentTarget.open)}
+            className="group rounded-3xl bg-m3-surface-container shadow-xs"
+          >
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-4">
               <div>
-                <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-700">
-                  <BookOpenCheck className="h-4 w-4" />
-                  Lớp đang xem
-                </div>
-                <h3 className="mt-3 text-base font-bold text-slate-950">
-                  {selectedClass ? selectedClass.name : 'Chưa chọn lớp'}
-                </h3>
-                <p className="mt-1 text-sm text-slate-600">
-                  Danh sách bên dưới chỉ hiển thị bài tập của lớp đang chọn.
+                <h2 className="text-lg font-bold text-m3-on-surface">Danh sách bài tập</h2>
+                <p className="mt-1 text-xs text-m3-on-surface-variant">
+                  Xem, sửa, lưu trữ hoặc xóa bài tập của lớp đang chọn.
                 </p>
               </div>
-
-              <label className="block">
-                <span className="text-sm font-semibold text-slate-700">Chọn lớp</span>
-                <select
-                  value={selectedClassId}
-                  onChange={(event) => setSelectedClassId(event.target.value)}
-                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-                  disabled={isLoadingClasses || isLoadingAssignments}
-                >
-                  {classes.length === 0 ? (
-                    <option value="">Không có lớp</option>
-                  ) : (
-                    classes.map((classItem) => (
-                      <option key={classItem.id} value={classItem.id}>
-                        {classItem.name}
-                      </option>
-                    ))
-                  )}
-                </select>
-              </label>
-            </div>
-
-            {!selectedClassId && (
-              <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
-                Chọn lớp để xem danh sách bài tập.
+              <div className="flex items-center gap-3">
+                <span className="hidden rounded-full bg-m3-surface-container-high px-3 py-1 text-xs font-semibold text-m3-on-surface shadow-xs sm:inline">
+                  {filteredAssignments.length} bài tập
+                </span>
+                <Icon name="expand_more" className="text-xl text-m3-on-surface-variant transition-transform duration-200 group-open:rotate-180" />
               </div>
-            )}
-          </section>
+            </summary>
 
-          {isLoadingAssignments ? (
-            <div className="flex items-center justify-center gap-2 px-6 py-12 text-sm text-slate-500">
-              <Loader2 className="h-5 w-5 animate-spin" />
-              Đang tải bài tập...
+            <div className="border-t border-m3-outline-variant/40">
+              <div className="flex items-center justify-between border-b border-m3-outline-variant/40 px-6 py-3.5">
+                <div>
+                  <h3 className="text-sm font-bold text-m3-on-surface">Danh mục bài tập</h3>
+                  <p className="text-xs text-m3-on-surface-variant">
+                    {filteredAssignments.length} bài tập phù hợp bộ lọc hiện tại
+                  </p>
+                </div>
+              </div>
+
+              <section className="mx-6 mt-4 rounded-3xl bg-m3-surface-container-low p-4 shadow-xs">
+                <div className="grid gap-4 lg:grid-cols-[1fr_280px] lg:items-end">
+                  <div>
+                    <div className="inline-flex items-center gap-1.5 rounded-full bg-m3-surface-container px-3 py-1 text-xs font-semibold text-m3-primary">
+                      <Icon name="menu_book" className="text-base" />
+                      Lớp đang xem
+                    </div>
+                    <h3 className="mt-2 text-base font-bold text-m3-on-surface">
+                      {selectedClass ? selectedClass.name : 'Chưa chọn lớp'}
+                    </h3>
+                    <p className="mt-1 text-xs text-m3-on-surface-variant">
+                      Danh sách bên dưới chỉ hiển thị bài tập của lớp đang chọn.
+                    </p>
+                  </div>
+
+                  <label className="block">
+                    <span className="text-xs font-bold text-m3-on-surface-variant">Chọn lớp</span>
+                    <select
+                      value={selectedClassId}
+                      onChange={(event) => setSelectedClassId(event.target.value)}
+                      className="mt-1.5 w-full rounded-2xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2.5 text-sm text-m3-on-surface outline-none transition focus:border-m3-primary focus:ring-2 focus:ring-m3-primary/20"
+                      disabled={isLoadingClasses || isLoadingAssignments}
+                    >
+                      {classes.length === 0 ? (
+                        <option value="">Không có lớp</option>
+                      ) : (
+                        classes.map((classItem) => (
+                          <option key={classItem.id} value={classItem.id}>
+                            {classItem.name}
+                          </option>
+                        ))
+                      )}
+                    </select>
+                  </label>
+                </div>
+
+                {!selectedClassId && (
+                  <div className="mt-3 flex items-center gap-2 rounded-2xl border border-amber-300 bg-amber-50 dark:bg-amber-950/30 p-3 text-xs font-medium text-amber-800 dark:text-amber-200">
+                    <Icon name="warning" className="text-base shrink-0" />
+                    <span>Chọn lớp để xem danh sách bài tập.</span>
+                  </div>
+                )}
+              </section>
+
+              {isLoadingAssignments ? (
+                <div className="flex items-center justify-center gap-2 px-6 py-12 text-xs text-m3-on-surface-variant">
+                  <ProgressIndicator variant="circular" shape="wavy" size={20} aria-label="Đang tải bài tập" />
+                  <span>Đang tải bài tập...</span>
+                </div>
+              ) : filteredAssignments.length === 0 ? (
+                <div className="px-6 py-12 text-center">
+                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-3xl bg-m3-surface text-m3-on-surface-variant">
+                    <Icon name="menu_book" className="text-3xl" />
+                  </div>
+                  <h3 className="mt-3 text-sm font-bold text-m3-on-surface">Chưa có bài tập nào</h3>
+                  <p className="mt-1 text-xs text-m3-on-surface-variant">
+                    Tạo bài tập mới bằng form bên phải để giáo viên có thể quản lý và chấm điểm.
+                  </p>
+                </div>
+              ) : (
+                <div className="max-h-110 overflow-auto px-6 py-4">
+                  <table className="min-w-full table-fixed divide-y divide-m3-outline-variant/40 text-sm">
+                    <thead className="sticky top-0 z-10 bg-m3-surface-container-high text-left text-xs font-bold uppercase tracking-wider text-m3-on-surface-variant">
+                      <tr>
+                        <th className="w-[28%] px-4 py-3">Bài tập</th>
+                        <th className="w-[11%] px-4 py-3">Môn</th>
+                        <th className="w-[14%] px-4 py-3">Loại</th>
+                        <th className="w-[10%] px-4 py-3">Điểm</th>
+                        <th className="w-[16%] px-4 py-3">Project</th>
+                        <th className="w-[11%] px-4 py-3">Trạng thái</th>
+                        <th className="w-[10%] px-4 py-3 text-right">Thao tác</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-m3-outline-variant/30 bg-m3-surface">
+                      {filteredAssignments.map((assignment) => (
+                        <tr key={assignment.id} className="h-14 align-middle hover:bg-m3-surface-container-high/60 transition-colors">
+                          <td className="px-4 py-2">
+                            <div className="truncate font-semibold text-m3-on-surface" title={assignment.name}>
+                              {assignment.name}
+                            </div>
+                            {assignment.description && (
+                              <div className="truncate text-xs text-m3-on-surface-variant" title={assignment.description}>
+                                {assignment.description}
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-4 py-2 text-xs font-medium text-m3-on-surface-variant">{subjectLabels[assignment.subject]}</td>
+                          <td className="px-4 py-2">
+                            <div className="truncate text-xs font-medium text-m3-on-surface" title={examTypeLabels[assignment.examType]}>
+                              {examTypeLabels[assignment.examType]}
+                            </div>
+                            <div className="text-[11px] text-m3-on-surface-variant">{gradingTypeLabels[assignment.gradingType]}</div>
+                          </td>
+                          <td className="px-4 py-2 font-bold text-m3-on-surface">{assignment.maxScore}</td>
+                          <td className="px-4 py-2">
+                            <div
+                              className="truncate font-medium text-m3-on-surface text-xs"
+                              title={assignment.projectCode || getProjectCodeFromEndpoint(assignment.gradingApiEndpoint) || '—'}
+                            >
+                              {assignment.projectCode || getProjectCodeFromEndpoint(assignment.gradingApiEndpoint) || '—'}
+                            </div>
+                            <div className="truncate text-[11px] text-m3-on-surface-variant" title={assignment.gradingApiEndpoint || 'Không dùng'}>
+                              {assignment.gradingApiEndpoint || 'Không dùng'}
+                            </div>
+                          </td>
+                          <td className="px-4 py-2">
+                            <span
+                              className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${assignment.isActive
+                                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                                : 'bg-m3-surface-container text-m3-on-surface-variant'
+                                }`}
+                            >
+                              {assignment.isActive ? 'Hoạt động' : 'Lưu trữ'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-2">
+                            <div className="flex justify-end gap-1">
+                              <button
+                                type="button"
+                                onClick={() => startEdit(assignment)}
+                                className="flex h-7 w-7 items-center justify-center rounded-full text-m3-on-surface-variant transition-colors hover:bg-m3-surface-container-high hover:text-m3-primary"
+                                title="Sửa"
+                                aria-label="Sửa"
+                              >
+                                <Icon name="edit" className="text-sm" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => void handleToggleActive(assignment)}
+                                disabled={actionAssignmentId === assignment.id}
+                                className="flex h-7 w-7 items-center justify-center rounded-full text-amber-600 transition-colors hover:bg-amber-500/10 disabled:cursor-not-allowed disabled:opacity-60"
+                                title={assignment.isActive ? 'Lưu trữ' : 'Khôi phục'}
+                                aria-label="Lưu trữ"
+                              >
+                                <Icon name={assignment.isActive ? 'archive' : 'restore'} className="text-sm" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => void handleDelete(assignment)}
+                                disabled={actionAssignmentId === assignment.id}
+                                className="flex h-7 w-7 items-center justify-center rounded-full text-m3-error transition-colors hover:bg-m3-error-container disabled:cursor-not-allowed disabled:opacity-60"
+                                title="Xóa"
+                                aria-label="Xóa"
+                              >
+                                <Icon name="delete" className="text-sm" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
-          ) : filteredAssignments.length === 0 ? (
-            <div className="px-6 py-12 text-center">
-              <BookOpenCheck className="mx-auto h-12 w-12 text-slate-300" />
-              <h3 className="mt-3 text-base font-semibold text-slate-800">Chưa có bài tập</h3>
-              <p className="mt-1 text-sm text-slate-500">
-                Tạo bài tập mới bằng form bên phải để giáo viên có thể quản lý và chấm điểm.
-              </p>
-            </div>
-          ) : (
-            <div className="max-h-[440px] overflow-auto">
-              <table className="min-w-full table-fixed divide-y divide-slate-100 text-sm">
-                <thead className="sticky top-0 z-10 bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  <tr>
-                    <th className="w-[28%] px-4 py-3">Bài tập</th>
-                    <th className="w-[11%] px-4 py-3">Môn</th>
-                    <th className="w-[14%] px-4 py-3">Loại</th>
-                    <th className="w-[10%] px-4 py-3">Điểm</th>
-                    <th className="w-[16%] px-4 py-3">Project</th>
-                    <th className="w-[11%] px-4 py-3">Trạng thái</th>
-                    <th className="w-[10%] px-4 py-3 text-right">Thao tác</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 bg-white">
-                  {filteredAssignments.map((assignment) => (
-                    <tr key={assignment.id} className="h-[56px] align-middle hover:bg-slate-50">
-                      <td className="px-4 py-2">
-                        <div className="truncate font-semibold text-slate-900" title={assignment.name}>
-                          {assignment.name}
-                        </div>
-                        {assignment.description && (
-                          <div className="truncate text-xs text-slate-500" title={assignment.description}>
-                            {assignment.description}
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-4 py-2 text-slate-700">{subjectLabels[assignment.subject]}</td>
-                      <td className="px-4 py-2">
-                        <div className="truncate text-slate-700" title={examTypeLabels[assignment.examType]}>
-                          {examTypeLabels[assignment.examType]}
-                        </div>
-                        <div className="text-xs text-slate-500">{gradingTypeLabels[assignment.gradingType]}</div>
-                      </td>
-                      <td className="px-4 py-2 font-semibold text-slate-800">{assignment.maxScore}</td>
-                      <td className="px-4 py-2">
-                        <div
-                          className="truncate font-medium text-slate-800"
-                          title={assignment.projectCode || getProjectCodeFromEndpoint(assignment.gradingApiEndpoint) || '—'}
-                        >
-                          {assignment.projectCode || getProjectCodeFromEndpoint(assignment.gradingApiEndpoint) || '—'}
-                        </div>
-                        <div className="truncate text-xs text-slate-500" title={assignment.gradingApiEndpoint || 'Không dùng'}>
-                          {assignment.gradingApiEndpoint || 'Không dùng'}
-                        </div>
-                      </td>
-                      <td className="px-4 py-2">
-                        <span
-                          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
-                            assignment.isActive
-                              ? 'bg-emerald-50 text-emerald-700'
-                              : 'bg-slate-100 text-slate-600'
-                          }`}
-                        >
-                          {assignment.isActive ? 'Hoạt động' : 'Lưu trữ'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-2">
-                        <div className="flex justify-end gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => startEdit(assignment)}
-                            className="rounded-lg border border-slate-200 p-2 text-slate-600 transition hover:bg-slate-100"
-                            title="Sửa"
-                          >
-                            <Edit3 className="h-4 w-4" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => void handleToggleActive(assignment)}
-                            disabled={actionAssignmentId === assignment.id}
-                            className="rounded-lg border border-amber-200 p-2 text-amber-700 transition hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-60"
-                            title={assignment.isActive ? 'Lưu trữ' : 'Khôi phục'}
-                          >
-                            {assignment.isActive ? <Archive className="h-4 w-4" /> : <RotateCcw className="h-4 w-4" />}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => void handleDelete(assignment)}
-                            disabled={actionAssignmentId === assignment.id}
-                            className="rounded-lg border border-rose-200 p-2 text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
-                            title="Xóa"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-          </div>
-        </details>
+          </details>
         )}
 
         {showAssignmentFormPanel && (
-        <details
-          open={section === 'form' || isAssignmentFormPanelOpen}
-          onToggle={(event) => setIsAssignmentFormPanelOpen(event.currentTarget.open)}
-          className="group rounded-3xl border border-slate-200 bg-white shadow-sm"
-        >
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-4">
-            <div>
-              <h2 className="text-lg font-bold text-slate-900">
-                {editingAssignment ? 'Chỉnh sửa bài tập' : 'Tạo / chỉnh sửa bài tập'}
-              </h2>
-              <p className="mt-1 text-sm text-slate-500">
-                {editingAssignment ? 'Đang sửa bài tập đã chọn.' : 'Mở khi cần tạo bài tập mới cho lớp.'}
-              </p>
-            </div>
-            <ChevronDown className="h-5 w-5 text-slate-500 transition group-open:rotate-180" />
-          </summary>
-
-          <form onSubmit={handleSubmit} className="border-t border-slate-100 p-6">
-            <div className="flex items-start justify-between gap-4">
-            <div>
-              <h2 className="text-lg font-bold text-slate-900">
-                {editingAssignment ? 'Chỉnh sửa bài tập' : 'Tạo bài tập mới'}
-              </h2>
-              <p className="mt-1 text-sm text-slate-500">
-                {editingAssignment
-                  ? 'Cập nhật thông tin bài tập đã chọn.'
-                  : 'Tạo bài tập cho lớp đang chọn.'}
-              </p>
-            </div>
-
-            {editingAssignment && (
-              <button
-                type="button"
-                onClick={resetForm}
-                className="rounded-xl border border-slate-200 p-2 text-slate-500 transition hover:bg-slate-50"
-                aria-label="Hủy chỉnh sửa"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
-          </div>
-
-          <section className="mt-5 rounded-2xl border border-blue-200 bg-blue-50/70 p-4">
-            <div className="grid gap-4 lg:grid-cols-[1fr_280px] lg:items-end">
+          <details
+            open={section === 'form' || isAssignmentFormPanelOpen}
+            onToggle={(event) => setIsAssignmentFormPanelOpen(event.currentTarget.open)}
+            className="group rounded-3xl bg-m3-surface-container shadow-xs"
+          >
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-4">
               <div>
-                <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-semibold text-blue-700">
-                  <ClipboardList className="h-4 w-4" />
-                  Lớp nhận bài tập
-                </div>
-                <h3 className="mt-3 text-base font-bold text-slate-950">
-                  {selectedClass ? selectedClass.name : 'Chưa chọn lớp'}
-                </h3>
-                <p className="mt-1 text-sm text-slate-600">
-                  Tất cả bài tạo nhanh và bài tạo thủ công bên dưới sẽ được lưu vào lớp đang chọn ở đây.
+                <h2 className="text-lg font-bold text-m3-on-surface">
+                  {editingAssignment ? 'Chỉnh sửa bài tập' : 'Tạo / chỉnh sửa bài tập'}
+                </h2>
+                <p className="mt-1 text-xs text-m3-on-surface-variant">
+                  {editingAssignment ? 'Đang sửa bài tập đã chọn.' : 'Mở khi cần tạo bài tập mới cho lớp.'}
                 </p>
               </div>
+              <Icon name="expand_more" className="text-xl text-m3-on-surface-variant transition-transform duration-200 group-open:rotate-180" />
+            </summary>
 
-              <label className="block">
-                <span className="text-sm font-semibold text-blue-900">Chọn lớp</span>
-                <select
-                  value={selectedClassId}
-                  onChange={(event) => setSelectedClassId(event.target.value)}
-                  className="mt-2 w-full rounded-xl border border-blue-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-                  disabled={isLoadingClasses || isSubmitting || isQuickCreatingAssignments}
-                >
-                  {classes.length === 0 ? (
-                    <option value="">Không có lớp</option>
-                  ) : (
-                    classes.map((classItem) => (
-                      <option key={classItem.id} value={classItem.id}>
-                        {classItem.name}
-                      </option>
-                    ))
-                  )}
-                </select>
-              </label>
-            </div>
-
-            {!selectedClassId && (
-              <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
-                Chọn lớp trước khi tạo bài tập.
-              </div>
-            )}
-          </section>
-
-          {!editingAssignment && (
-            <section className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4">
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+            <form onSubmit={handleSubmit} className="border-t border-m3-outline-variant/40 p-6">
+              <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h3 className="text-base font-bold text-emerald-950">Tạo nhanh bài tập</h3>
-                  <p className="mt-1 text-sm text-emerald-700">
-                    Chọn môn và phần, hệ thống sẽ điền sẵn danh sách project để tạo hàng loạt.
+                  <h3 className="text-sm font-bold text-m3-on-surface">
+                    {editingAssignment ? 'Chỉnh sửa bài tập' : 'Tạo bài tập mới'}
+                  </h3>
+                  <p className="mt-0.5 text-xs text-m3-on-surface-variant">
+                    {editingAssignment
+                      ? 'Cập nhật thông tin bài tập đã chọn.'
+                      : 'Tạo bài tập cho lớp đang chọn.'}
                   </p>
                 </div>
-                <div className="grid gap-2 sm:grid-cols-2 lg:min-w-[360px]">
-                  <label className="block">
-                    <span className="text-xs font-semibold text-emerald-900">Môn</span>
-                    <select
-                      value={quickSubject}
-                      onChange={(event) => setQuickSubject(event.target.value as QuickSubjectCode)}
-                      className="mt-1 w-full rounded-xl border border-emerald-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
-                      disabled={isQuickCreatingAssignments}
-                    >
-                      {quickSubjectOptions.map((subject) => (
-                        <option key={subject.code} value={subject.code}>
-                          {subject.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+
+                {editingAssignment && (
+                  <button
+                    type="button"
+                    onClick={resetForm}
+                    className="flex h-7 w-7 items-center justify-center rounded-full text-m3-on-surface-variant transition-colors hover:bg-m3-surface hover:text-m3-on-surface"
+                    aria-label="Hủy chỉnh sửa"
+                  >
+                    <Icon name="close" className="text-base" />
+                  </button>
+                )}
+              </div>
+
+              <section className="mt-4 rounded-3xl bg-m3-surface-container-low p-4 shadow-xs">
+                <div className="grid gap-4 lg:grid-cols-[1fr_280px] lg:items-end">
+                  <div>
+                    <div className="inline-flex items-center gap-1.5 rounded-full bg-m3-surface-container px-3 py-1 text-xs font-semibold text-m3-primary">
+                      <Icon name="assignment" className="text-base" />
+                      Lớp nhận bài tập
+                    </div>
+                    <h3 className="mt-2 text-base font-bold text-m3-on-surface">
+                      {selectedClass ? selectedClass.name : 'Chưa chọn lớp'}
+                    </h3>
+                    <p className="mt-1 text-xs text-m3-on-surface-variant">
+                      Tất cả bài tạo nhanh và bài tạo thủ công bên dưới sẽ được lưu vào lớp đang chọn ở đây.
+                    </p>
+                  </div>
 
                   <label className="block">
-                    <span className="text-xs font-semibold text-emerald-900">Phần</span>
+                    <span className="text-xs font-bold text-m3-on-surface-variant">Chọn lớp</span>
                     <select
-                      value={quickPracticeCode}
-                      onChange={(event) => setQuickPracticeCode(event.target.value as QuickPracticeCode)}
-                      className="mt-1 w-full rounded-xl border border-emerald-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
-                      disabled={isQuickCreatingAssignments}
+                      value={selectedClassId}
+                      onChange={(event) => setSelectedClassId(event.target.value)}
+                      className="mt-1.5 w-full rounded-2xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2.5 text-sm text-m3-on-surface outline-none transition focus:border-m3-primary focus:ring-2 focus:ring-m3-primary/20"
+                      disabled={isLoadingClasses || isSubmitting || isQuickCreatingAssignments}
                     >
-                      {quickPracticeOptions.map((practice) => (
-                        <option key={practice.code} value={practice.code}>
-                          {practice.label}
-                        </option>
-                      ))}
+                      {classes.length === 0 ? (
+                        <option value="">Không có lớp</option>
+                      ) : (
+                        classes.map((classItem) => (
+                          <option key={classItem.id} value={classItem.id}>
+                            {classItem.name}
+                          </option>
+                        ))
+                      )}
                     </select>
                   </label>
                 </div>
-              </div>
 
-              {quickPracticeCode === 'exam_review' && (
-                <p className="mt-3 rounded-xl border border-indigo-200 bg-white px-3 py-2 text-xs text-indigo-700">
-                  {quickSubject === 'excel'
-                    ? 'Ôn thi Excel dùng project chẵn: 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22.'
-                    : 'Ôn thi Word dùng project lẻ: 1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23 và thêm 20, 22.'}
-                </p>
+                {!selectedClassId && (
+                  <div className="mt-3 flex items-center gap-2 rounded-2xl border border-amber-300 bg-amber-50 dark:bg-amber-950/30 p-3 text-xs font-medium text-amber-800 dark:text-amber-200">
+                    <Icon name="warning" className="text-base shrink-0" />
+                    <span>Chọn lớp trước khi tạo bài tập.</span>
+                  </div>
+                )}
+              </section>
+
+              {!editingAssignment && (
+                <section className="mt-5 rounded-3xl border border-emerald-500/20 bg-emerald-500/5 p-4">
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                    <div>
+                      <h3 className="text-sm font-bold text-emerald-800 dark:text-emerald-300">Tạo nhanh bài tập</h3>
+                      <p className="mt-1 text-xs text-emerald-700 dark:text-emerald-400">
+                        Chọn môn và phần, hệ thống sẽ điền sẵn danh sách project để tạo hàng loạt.
+                      </p>
+                    </div>
+                    <div className="grid gap-2 sm:grid-cols-2 lg:min-w-90">
+                      <label className="block">
+                        <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300">Môn</span>
+                        <select
+                          value={quickSubject}
+                          onChange={(event) => setQuickSubject(event.target.value as QuickSubjectCode)}
+                          className="mt-1 w-full rounded-2xl border border-emerald-500/30 bg-m3-surface px-3 py-2 text-xs text-m3-on-surface outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                          disabled={isQuickCreatingAssignments}
+                        >
+                          {quickSubjectOptions.map((subject) => (
+                            <option key={subject.code} value={subject.code}>
+                              {subject.label}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+
+                      <label className="block">
+                        <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300">Phần</span>
+                        <select
+                          value={quickPracticeCode}
+                          onChange={(event) => setQuickPracticeCode(event.target.value as QuickPracticeCode)}
+                          className="mt-1 w-full rounded-2xl border border-emerald-500/30 bg-m3-surface px-3 py-2 text-xs text-m3-on-surface outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                          disabled={isQuickCreatingAssignments}
+                        >
+                          {quickPracticeOptions.map((practice) => (
+                            <option key={practice.code} value={practice.code}>
+                              {practice.label}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    </div>
+                  </div>
+
+                  {quickPracticeCode === 'exam_review' && (
+                    <p className="mt-3 rounded-2xl border border-indigo-300 bg-indigo-50 dark:bg-indigo-950/30 p-2.5 text-xs text-indigo-800 dark:text-indigo-200">
+                      {quickSubject === 'excel'
+                        ? 'Ôn thi Excel dùng project chẵn: 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22.'
+                        : 'Ôn thi Word dùng project lẻ: 1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23 và thêm 20, 22.'}
+                    </p>
+                  )}
+
+                  <div className="mt-4 rounded-2xl border border-emerald-500/20 bg-m3-surface p-3">
+                    <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+                      <div>
+                        <p className="text-xs font-bold text-m3-on-surface">Tạo nhanh từng phần ({quickSubject.toUpperCase()})</p>
+                        <p className="mt-0.5 text-[11px] text-m3-on-surface-variant">Bấm một phần để tạo ngay toàn bộ project trong phần đó.</p>
+                      </div>
+                      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                        {quickPracticeOptions.map((practice) => {
+                          const endpointCount = resolveQuickEndpoints(gradingEndpoints, quickSubject, practice.code).length;
+                          const hasProjects = endpointCount > 0;
+
+                          return (
+                            <button
+                              key={`quick-create-${practice.code}`}
+                              type="button"
+                              onClick={() => void handleQuickCreateByPractice(practice.code)}
+                              disabled={isQuickCreatingAssignments || !selectedClassId || !hasProjects}
+                              className="rounded-2xl border border-emerald-500/30 px-3 py-2 text-left text-xs font-semibold text-emerald-800 dark:text-emerald-300 transition hover:bg-emerald-500/10 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              <span className="block">{practice.label}</span>
+                              <span className="mt-0.5 block text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                                {hasProjects ? `${endpointCount} project` : 'Chưa có project'}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
+                  <label className="mt-4 block">
+                    <span className="text-xs font-bold text-m3-on-surface-variant">Mô tả dùng chung</span>
+                    <textarea
+                      value={quickAssignmentDescription}
+                      onChange={(event) => setQuickAssignmentDescription(event.target.value)}
+                      rows={2}
+                      className="mt-1.5 w-full resize-none rounded-2xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2 text-xs text-m3-on-surface outline-none transition focus:border-m3-primary focus:ring-2 focus:ring-m3-primary/20"
+                      placeholder="Nội dung này sẽ áp dụng cho tất cả bài được tạo nhanh."
+                      disabled={isQuickCreatingAssignments}
+                    />
+                  </label>
+
+                  <div className="mt-4 rounded-2xl border border-emerald-500/20 bg-m3-surface">
+                    <div className="flex flex-col gap-3 border-b border-m3-outline-variant/40 p-3 lg:flex-row lg:items-center lg:justify-between">
+                      <div>
+                        <p className="text-xs font-bold text-m3-on-surface">Danh sách project sẽ tạo</p>
+                        <p className="mt-0.5 text-[11px] text-m3-on-surface-variant">Có thể bỏ chọn project không cần tạo hoặc đổi tên từng bài.</p>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        <button
+                          type="button"
+                          onClick={selectAllQuickAssignments}
+                          disabled={isQuickCreatingAssignments || quickAssignmentDrafts.length === 0}
+                          className="rounded-full border border-m3-outline-variant px-3 py-1 text-xs font-semibold text-m3-on-surface transition hover:bg-m3-surface-container disabled:opacity-50"
+                        >
+                          Chọn tất cả
+                        </button>
+                        <button
+                          type="button"
+                          onClick={clearQuickAssignments}
+                          disabled={isQuickCreatingAssignments || quickAssignmentDrafts.length === 0}
+                          className="rounded-full border border-m3-outline-variant px-3 py-1 text-xs font-semibold text-m3-on-surface transition hover:bg-m3-surface-container disabled:opacity-50"
+                        >
+                          Bỏ chọn
+                        </button>
+                        <button
+                          type="button"
+                          onClick={resetQuickAssignmentNames}
+                          disabled={isQuickCreatingAssignments || quickAssignmentDrafts.length === 0}
+                          className="rounded-full border border-m3-outline-variant px-3 py-1 text-xs font-semibold text-m3-on-surface transition hover:bg-m3-surface-container disabled:opacity-50"
+                        >
+                          Reset tên
+                        </button>
+                      </div>
+                    </div>
+
+                    {quickAssignmentDrafts.length === 0 ? (
+                      <div className="px-3 py-4 text-xs text-amber-800 dark:text-amber-200">
+                        Phần này chưa có project khả dụng để tạo nhanh.
+                      </div>
+                    ) : (
+                      <div className="max-h-72 overflow-auto">
+                        <table className="min-w-full divide-y divide-m3-outline-variant/30 text-xs">
+                          <thead className="sticky top-0 bg-m3-surface-container-high">
+                            <tr>
+                              <th className="w-16 px-3 py-2 text-left font-bold text-m3-on-surface-variant">Chọn</th>
+                              <th className="px-3 py-2 text-left font-bold text-m3-on-surface-variant">Project</th>
+                              <th className="px-3 py-2 text-left font-bold text-m3-on-surface-variant">Tên bài tập</th>
+                              <th className="w-28 px-3 py-2 text-right font-bold text-m3-on-surface-variant">Điểm</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-m3-outline-variant/30 bg-m3-surface">
+                            {quickAssignmentDrafts.map((draft) => (
+                              <tr key={draft.endpoint}>
+                                <td className="px-3 py-2">
+                                  <input
+                                    type="checkbox"
+                                    checked={draft.selected}
+                                    onChange={() => handleToggleQuickAssignment(draft.endpoint)}
+                                    disabled={isQuickCreatingAssignments}
+                                    className="h-4 w-4 rounded-sm border-m3-outline-variant text-emerald-600 focus:ring-emerald-500"
+                                  />
+                                </td>
+                                <td className="px-3 py-2 text-m3-on-surface">
+                                  <div className="font-semibold">{draft.displayName}</div>
+                                  <div className="text-[11px] text-m3-on-surface-variant">{draft.endpoint}</div>
+                                </td>
+                                <td className="px-3 py-2">
+                                  <input
+                                    type="text"
+                                    value={draft.name}
+                                    onChange={(event) => handleQuickAssignmentNameChange(draft.endpoint, event.target.value)}
+                                    disabled={isQuickCreatingAssignments}
+                                    className="w-full rounded-xl border border-m3-outline-variant bg-m3-surface px-2.5 py-1.5 text-xs text-m3-on-surface outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                                    placeholder="Nhập tên bài tập"
+                                  />
+                                </td>
+                                <td className="px-3 py-2 text-right font-bold text-m3-on-surface">{draft.maxScore}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+
+                    <div className="border-t border-m3-outline-variant/40 p-3">
+                      <Button
+                        colorStyle="filled"
+                        size="md"
+                        type="button"
+                        onClick={() => void handleCreateSelectedQuickAssignments()}
+                        disabled={isQuickCreatingAssignments || !selectedClassId || selectedQuickAssignmentCount === 0}
+                        loading={isQuickCreatingAssignments}
+                        fullWidth
+                      >
+                        <div className="flex items-center justify-center gap-2">
+                          <Icon name="add" className="text-lg" />
+                          <span>{isQuickCreatingAssignments ? 'Đang tạo nhanh...' : `Tạo nhanh ${selectedQuickAssignmentCount} bài đã chọn`}</span>
+                        </div>
+                      </Button>
+                    </div>
+                  </div>
+                </section>
               )}
 
-              <div className="mt-4 rounded-xl border border-emerald-200 bg-white p-3">
-                <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-                  <div>
-                    <p className="text-sm font-semibold text-emerald-950">Tạo nhanh từng phần ({quickSubject.toUpperCase()})</p>
-                    <p className="mt-1 text-xs text-slate-500">Bấm một phần để tạo ngay toàn bộ project trong phần đó.</p>
-                  </div>
-                  <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-                    {quickPracticeOptions.map((practice) => {
-                      const endpointCount = resolveQuickEndpoints(gradingEndpoints, quickSubject, practice.code).length;
-                      const hasProjects = endpointCount > 0;
+              <div className="mt-5 space-y-4">
+                <label className="block">
+                  <span className="text-xs font-bold text-m3-on-surface-variant">Tên bài tập</span>
+                  <input
+                    value={form.name}
+                    onChange={(event) => updateForm('name', event.target.value)}
+                    className="mt-1.5 w-full rounded-2xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2.5 text-sm text-m3-on-surface outline-none transition focus:border-m3-primary focus:ring-2 focus:ring-m3-primary/20"
+                    placeholder="Ví dụ: Project 01 - Excel"
+                  />
+                </label>
 
-                      return (
-                        <button
-                          key={`quick-create-${practice.code}`}
-                          type="button"
-                          onClick={() => void handleQuickCreateByPractice(practice.code)}
-                          disabled={isQuickCreatingAssignments || !selectedClassId || !hasProjects}
-                          className="rounded-xl border border-emerald-200 px-3 py-2 text-left text-xs font-semibold text-emerald-800 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          <span className="block">{practice.label}</span>
-                          <span className="mt-1 block text-[11px] font-medium text-emerald-600">
-                            {hasProjects ? `${endpointCount} project` : 'Chưa có project'}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
+                <label className="block">
+                  <span className="text-xs font-bold text-m3-on-surface-variant">Mô tả</span>
+                  <textarea
+                    value={form.description}
+                    onChange={(event) => updateForm('description', event.target.value)}
+                    rows={2}
+                    className="mt-1.5 w-full resize-none rounded-2xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2 text-sm text-m3-on-surface outline-none transition focus:border-m3-primary focus:ring-2 focus:ring-m3-primary/20"
+                    placeholder="Ghi chú nội dung bài tập..."
+                  />
+                </label>
 
-              <label className="mt-4 block">
-                <span className="text-sm font-semibold text-emerald-900">Mô tả dùng chung</span>
-                <textarea
-                  value={quickAssignmentDescription}
-                  onChange={(event) => setQuickAssignmentDescription(event.target.value)}
-                  rows={2}
-                  className="mt-2 w-full resize-none rounded-xl border border-emerald-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
-                  placeholder="Nội dung này sẽ áp dụng cho tất cả bài được tạo nhanh."
-                  disabled={isQuickCreatingAssignments}
-                />
-              </label>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="block">
+                    <span className="text-xs font-bold text-m3-on-surface-variant">Môn</span>
+                    <select
+                      value={form.subject}
+                      onChange={(event) => updateForm('subject', event.target.value as SubjectCode)}
+                      className="mt-1.5 w-full rounded-2xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2.5 text-sm text-m3-on-surface outline-none transition focus:border-m3-primary focus:ring-2 focus:ring-m3-primary/20"
+                    >
+                      {Object.entries(subjectLabels).map(([value, label]) => (
+                        <option key={value} value={value}>
+                          {label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
 
-              <div className="mt-4 rounded-xl border border-emerald-200 bg-white">
-                <div className="flex flex-col gap-3 border-b border-emerald-100 p-3 lg:flex-row lg:items-center lg:justify-between">
-                  <div>
-                    <p className="text-sm font-semibold text-emerald-950">Danh sách project sẽ tạo</p>
-                    <p className="mt-1 text-xs text-slate-500">Có thể bỏ chọn project không cần tạo hoặc đổi tên từng bài.</p>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      onClick={selectAllQuickAssignments}
-                      disabled={isQuickCreatingAssignments || quickAssignmentDrafts.length === 0}
-                      className="rounded-lg border border-emerald-200 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:opacity-50"
+                  <label className="block">
+                    <span className="text-xs font-bold text-m3-on-surface-variant">Loại bài</span>
+                    <select
+                      value={form.examType}
+                      onChange={(event) => updateForm('examType', event.target.value as ExamTypeCode)}
+                      className="mt-1.5 w-full rounded-2xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2.5 text-sm text-m3-on-surface outline-none transition focus:border-m3-primary focus:ring-2 focus:ring-m3-primary/20"
                     >
-                      Chọn tất cả
-                    </button>
-                    <button
-                      type="button"
-                      onClick={clearQuickAssignments}
-                      disabled={isQuickCreatingAssignments || quickAssignmentDrafts.length === 0}
-                      className="rounded-lg border border-emerald-200 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:opacity-50"
-                    >
-                      Bỏ chọn
-                    </button>
-                    <button
-                      type="button"
-                      onClick={resetQuickAssignmentNames}
-                      disabled={isQuickCreatingAssignments || quickAssignmentDrafts.length === 0}
-                      className="rounded-lg border border-emerald-200 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:opacity-50"
-                    >
-                      Reset tên
-                    </button>
-                  </div>
+                      {Object.entries(examTypeLabels).map(([value, label]) => (
+                        <option key={value} value={value}>
+                          {label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
                 </div>
 
-                {quickAssignmentDrafts.length === 0 ? (
-                  <div className="px-3 py-4 text-sm text-amber-700">
-                    Phần này chưa có project khả dụng để tạo nhanh.
-                  </div>
-                ) : (
-                  <div className="max-h-72 overflow-auto">
-                    <table className="min-w-full divide-y divide-emerald-100">
-                      <thead className="sticky top-0 bg-emerald-50">
-                        <tr>
-                          <th className="w-16 px-3 py-2 text-left text-xs font-semibold uppercase text-emerald-800">Chọn</th>
-                          <th className="px-3 py-2 text-left text-xs font-semibold uppercase text-emerald-800">Project</th>
-                          <th className="px-3 py-2 text-left text-xs font-semibold uppercase text-emerald-800">Tên bài tập</th>
-                          <th className="w-28 px-3 py-2 text-right text-xs font-semibold uppercase text-emerald-800">Điểm</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-emerald-50">
-                        {quickAssignmentDrafts.map((draft) => (
-                          <tr key={draft.endpoint}>
-                            <td className="px-3 py-2">
-                              <input
-                                type="checkbox"
-                                checked={draft.selected}
-                                onChange={() => handleToggleQuickAssignment(draft.endpoint)}
-                                disabled={isQuickCreatingAssignments}
-                                className="h-4 w-4 rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500"
-                              />
-                            </td>
-                            <td className="px-3 py-2 text-sm text-slate-700">
-                              <div className="font-semibold">{draft.displayName}</div>
-                              <div className="text-xs text-slate-500">{draft.endpoint}</div>
-                            </td>
-                            <td className="px-3 py-2">
-                              <input
-                                type="text"
-                                value={draft.name}
-                                onChange={(event) => handleQuickAssignmentNameChange(draft.endpoint, event.target.value)}
-                                disabled={isQuickCreatingAssignments}
-                                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
-                                placeholder="Nhập tên bài tập"
-                              />
-                            </td>
-                            <td className="px-3 py-2 text-right text-sm text-slate-700">{draft.maxScore}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="block">
+                    <span className="text-xs font-bold text-m3-on-surface-variant">Điểm tối đa</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={form.maxScore}
+                      onChange={(event) => updateForm('maxScore', event.target.value)}
+                      className="mt-1.5 w-full rounded-2xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2.5 text-sm text-m3-on-surface outline-none transition focus:border-m3-primary focus:ring-2 focus:ring-m3-primary/20"
+                    />
+                  </label>
+
+                  <label className="block">
+                    <span className="text-xs font-bold text-m3-on-surface-variant">Project code</span>
+                    <input
+                      value={form.projectCode}
+                      onChange={(event) => updateForm('projectCode', event.target.value)}
+                      className="mt-1.5 w-full rounded-2xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2.5 text-sm text-m3-on-surface outline-none transition focus:border-m3-primary focus:ring-2 focus:ring-m3-primary/20"
+                      placeholder="project01"
+                    />
+                  </label>
+                </div>
+
+                <label className="block">
+                  <span className="text-xs font-bold text-m3-on-surface-variant">Kiểu chấm</span>
+                  <select
+                    value={form.gradingType}
+                    onChange={(event) => updateForm('gradingType', event.target.value as GradingTypeCode)}
+                    className="mt-1.5 w-full rounded-2xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2.5 text-sm text-m3-on-surface outline-none transition focus:border-m3-primary focus:ring-2 focus:ring-m3-primary/20"
+                  >
+                    {Object.entries(gradingTypeLabels).map(([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                {form.gradingType === 'auto' && (
+                  <label className="block">
+                    <span className="text-xs font-bold text-m3-on-surface-variant">Endpoint chấm điểm</span>
+                    <select
+                      value={form.gradingApiEndpoint}
+                      onChange={(event) => handleEndpointChange(event.target.value)}
+                      className="mt-1.5 w-full rounded-2xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2.5 text-sm text-m3-on-surface outline-none transition focus:border-m3-primary focus:ring-2 focus:ring-m3-primary/20"
+                      disabled={isLoadingEndpoints}
+                    >
+                      <option value="">Chọn endpoint</option>
+                      {endpointOptions.map((endpoint) => (
+                        <option key={endpoint.endpoint} value={endpoint.endpoint}>
+                          {buildEndpointLabel(endpoint)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+
+                {actionMessage && (
+                  <div className="rounded-2xl border border-m3-primary/30 bg-m3-primary/10 p-3 text-xs text-m3-primary">
+                    {actionMessage}
                   </div>
                 )}
 
-                <div className="border-t border-emerald-100 p-3">
-                  <button
-                    type="button"
-                    onClick={() => void handleCreateSelectedQuickAssignments()}
-                    disabled={isQuickCreatingAssignments || !selectedClassId || selectedQuickAssignmentCount === 0}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                <div className="flex flex-col gap-2.5 sm:flex-row pt-2">
+                  <Button
+                    colorStyle="filled"
+                    size="md"
+                    type="submit"
+                    disabled={isSubmitting || !selectedClassId}
+                    loading={isSubmitting}
+                    className="flex-1"
                   >
-                    {isQuickCreatingAssignments ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-                    {isQuickCreatingAssignments ? 'Đang tạo nhanh...' : `Tạo nhanh ${selectedQuickAssignmentCount} bài đã chọn`}
-                  </button>
+                    <div className="flex items-center justify-center gap-2">
+                      <Icon name="save" className="text-lg" />
+                      <span>{editingAssignment ? 'Lưu thay đổi' : 'Tạo bài tập'}</span>
+                    </div>
+                  </Button>
+
+                  <Button
+                    colorStyle="outlined"
+                    size="md"
+                    type="button"
+                    onClick={resetForm}
+                  >
+                    <div className="flex items-center justify-center gap-1.5">
+                      <Icon name="add" className="text-base" />
+                      <span>Form mới</span>
+                    </div>
+                  </Button>
                 </div>
               </div>
-            </section>
-          )}
-
-          <div className="mt-5 space-y-4">
-            <label className="block">
-              <span className="text-sm font-semibold text-slate-700">Tên bài tập</span>
-              <input
-                value={form.name}
-                onChange={(event) => updateForm('name', event.target.value)}
-                className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-                placeholder="Ví dụ: Project 01 - Excel"
-              />
-            </label>
-
-            <label className="block">
-              <span className="text-sm font-semibold text-slate-700">Mô tả</span>
-              <textarea
-                value={form.description}
-                onChange={(event) => updateForm('description', event.target.value)}
-                rows={3}
-                className="mt-2 w-full resize-none rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-                placeholder="Ghi chú nội dung bài tập..."
-              />
-            </label>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className="block">
-                <span className="text-sm font-semibold text-slate-700">Môn</span>
-                <select
-                  value={form.subject}
-                  onChange={(event) => updateForm('subject', event.target.value as SubjectCode)}
-                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-                >
-                  {Object.entries(subjectLabels).map(([value, label]) => (
-                    <option key={value} value={value}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="block">
-                <span className="text-sm font-semibold text-slate-700">Loại bài</span>
-                <select
-                  value={form.examType}
-                  onChange={(event) => updateForm('examType', event.target.value as ExamTypeCode)}
-                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-                >
-                  {Object.entries(examTypeLabels).map(([value, label]) => (
-                    <option key={value} value={value}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className="block">
-                <span className="text-sm font-semibold text-slate-700">Điểm tối đa</span>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={form.maxScore}
-                  onChange={(event) => updateForm('maxScore', event.target.value)}
-                  className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-                />
-              </label>
-
-              <label className="block">
-                <span className="text-sm font-semibold text-slate-700">Project code</span>
-                <input
-                  value={form.projectCode}
-                  onChange={(event) => updateForm('projectCode', event.target.value)}
-                  className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-                  placeholder="project01"
-                />
-              </label>
-            </div>
-
-            <label className="block">
-              <span className="text-sm font-semibold text-slate-700">Kiểu chấm</span>
-              <select
-                value={form.gradingType}
-                onChange={(event) => updateForm('gradingType', event.target.value as GradingTypeCode)}
-                className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-              >
-                {Object.entries(gradingTypeLabels).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            {form.gradingType === 'auto' && (
-              <label className="block">
-                <span className="text-sm font-semibold text-slate-700">Endpoint chấm điểm</span>
-                <select
-                  value={form.gradingApiEndpoint}
-                  onChange={(event) => handleEndpointChange(event.target.value)}
-                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-                  disabled={isLoadingEndpoints}
-                >
-                  <option value="">Chọn endpoint</option>
-                  {endpointOptions.map((endpoint) => (
-                    <option key={endpoint.endpoint} value={endpoint.endpoint}>
-                      {buildEndpointLabel(endpoint)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            )}
-
-            {actionMessage && (
-              <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
-                {actionMessage}
-              </div>
-            )}
-
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <button
-                type="submit"
-                disabled={isSubmitting || !selectedClassId}
-                className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                {editingAssignment ? 'Lưu thay đổi' : 'Tạo bài tập'}
-              </button>
-
-              <button
-                type="button"
-                onClick={resetForm}
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-              >
-                <Plus className="h-4 w-4" />
-                Form mới
-              </button>
-            </div>
-          </div>
-          </form>
-        </details>
+            </form>
+          </details>
         )}
       </div>
     </div>

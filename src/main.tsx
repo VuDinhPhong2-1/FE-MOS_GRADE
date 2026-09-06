@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import { MD3ThemeProvider } from '@bug-on/m3-expressive';
 import App from './App';
 import ToastCenter from './components/ToastCenter';
 import ErrorModal from './components/ErrorModal';
@@ -26,12 +27,20 @@ window.addEventListener('error', (event) => {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <GoogleOAuthProvider clientId={googleClientId}>
-      <BrowserRouter>
-        <App />
-        <ToastCenter />
-        <ErrorModal />
-      </BrowserRouter>
-    </GoogleOAuthProvider>
+    <MD3ThemeProvider
+      defaultMode="system"
+      sourceColor="#1B6EF3"
+      variant="expressive"
+      contrastLevel={0}
+      enableSnackbar
+    >
+      <GoogleOAuthProvider clientId={googleClientId}>
+        <BrowserRouter>
+          <App />
+          <ToastCenter />
+          <ErrorModal />
+        </BrowserRouter>
+      </GoogleOAuthProvider>
+    </MD3ThemeProvider>
   </StrictMode>
 );

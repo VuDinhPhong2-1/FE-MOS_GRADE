@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, Loader2 } from 'lucide-react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Icon, ProgressIndicator } from '@bug-on/m3-expressive';
 import GradingModal from '../components/GradingModal';
 import { useAuth } from '../context/AuthContext';
+import { usePageHeader } from '../context/PageActionsContext';
 import studentService from '../services/student.service';
 import { ApiServiceError, classService } from '../services/class.service';
 import type { Class } from '../types/class.types';
@@ -142,11 +143,25 @@ const ClassGradingPage = () => {
 
   const classDisplayName = locationState?.className || classInfo?.name || classId || 'Lớp học';
 
+  usePageHeader({
+    title: `Chấm điểm: ${classDisplayName}`,
+    subtitle: `Tổng ${students.length} học sinh · Hoạt động ${activeStudents.length}`,
+    actions: [
+      {
+        id: 'back-to-classes',
+        label: 'Quay lại',
+        icon: 'arrow_back',
+        colorStyle: 'outlined',
+        onClick: handleBack,
+      },
+    ],
+  }, [classDisplayName, students.length, activeStudents.length, handleBack]);
+
   if (isLoading) {
     return (
-      <div className="flex h-64 items-center justify-center text-slate-600">
-        <Loader2 size={20} className="mr-2 animate-spin" />
-        Đang tải màn hình chấm điểm...
+      <div className="flex h-64 flex-col items-center justify-center gap-3">
+        <ProgressIndicator variant="circular" shape="wavy" size={36} aria-label="Đang tải màn hình chấm điểm" />
+        <span className="text-sm font-medium text-m3-on-surface-variant">Đang tải màn hình chấm điểm...</span>
       </div>
     );
   }
@@ -154,16 +169,9 @@ const ClassGradingPage = () => {
   if (error) {
     return (
       <div className="space-y-4">
-        <button
-          type="button"
-          onClick={handleBack}
-          className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50"
-        >
-          <ArrowLeft size={16} />
-          Quay lại
-        </button>
-        <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-          {error}
+        <div className="flex items-center gap-3 rounded-2xl bg-m3-error-container p-4 text-xs font-medium text-m3-on-error-container shadow-xs">
+          <Icon name="warning" className="text-xl shrink-0" />
+          <span>{error}</span>
         </div>
       </div>
     );
@@ -172,16 +180,9 @@ const ClassGradingPage = () => {
   if (!canManageClass) {
     return (
       <div className="space-y-4">
-        <button
-          type="button"
-          onClick={handleBack}
-          className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50"
-        >
-          <ArrowLeft size={16} />
-          Quay lại
-        </button>
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          Bạn chỉ có quyền xem lớp này, không thể chấm điểm.
+        <div className="flex items-center gap-3 rounded-2xl bg-amber-500/15 p-4 text-xs font-medium text-amber-700 dark:text-amber-300 shadow-xs">
+          <Icon name="lock" className="text-xl shrink-0" />
+          <span>Bạn chỉ có quyền xem lớp này, không có quyền thực hiện thao tác chấm điểm.</span>
         </div>
       </div>
     );
@@ -189,20 +190,6 @@ const ClassGradingPage = () => {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <button
-          type="button"
-          onClick={handleBack}
-          className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50"
-        >
-          <ArrowLeft size={16} />
-          Quay lại danh sách học sinh
-        </button>
-        <div className="text-sm text-slate-600">
-          Lớp: <span className="font-semibold text-slate-800">{classDisplayName}</span> · Tổng {students.length} học
-          sinh · Hoạt động {activeStudents.length}
-        </div>
-      </div>
 
       <GradingModal
         isOpen

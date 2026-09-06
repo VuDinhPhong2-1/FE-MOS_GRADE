@@ -1,4 +1,4 @@
-import { RefreshCw, RotateCcw, Send, ShieldAlert, SkipForward } from 'lucide-react';
+import { Icon, ProgressIndicator } from '@bug-on/m3-expressive';
 import type { LocalAgentState } from '../types/local-agent.types';
 
 type LocalAgentCompactPanelProps = {
@@ -46,7 +46,11 @@ export function LocalAgentCompactPanel({
             disabled={isLoading}
             className="ml-auto inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-60"
           >
-            <RefreshCw size={15} className={loadingAction === 'refresh' ? 'animate-spin' : ''} />
+            {loadingAction === 'refresh' ? (
+              <ProgressIndicator variant="circular" shape="wavy" showTrack size={15} aria-label="Loading..." />
+            ) : (
+              <Icon name="refresh" variant="rounded" size={15} />
+            )}
             Refresh
           </button>
         </div>
@@ -135,7 +139,7 @@ export function LocalAgentCompactPanel({
             disabled={disableActions}
             className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:bg-slate-300"
           >
-            <Send size={16} />
+            <Icon name="send" variant="rounded" size={16} />
             Submit
           </button>
           <button
@@ -144,7 +148,7 @@ export function LocalAgentCompactPanel({
             disabled={disableActions}
             className="inline-flex items-center justify-center gap-2 rounded-lg bg-amber-600 px-3 py-2 text-sm font-semibold text-white hover:bg-amber-700 disabled:bg-slate-300"
           >
-            <ShieldAlert size={16} />
+            <Icon name="gpp_maybe" variant="rounded" size={16} />
             Force submit
           </button>
           <button
@@ -153,7 +157,7 @@ export function LocalAgentCompactPanel({
             disabled={disableActions}
             className="inline-flex items-center justify-center gap-2 rounded-lg bg-slate-800 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-900 disabled:bg-slate-300"
           >
-            <SkipForward size={16} />
+            <Icon name="skip_next" variant="rounded" size={16} />
             Next project
           </button>
           <button
@@ -162,7 +166,7 @@ export function LocalAgentCompactPanel({
             disabled={disableActions}
             className="inline-flex items-center justify-center gap-2 rounded-lg bg-sky-600 px-3 py-2 text-sm font-semibold text-white hover:bg-sky-700 disabled:bg-slate-300"
           >
-            <RotateCcw size={16} />
+            <Icon name="restart_alt" variant="rounded" size={16} />
             Restart
           </button>
         </div>

@@ -1,18 +1,5 @@
-﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  Plus,
-  BookOpen,
-  Users,
-  Calendar,
-  User,
-  Loader2,
-  AlertCircle,
-  Edit,
-  Trash2,
-  X,
-  Filter,
-  Search,
-} from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Icon, ProgressIndicator } from '@bug-on/m3-expressive';
 import StudentList from './StudentList';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -416,9 +403,9 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-        <span className="ml-2 text-gray-600">Đang tải danh sách lớp...</span>
+      <div className="flex items-center justify-center h-64 gap-2">
+        <ProgressIndicator variant="circular" shape="wavy" showTrack size={32} aria-label="Đang tải danh sách lớp..." />
+        <span className="text-gray-600">Đang tải danh sách lớp...</span>
       </div>
     );
   }
@@ -426,60 +413,60 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
   return (
     <div>
       <div className="mb-6">
-        <h2 className="app-section-title mb-2 flex items-center gap-2 text-2xl">
-          <BookOpen className="text-blue-600" />
+        <h2 className="text-2xl font-bold tracking-tight text-m3-on-surface mb-2 flex items-center gap-2">
+          <Icon name="menu_book" variant="rounded" size={24} className="text-blue-600" />
           Danh sách lớp học
         </h2>
-        <p className="text-gray-600">
+        <p className="text-m3-on-surface-variant">
           Trường: <span className="font-semibold">{selectedSchool.name}</span>
         </p>
       </div>
 
       {error && (
         <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg flex items-center gap-2">
-          <AlertCircle size={20} />
+          <Icon name="error" variant="rounded" size={20} />
           {error}
         </div>
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="app-card p-4">
+        <div className="rounded-2xl bg-m3-surface-container p-4 shadow-xs text-m3-on-surface">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-500 text-sm">Tổng số lớp</p>
+              <p className="text-m3-on-surface-variant text-sm">Tổng số lớp</p>
               <p className="text-2xl font-bold">{classes.length}</p>
             </div>
-            <BookOpen className="w-8 h-8 text-blue-500 opacity-50" />
+            <Icon name="menu_book" variant="rounded" size={32} className="text-blue-500 opacity-50" />
           </div>
         </div>
 
-        <div className="app-card p-4">
+        <div className="rounded-2xl bg-m3-surface-container p-4 shadow-xs text-m3-on-surface">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-500 text-sm">Đang hoạt động</p>
+              <p className="text-m3-on-surface-variant text-sm">Đang hoạt động</p>
               <p className="text-2xl font-bold text-green-600">{classes.filter((c) => c.isActive).length}</p>
             </div>
-            <Users className="w-8 h-8 text-green-500 opacity-50" />
+            <Icon name="group" variant="rounded" size={32} className="text-green-500 opacity-50" />
           </div>
         </div>
 
-        <div className="app-card p-4">
+        <div className="rounded-2xl bg-m3-surface-container p-4 shadow-xs text-m3-on-surface">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-500 text-sm">Tổng học sinh</p>
+              <p className="text-m3-on-surface-variant text-sm">Tổng học sinh</p>
               <p className="text-2xl font-bold">{classes.reduce((sum, cls) => sum + cls.currentStudents, 0)}</p>
             </div>
-            <User className="w-8 h-8 text-purple-500 opacity-50" />
+            <Icon name="person" variant="rounded" size={32} className="text-purple-500 opacity-50" />
           </div>
         </div>
 
-        <div className="app-card p-4">
+        <div className="rounded-2xl bg-m3-surface-container p-4 shadow-xs text-m3-on-surface">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-500 text-sm">Năm học</p>
+              <p className="text-m3-on-surface-variant text-sm">Năm học</p>
               <p className="text-lg font-bold">2024-2025</p>
             </div>
-            <Calendar className="w-8 h-8 text-orange-500 opacity-50" />
+            <Icon name="calendar_today" variant="rounded" size={32} className="text-orange-500 opacity-50" />
           </div>
         </div>
       </div>
@@ -487,7 +474,7 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
       <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center mb-4">
         <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center">
           <div className="flex items-center gap-2">
-            <Filter size={18} className="text-gray-600" />
+            <Icon name="filter_list" variant="rounded" size={18} className="text-gray-600" />
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
@@ -500,7 +487,7 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
           </div>
 
           <div className="relative w-full sm:max-w-xs">
-            <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Icon name="search" variant="rounded" size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
               value={classSearch}
@@ -512,8 +499,8 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
         </div>
 
         {canCreateClass && (
-          <button onClick={handleOpenAddModal} className="app-btn-primary flex w-full items-center justify-center gap-2 px-4 py-2 sm:w-auto">
-            <Plus size={18} />
+          <button onClick={handleOpenAddModal} className="rounded-xl bg-m3-primary text-m3-on-primary font-semibold shadow-xs hover:bg-m3-primary/90 transition-all flex w-full items-center justify-center gap-2 px-4 py-2 sm:w-auto">
+            <Icon name="add" variant="rounded" size={18} />
             Thêm lớp mới
           </button>
         )}
@@ -524,21 +511,18 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
           {visibleClasses.map((cls) => (
             <div
               key={cls.id}
-              className={`app-card overflow-hidden transition-shadow hover:shadow-xl ${
-                !cls.isActive ? 'opacity-60' : ''
-              }`}
+              className={`rounded-2xl bg-m3-surface-container overflow-hidden shadow-xs transition-shadow hover:shadow-md text-m3-on-surface ${!cls.isActive ? 'opacity-60' : ''
+                }`}
             >
               <div
-                className={`bg-gradient-to-r ${
-                  cls.isActive ? 'from-blue-500 to-blue-600' : 'from-gray-400 to-gray-500'
-                } text-white p-4`}
+                className={`bg-linear-to-r ${cls.isActive ? 'from-blue-500 to-blue-600' : 'from-gray-400 to-gray-500'
+                  } text-white p-4`}
               >
                 <div className="flex justify-between items-start mb-2">
                   <h3 className="text-lg font-bold">{cls.name}</h3>
                   <span
-                    className={`px-2 py-1 text-xs rounded-full ${
-                      cls.isActive ? 'bg-green-400 bg-opacity-30 text-white' : 'bg-red-400 bg-opacity-30 text-white'
-                    }`}
+                    className={`px-2 py-1 text-xs rounded-full ${cls.isActive ? 'bg-green-400 bg-opacity-30 text-white' : 'bg-red-400 bg-opacity-30 text-white'
+                      }`}
                   >
                     {cls.isActive ? 'Hoạt động' : 'Ngừng'}
                   </span>
@@ -580,7 +564,7 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
                           className="p-2 text-indigo-600 hover:bg-indigo-100 rounded transition"
                           title="Bàn giao quyền lớp"
                         >
-                          <Users size={16} />
+                          <Icon name="group" variant="rounded" size={16} />
                         </button>
                       )}
                       <button
@@ -588,14 +572,14 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
                         className="p-2 text-green-600 hover:bg-green-100 rounded transition"
                         title="Sửa lớp"
                       >
-                        <Edit size={16} />
+                        <Icon name="edit" variant="rounded" size={16} />
                       </button>
                       <button
                         onClick={() => handleDeleteClass(cls.id, cls.name)}
                         className="p-2 text-red-600 hover:bg-red-50 rounded transition"
                         title="Xóa lớp"
                       >
-                        <Trash2 size={16} />
+                        <Icon name="delete" variant="rounded" size={16} />
                       </button>
                     </>
                   ) : (
@@ -609,22 +593,22 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
           ))}
         </div>
       ) : (
-        <div className="app-card py-12 text-center">
-          <BookOpen className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-          <p className="text-gray-500 text-lg">
+        <div className="rounded-2xl bg-m3-surface-container py-12 text-center shadow-xs text-m3-on-surface">
+          <Icon name="menu_book" variant="rounded" size={64} className="mx-auto mb-4 text-m3-outline" />
+          <p className="text-m3-on-surface-variant text-lg">
             {classes.length === 0 ? 'Chưa có lớp học nào trong trường này' : 'Không tìm thấy lớp phù hợp với từ khóa tìm kiếm'}
           </p>
           {classes.length > 0 && classSearch.trim() && (
             <button
               onClick={() => setClassSearch('')}
-              className="mt-4 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+              className="mt-4 rounded-xl bg-m3-surface-container-high px-4 py-2 text-sm font-medium text-m3-on-surface transition hover:bg-m3-surface-container-highest"
             >
               Xóa từ khóa tìm kiếm
             </button>
           )}
           {classes.length === 0 && canCreateClass && (
-            <button onClick={handleOpenAddModal} className="app-btn-primary mt-4 px-4 py-2">
-              <Plus className="inline mr-2" size={18} />
+            <button onClick={handleOpenAddModal} className="rounded-xl bg-m3-primary text-m3-on-primary font-semibold shadow-xs hover:bg-m3-primary/90 transition-all mt-4 px-4 py-2">
+              <Icon name="add" variant="rounded" size={18} className="inline mr-2" />
               Tạo lớp đầu tiên
             </button>
           )}
@@ -633,7 +617,7 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
 
       {showHandoverModal && handoverClass && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 backdrop-blur-[1px]">
-          <div className="app-card w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="rounded-3xl bg-m3-surface-container-high w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl text-m3-on-surface">
             <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b">
               <h2 className="text-lg sm:text-xl font-semibold">
                 Bàn giao quyền lớp: <span className="text-blue-600">{handoverClass.name}</span>
@@ -646,7 +630,7 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
                 }}
                 className="p-1 hover:bg-gray-100 rounded"
               >
-                <X size={24} />
+                <Icon name="close" variant="rounded" size={24} />
               </button>
             </div>
 
@@ -664,8 +648,8 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
               {handoverError && <div className="rounded bg-red-50 text-red-700 px-3 py-2 text-sm">{handoverError}</div>}
 
               {isLoadingTeachers ? (
-                <div className="flex items-center justify-center py-8 text-gray-600">
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                <div className="flex items-center justify-center py-8 text-gray-600 gap-2">
+                  <ProgressIndicator variant="circular" shape="wavy" showTrack size={20} aria-label="Đang tải danh sách giáo viên..." />
                   Đang tải danh sách giáo viên...
                 </div>
               ) : filteredTeachers.length === 0 ? (
@@ -697,11 +681,10 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
                             type="button"
                             disabled={isBusy}
                             onClick={() => handleToggleHandover(teacher.userId, granted)}
-                            className={`min-w-[110px] rounded px-3 py-1.5 text-sm font-medium transition ${
-                              granted
-                                ? 'bg-rose-100 text-rose-700 hover:bg-rose-200'
-                                : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
-                            } disabled:opacity-60`}
+                            className={`min-w-27.5 rounded px-3 py-1.5 text-sm font-medium transition ${granted
+                              ? 'bg-rose-100 text-rose-700 hover:bg-rose-200'
+                              : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
+                              } disabled:opacity-60`}
                           >
                             {isBusy ? 'Đang lưu...' : granted ? 'Thu hồi quyền' : 'Cấp quyền'}
                           </button>
@@ -718,11 +701,11 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
 
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 backdrop-blur-[1px]">
-          <div className="app-card w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div className="rounded-3xl bg-m3-surface-container-high w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-xl text-m3-on-surface">
             <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b">
               <h2 className="text-lg sm:text-xl font-semibold">{editingClass ? 'Chỉnh sửa lớp học' : 'Thêm lớp học mới'}</h2>
               <button onClick={() => setShowModal(false)} className="p-1 hover:bg-gray-100 rounded">
-                <X size={24} />
+                <Icon name="close" variant="rounded" size={24} />
               </button>
             </div>
 
@@ -834,17 +817,17 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
                 >
                   {isSubmitting ? (
                     <>
-                      <Loader2 size={18} className="animate-spin" />
+                      <ProgressIndicator variant="circular" shape="wavy" showTrack size={18} aria-label="Đang lưu..." />
                       Đang lưu...
                     </>
                   ) : editingClass ? (
                     <>
-                      <Edit size={18} />
+                      <Icon name="edit" variant="rounded" size={18} />
                       Cập nhật
                     </>
                   ) : (
                     <>
-                      <Plus size={18} />
+                      <Icon name="add" variant="rounded" size={18} />
                       Thêm lớp
                     </>
                   )}

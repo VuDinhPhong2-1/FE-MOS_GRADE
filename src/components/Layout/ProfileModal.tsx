@@ -1,5 +1,21 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { Loader2, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import {
+  Dialog,
+  DialogPortal,
+  DialogOverlay,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogBody,
+  DialogFooter,
+  DialogClose,
+  Button,
+  IconButton,
+  Icon,
+  TextField,
+} from '@bug-on/m3-expressive';
 import { useAuth } from '../../context/AuthContext';
 import { authService } from '../../services/auth.service';
 import { notify } from '../../utils/notify';
@@ -16,17 +32,22 @@ interface ProfileFormState {
   avatar: string;
 }
 
-const ProfileModal = ({ isOpen, onClose, onAvatarPreview }: ProfileModalProps) => {
-  const { user, getAccessToken, updateUser } = useAuth();
+export const ProfileModal = ({ isOpen, onClose, onAvatarPreview }: ProfileModalProps) => {
+  const { user, getAccessToken, updateUser, logout } = useAuth();
+  const navigate = useNavigate();
   const [form, setForm] = useState<ProfileFormState>({
     fullName: '',
     phoneNumber: '',
     avatar: '',
   });
   const [saving, setSaving] = useState(false);
+  const [confirmLogout, setConfirmLogout] = useState(false);
 
   useEffect(() => {
-    if (!isOpen || !user) return;
+    if (!isOpen || !user) {
+      setConfirmLogout(false);
+      return;
+    }
     const initial = {
       fullName: user.fullName || '',
       phoneNumber: user.phoneNumber || '',
@@ -34,13 +55,19 @@ const ProfileModal = ({ isOpen, onClose, onAvatarPreview }: ProfileModalProps) =
     };
     setForm(initial);
     if (onAvatarPreview) onAvatarPreview(initial.avatar || '');
-    // clear preview when modal closes
     return () => {
       if (onAvatarPreview) onAvatarPreview('');
     };
   }, [isOpen, user, onAvatarPreview]);
 
-  if (!isOpen || !user) return null;
+  if (!user) return null;
+
+  const handleLogout = () => {
+    onClose();
+    logout();
+    navigate('/login', { replace: true });
+    notify.success('Đã đăng xuất thành công');
+  };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -73,116 +100,196 @@ const ProfileModal = ({ isOpen, onClose, onAvatarPreview }: ProfileModalProps) =
   };
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-slate-900/50 p-3 backdrop-blur-[1px]">
-      <div className="app-card w-full max-w-xl overflow-hidden">
-        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-          <div>
-            <h3 className="text-lg font-bold text-slate-900">Chỉnh sửa tài khoản</h3>
-            <p className="text-xs text-slate-500">Cập nhật hồ sơ cá nhân của bạn</p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg border border-slate-200 p-2 text-slate-500 hover:bg-slate-50 hover:text-slate-700"
-            aria-label="Đóng hộp thoại"
-          >
-            <X size={18} />
-          </button>
-        </div>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogPortal open={isOpen}>
+        <DialogOverlay />
+        <DialogContent
+          hideCloseButton
+          className="flex max-h-[90vh] w-[calc(100%-2rem)] max-w-lg flex-col overflow-hidden rounded-4xl bg-m3-surface-container-high p-0 text-m3-on-surface shadow-2xl"
+        >
+          <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 pt-5 pb-3">
+              <DialogHeader className="mb-0 gap-0.5">
+                <DialogTitle className="text-lg font-bold text-m3-on-surface">
+                  Chỉnh sửa tài khoản
+                </DialogTitle>
+                <DialogDescription className="text-xs text-m3-on-surface-variant">
+                  Cập nhật hồ sơ cá nhân của bạn
+                </DialogDescription>
+              </DialogHeader>
+              <DialogClose asChild>
+                <IconButton
+                  type="button"
+                  size="sm"
+                  colorStyle="standard"
+                  aria-label="Đóng hộp thoại"
+                  onClick={onClose}
+                >
+                  <Icon name="close" />
+                </IconButton>
+              </DialogClose>
+            </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 p-5">
-          <div className="grid gap-1">
-            <label htmlFor="profile-username" className="text-sm font-semibold text-slate-700">
-              Tên đăng nhập
-            </label>
-            <input
-              id="profile-username"
-              type="text"
-              readOnly
-              value={user.username}
-              className="w-full cursor-not-allowed bg-slate-100 px-3 py-2 text-slate-500"
-            />
-          </div>
+            {/* Body */}
+            <DialogBody className="flex flex-1 flex-col gap-5 overflow-y-auto px-6 pt-2 pb-6 pr-5">
+              {/* Avatar Preview & Profile Summary Card */}
+              <div className="flex items-center gap-4 rounded-xl bg-m3-surface-container p-3 mb-4">
+                <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full bg-m3-surface-container-highest ring-2 ring-m3-outline-variant/30">
+                  {form.avatar ? (
+                    <img
+                      src={form.avatar}
+                      alt={form.fullName || user.username}
+                      className="h-full w-full object-cover"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLElement).style.display = 'none';
+                      }}
+                    />
+                  ) : (
+                    <div className="grid h-full w-full place-items-center text-m3-primary">
+                      <Icon name="account_circle" size={40} />
+                    </div>
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-bold text-m3-on-surface">
+                    {form.fullName || user.fullName || user.username}
+                  </div>
+                  <div className="truncate text-xs text-m3-on-surface-variant">
+                    {user.email || 'Chưa có email'}
+                  </div>
+                  <div className="mt-1 inline-flex items-center gap-1 rounded-md bg-m3-primary/10 px-2 py-0.5 text-[11px] font-semibold text-m3-primary">
+                    <Icon name="verified_user" className="text-xs" />
+                    <span>{user.role || 'Người dùng'}</span>
+                  </div>
+                </div>
+              </div>
 
-          <div className="grid gap-1">
-            <label htmlFor="profile-email" className="text-sm font-semibold text-slate-700">
-              Thư điện tử
-            </label>
-            <input
-              id="profile-email"
-              type="text"
-              readOnly
-              value={user.email || ''}
-              className="w-full cursor-not-allowed bg-slate-100 px-3 py-2 text-slate-500"
-            />
-          </div>
+              <TextField
+                variant="outlined"
+                label="Tên đăng nhập"
+                readOnly
+                fullWidth
+                value={user.username}
+                supportingText="Tên tài khoản không thể thay đổi"
+                leadingIcon={<Icon name="person" />}
+                className="pt-2.5"
+              />
 
-          <div className="grid gap-1">
-            <label htmlFor="profile-fullname" className="text-sm font-semibold text-slate-700">
-              Họ và tên
-            </label>
-            <input
-              id="profile-fullname"
-              type="text"
-              value={form.fullName}
-              onChange={(event) => setForm((prev) => ({ ...prev, fullName: event.target.value }))}
-              placeholder="Ví dụ: Vũ Đình Phong"
-              className="w-full px-3 py-2"
-              maxLength={120}
-            />
-          </div>
+              <TextField
+                variant="outlined"
+                label="Thư điện tử"
+                readOnly
+                fullWidth
+                value={user.email || ''}
+                supportingText="Địa chỉ thư điện tử định danh"
+                leadingIcon={<Icon name="mail" />}
+                className="pt-2.5"
+              />
 
-          <div className="grid gap-1">
-            <label htmlFor="profile-phone" className="text-sm font-semibold text-slate-700">
-              Số điện thoại
-            </label>
-            <input
-              id="profile-phone"
-              type="text"
-              value={form.phoneNumber}
-              onChange={(event) => setForm((prev) => ({ ...prev, phoneNumber: event.target.value }))}
-              placeholder="Ví dụ: 0909xxxxxx"
-              className="w-full px-3 py-2"
-              maxLength={25}
-            />
-          </div>
+              <TextField
+                variant="outlined"
+                label="Họ và tên"
+                placeholder="Ví dụ: Vũ Đình Phong"
+                fullWidth
+                maxLength={120}
+                value={form.fullName}
+                onChange={(value: string) => setForm((prev) => ({ ...prev, fullName: value }))}
+                leadingIcon={<Icon name="badge" />}
+                className="pt-2.5"
+              />
 
-          <div className="grid gap-1">
-            <label htmlFor="profile-avatar" className="text-sm font-semibold text-slate-700">
-              Ảnh đại diện (URL)
-            </label>
-            <input
-              id="profile-avatar"
-              type="text"
-              value={form.avatar}
-              onChange={(event) => {
-                const next = event.target.value;
-                setForm((prev) => ({ ...prev, avatar: next }));
-                if (onAvatarPreview) onAvatarPreview(next || '');
-              }}
-              placeholder="https://..."
-              className="w-full px-3 py-2"
-              maxLength={500}
-            />
-          </div>
+              <TextField
+                variant="outlined"
+                type="tel"
+                label="Số điện thoại"
+                placeholder="Ví dụ: 0909xxxxxx"
+                fullWidth
+                maxLength={25}
+                value={form.phoneNumber}
+                onChange={(value: string) => setForm((prev) => ({ ...prev, phoneNumber: value }))}
+                leadingIcon={<Icon name="call" />}
+                className="pt-2.5"
+              />
 
-          <div className="flex justify-end gap-2 border-t border-slate-200 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="app-btn-secondary px-4 py-2 text-sm"
-              disabled={saving}
-            >
-              Hủy
-            </button>
-            <button type="submit" className="app-btn-primary inline-flex items-center gap-2 px-4 py-2 text-sm" disabled={saving}>
-              {saving ? <Loader2 size={16} className="animate-spin" /> : null}
-              Lưu thay đổi
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+              <TextField
+                variant="outlined"
+                label="Ảnh đại diện (URL)"
+                placeholder="https://..."
+                fullWidth
+                maxLength={500}
+                value={form.avatar}
+                onChange={(value: string) => {
+                  setForm((prev) => ({ ...prev, avatar: value }));
+                  if (onAvatarPreview) onAvatarPreview(value || '');
+                }}
+                leadingIcon={<Icon name="image" />}
+                className="pt-2.5"
+              />
+            </DialogBody>
+
+            {/* Footer */}
+            <DialogFooter className="mt-0 flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-m3-outline-variant/30 px-6 py-4 sm:flex-row sm:space-x-0">
+              {confirmLogout ? (
+                <div className="inline-flex items-center gap-2 rounded-full bg-m3-error-container/40 px-3 py-1.5 text-xs font-semibold text-m3-error animate-in fade-in zoom-in duration-150">
+                  <span>Xác nhận đăng xuất?</span>
+                  <Button
+                    type="button"
+                    size="xs"
+                    colorStyle="filled"
+                    onClick={handleLogout}
+                    className="bg-m3-error text-m3-on-error hover:bg-m3-error/90 shadow-xs"
+                  >
+                    Đồng ý
+                  </Button>
+                  <Button
+                    type="button"
+                    size="xs"
+                    colorStyle="tonal"
+                    onClick={() => setConfirmLogout(false)}
+                  >
+                    Hủy
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  type="button"
+                  colorStyle="text"
+                  size="sm"
+                  onClick={() => setConfirmLogout(true)}
+                  icon={<Icon name="logout" className="text-base" />}
+                  className="text-m3-error hover:bg-m3-error/8 active:bg-m3-error/12"
+                >
+                  Đăng xuất
+                </Button>
+              )}
+
+              <div className="flex items-center gap-2.5">
+                <Button
+                  type="button"
+                  colorStyle="tonal"
+                  size="sm"
+                  onClick={onClose}
+                  disabled={saving}
+                >
+                  Hủy
+                </Button>
+                <Button
+                  type="submit"
+                  colorStyle="filled"
+                  size="sm"
+                  loading={saving}
+                  loadingVariant="circular"
+                  disabled={saving}
+                >
+                  Lưu thay đổi
+                </Button>
+              </div>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </DialogPortal>
+    </Dialog>
   );
 };
 

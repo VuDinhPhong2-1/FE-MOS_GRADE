@@ -1,6 +1,6 @@
-﻿import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { FC } from 'react';
-import { X, FileDown, Eye, EyeOff } from 'lucide-react';
+import { Icon } from '@bug-on/m3-expressive';
 import type { Assignment } from '../types/assignment.types';
 import type { Student } from '../types/student.types';
 import { exportToExcel, exportToPdf } from '../utils/exportUtils';
@@ -998,18 +998,18 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
     + (isTotalScoreColumnVisible ? 1 : 0)
     + (isOtthPercentageColumnVisible ? 1 : 0);
   const containerClassName = isPageMode
-    ? 'flex w-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm'
-    : 'flex h-[96vh] w-[calc(100vw-0.5rem)] max-w-[1920px] flex-col overflow-hidden rounded-xl bg-white shadow-2xl sm:h-[94vh] sm:w-[calc(100vw-1.5rem)] sm:rounded-2xl';
+    ? 'flex w-full flex-col overflow-hidden rounded-4xl bg-m3-surface-container shadow-sm'
+    : 'flex h-[96vh] w-[calc(100vw-0.5rem)] max-w-[1920px] flex-col overflow-hidden rounded-4xl bg-m3-surface-container shadow-2xl sm:h-[94vh] sm:w-[calc(100vw-1.5rem)]';
   const content = (
       <div className={containerClassName}>
-        <div className="flex items-center justify-between border-b border-slate-200 bg-gradient-to-r from-slate-50 to-blue-50 px-4 py-4 sm:px-6 sm:py-5">
+        <div className="flex items-center justify-between bg-linear-to-r from-m3-surface-container-high to-m3-surface-container px-4 py-4 sm:px-6 sm:py-5">
           <div className="flex items-center gap-3">
-            <div className="grid h-10 w-10 place-items-center rounded-xl bg-blue-600 font-bold text-white">
+            <div className="grid h-10 w-10 place-items-center rounded-2xl bg-m3-primary font-bold text-m3-on-primary">
               BD
             </div>
             <div>
-              <h2 className="text-xl font-extrabold text-slate-800">{headerTitle}</h2>
-              <p className="text-sm text-slate-500">
+              <h2 className="text-xl font-extrabold text-m3-on-surface">{headerTitle}</h2>
+              <p className="text-sm text-m3-on-surface-variant">
                 {sortedDisplayRows.length}
                 {(searchTerm || showOnlyExamStudents) ? `/${filteredStudentCount}` : ''}
                 {' '}học sinh hiển thị, tổng lớp {students.length}, {assignments.length} bài tập, hiện {visibleScoreColumnCount}/
@@ -1017,8 +1017,12 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
-            <X size={24} />
+          <button
+            onClick={onClose}
+            className="grid h-9 w-9 place-items-center rounded-full text-m3-on-surface-variant transition-colors hover:bg-m3-surface-container-highest hover:text-m3-on-surface"
+            aria-label="Đóng"
+          >
+            <Icon name="close" className="text-2xl" />
           </button>
         </div>
 
@@ -1055,39 +1059,39 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsClassificationColumnVisible((prev) => !prev)}
-                  className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition ${
+                  className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold text-white shadow-xs transition ${
                     isClassificationColumnVisible
-                      ? 'bg-gradient-to-r from-fuchsia-600 to-violet-600 hover:from-fuchsia-700 hover:to-violet-700'
-                      : 'bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700'
+                      ? 'bg-linear-to-r from-fuchsia-600 to-violet-600 hover:from-fuchsia-700 hover:to-violet-700'
+                      : 'bg-linear-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700'
                   }`}
                 >
-                  {isClassificationColumnVisible ? <EyeOff size={14} /> : <Eye size={14} />}
+                  {isClassificationColumnVisible ? <Icon name="visibility_off" className="text-sm" /> : <Icon name="visibility" className="text-sm" />}
                   {isClassificationColumnVisible ? 'Ẩn cột xếp loại' : 'Hiện cột xếp loại'}
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setIsTotalScoreColumnVisible((prev) => !prev)}
-                  className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition ${
+                  className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold text-white shadow-xs transition ${
                     isTotalScoreColumnVisible
-                      ? 'bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700'
-                      : 'bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700'
+                      ? 'bg-linear-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700'
+                      : 'bg-linear-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700'
                   }`}
                 >
-                  {isTotalScoreColumnVisible ? <EyeOff size={14} /> : <Eye size={14} />}
+                  {isTotalScoreColumnVisible ? <Icon name="visibility_off" className="text-sm" /> : <Icon name="visibility" className="text-sm" />}
                   {isTotalScoreColumnVisible ? 'Ẩn cột tổng điểm 3 Practice' : 'Hiện cột tổng điểm 3 Practice'}
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setIsOtthPercentageColumnVisible((prev) => !prev)}
-                  className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition ${
+                  className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold text-white shadow-xs transition ${
                     isOtthPercentageColumnVisible
-                      ? 'bg-gradient-to-r from-cyan-600 to-sky-600 hover:from-cyan-700 hover:to-sky-700'
-                      : 'bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700'
+                      ? 'bg-linear-to-r from-cyan-600 to-sky-600 hover:from-cyan-700 hover:to-sky-700'
+                      : 'bg-linear-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700'
                   }`}
                 >
-                  {isOtthPercentageColumnVisible ? <EyeOff size={14} /> : <Eye size={14} />}
+                  {isOtthPercentageColumnVisible ? <Icon name="visibility_off" className="text-sm" /> : <Icon name="visibility" className="text-sm" />}
                   {isOtthPercentageColumnVisible ? 'Ẩn cột tỷ lệ đạt OTTH' : 'Hiện cột tỷ lệ đạt OTTH'}
                 </button>
 
@@ -1134,7 +1138,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
             </div>
 
             <div className="mb-3 flex flex-wrap items-center gap-3">
-              <div className="flex-1 min-w-[200px] max-w-[400px]">
+              <div className="flex-1 min-w-50 max-w-100">
                 <input
                   type="text"
                   placeholder="Tìm kiếm tên học sinh..."
@@ -1190,13 +1194,13 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
                       <button
                         type="button"
                         onClick={() => handleTogglePracticeGroupDisplay(practice.code)}
-                        className={`inline-flex min-w-[64px] items-center justify-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold transition ${
+                        className={`inline-flex min-w-16 items-center justify-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold transition ${
                           isVisible
                             ? 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
                             : 'border-slate-300 bg-slate-100 text-slate-600 hover:bg-slate-200'
                         }`}
                       >
-                        {isVisible ? <EyeOff size={12} /> : <Eye size={12} />}
+                        {isVisible ? <Icon name="visibility_off" className="text-xs" /> : <Icon name="visibility" className="text-xs" />}
                         {isVisible ? 'Ẩn' : 'Hiện'}
                       </button>
                     </div>
@@ -1207,12 +1211,12 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
           </div>
 
           <div id="score-table" className="relative overflow-hidden rounded-2xl border border-slate-200 shadow-lg shadow-slate-900/5">
-            <div className="flex items-center justify-between border-b border-slate-700 bg-gradient-to-r from-slate-800 to-slate-700 px-4 py-2.5 text-sm font-semibold text-white">
+            <div className="flex items-center justify-between border-b border-slate-700 bg-linear-to-r from-slate-800 to-slate-700 px-4 py-2.5 text-sm font-semibold text-white">
               <span>Bảng điểm lớp {titleClassName}</span>
               <span className="text-xs font-medium text-slate-200">Nhấn badge lỗi để xem chi tiết</span>
             </div>
-            <div className="min-h-[18rem] max-h-[calc(100vh-20rem)] overflow-auto">
-              <table className="w-full min-w-[1940px] border-separate border-spacing-0 text-sm text-slate-700">
+            <div className="min-h-72 max-h-[calc(100vh-20rem)] overflow-auto">
+              <table className="w-full min-w-485 border-separate border-spacing-0 text-sm text-slate-700">
                 <thead className="z-20">
                   <tr className="border-b border-slate-700 bg-slate-800">
                     <th
@@ -1237,7 +1241,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
                       return (
                         <th
                           key={assignment.id}
-                          className="sticky top-0 z-40 min-w-[140px] border-r border-slate-700 bg-slate-800 px-3 py-3 text-center text-xs font-bold text-slate-100"
+                          className="sticky top-0 z-40 min-w-35 border-r border-slate-700 bg-slate-800 px-3 py-3 text-center text-xs font-bold text-slate-100"
                         >
                           <div title={assignment.name}>{assignment.name}</div>
                           <div className="text-[11px] font-normal text-slate-300">(tối đa {assignment.maxScore})</div>
@@ -1245,7 +1249,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
                       );
                     })}
                     {isClassificationColumnVisible && (
-                      <th className="sticky top-0 z-40 min-w-[130px] border-r border-slate-700 bg-slate-800 px-3 py-3 text-center text-xs font-bold uppercase tracking-wide text-slate-100">
+                      <th className="sticky top-0 z-40 min-w-32.5 border-r border-slate-700 bg-slate-800 px-3 py-3 text-center text-xs font-bold uppercase tracking-wide text-slate-100">
                         Xếp loại
                       </th>
                     )}
@@ -1261,7 +1265,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
                         completionVisible ? (
                         <th
                             key={`${practice.code}-completion-sub`}
-                            className={`sticky top-0 z-40 min-w-[112px] border-l border-slate-700 px-3 py-3 text-center text-xs font-bold uppercase tracking-wide ${theme.completionHeader}`}
+                            className={`sticky top-0 z-40 min-w-28 border-l border-slate-700 px-3 py-3 text-center text-xs font-bold uppercase tracking-wide ${theme.completionHeader}`}
                           >
                             {getPracticeCompletionHeaderLabel(practice)}
                           </th>
@@ -1269,7 +1273,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
                         scoreVisible ? (
                           <th
                             key={`${practice.code}-score-sub`}
-                            className={`sticky top-0 z-40 min-w-[132px] border-r border-slate-700 px-3 py-3 text-right text-xs font-bold uppercase tracking-wide ${theme.scoreHeader}`}
+                            className={`sticky top-0 z-40 min-w-33 border-r border-slate-700 px-3 py-3 text-right text-xs font-bold uppercase tracking-wide ${theme.scoreHeader}`}
                           >
                             {getPracticeScoreHeaderLabel(practice)}
                           </th>
@@ -1277,19 +1281,19 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
                       ];
                     })}
                     {isTotalScoreColumnVisible && (
-                      <th className="sticky top-0 z-40 min-w-[140px] border-l border-slate-700 bg-blue-200 px-4 py-3 text-right text-xs font-bold uppercase tracking-wide text-blue-900">
+                      <th className="sticky top-0 z-40 min-w-35 border-l border-slate-700 bg-blue-200 px-4 py-3 text-right text-xs font-bold uppercase tracking-wide text-blue-900">
                         Tổng điểm 3 Practice
                       </th>
                     )}
                     {isOtthPercentageColumnVisible && (
-                      <th className="sticky top-0 z-40 min-w-[130px] border-l border-slate-700 bg-cyan-200 px-4 py-3 text-center text-xs font-bold uppercase tracking-wide text-cyan-900">
+                      <th className="sticky top-0 z-40 min-w-32.5 border-l border-slate-700 bg-cyan-200 px-4 py-3 text-center text-xs font-bold uppercase tracking-wide text-cyan-900">
                         Tỷ lệ đạt OTTH
                       </th>
                     )}
-                    <th className="sticky top-0 z-40 min-w-[130px] border-l border-slate-700 bg-emerald-200 px-4 py-3 text-center text-xs font-bold uppercase tracking-wide text-emerald-900">
+                    <th className="sticky top-0 z-40 min-w-32.5 border-l border-slate-700 bg-emerald-200 px-4 py-3 text-center text-xs font-bold uppercase tracking-wide text-emerald-900">
                       Tỷ lệ đạt ôn thi
                     </th>
-                    <th className="sticky top-0 z-40 min-w-[220px] border-l border-slate-700 bg-slate-800 px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-100">
+                    <th className="sticky top-0 z-40 min-w-55 border-l border-slate-700 bg-slate-800 px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-100">
                       Ghi chú
                     </th>
                   </tr>
@@ -1338,7 +1342,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
                             className="border-r border-slate-100 px-3 py-3 text-center align-top"
                           >
                             <div
-                              className={`mx-auto inline-flex min-w-[62px] items-center justify-center rounded-full border px-2.5 py-1 text-xs font-bold ${getScorePillClass(score, maxScore)}`}
+                              className={`mx-auto inline-flex min-w-15.5 items-center justify-center rounded-full border px-2.5 py-1 text-xs font-bold ${getScorePillClass(score, maxScore)}`}
                             >
                               {formatScore(score)}
                             </div>
@@ -1384,7 +1388,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
                                   event.target.value as CompetencyLevel
                                 )
                               }
-                              className={`h-8 min-w-[86px] rounded-full border px-3 text-center text-xs font-bold outline-none ${
+                              className={`h-8 min-w-21.5 rounded-full border px-3 text-center text-xs font-bold outline-none ${
                                 row.classification
                                   ? classificationClassMap[row.classification]
                                   : 'border-slate-300 bg-white text-slate-600'
@@ -1470,7 +1474,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
                       </td>
 
                       <td className="border-l border-slate-300 px-4 py-3 text-left text-slate-600">
-                        <div className="max-w-[260px] space-y-1">
+                        <div className="max-w-65 space-y-1">
                           <textarea
                             value={row.notes}
                             onChange={(event) => handleNotesChange(row.id, event.target.value)}
@@ -1510,22 +1514,22 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
           </div>
         </div>
 
-        <div className="flex flex-col items-center justify-end gap-2 border-t border-slate-200 bg-slate-50 p-3 sm:flex-row sm:p-4">
+        <div className="flex flex-col items-center justify-end gap-2.5 bg-m3-surface-container-high p-3 sm:flex-row sm:p-4">
           <button
             onClick={handleExportExcel}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-white hover:bg-green-700 sm:w-auto"
+            className="flex w-full items-center justify-center gap-2 rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-xs transition-opacity hover:opacity-95 sm:w-auto"
           >
-            <FileDown size={18} /> Xuất Excel
+            <Icon name="download" className="text-lg" /> Xuất Excel
           </button>
           <button
             onClick={handleExportPdf}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-white hover:bg-red-700 sm:w-auto"
+            className="flex w-full items-center justify-center gap-2 rounded-full bg-rose-600 px-5 py-2.5 text-sm font-semibold text-white shadow-xs transition-opacity hover:opacity-95 sm:w-auto"
           >
-            <FileDown size={18} /> Xuất PDF
+            <Icon name="download" className="text-lg" /> Xuất PDF
           </button>
           <button
             onClick={onClose}
-            className="w-full rounded-lg bg-slate-200 px-4 py-2 text-slate-800 hover:bg-slate-300 sm:w-auto"
+            className="w-full rounded-full bg-m3-surface-container-highest px-5 py-2.5 text-sm font-semibold text-m3-on-surface shadow-xs transition-colors hover:bg-m3-surface-container sm:w-auto"
           >
             {isPageMode ? 'Quay lại' : 'Đóng'}
           </button>
@@ -1538,7 +1542,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-1 sm:p-3 backdrop-blur-[1px]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-1 sm:p-3 backdrop-blur-xs">
       {content}
     </div>
   );
