@@ -18,6 +18,7 @@ export interface XmlGradingCondition {
   score: number;
   sourceFile: string;
   expectedVariants: XmlExpectedVariant[];
+  ignoreAttributes: string[];
   compareMode: XmlCompareMode;
   matchPolicy: XmlMatchPolicy;
   feedback: XmlConditionFeedback;

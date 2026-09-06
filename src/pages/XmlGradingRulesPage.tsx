@@ -69,7 +69,7 @@ const emptyRuleSet = (): GradingRuleSet => ({ id: '', subject: 'excel', version:
 const emptyProject = (): ProjectXmlRule => ({ projectCode: 'project22', projectName: '', maxScore: 125, tasks: [] });
 const emptyTask = (): TaskXmlRule => ({ taskId: '', taskName: '', maxScore: 1, conditions: [] });
 const emptyCondition = (): XmlGradingCondition => ({
-  conditionId: '', score: 1, sourceFile: 'xl/worksheets/sheet1.xml', expectedVariants: [{ expectedValues: [''] }], compareMode: 'xmlContainsNormalized', matchPolicy: 'all',
+  conditionId: '', score: 1, sourceFile: 'xl/worksheets/sheet1.xml', expectedVariants: [{ expectedValues: [''] }], ignoreAttributes: [], compareMode: 'xmlContainsNormalized', matchPolicy: 'all',
   feedback: { successDetail: '', errorMessage: '', fixAction: '' }, stopTaskIfFailed: false,
 });
 
@@ -121,6 +121,7 @@ const prepareCondition = (condition: XmlGradingCondition): XmlGradingCondition =
       expectedValues: (variant.expectedValues ?? []).map((value) => value.trim()).filter(Boolean),
     }))
     .filter((variant) => variant.expectedValues.length > 0),
+  ignoreAttributes: (condition.ignoreAttributes ?? []).map((value) => value.trim()).filter(Boolean),
 });
 
 const XmlGradingRulesPage = () => {
@@ -1430,6 +1431,20 @@ const XmlGradingRulesPage = () => {
                                                             }
                                                             placeholder="Ví dụ: Kiểm tra lại định dạng ô..."
                                                             className={inputClass}
+                                                          />
+                                                        </label>
+                                                        <label className="mt-3 block text-xs font-semibold text-slate-600">
+                                                          Ignore attributes
+                                                          <textarea
+                                                            value={(condition.ignoreAttributes ?? []).join('\n')}
+                                                            onChange={(e) =>
+                                                              mutateCondition(pi, ti, ci, {
+                                                                ignoreAttributes: e.target.value.split('\n'),
+                                                              })
+                                                            }
+                                                            rows={3}
+                                                            placeholder={'id\nr:id\nrsid*\nwp:docPr@id'}
+                                                            className={cx(inputClass, 'resize-y font-mono')}
                                                           />
                                                         </label>
                                                         <label className="mt-3 flex items-center gap-2 text-xs font-medium text-slate-600">
