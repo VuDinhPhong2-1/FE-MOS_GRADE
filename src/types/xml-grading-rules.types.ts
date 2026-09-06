@@ -22,6 +22,7 @@ export interface XmlGradingCondition {
   compareMode: XmlCompareMode;
   matchPolicy: XmlMatchPolicy;
   minOccurrences?: number;
+  maxOccurrences?: number;
   feedback: XmlConditionFeedback;
   stopTaskIfFailed: boolean;
 }
@@ -32,7 +33,8 @@ export interface XmlGradingCondition {
  */
 export type SpecialConditionType =
   | 'pictureBullet'
-  | 'insertedImage';
+  | 'insertedImage'
+  | 'convertTableToText';
 
   export type ImageWrapType =
   | 'inline'
@@ -50,11 +52,21 @@ export type SpecialConditionType =
   wrapType?: ImageWrapType;
 }
 
+export interface ConvertTableToTextConfig {
+  sourceFile?: string;
+  anchorText?: string;
+  expectedRows?: string[];
+  minRows?: number;
+  minTabsPerRow?: number;
+  requireNoTables?: boolean;
+}
+
 export interface SpecialCondition {
   type: SpecialConditionType;
   score: number;
   config?: PictureBulletConfig;
   imageInsertConfig?: ImageInsertConfig; // MỚI
+  convertTableToTextConfig?: ConvertTableToTextConfig;
 }
 
 export interface PictureBulletConfig {
@@ -90,6 +102,7 @@ export interface SpecialCondition {
 
   config?: PictureBulletConfig;
   imageInsertConfig?: ImageInsertConfig;
+  convertTableToTextConfig?: ConvertTableToTextConfig;
 }
 
 export interface TaskXmlRule {

@@ -32,7 +32,7 @@ const compareModesLabels: Record<XmlCompareMode, string> = {
     'Tìm đúng đoạn XML đã nhập, chỉ bỏ khoảng trắng đầu và cuối',
 
   'xmlMinOccurrences':
-    'Dem so lan xuat hien toi thieu sau khi chuan hoa XML',
+    'Đếm số lần xuất hiện tối thiểu sau khi chuẩn hóa XML',
 
   'xmlEquivalentWholeFile':
     'Đọc XML và so sánh toàn bộ cấu trúc, không phụ thuộc format',
@@ -65,6 +65,12 @@ const specialConditionOptions: Array<{
       label: 'Chèn đúng hình ảnh vào tài liệu',
       description:
         'Kiểm tra tài liệu có chèn đúng file ảnh yêu cầu (so khớp theo nội dung ảnh) và đúng chế độ ngắt dòng văn bản (Tight/Square/Through/Top and Bottom/Inline...) hay không.',
+    },
+    {
+      value: 'convertTableToText',
+      label: 'Convert Table to Text',
+      description:
+        'Kiem tra bang Word da duoc chuyen thanh cac dong van ban va tach cot bang tab.',
     },
   ];
 
@@ -126,6 +132,7 @@ const prepareCondition = (condition: XmlGradingCondition): XmlGradingCondition =
     .filter((variant) => variant.expectedValues.length > 0),
   ignoreAttributes: (condition.ignoreAttributes ?? []).map((value) => value.trim()).filter(Boolean),
   minOccurrences: condition.minOccurrences && condition.minOccurrences > 0 ? condition.minOccurrences : undefined,
+  maxOccurrences: condition.maxOccurrences && condition.maxOccurrences > 0 ? condition.maxOccurrences : undefined,
 });
 
 const XmlGradingRulesPage = () => {
@@ -148,6 +155,7 @@ const XmlGradingRulesPage = () => {
   // Ẩn/hiện riêng khối "Điều kiện đặc biệt" của từng Task, độc lập với
   // việc Task đang expand/collapse. Mặc định mở (true) để giữ hành vi cũ.
   const [expandedSpecialConditions, setExpandedSpecialConditions] = useState<Record<string, boolean>>({});
+  const [expandedConditionBasics, setExpandedConditionBasics] = useState<Record<string, boolean>>({});
   const [activeTab, setActiveTab] = useState<'editor' | 'validation' | 'test'>('editor');
   const [showAdvanced, setShowAdvanced] = useState<Record<string, boolean>>({});
   const [saveError, setSaveError] = useState('');
@@ -590,6 +598,9 @@ const XmlGradingRulesPage = () => {
 
   const toggleTask = (key: string) =>
     setExpandedTasks((prev) => ({ ...prev, [key]: !(prev[key] ?? false) }));
+
+  const toggleConditionBasics = (key: string) =>
+    setExpandedConditionBasics((prev) => ({ ...prev, [key]: !(prev[key] ?? false) }));
 
   const toggleAdvanced = (key: string) =>
     setShowAdvanced((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -1070,6 +1081,20 @@ const XmlGradingRulesPage = () => {
                                                               },
                                                             });
                                                           }
+                                                          if (value === 'convertTableToText') {
+                                                            updateTaskSpecialCondition(pi, ti, {
+                                                              type: 'convertTableToText',
+                                                              score: task.specialCondition?.score ?? 0,
+                                                              convertTableToTextConfig: task.specialCondition?.convertTableToTextConfig ?? {
+                                                                sourceFile: 'word/document.xml',
+                                                                anchorText: '',
+                                                                expectedRows: [],
+                                                                minRows: 1,
+                                                                minTabsPerRow: 1,
+                                                                requireNoTables: true,
+                                                              },
+                                                            });
+                                                          }
                                                         }}
                                                         className="mt-1 w-full appearance-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 pr-10 text-sm font-medium text-slate-800 shadow-sm outline-none transition hover:border-slate-300 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
                                                       >
@@ -1180,11 +1205,140 @@ const XmlGradingRulesPage = () => {
                                                 }}
                                               />
                                             )}
+                                            {task.specialCondition?.type === 'convertTableToText' && (
+                                              <div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
+                                                <div className="grid gap-3 md:grid-cols-2">
+                                                  <label className="text-xs font-semibold text-slate-600">
+                                                    Source file
+                                                    <input
+                                                      value={task.specialCondition.convertTableToTextConfig?.sourceFile ?? 'word/document.xml'}
+                                                      onChange={(e) => {
+                                                        const currentConfig = task.specialCondition?.convertTableToTextConfig ?? {};
+                                                        updateTaskSpecialCondition(pi, ti, {
+                                                          ...task.specialCondition!,
+                                                          type: 'convertTableToText',
+                                                          convertTableToTextConfig: {
+                                                            ...currentConfig,
+                                                            sourceFile: e.target.value,
+                                                          },
+                                                        });
+                                                      }}
+                                                      placeholder="word/document.xml"
+                                                      className={inputClass}
+                                                    />
+                                                  </label>
+                                                  <label className="text-xs font-semibold text-slate-600">
+                                                    Anchor text
+                                                    <input
+                                                      value={task.specialCondition.convertTableToTextConfig?.anchorText ?? ''}
+                                                      onChange={(e) => {
+                                                        const currentConfig = task.specialCondition?.convertTableToTextConfig ?? {};
+                                                        updateTaskSpecialCondition(pi, ti, {
+                                                          ...task.specialCondition!,
+                                                          type: 'convertTableToText',
+                                                          convertTableToTextConfig: {
+                                                            ...currentConfig,
+                                                            anchorText: e.target.value,
+                                                          },
+                                                        });
+                                                      }}
+                                                      placeholder="Weekly Rental:"
+                                                      className={inputClass}
+                                                    />
+                                                  </label>
+                                                </div>
+                                                <div className="mt-3 grid gap-3 md:grid-cols-2">
+                                                  <label className="text-xs font-semibold text-slate-600">
+                                                    Min rows
+                                                    <input
+                                                      type="number"
+                                                      min={1}
+                                                      step={1}
+                                                      value={task.specialCondition.convertTableToTextConfig?.minRows ?? ''}
+                                                      onChange={(e) => {
+                                                        const currentConfig = task.specialCondition?.convertTableToTextConfig ?? {};
+                                                        updateTaskSpecialCondition(pi, ti, {
+                                                          ...task.specialCondition!,
+                                                          type: 'convertTableToText',
+                                                          convertTableToTextConfig: {
+                                                            ...currentConfig,
+                                                            minRows: e.target.value ? Number(e.target.value) : undefined,
+                                                          },
+                                                        });
+                                                      }}
+                                                      placeholder="6"
+                                                      className={inputClass}
+                                                    />
+                                                  </label>
+                                                  <label className="text-xs font-semibold text-slate-600">
+                                                    Min tabs per row
+                                                    <input
+                                                      type="number"
+                                                      min={1}
+                                                      step={1}
+                                                      value={task.specialCondition.convertTableToTextConfig?.minTabsPerRow ?? ''}
+                                                      onChange={(e) => {
+                                                        const currentConfig = task.specialCondition?.convertTableToTextConfig ?? {};
+                                                        updateTaskSpecialCondition(pi, ti, {
+                                                          ...task.specialCondition!,
+                                                          type: 'convertTableToText',
+                                                          convertTableToTextConfig: {
+                                                            ...currentConfig,
+                                                            minTabsPerRow: e.target.value ? Number(e.target.value) : undefined,
+                                                          },
+                                                        });
+                                                      }}
+                                                      placeholder="5"
+                                                      className={inputClass}
+                                                    />
+                                                  </label>
+                                                </div>
+                                                <label className="mt-3 block text-xs font-semibold text-slate-600">
+                                                  Expected rows
+                                                  <textarea
+                                                    value={(task.specialCondition.convertTableToTextConfig?.expectedRows ?? []).join('\n')}
+                                                    onChange={(e) => {
+                                                      const currentConfig = task.specialCondition?.convertTableToTextConfig ?? {};
+                                                      updateTaskSpecialCondition(pi, ti, {
+                                                        ...task.specialCondition!,
+                                                        type: 'convertTableToText',
+                                                        convertTableToTextConfig: {
+                                                          ...currentConfig,
+                                                          expectedRows: e.target.value.split('\n'),
+                                                        },
+                                                      });
+                                                    }}
+                                                    rows={5}
+                                                    placeholder={'Sleeps\tLog Cabin\tSpring\tSummer\tFall\tWinter\n2\tAspen\t3240\t4320\t3450\t2240'}
+                                                    className={cx(inputClass, 'resize-y font-mono')}
+                                                  />
+                                                </label>
+                                                <label className="mt-3 flex items-center gap-2 text-xs font-medium text-slate-600">
+                                                  <input
+                                                    type="checkbox"
+                                                    checked={task.specialCondition.convertTableToTextConfig?.requireNoTables ?? true}
+                                                    onChange={(e) => {
+                                                      const currentConfig = task.specialCondition?.convertTableToTextConfig ?? {};
+                                                      updateTaskSpecialCondition(pi, ti, {
+                                                        ...task.specialCondition!,
+                                                        type: 'convertTableToText',
+                                                        convertTableToTextConfig: {
+                                                          ...currentConfig,
+                                                          requireNoTables: e.target.checked,
+                                                        },
+                                                      });
+                                                    }}
+                                                    className="h-4 w-4 accent-blue-600"
+                                                  />
+                                                  Require no Word tables
+                                                </label>
+                                              </div>
+                                            )}
                                           </div>
                                           <div className="mt-5">
                                             <div className="mb-3 flex items-center justify-between gap-2">
                                               <div>
-                                                <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Conditions</p>
+                                                <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Điều kiện</p>
                                                 <p className="mt-1 text-xs text-slate-400">
                                                   {task.conditions.length} điều kiện chấm điểm
                                                 </p>
@@ -1205,6 +1359,7 @@ const XmlGradingRulesPage = () => {
                                               {task.conditions.map((condition, ci) => {
                                                 const conditionKey = `${pi}-${ti}-${ci}`;
                                                 const advanced = showAdvanced[conditionKey] ?? false;
+                                                const basicsExpanded = expandedConditionBasics[conditionKey] ?? false;
 
                                                 return (
                                                   <div key={conditionKey} className="rounded-xl border border-m3-outline-variant/60 bg-m3-surface p-4">
@@ -1230,35 +1385,60 @@ const XmlGradingRulesPage = () => {
                                                       </button>
                                                     </div>
 
-                                                    <div className="mt-3 grid gap-3 md:grid-cols-[1fr_120px]">
-                                                      <label className="text-xs font-semibold text-slate-600">
-                                                        Mã điều kiện
-                                                        <input
-                                                          value={condition.conditionId}
-                                                          onChange={(e) => mutateCondition(pi, ti, ci, { conditionId: e.target.value })}
-                                                          className={inputClass}
+                                                    <div className="mt-3 rounded-lg border border-m3-outline-variant/60 bg-m3-surface-container-lowest">
+                                                      <button
+                                                        onClick={() => toggleConditionBasics(conditionKey)}
+                                                        className="flex w-full items-center gap-2 px-3 py-2.5 text-left"
+                                                      >
+                                                        <Icon
+                                                          name="expand_more"
+                                                          className={cx(
+                                                            'text-lg text-m3-on-surface-variant transition-transform duration-200',
+                                                            basicsExpanded && 'rotate-180'
+                                                          )}
                                                         />
-                                                      </label>
-                                                      <label className="text-xs font-semibold text-slate-600">
-                                                        Điểm
-                                                        <input
-                                                          type="number"
-                                                          value={condition.score}
-                                                          onChange={(e) => mutateCondition(pi, ti, ci, { score: Number(e.target.value) })}
-                                                          className={inputClass}
-                                                        />
-                                                      </label>
-                                                    </div>
+                                                        <span className="shrink-0 text-xs font-semibold text-m3-on-surface">
+                                                          Thông tin điều kiện
+                                                        </span>
+                                                        <span className="min-w-0 truncate font-mono text-[11px] text-m3-on-surface-variant">
+                                                          {condition.conditionId || `C${String(ci + 1).padStart(2, '0')}`} · {condition.score} điểm · {condition.sourceFile || 'Chưa chọn file XML'}
+                                                        </span>
+                                                      </button>
 
-                                                    <label className="mt-3 block text-xs font-semibold text-slate-600">
-                                                      File XML cần kiểm tra
-                                                      <input
-                                                        value={condition.sourceFile}
-                                                        onChange={(e) => mutateCondition(pi, ti, ci, { sourceFile: e.target.value })}
-                                                        placeholder="xl/worksheets/sheet1.xml"
-                                                        className={cx(inputClass, 'font-mono')}
-                                                      />
-                                                    </label>
+                                                      {basicsExpanded && (
+                                                        <div className="border-t border-m3-outline-variant/50 px-3 pb-3 pt-1">
+                                                          <div className="grid gap-3 md:grid-cols-[1fr_120px]">
+                                                            <label className="text-xs font-semibold text-slate-600">
+                                                              Mã điều kiện
+                                                              <input
+                                                                value={condition.conditionId}
+                                                                onChange={(e) => mutateCondition(pi, ti, ci, { conditionId: e.target.value })}
+                                                                className={inputClass}
+                                                              />
+                                                            </label>
+                                                            <label className="text-xs font-semibold text-slate-600">
+                                                              Điểm
+                                                              <input
+                                                                type="number"
+                                                                value={condition.score}
+                                                                onChange={(e) => mutateCondition(pi, ti, ci, { score: Number(e.target.value) })}
+                                                                className={inputClass}
+                                                              />
+                                                            </label>
+                                                          </div>
+
+                                                          <label className="mt-3 block text-xs font-semibold text-slate-600">
+                                                            File XML cần kiểm tra
+                                                            <input
+                                                              value={condition.sourceFile}
+                                                              onChange={(e) => mutateCondition(pi, ti, ci, { sourceFile: e.target.value })}
+                                                              placeholder="xl/worksheets/sheet1.xml"
+                                                              className={cx(inputClass, 'font-mono')}
+                                                            />
+                                                          </label>
+                                                        </div>
+                                                      )}
+                                                    </div>
 
                                                     <label className="mt-3 block text-xs font-semibold text-slate-600">
                                                       Giá trị cần tìm trong XML
@@ -1282,7 +1462,7 @@ const XmlGradingRulesPage = () => {
                                                     <div className="mt-3 rounded-lg border border-blue-100 bg-white/70 p-3">
                                                       <div className="mb-2 flex items-center justify-between gap-3">
                                                         <span className="text-xs font-semibold text-slate-600">
-                                                          Expected variants
+                                                          Các biến thể dự kiến
                                                         </span>
                                                         <button
                                                           onClick={() => {
@@ -1293,7 +1473,7 @@ const XmlGradingRulesPage = () => {
                                                           }}
                                                           className="inline-flex items-center gap-1 rounded-lg border border-blue-200 px-2.5 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-50"
                                                         >
-                                                          <Icon name="add" className="text-sm" /> Them variant
+                                                          <Icon name="add" className="text-sm" /> Thêm biến thể
                                                         </button>
                                                       </div>
 
@@ -1438,7 +1618,7 @@ const XmlGradingRulesPage = () => {
                                                           />
                                                         </label>
                                                         <label className="mt-3 block text-xs font-semibold text-slate-600">
-                                                          Ignore attributes
+                                                          Bỏ qua các thuộc tính
                                                           <textarea
                                                             value={(condition.ignoreAttributes ?? []).join('\n')}
                                                             onChange={(e) =>
@@ -1452,22 +1632,40 @@ const XmlGradingRulesPage = () => {
                                                           />
                                                         </label>
                                                         {condition.compareMode === 'xmlMinOccurrences' && (
-                                                          <label className="mt-3 block text-xs font-semibold text-slate-600">
-                                                            Min occurrences
-                                                            <input
-                                                              type="number"
-                                                              min={1}
-                                                              step={1}
-                                                              value={condition.minOccurrences ?? ''}
-                                                              onChange={(e) =>
-                                                                mutateCondition(pi, ti, ci, {
-                                                                  minOccurrences: e.target.value ? Number(e.target.value) : undefined,
-                                                                })
-                                                              }
-                                                              placeholder="30"
-                                                              className={inputClass}
-                                                            />
-                                                          </label>
+                                                          <div className="mt-3 grid gap-3 md:grid-cols-2">
+                                                            <label className="block text-xs font-semibold text-slate-600">
+                                                              Số lần xuất hiện tối thiểu
+                                                              <input
+                                                                type="number"
+                                                                min={1}
+                                                                step={1}
+                                                                value={condition.minOccurrences ?? ''}
+                                                                onChange={(e) =>
+                                                                  mutateCondition(pi, ti, ci, {
+                                                                    minOccurrences: e.target.value ? Number(e.target.value) : undefined,
+                                                                  })
+                                                                }
+                                                                placeholder="1"
+                                                                className={inputClass}
+                                                              />
+                                                            </label>
+                                                            <label className="block text-xs font-semibold text-slate-600">
+                                                              Số lần xuất hiện tối đa
+                                                              <input
+                                                                type="number"
+                                                                min={1}
+                                                                step={1}
+                                                                value={condition.maxOccurrences ?? ''}
+                                                                onChange={(e) =>
+                                                                  mutateCondition(pi, ti, ci, {
+                                                                    maxOccurrences: e.target.value ? Number(e.target.value) : undefined,
+                                                                  })
+                                                                }
+                                                                placeholder="Để trống nếu không giới hạn"
+                                                                className={inputClass}
+                                                              />
+                                                            </label>
+                                                          </div>
                                                         )}
                                                         <label className="mt-3 flex items-center gap-2 text-xs font-medium text-slate-600">
                                                           <input
