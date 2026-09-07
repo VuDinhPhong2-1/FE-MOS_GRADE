@@ -97,7 +97,7 @@ const Layout = ({ children, navItems }: LayoutProps) => {
               icon: act.icon ? <Icon name={act.icon} /> : <Icon name="circle" />,
               onClick: () => {
                 setFabOpen(false);
-                act.onClick();
+                act.onClick?.();
               },
               disabled: act.disabled,
             }))}

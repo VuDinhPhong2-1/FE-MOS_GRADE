@@ -74,15 +74,7 @@ const SchoolList = () => {
       ? 'Danh sách lớp học trực thuộc'
       : 'Danh sách các trường và cơ sở đào tạo trong hệ thống MOS Grader',
     actions: selectedSchool
-      ? [
-        {
-          id: 'back-to-schools',
-          label: 'Quay lại danh sách',
-          icon: 'arrow_back',
-          colorStyle: 'outlined',
-          onClick: handleBackToSchools,
-        },
-      ]
+      ? []
       : [
         {
           id: 'refresh-schools',

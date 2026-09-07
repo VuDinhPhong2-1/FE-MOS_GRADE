@@ -5,17 +5,19 @@ export interface PageAction {
   id: string;
   label: string;
   icon?: string; // Material Symbol snake_case name (ví dụ: 'add', 'refresh', 'file_upload')
-  onClick: () => void;
+  onClick?: () => void;
   colorStyle?: 'filled' | 'outlined' | 'tonal' | 'text' | 'elevated';
   variant?: 'filled' | 'outlined' | 'tonal' | 'text' | 'elevated'; // alias for colorStyle
   disabled?: boolean;
   className?: string;
+  customNode?: ReactNode;
 }
 
 export interface PageHeaderConfig {
   title?: ReactNode;
   subtitle?: ReactNode;
   actions?: PageAction[];
+  searchSlot?: ReactNode;
 }
 
 interface PageActionsContextType {
@@ -59,6 +61,7 @@ export const usePageHeader = (
       title: pageConfig.title,
       subtitle: pageConfig.subtitle,
       actions: pageConfig.actions,
+      searchSlot: pageConfig.searchSlot,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
