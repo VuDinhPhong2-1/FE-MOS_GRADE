@@ -285,15 +285,17 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
           ...formData,
           isActive,
         };
-        await classService.updateClass(editingClass.id, updateData, getAccessToken);
+        const updatedClass = await classService.updateClass(editingClass.id, updateData, getAccessToken);
+        setClasses((prev) => prev.map((cls) => (cls.id === updatedClass.id ? { ...cls, ...updatedClass } : cls)));
       } else {
-        await classService.createClass(
+        const createdClass = await classService.createClass(
           {
             ...formData,
             schoolId: selectedSchool.id,
           },
           getAccessToken
         );
+        setClasses((prev) => [createdClass, ...prev.filter((cls) => cls.id !== createdClass.id)]);
       }
 
       setShowModal(false);
