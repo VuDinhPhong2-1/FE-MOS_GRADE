@@ -1,403 +1,213 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Icon, ProgressIndicator } from '@bug-on/m3-expressive';
+import React from 'react';
+import {
+  Button,
+  Card,
+  CardContent,
+  Icon,
+  IconButton,
+  Menu,
+  MenuContent,
+  MenuDivider,
+  MenuGroup,
+  MenuItem,
+  MenuTrigger,
+  ProgressIndicator,
+  Search,
+} from '@bug-on/m3-expressive';
 import StudentList from './StudentList';
-import { useSearchParams } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { ApiServiceError, classService } from '../services/class.service';
-import { authService } from '../services/auth.service';
-import studentService from '../services/student.service';
+import { usePageHeader } from '../context/PageActionsContext';
 import type { School } from '../types';
-import type { Class, CreateClassRequest, UpdateClassRequest } from '../types/class.types';
-import type { TeacherSummary } from '../types/auth.types';
+import {
+  ClassFormModal,
+  ClassGrid,
+  ClassStatsGrid,
+  DeleteClassDialog,
+  HandoverModal,
+  useClassList,
+} from '../features/classlist';
 
 interface ClassListProps {
   selectedSchool: School;
 }
 
-const OBJECT_ID_REGEX = /^[a-fA-F0-9]{24}$/;
-const VIETNAMESE_TONE_MARKS_REGEX = /[\u0300-\u036f]/g;
-
-const normalizeSearchText = (value: string): string =>
-  value
-    .normalize('NFD')
-    .replace(VIETNAMESE_TONE_MARKS_REGEX, '')
-    .toLowerCase()
-    .trim();
-
-const getGradeOrderValue = (grade?: string): number | null => {
-  if (!grade) return null;
-  const match = grade.match(/\d+/);
-  if (!match) return null;
-
-  const gradeValue = Number.parseInt(match[0], 10);
-  return Number.isNaN(gradeValue) ? null : gradeValue;
-};
-
 const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
-  const { getAccessToken, logout, user } = useAuth();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const {
+    classes,
+    visibleClasses,
+    selectedClass,
+    isLoading,
+    error,
+    canCreateClass,
+    canManageClass,
+    canHandoverClass,
+    showInactive,
+    setShowInactive,
+    classSearch,
+    setClassSearch,
+    classSearchActive,
+    setClassSearchActive,
+    selectedGradeFilter,
+    setSelectedGradeFilter,
+    handleClearSearch,
+    handleSelectClass,
+    handleBackToClassList,
+    showModal,
+    editingClass,
+    formData,
+    setFormData,
+    isActive,
+    setIsActive,
+    formError,
+    setFormError,
+    isSubmitting,
+    isSubmitDisabled,
+    handleOpenAddModal,
+    handleOpenEditModal,
+    handleCloseFormModal,
+    handleSubmitForm,
+    classToDelete,
+    isDeletingClass,
+    openDeleteDialog,
+    closeDeleteDialog,
+    handleConfirmDelete,
+    showHandoverModal,
+    handoverClass,
+    teachers,
+    isLoadingTeachers,
+    handoverError,
+    handoverBusyTeacherId,
+    handoverSearch,
+    setHandoverSearch,
+    handleOpenHandoverModal,
+    handleCloseHandoverModal,
+    handleToggleHandover,
+  } = useClassList(selectedSchool);
 
-  const [classes, setClasses] = useState<Class[]>([]);
-  const [selectedClass, setSelectedClass] = useState<Class | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState('');
-
-  const [showInactive, setShowInactive] = useState(false);
-  const [classSearch, setClassSearch] = useState('');
-
-  const [showModal, setShowModal] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [editingClass, setEditingClass] = useState<Class | null>(null);
-  const [isActive, setIsActive] = useState(true);
-  const [formError, setFormError] = useState('');
-  const [showHandoverModal, setShowHandoverModal] = useState(false);
-  const [handoverClass, setHandoverClass] = useState<Class | null>(null);
-  const [teachers, setTeachers] = useState<TeacherSummary[]>([]);
-  const [isLoadingTeachers, setIsLoadingTeachers] = useState(false);
-  const [handoverError, setHandoverError] = useState('');
-  const [handoverBusyTeacherId, setHandoverBusyTeacherId] = useState<string | null>(null);
-  const [handoverSearch, setHandoverSearch] = useState('');
-
-  const [formData, setFormData] = useState<CreateClassRequest>({
-    name: '',
-    schoolId: selectedSchool.id,
-    description: '',
-    maxStudents: undefined,
-    academicYear: '2024-2025',
-    grade: '',
-  });
-
-  const schoolIdForCreate = selectedSchool.id || formData.schoolId || '';
-  const currentUserId = user?.userId || '';
-  const isAdmin = user?.role === 'Admin';
-  const isTeacher = user?.role === 'Teacher';
-  const canCreateClass = isAdmin || isTeacher;
-  const canManageClass = useCallback(
-    (cls: Class): boolean =>
-      isAdmin || cls.ownerId === currentUserId || Boolean(cls.managerTeacherIds?.includes(currentUserId)),
-    [currentUserId, isAdmin]
-  );
-  const canHandoverClass = useCallback(
-    (cls: Class): boolean => isAdmin || cls.ownerId === currentUserId,
-    [currentUserId, isAdmin]
-  );
-
-  const createFormValidation = useMemo(() => {
-    const name = (formData.name || '').trim();
-    if (!name) return 'Tên lớp là bắt buộc.';
-
-    if (!OBJECT_ID_REGEX.test(schoolIdForCreate)) {
-      return 'Trường không hợp lệ.';
-    }
-
-    if (typeof formData.maxStudents === 'number') {
-      if (!Number.isInteger(formData.maxStudents) || formData.maxStudents < 1 || formData.maxStudents > 200) {
-        return 'Sĩ số tối đa phải từ 1 đến 200.';
-      }
-    }
-
-    if (formData.academicYear && formData.academicYear.length > 20) {
-      return 'Năm học không được quá 20 ký tự.';
-    }
-
-    if (formData.grade && formData.grade.length > 20) {
-      return 'Khối không được quá 20 ký tự.';
-    }
-
-    if (formData.description && formData.description.length > 500) {
-      return 'Mô tả không được quá 500 ký tự.';
-    }
-
-    return '';
-  }, [formData, schoolIdForCreate]);
-
-  const filteredTeachers = useMemo(() => {
-    const keyword = handoverSearch.trim().toLowerCase();
-    if (!keyword) {
-      return teachers;
-    }
-
-    return teachers.filter((teacher) => {
-      const fullName = (teacher.fullName || '').toLowerCase();
-      const username = (teacher.username || '').toLowerCase();
-      const email = (teacher.email || '').toLowerCase();
-      return fullName.includes(keyword) || username.includes(keyword) || email.includes(keyword);
-    });
-  }, [handoverSearch, teachers]);
-
-  const visibleClasses = useMemo(() => {
-    const searchKeyword = normalizeSearchText(classSearch);
-
-    return [...classes]
-      .filter((cls) => !searchKeyword || normalizeSearchText(cls.name).includes(searchKeyword))
-      .sort((classA, classB) => {
-        const gradeA = getGradeOrderValue(classA.grade);
-        const gradeB = getGradeOrderValue(classB.grade);
-
-        if (gradeA !== null && gradeB !== null && gradeA !== gradeB) {
-          return gradeA - gradeB;
-        }
-
-        if (gradeA !== null && gradeB === null) {
-          return -1;
-        }
-
-        if (gradeA === null && gradeB !== null) {
-          return 1;
-        }
-
-        return classA.name.localeCompare(classB.name, 'vi', { numeric: true, sensitivity: 'base' });
-      });
-  }, [classSearch, classes]);
-
-  const isSubmitDisabled = isSubmitting || (!editingClass && !!createFormValidation);
-
-  const fetchClasses = useCallback(async () => {
-    setIsLoading(true);
-    setError('');
-
-    try {
-      const data = await classService.getClassesBySchool(selectedSchool.id, getAccessToken, showInactive);
-      const classListWithStudents = await Promise.all(
-        data.map(async (cls) => {
-          try {
-            const students = await studentService.getStudentsByClassId(cls.id, getAccessToken);
-            return { ...cls, currentStudents: students.length };
-          } catch {
-            return { ...cls, currentStudents: cls.studentIds?.length ?? cls.currentStudents ?? 0 };
-          }
-        })
-      );
-
-      setClasses(classListWithStudents);
-    } catch (err) {
-      setError('Không thể tải danh sách lớp học');
-      console.error('Error fetching classes:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [selectedSchool.id, getAccessToken, showInactive]);
-
-  useEffect(() => {
-    fetchClasses();
-  }, [fetchClasses]);
-
-  useEffect(() => {
-    const classId = searchParams.get('classId');
-    if (!classId) {
-      setSelectedClass(null);
-      return;
-    }
-
-    const matchedClass = classes.find((cls) => cls.id === classId) || null;
-    setSelectedClass(matchedClass);
-  }, [classes, searchParams]);
-
-  const handleSelectClass = (cls: Class) => {
-    const nextParams = new URLSearchParams(searchParams);
-    nextParams.set('schoolId', selectedSchool.id);
-    nextParams.set('classId', cls.id);
-    setSearchParams(nextParams);
-    setSelectedClass(cls);
-  };
-
-  const handleBackToClassList = () => {
-    const nextParams = new URLSearchParams(searchParams);
-    nextParams.set('schoolId', selectedSchool.id);
-    nextParams.delete('classId');
-    setSearchParams(nextParams);
-    setSelectedClass(null);
-  };
-
-  const mapClassApiError = (err: unknown): string => {
-    if (err instanceof ApiServiceError) {
-      if (err.status === 401) {
-        logout();
-        window.location.href = '/login';
-        return 'Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.';
-      }
-      if (err.status === 403) return 'Bạn chỉ có quyền xem lớp này.';
-      if (err.status === 404) return 'Không tìm thấy trường.';
-      if (err.status === 400) return err.message || 'Dữ liệu không hợp lệ.';
-      if (err.status >= 500) return 'Có lỗi hệ thống, vui lòng thử lại.';
-      return err.message || 'Có lỗi xảy ra.';
-    }
-
-    if (err instanceof Error) return err.message;
-    return 'Có lỗi xảy ra.';
-  };
-
-  const handleOpenAddModal = () => {
-    if (!canCreateClass) {
-      alert('Bạn không có quyền tạo lớp trong trường này.');
-      return;
-    }
-
-    setEditingClass(null);
-    setIsActive(true);
-    setFormData({
-      name: '',
-      schoolId: selectedSchool.id,
-      description: '',
-      maxStudents: undefined,
-      academicYear: '2024-2025',
-      grade: '',
-    });
-    setFormError('');
-    setShowModal(true);
-  };
-
-  const handleOpenEditModal = (cls: Class) => {
-    if (!canManageClass(cls)) {
-      alert('Bạn chỉ có quyền xem lớp này.');
-      return;
-    }
-
-    setEditingClass(cls);
-    setIsActive(cls.isActive);
-    setFormData({
-      name: cls.name,
-      schoolId: cls.schoolId,
-      description: cls.description || '',
-      maxStudents: cls.maxStudents,
-      academicYear: cls.academicYear || '2024-2025',
-      grade: cls.grade || '',
-    });
-    setFormError('');
-    setShowModal(true);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setError('');
-    setFormError('');
-
-    if (!editingClass && createFormValidation) {
-      setFormError(createFormValidation);
-      setIsSubmitting(false);
-      return;
-    }
-
-    try {
-      if (editingClass) {
-        const updateData: UpdateClassRequest = {
-          ...formData,
-          isActive,
-        };
-        const updatedClass = await classService.updateClass(editingClass.id, updateData, getAccessToken);
-        setClasses((prev) => prev.map((cls) => (cls.id === updatedClass.id ? { ...cls, ...updatedClass } : cls)));
-      } else {
-        const createdClass = await classService.createClass(
+  usePageHeader(
+    {
+      title: selectedClass ? `Lớp ${selectedClass.name}` : selectedSchool.name,
+      subtitle: selectedClass ? 'Danh sách học sinh' : 'Danh sách lớp học trực thuộc',
+      searchSlot: !selectedClass ? (
+        <Search
+          query={classSearch}
+          onQueryChange={setClassSearch}
+          onSearch={setClassSearch}
+          active={classSearchActive}
+          onActiveChange={setClassSearchActive}
+          placeholder="Tìm theo tên lớp..."
+          aria-label="Tìm kiếm lớp học"
+          className="w-64 xl:w-72"
+        />
+      ) : undefined,
+      actions: !selectedClass
+        ? [
           {
-            ...formData,
-            schoolId: selectedSchool.id,
+            id: 'filter-classes',
+            label: 'Lọc',
+            icon: 'tune',
+            customNode: (
+              <Menu>
+                <MenuTrigger asChild>
+                  <IconButton
+                    colorStyle="standard"
+                    size="md"
+                    aria-label="Bộ lọc lớp học"
+                    title="Bộ lọc lớp học"
+                  >
+                    <Icon name="tune" size={20} />
+                  </IconButton>
+                </MenuTrigger>
+                <MenuContent align="end" className="w-64">
+                  <MenuGroup label="Trạng thái lớp">
+                    <MenuItem
+                      selected={showInactive}
+                      keepOpen
+                      onClick={() => setShowInactive((prev) => !prev)}
+                    >
+                      Hiển thị lớp không hoạt động
+                    </MenuItem>
+                  </MenuGroup>
+                  <MenuDivider />
+                  <MenuGroup label="Lọc theo khối">
+                    <MenuItem
+                      selected={selectedGradeFilter === ''}
+                      keepOpen
+                      onClick={() => setSelectedGradeFilter('')}
+                    >
+                      Tất cả các khối
+                    </MenuItem>
+                    <MenuItem
+                      selected={selectedGradeFilter === '10'}
+                      keepOpen
+                      onClick={() => setSelectedGradeFilter('10')}
+                    >
+                      Khối 10
+                    </MenuItem>
+                    <MenuItem
+                      selected={selectedGradeFilter === '11'}
+                      keepOpen
+                      onClick={() => setSelectedGradeFilter('11')}
+                    >
+                      Khối 11
+                    </MenuItem>
+                    <MenuItem
+                      selected={selectedGradeFilter === '12'}
+                      keepOpen
+                      onClick={() => setSelectedGradeFilter('12')}
+                    >
+                      Khối 12
+                    </MenuItem>
+                  </MenuGroup>
+                </MenuContent>
+              </Menu>
+            ),
+            onClick: () => {
+              setShowInactive((prev) => !prev);
+            },
           },
-          getAccessToken
-        );
-        setClasses((prev) => [createdClass, ...prev.filter((cls) => cls.id !== createdClass.id)]);
-      }
-
-      setShowModal(false);
-      setEditingClass(null);
-      setIsActive(true);
-
-      await fetchClasses();
-    } catch (err) {
-      const mapped = mapClassApiError(err);
-      setFormError(mapped);
-      setError(mapped);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleDeleteClass = async (classId: string, className: string) => {
-    const classToDelete = classes.find((item) => item.id === classId);
-    if (classToDelete && !canManageClass(classToDelete)) {
-      alert('Bạn chỉ có quyền xem lớp này.');
-      return;
-    }
-
-    if (!confirm(`Bạn có chắc muốn xóa vĩnh viễn lớp "${className}"?\n\nHành động này không thể hoàn tác.`)) {
-      return;
-    }
-
-    try {
-      await classService.deleteClass(classId, getAccessToken);
-      await fetchClasses();
-    } catch {
-      alert('Không thể xóa lớp học');
-    }
-  };
-
-  const handleOpenHandoverModal = async (cls: Class) => {
-    if (!canHandoverClass(cls)) {
-      alert('Chỉ giáo viên chính hoặc Admin mới được bàn giao quyền lớp.');
-      return;
-    }
-
-    setShowHandoverModal(true);
-    setHandoverClass(cls);
-    setHandoverError('');
-    setHandoverSearch('');
-    setIsLoadingTeachers(true);
-
-    try {
-      const teacherList = await authService.getTeachers(getAccessToken);
-      setTeachers(teacherList);
-    } catch (err) {
-      setTeachers([]);
-      setHandoverError(err instanceof Error ? err.message : 'Không thể tải danh sách giáo viên');
-    } finally {
-      setIsLoadingTeachers(false);
-    }
-  };
-
-  const handleToggleHandover = async (teacherId: string, granted: boolean) => {
-    if (!handoverClass) {
-      return;
-    }
-
-    setHandoverBusyTeacherId(teacherId);
-    setHandoverError('');
-
-    try {
-      const updatedClass = granted
-        ? await classService.revokeClassManagement(handoverClass.id, teacherId, getAccessToken)
-        : await classService.grantClassManagement(handoverClass.id, teacherId, getAccessToken);
-
-      setHandoverClass(updatedClass);
-      setClasses((prev) => prev.map((cls) => (cls.id === updatedClass.id ? { ...cls, ...updatedClass } : cls)));
-      setSelectedClass((prev) => (prev?.id === updatedClass.id ? { ...prev, ...updatedClass } : prev));
-    } catch (err) {
-      setHandoverError(err instanceof Error ? err.message : 'Không thể cập nhật bàn giao lớp');
-    } finally {
-      setHandoverBusyTeacherId(null);
-    }
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    if (formError) setFormError('');
-
-    setFormData((prev) => ({
-      ...prev,
-      [name]: ['maxStudents'].includes(name) ? (value ? parseInt(value, 10) : undefined) : value,
-    }));
-  };
+          ...(canCreateClass
+            ? [
+              {
+                id: 'add-class',
+                label: 'Thêm lớp mới',
+                icon: 'add',
+                colorStyle: 'filled' as const,
+                onClick: handleOpenAddModal,
+              },
+            ]
+            : []),
+        ]
+        : [],
+    },
+    [
+      selectedClass,
+      selectedSchool.name,
+      classSearch,
+      classSearchActive,
+      showInactive,
+      selectedGradeFilter,
+      canCreateClass,
+      handleOpenAddModal,
+      setClassSearch,
+      setClassSearchActive,
+      setShowInactive,
+      setSelectedGradeFilter,
+    ]
+  );
 
   if (selectedClass) {
     const selectedClassReadOnly = !canManageClass(selectedClass);
     return (
       <div className="space-y-4">
-        <button
-          className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50"
+        <Button
+          type="button"
+          colorStyle="tonal"
           onClick={handleBackToClassList}
+          icon={<Icon name="arrow_back" className="text-base" />}
+          className="rounded-full shadow-xs"
         >
-          <span aria-hidden>←</span>
           Quay lại danh sách lớp
-        </button>
+        </Button>
         <StudentList selectedClass={selectedClass} readOnly={selectedClassReadOnly} />
       </div>
     );
@@ -405,440 +215,83 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64 gap-2">
+      <div className="flex h-64 flex-col items-center justify-center gap-3">
         <ProgressIndicator variant="circular" shape="wavy" size={64} aria-label="Đang tải danh sách lớp..." />
-        <span className="text-gray-600">Đang tải danh sách lớp...</span>
+        <span className="text-sm font-medium text-m3-on-surface-variant">Đang tải danh sách lớp...</span>
       </div>
     );
   }
 
   return (
-    <div>
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold tracking-tight text-m3-on-surface mb-2 flex items-center gap-2">
-          <Icon name="menu_book" variant="rounded" size={24} className="text-blue-600" />
-          Danh sách lớp học
-        </h2>
-        <p className="text-m3-on-surface-variant">
-          Trường: <span className="font-semibold">{selectedSchool.name}</span>
-        </p>
-      </div>
-
+    <div className="space-y-6">
+      {/* Thông báo lỗi nếu có */}
       {error && (
-        <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg flex items-center gap-2">
-          <Icon name="error" variant="rounded" size={20} />
-          {error}
-        </div>
+        <Card variant="outlined" className="border-m3-error bg-m3-error-container text-m3-on-error-container">
+          <CardContent className="flex items-center gap-3 p-4 text-xs font-medium">
+            <Icon name="warning" className="shrink-0 text-xl" />
+            <span>{error}</span>
+          </CardContent>
+        </Card>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="rounded-2xl bg-m3-surface-container p-4 shadow-xs text-m3-on-surface">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-m3-on-surface-variant text-sm">Tổng số lớp</p>
-              <p className="text-2xl font-bold">{classes.length}</p>
-            </div>
-            <Icon name="menu_book" variant="rounded" size={32} className="text-blue-500 opacity-50" />
-          </div>
-        </div>
+      {/* Thống kê 4 ô theo chuẩn M3 Card */}
+      <ClassStatsGrid classes={classes} />
 
-        <div className="rounded-2xl bg-m3-surface-container p-4 shadow-xs text-m3-on-surface">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-m3-on-surface-variant text-sm">Đang hoạt động</p>
-              <p className="text-2xl font-bold text-green-600">{classes.filter((c) => c.isActive).length}</p>
-            </div>
-            <Icon name="group" variant="rounded" size={32} className="text-green-500 opacity-50" />
-          </div>
-        </div>
+      {/* Danh sách lớp học theo MD3 Card */}
+      <ClassGrid
+        classes={visibleClasses}
+        canManageClass={canManageClass}
+        canHandoverClass={canHandoverClass}
+        canCreateClass={canCreateClass}
+        totalClassCount={classes.length}
+        searchQuery={classSearch}
+        onSelectClass={handleSelectClass}
+        onEditClass={handleOpenEditModal}
+        onDeleteClass={openDeleteDialog}
+        onHandoverClass={handleOpenHandoverModal}
+        onOpenAddModal={handleOpenAddModal}
+        onClearSearch={handleClearSearch}
+      />
 
-        <div className="rounded-2xl bg-m3-surface-container p-4 shadow-xs text-m3-on-surface">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-m3-on-surface-variant text-sm">Tổng học sinh</p>
-              <p className="text-2xl font-bold">{classes.reduce((sum, cls) => sum + cls.currentStudents, 0)}</p>
-            </div>
-            <Icon name="person" variant="rounded" size={32} className="text-purple-500 opacity-50" />
-          </div>
-        </div>
+      {/* Modal Bàn giao quyền lớp học */}
+      <HandoverModal
+        open={showHandoverModal}
+        onClose={handleCloseHandoverModal}
+        handoverClass={handoverClass}
+        teachers={teachers}
+        isLoadingTeachers={isLoadingTeachers}
+        handoverError={handoverError}
+        handoverBusyTeacherId={handoverBusyTeacherId}
+        handoverSearch={handoverSearch}
+        onSearchChange={setHandoverSearch}
+        onToggleHandover={handleToggleHandover}
+      />
 
-        <div className="rounded-2xl bg-m3-surface-container p-4 shadow-xs text-m3-on-surface">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-m3-on-surface-variant text-sm">Năm học</p>
-              <p className="text-lg font-bold">2024-2025</p>
-            </div>
-            <Icon name="calendar_today" variant="rounded" size={32} className="text-orange-500 opacity-50" />
-          </div>
-        </div>
-      </div>
+      {/* Modal Thêm / Chỉnh sửa lớp học */}
+      <ClassFormModal
+        open={showModal}
+        onClose={handleCloseFormModal}
+        editingClass={editingClass}
+        formData={formData}
+        setFormData={setFormData}
+        isActive={isActive}
+        setIsActive={setIsActive}
+        formError={formError}
+        setFormError={setFormError}
+        isSubmitting={isSubmitting}
+        onSubmit={handleSubmitForm}
+        attendanceSpreadsheetId={selectedSchool.attendanceSpreadsheetId}
+        isSubmitDisabled={isSubmitDisabled}
+      />
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center mb-4">
-        <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="flex items-center gap-2">
-            <Icon name="filter_list" variant="rounded" size={18} className="text-gray-600" />
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={showInactive}
-                onChange={(e) => setShowInactive(e.target.checked)}
-                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-              />
-              <span className="text-sm text-gray-700">Hiển thị lớp không hoạt động</span>
-            </label>
-          </div>
-
-          <div className="relative w-full sm:max-w-xs">
-            <Icon name="search" variant="rounded" size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              value={classSearch}
-              onChange={(event) => setClassSearch(event.target.value)}
-              placeholder="Tìm theo tên lớp..."
-              className="w-full rounded-lg border border-gray-300 py-2 pl-9 pr-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-        </div>
-
-        {canCreateClass && (
-          <button onClick={handleOpenAddModal} className="rounded-xl bg-m3-primary text-m3-on-primary font-semibold shadow-xs hover:bg-m3-primary/90 transition-all flex w-full items-center justify-center gap-2 px-4 py-2 sm:w-auto">
-            <Icon name="add" variant="rounded" size={18} />
-            Thêm lớp mới
-          </button>
-        )}
-      </div>
-
-      {visibleClasses.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {visibleClasses.map((cls) => (
-            <div
-              key={cls.id}
-              className={`rounded-2xl bg-m3-surface-container overflow-hidden shadow-xs transition-shadow hover:shadow-md text-m3-on-surface ${!cls.isActive ? 'opacity-60' : ''
-                }`}
-            >
-              <div
-                className={`bg-linear-to-r ${cls.isActive ? 'from-blue-500 to-blue-600' : 'from-gray-400 to-gray-500'
-                  } text-white p-4`}
-              >
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="text-lg font-bold">{cls.name}</h3>
-                  <span
-                    className={`px-2 py-1 text-xs rounded-full ${cls.isActive ? 'bg-green-400 bg-opacity-30 text-white' : 'bg-red-400 bg-opacity-30 text-white'
-                      }`}
-                  >
-                    {cls.isActive ? 'Hoạt động' : 'Ngừng'}
-                  </span>
-                </div>
-              </div>
-
-              <div className="p-4">
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-500">Khối:</span>
-                    <span className="font-medium">{cls.grade || 'Không có'}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-500">Sĩ số:</span>
-                    <span className="font-medium">
-                      {cls.currentStudents}/{cls.maxStudents || '∞'}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-500">Năm học:</span>
-                    <span className="font-medium">{cls.academicYear || 'Không có'}</span>
-                  </div>
-                </div>
-
-                {cls.description && <p className="text-xs text-gray-600 mt-3 italic line-clamp-2">{cls.description}</p>}
-
-                <div className="flex gap-2 mt-4">
-                  <button
-                    onClick={() => handleSelectClass(cls)}
-                    className="flex-1 bg-blue-100 text-blue-700 rounded px-3 py-2 hover:bg-blue-200 transition text-sm font-medium"
-                  >
-                    Xem học sinh
-                  </button>
-                  {canManageClass(cls) ? (
-                    <>
-                      {canHandoverClass(cls) && (
-                        <button
-                          onClick={() => handleOpenHandoverModal(cls)}
-                          className="p-2 text-indigo-600 hover:bg-indigo-100 rounded transition"
-                          title="Bàn giao quyền lớp"
-                        >
-                          <Icon name="group" variant="rounded" size={16} />
-                        </button>
-                      )}
-                      <button
-                        onClick={() => handleOpenEditModal(cls)}
-                        className="p-2 text-green-600 hover:bg-green-100 rounded transition"
-                        title="Sửa lớp"
-                      >
-                        <Icon name="edit" variant="rounded" size={16} />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteClass(cls.id, cls.name)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded transition"
-                        title="Xóa lớp"
-                      >
-                        <Icon name="delete" variant="rounded" size={16} />
-                      </button>
-                    </>
-                  ) : (
-                    <span className="inline-flex items-center rounded px-2 py-1 text-xs font-medium text-slate-500 bg-slate-100">
-                      Chỉ xem
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="rounded-2xl bg-m3-surface-container py-12 text-center shadow-xs text-m3-on-surface">
-          <Icon name="menu_book" variant="rounded" size={64} className="mx-auto mb-4 text-m3-outline" />
-          <p className="text-m3-on-surface-variant text-lg">
-            {classes.length === 0 ? 'Chưa có lớp học nào trong trường này' : 'Không tìm thấy lớp phù hợp với từ khóa tìm kiếm'}
-          </p>
-          {classes.length > 0 && classSearch.trim() && (
-            <button
-              onClick={() => setClassSearch('')}
-              className="mt-4 rounded-xl bg-m3-surface-container-high px-4 py-2 text-sm font-medium text-m3-on-surface transition hover:bg-m3-surface-container-highest"
-            >
-              Xóa từ khóa tìm kiếm
-            </button>
-          )}
-          {classes.length === 0 && canCreateClass && (
-            <button onClick={handleOpenAddModal} className="rounded-xl bg-m3-primary text-m3-on-primary font-semibold shadow-xs hover:bg-m3-primary/90 transition-all mt-4 px-4 py-2">
-              <Icon name="add" variant="rounded" size={18} className="inline mr-2" />
-              Tạo lớp đầu tiên
-            </button>
-          )}
-        </div>
-      )}
-
-      {showHandoverModal && handoverClass && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 backdrop-blur-[1px]">
-          <div className="rounded-3xl bg-m3-surface-container-high w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl text-m3-on-surface">
-            <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b">
-              <h2 className="text-lg sm:text-xl font-semibold">
-                Bàn giao quyền lớp: <span className="text-blue-600">{handoverClass.name}</span>
-              </h2>
-              <button
-                onClick={() => {
-                  setShowHandoverModal(false);
-                  setHandoverClass(null);
-                  setHandoverError('');
-                }}
-                className="p-1 hover:bg-gray-100 rounded"
-              >
-                <Icon name="close" variant="rounded" size={24} />
-              </button>
-            </div>
-
-            <div className="p-4 sm:p-6 space-y-3">
-              <p className="text-sm text-gray-600">
-                Giáo viên chính/Admin có thể cấp hoặc thu hồi quyền quản lý lớp cho giáo viên khác.
-              </p>
-              <input
-                type="text"
-                value={handoverSearch}
-                onChange={(event) => setHandoverSearch(event.target.value)}
-                placeholder="Tìm theo tên, username hoặc email..."
-                className="w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-              {handoverError && <div className="rounded bg-red-50 text-red-700 px-3 py-2 text-sm">{handoverError}</div>}
-
-              {isLoadingTeachers ? (
-                <div className="flex items-center justify-center py-8 text-gray-600 gap-2">
-                  <ProgressIndicator variant="circular" shape="wavy" showTrack size={20} aria-label="Đang tải danh sách giáo viên..." />
-                  Đang tải danh sách giáo viên...
-                </div>
-              ) : filteredTeachers.length === 0 ? (
-                <div className="rounded border border-dashed border-gray-300 p-6 text-center text-gray-500">
-                  Không tìm thấy giáo viên phù hợp.
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {filteredTeachers.map((teacher) => {
-                    const isOwner = teacher.userId === handoverClass.ownerId;
-                    const granted = Boolean(handoverClass.managerTeacherIds?.includes(teacher.userId));
-                    const isBusy = handoverBusyTeacherId === teacher.userId;
-
-                    return (
-                      <div key={teacher.userId} className="flex items-center justify-between rounded border border-gray-200 px-3 py-2">
-                        <div className="min-w-0">
-                          <p className="font-medium text-gray-800 truncate">
-                            {teacher.fullName?.trim() || teacher.username}
-                          </p>
-                          <p className="text-xs text-gray-500 truncate">{teacher.email || teacher.username}</p>
-                        </div>
-
-                        {isOwner ? (
-                          <span className="rounded bg-emerald-100 px-2 py-1 text-xs font-medium text-emerald-700">
-                            Giáo viên chính
-                          </span>
-                        ) : (
-                          <button
-                            type="button"
-                            disabled={isBusy}
-                            onClick={() => handleToggleHandover(teacher.userId, granted)}
-                            className={`min-w-27.5 rounded px-3 py-1.5 text-sm font-medium transition ${granted
-                              ? 'bg-rose-100 text-rose-700 hover:bg-rose-200'
-                              : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
-                              } disabled:opacity-60`}
-                          >
-                            {isBusy ? 'Đang lưu...' : granted ? 'Thu hồi quyền' : 'Cấp quyền'}
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 backdrop-blur-[1px]">
-          <div className="rounded-3xl bg-m3-surface-container-high w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-xl text-m3-on-surface">
-            <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b">
-              <h2 className="text-lg sm:text-xl font-semibold">{editingClass ? 'Chỉnh sửa lớp học' : 'Thêm lớp học mới'}</h2>
-              <button onClick={() => setShowModal(false)} className="p-1 hover:bg-gray-100 rounded">
-                <Icon name="close" variant="rounded" size={24} />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4">
-              {(formError || error) && <div className="p-3 bg-red-100 text-red-700 rounded text-sm">{formError || error}</div>}
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tên lớp <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="VD: Lớp 10A1"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Khối</label>
-                  <select
-                    name="grade"
-                    value={formData.grade}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="">-- Chọn khối --</option>
-                    <option value="10">Khối 10</option>
-                    <option value="11">Khối 11</option>
-                    <option value="12">Khối 12</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Sĩ số tối đa</label>
-                  <input
-                    type="number"
-                    name="maxStudents"
-                    value={formData.maxStudents || ''}
-                    onChange={handleChange}
-                    min="1"
-                    max="100"
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="VD: 45"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Năm học</label>
-                <input
-                  type="text"
-                  name="academicYear"
-                  value={formData.academicYear}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="VD: 2024-2025"
-                />
-              </div>
-
-              <div className="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-sm text-blue-700">
-                {selectedSchool.attendanceSpreadsheetId
-                  ? 'Google Sheet của lớp sẽ tự lấy theo cấu hình của Trường. Chỉ cần cấu hình tại màn hình Quản lý trường.'
-                  : 'Trường chưa cấu hình Google Sheet. Vui lòng vào Quản lý trường để thêm Spreadsheet ID.'}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả</label>
-                <textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  rows={3}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Mô tả về lớp học..."
-                />
-              </div>
-
-              {editingClass && (
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="isActive"
-                    checked={isActive}
-                    onChange={(e) => setIsActive(e.target.checked)}
-                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                  />
-                  <label htmlFor="isActive" className="text-sm font-medium text-gray-700">
-                    Lớp đang hoạt động
-                  </label>
-                </div>
-              )}
-
-              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-4 border-t">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="w-full sm:w-auto px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
-                >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitDisabled}
-                  className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <ProgressIndicator variant="circular" shape="wavy" showTrack size={18} aria-label="Đang lưu..." />
-                      Đang lưu...
-                    </>
-                  ) : editingClass ? (
-                    <>
-                      <Icon name="edit" variant="rounded" size={18} />
-                      Cập nhật
-                    </>
-                  ) : (
-                    <>
-                      <Icon name="add" variant="rounded" size={18} />
-                      Thêm lớp
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* Modal Xác nhận xóa lớp học */}
+      <DeleteClassDialog
+        open={Boolean(classToDelete)}
+        isDeleting={isDeletingClass}
+        classToDelete={classToDelete}
+        onClose={closeDeleteDialog}
+        onConfirmDelete={handleConfirmDelete}
+      />
     </div>
   );
 };

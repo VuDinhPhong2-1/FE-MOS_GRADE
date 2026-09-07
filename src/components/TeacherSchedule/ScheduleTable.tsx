@@ -430,6 +430,7 @@ export const ScheduleTable = ({
         open={datePickerOpen}
         onDismiss={() => setDatePickerOpen(false)}
         title="Chọn ngày trong tuần"
+        className="w-[calc(100vw-2rem)]! sm:w-100! max-w-md!"
         confirmButton={
           <Button
             type="button"
@@ -451,7 +452,11 @@ export const ScheduleTable = ({
           </Button>
         }
       >
-        <DatePicker state={datePickerState} title="Chọn ngày trong tuần" />
+        <DatePicker
+          state={datePickerState}
+          title="Chọn ngày trong tuần"
+          className="w-full! max-w-none!"
+        />
       </DatePickerDialog>
     </>
   );

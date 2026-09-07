@@ -483,6 +483,7 @@ export const ScheduleFormModal = ({
           open={datePickerOpen}
           onDismiss={() => setDatePickerOpen(false)}
           title="Chọn ngày dạy"
+          className="w-[calc(100vw-2rem)]! sm:w-100! max-w-md!"
           confirmButton={
             <Button
               type="button"
@@ -504,7 +505,7 @@ export const ScheduleFormModal = ({
             </Button>
           }
         >
-          <DatePicker state={datePickerState} />
+          <DatePicker state={datePickerState} className="w-full! max-w-none!" />
         </DatePickerDialog>
 
         {/* Modal Start Time Picker Dialog */}

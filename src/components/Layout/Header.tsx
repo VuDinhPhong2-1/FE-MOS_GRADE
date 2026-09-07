@@ -1,3 +1,4 @@
+import React from 'react';
 import { Icon, Button, IconButton } from '@bug-on/m3-expressive';
 import { usePageActionsContext } from '../../context/PageActionsContext';
 import ThemeToggle from '../ThemeToggle';
@@ -38,26 +39,38 @@ const Header = ({ onOpenProfile }: HeaderProps) => {
         )}
       </div>
 
-      {/* Right side: Desktop Actions + Mobile ThemeToggle + Mobile Settings Button */}
+      {/* Right side: Desktop Search + Desktop Actions + Mobile ThemeToggle + Mobile Settings Button */}
       <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3">
+        {/* Desktop Search Slot */}
+        {config.searchSlot && (
+          <div className="hidden items-center lg:flex">
+            {config.searchSlot}
+          </div>
+        )}
+
         {/* Desktop Page Actions Container */}
         {actions.length > 0 && (
           <div className="hidden items-center gap-2 lg:flex">
-            {actions.map((act) => (
-              <Button
-                key={act.id}
-                colorStyle={act.colorStyle || act.variant || 'filled'}
-                size="sm"
-                onClick={act.onClick}
-                disabled={act.disabled}
-                className={act.className}
-              >
-                <div className="flex items-center gap-1.5">
-                  {act.icon && <Icon name={act.icon} className="text-base" />}
-                  <span>{act.label}</span>
-                </div>
-              </Button>
-            ))}
+            {actions.map((act) => {
+              if (act.customNode) {
+                return <React.Fragment key={act.id}>{act.customNode}</React.Fragment>;
+              }
+              return (
+                <Button
+                  key={act.id}
+                  colorStyle={act.colorStyle || act.variant || 'filled'}
+                  size="sm"
+                  onClick={act.onClick}
+                  disabled={act.disabled}
+                  className={act.className}
+                >
+                  <div className="flex items-center gap-1.5">
+                    {act.icon && <Icon name={act.icon} className="text-base" />}
+                    <span>{act.label}</span>
+                  </div>
+                </Button>
+              );
+            })}
           </div>
         )}
 

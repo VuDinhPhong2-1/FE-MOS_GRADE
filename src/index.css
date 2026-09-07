@@ -82,3 +82,8 @@ td {
   background-clip: content-box;
 }
 
+/* M3 Expressive DatePicker: ngăn xuống dòng nhãn tháng/năm khi hiển thị tiếng Việt */
+button[aria-controls="date-picker-selection"] {
+  white-space: nowrap;
+}
+
