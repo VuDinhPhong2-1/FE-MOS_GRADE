@@ -9,6 +9,7 @@
 @source "../src/components/Layout/{Header,Layout,ProfileModal,Sidebar}.tsx";
 @source "../src/components/StudentList/**/*.{tsx,ts}";
 @source "../src/components/SchoolList/**/*.{tsx,ts}";
+@source "../src/components/TeacherSchedule/**/*.{tsx,ts}";
 
 *,
 *::before,
@@ -80,4 +81,4 @@ td {
   border: 2px solid transparent;
   background-clip: content-box;
 }
-
+
