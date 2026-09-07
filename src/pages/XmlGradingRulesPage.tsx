@@ -53,6 +53,7 @@ const specialConditionOptions: Array<{
   value: SpecialConditionType;
   label: string;
   description: string;
+  subjects?: string[];
 }> = [
     {
       value: 'pictureBullet',
@@ -72,7 +73,22 @@ const specialConditionOptions: Array<{
       description:
         'Kiem tra bang Word da duoc chuyen thanh cac dong van ban va tach cot bang tab.',
     },
+    {
+      value: 'hyperlink',
+      label: 'Hyperlink',
+      description:
+        'Kiem tra text hien thi va URL cua hyperlink trong Word.',
+    },
   ];
+
+const normalizeSubject = (value: string) => value.trim().toLowerCase();
+
+const specialConditionOptionsForSubject = (subject: string) => {
+  const normalizedSubject = normalizeSubject(subject);
+  return specialConditionOptions.filter((option) =>
+    (option.subjects ?? ['word']).includes(normalizedSubject)
+  );
+};
 
 const emptyRuleSet = (): GradingRuleSet => ({ id: '', subject: 'excel', version: 'v1', isActive: false, projects: [] });
 const emptyProject = (): ProjectXmlRule => ({ projectCode: 'project22', projectName: '', maxScore: 125, tasks: [] });
@@ -81,6 +97,8 @@ const emptyCondition = (): XmlGradingCondition => ({
   conditionId: '', score: 1, sourceFile: 'xl/worksheets/sheet1.xml', expectedVariants: [{ expectedValues: [''] }], ignoreAttributes: [], compareMode: 'xmlContainsNormalized', matchPolicy: 'all',
   feedback: { successDetail: '', errorMessage: '', fixAction: '' }, stopTaskIfFailed: false,
 });
+
+const emptyFeedback = () => ({ successDetail: '', errorMessage: '', fixAction: '' });
 
 const cx = (...items: Array<string | false | null | undefined>) => items.filter(Boolean).join(' ');
 
@@ -922,6 +940,9 @@ const XmlGradingRulesPage = () => {
                                   const taskKey = `${pi}-${ti}`;
                                   const taskExpanded = expandedTasks[taskKey] ?? false;
                                   const specialConditionExpanded = expandedSpecialConditions[taskKey] ?? true;
+                                  const availableSpecialConditionOptions = specialConditionOptionsForSubject(selected.subject);
+                                  const currentSpecialConditionSupported = !task.specialCondition?.type
+                                    || availableSpecialConditionOptions.some((option) => option.value === task.specialCondition?.type);
 
                                   return (
                                     <div key={taskKey} className="overflow-hidden rounded-2xl bg-m3-surface-container-high shadow-xs transition hover:shadow-md text-m3-on-surface">
@@ -1067,6 +1088,7 @@ const XmlGradingRulesPage = () => {
                                                               // Giữ lại score nếu người dùng đã nhập trước đó
                                                               // (VD: đổi qua đổi lại giữa các loại), mặc định 0.
                                                               score: task.specialCondition?.score ?? 0,
+                                                              feedback: task.specialCondition?.feedback ?? emptyFeedback(),
                                                               config: task.specialCondition?.config ?? {
                                                                 level: 0,
                                                               },
@@ -1076,6 +1098,7 @@ const XmlGradingRulesPage = () => {
                                                             updateTaskSpecialCondition(pi, ti, {
                                                               type: 'insertedImage',
                                                               score: task.specialCondition?.score ?? 0,
+                                                              feedback: task.specialCondition?.feedback ?? emptyFeedback(),
                                                               imageInsertConfig: task.specialCondition?.imageInsertConfig ?? {
                                                                 wrapType: 'tight',
                                                               },
@@ -1085,6 +1108,7 @@ const XmlGradingRulesPage = () => {
                                                             updateTaskSpecialCondition(pi, ti, {
                                                               type: 'convertTableToText',
                                                               score: task.specialCondition?.score ?? 0,
+                                                              feedback: task.specialCondition?.feedback ?? emptyFeedback(),
                                                               convertTableToTextConfig: task.specialCondition?.convertTableToTextConfig ?? {
                                                                 sourceFile: 'word/document.xml',
                                                                 anchorText: '',
@@ -1095,12 +1119,26 @@ const XmlGradingRulesPage = () => {
                                                               },
                                                             });
                                                           }
+                                                          if (value === 'hyperlink') {
+                                                            updateTaskSpecialCondition(pi, ti, {
+                                                              type: 'hyperlink',
+                                                              score: task.specialCondition?.score ?? 0,
+                                                              feedback: task.specialCondition?.feedback ?? emptyFeedback(),
+                                                              hyperlinkConfig: task.specialCondition?.hyperlinkConfig ?? {
+                                                                sourceFile: 'word/document.xml',
+                                                                relsFile: 'word/_rels/document.xml.rels',
+                                                                displayText: '',
+                                                                url: '',
+                                                                caseSensitiveText: false,
+                                                              },
+                                                            });
+                                                          }
                                                         }}
                                                         className="mt-1 w-full appearance-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 pr-10 text-sm font-medium text-slate-800 shadow-sm outline-none transition hover:border-slate-300 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
                                                       >
                                                         <option value="">Không sử dụng</option>
 
-                                                        {specialConditionOptions.map((option) => (
+                                                        {availableSpecialConditionOptions.map((option) => (
                                                           <option key={option.value} value={option.value}>
                                                             {option.label}
                                                           </option>
@@ -1121,6 +1159,12 @@ const XmlGradingRulesPage = () => {
                                                     </div>
                                                   </label>
                                                 </div>
+
+                                                {!currentSpecialConditionSupported && (
+                                                  <div className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">
+                                                    Special condition nay khong ho tro cho subject {selected.subject || 'unknown'}.
+                                                  </div>
+                                                )}
 
                                                 {/* Score input cho Special Condition */}
                                                 {task.specialCondition?.type && (
@@ -1148,6 +1192,62 @@ const XmlGradingRulesPage = () => {
                                                   </div>
                                                 )}
 
+                                                {task.specialCondition?.type && (
+                                                  <div className="mt-3 grid gap-3 md:grid-cols-2">
+                                                    <label className="text-xs font-semibold text-slate-600">
+                                                      Thong bao khi dung
+                                                      <input
+                                                        value={task.specialCondition.feedback?.successDetail ?? ''}
+                                                        onChange={(e) =>
+                                                          updateTaskSpecialCondition(pi, ti, {
+                                                            ...task.specialCondition!,
+                                                            feedback: {
+                                                              ...(task.specialCondition?.feedback ?? emptyFeedback()),
+                                                              successDetail: e.target.value,
+                                                            },
+                                                          })
+                                                        }
+                                                        placeholder="Da hoan thanh dung yeu cau."
+                                                        className={inputClass}
+                                                      />
+                                                    </label>
+                                                    <label className="text-xs font-semibold text-slate-600">
+                                                      Thong bao khi sai
+                                                      <input
+                                                        value={task.specialCondition.feedback?.errorMessage ?? ''}
+                                                        onChange={(e) =>
+                                                          updateTaskSpecialCondition(pi, ti, {
+                                                            ...task.specialCondition!,
+                                                            feedback: {
+                                                              ...(task.specialCondition?.feedback ?? emptyFeedback()),
+                                                              errorMessage: e.target.value,
+                                                            },
+                                                          })
+                                                        }
+                                                        placeholder="Ban chua thuc hien dung yeu cau."
+                                                        className={inputClass}
+                                                      />
+                                                    </label>
+                                                    <label className="text-xs font-semibold text-slate-600 md:col-span-2">
+                                                      Goi y cach sua
+                                                      <input
+                                                        value={task.specialCondition.feedback?.fixAction ?? ''}
+                                                        onChange={(e) =>
+                                                          updateTaskSpecialCondition(pi, ti, {
+                                                            ...task.specialCondition!,
+                                                            feedback: {
+                                                              ...(task.specialCondition?.feedback ?? emptyFeedback()),
+                                                              fixAction: e.target.value,
+                                                            },
+                                                          })
+                                                        }
+                                                        placeholder="Vi du: Chon text -> Insert -> Link -> nhap URL dung."
+                                                        className={inputClass}
+                                                      />
+                                                    </label>
+                                                  </div>
+                                                )}
+
                                                 {/* Description */}
                                                 {task.specialCondition?.type && (
                                                   <div className="mt-3 flex items-start gap-3 rounded-xl border border-violet-100 bg-violet-50/60 p-3">
@@ -1158,7 +1258,7 @@ const XmlGradingRulesPage = () => {
                                                     <div>
                                                       <p className="text-xs font-bold text-violet-900">
                                                         {
-                                                          specialConditionOptions.find(
+                                                          availableSpecialConditionOptions.find(
                                                             (option) => option.value === task.specialCondition?.type
                                                           )?.label
                                                         }
@@ -1166,7 +1266,7 @@ const XmlGradingRulesPage = () => {
 
                                                       <p className="mt-0.5 text-xs leading-5 text-violet-700/80">
                                                         {
-                                                          specialConditionOptions.find(
+                                                          availableSpecialConditionOptions.find(
                                                             (option) => option.value === task.specialCondition?.type
                                                           )?.description
                                                         }
@@ -1209,7 +1309,7 @@ const XmlGradingRulesPage = () => {
                                               <div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
                                                 <div className="grid gap-3 md:grid-cols-2">
                                                   <label className="text-xs font-semibold text-slate-600">
-                                                    Source file
+                                                    Tệp nguồn
                                                     <input
                                                       value={task.specialCondition.convertTableToTextConfig?.sourceFile ?? 'word/document.xml'}
                                                       onChange={(e) => {
@@ -1330,7 +1430,110 @@ const XmlGradingRulesPage = () => {
                                                     }}
                                                     className="h-4 w-4 accent-blue-600"
                                                   />
-                                                  Require no Word tables
+                                                  Không yêu cầu bảng Word
+                                                </label>
+                                              </div>
+                                            )}
+                                            {task.specialCondition?.type === 'hyperlink' && (
+                                              <div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
+                                                <div className="grid gap-3 md:grid-cols-2">
+                                                  <label className="text-xs font-semibold text-slate-600">
+                                                    Display text
+                                                    <input
+                                                      value={task.specialCondition.hyperlinkConfig?.displayText ?? ''}
+                                                      onChange={(e) => {
+                                                        const currentConfig = task.specialCondition?.hyperlinkConfig ?? {};
+                                                        updateTaskSpecialCondition(pi, ti, {
+                                                          ...task.specialCondition!,
+                                                          type: 'hyperlink',
+                                                          hyperlinkConfig: {
+                                                            ...currentConfig,
+                                                            displayText: e.target.value,
+                                                          },
+                                                        });
+                                                      }}
+                                                      placeholder="log cabin"
+                                                      className={inputClass}
+                                                    />
+                                                  </label>
+                                                  <label className="text-xs font-semibold text-slate-600">
+                                                    URL
+                                                    <input
+                                                      value={task.specialCondition.hyperlinkConfig?.url ?? ''}
+                                                      onChange={(e) => {
+                                                        const currentConfig = task.specialCondition?.hyperlinkConfig ?? {};
+                                                        updateTaskSpecialCondition(pi, ti, {
+                                                          ...task.specialCondition!,
+                                                          type: 'hyperlink',
+                                                          hyperlinkConfig: {
+                                                            ...currentConfig,
+                                                            url: e.target.value,
+                                                          },
+                                                        });
+                                                      }}
+                                                      placeholder="https://en.wikipedia.org/wiki/Log_cabin"
+                                                      className={inputClass}
+                                                    />
+                                                  </label>
+                                                </div>
+                                                <div className="mt-3 grid gap-3 md:grid-cols-2">
+                                                  <label className="text-xs font-semibold text-slate-600">
+                                                    Tệp nguồn
+                                                    <input
+                                                      value={task.specialCondition.hyperlinkConfig?.sourceFile ?? 'word/document.xml'}
+                                                      onChange={(e) => {
+                                                        const currentConfig = task.specialCondition?.hyperlinkConfig ?? {};
+                                                        updateTaskSpecialCondition(pi, ti, {
+                                                          ...task.specialCondition!,
+                                                          type: 'hyperlink',
+                                                          hyperlinkConfig: {
+                                                            ...currentConfig,
+                                                            sourceFile: e.target.value,
+                                                          },
+                                                        });
+                                                      }}
+                                                      placeholder="word/document.xml"
+                                                      className={inputClass}
+                                                    />
+                                                  </label>
+                                                  <label className="text-xs font-semibold text-slate-600">
+                                                    Rels file
+                                                    <input
+                                                      value={task.specialCondition.hyperlinkConfig?.relsFile ?? 'word/_rels/document.xml.rels'}
+                                                      onChange={(e) => {
+                                                        const currentConfig = task.specialCondition?.hyperlinkConfig ?? {};
+                                                        updateTaskSpecialCondition(pi, ti, {
+                                                          ...task.specialCondition!,
+                                                          type: 'hyperlink',
+                                                          hyperlinkConfig: {
+                                                            ...currentConfig,
+                                                            relsFile: e.target.value,
+                                                          },
+                                                        });
+                                                      }}
+                                                      placeholder="word/_rels/document.xml.rels"
+                                                      className={inputClass}
+                                                    />
+                                                  </label>
+                                                </div>
+                                                <label className="mt-3 flex items-center gap-2 text-xs font-medium text-slate-600">
+                                                  <input
+                                                    type="checkbox"
+                                                    checked={task.specialCondition.hyperlinkConfig?.caseSensitiveText ?? false}
+                                                    onChange={(e) => {
+                                                      const currentConfig = task.specialCondition?.hyperlinkConfig ?? {};
+                                                      updateTaskSpecialCondition(pi, ti, {
+                                                        ...task.specialCondition!,
+                                                        type: 'hyperlink',
+                                                        hyperlinkConfig: {
+                                                          ...currentConfig,
+                                                          caseSensitiveText: e.target.checked,
+                                                        },
+                                                      });
+                                                    }}
+                                                    className="h-4 w-4 accent-blue-600"
+                                                  />
+                                                  Case-sensitive display text
                                                 </label>
                                               </div>
                                             )}

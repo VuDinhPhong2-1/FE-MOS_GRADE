@@ -34,7 +34,8 @@ export interface XmlGradingCondition {
 export type SpecialConditionType =
   | 'pictureBullet'
   | 'insertedImage'
-  | 'convertTableToText';
+  | 'convertTableToText'
+  | 'hyperlink';
 
   export type ImageWrapType =
   | 'inline'
@@ -61,12 +62,22 @@ export interface ConvertTableToTextConfig {
   requireNoTables?: boolean;
 }
 
+export interface HyperlinkConfig {
+  sourceFile?: string;
+  relsFile?: string;
+  displayText?: string;
+  url?: string;
+  caseSensitiveText?: boolean;
+}
+
 export interface SpecialCondition {
   type: SpecialConditionType;
   score: number;
+  feedback?: XmlConditionFeedback;
   config?: PictureBulletConfig;
   imageInsertConfig?: ImageInsertConfig; // MỚI
   convertTableToTextConfig?: ConvertTableToTextConfig;
+  hyperlinkConfig?: HyperlinkConfig;
 }
 
 export interface PictureBulletConfig {
@@ -100,9 +111,11 @@ export interface SpecialCondition {
    */
   score: number;
 
+  feedback?: XmlConditionFeedback;
   config?: PictureBulletConfig;
   imageInsertConfig?: ImageInsertConfig;
   convertTableToTextConfig?: ConvertTableToTextConfig;
+  hyperlinkConfig?: HyperlinkConfig;
 }
 
 export interface TaskXmlRule {
