@@ -1172,6 +1172,7 @@ const XmlGradingRulesPage = () => {
                                                                 sourceFile: 'word/document.xml',
                                                                 relsFile: 'word/_rels/document.xml.rels',
                                                                 targetImageIndex: 1,
+                                                                stylePreset: 'simpleFrameBlack',
                                                                 requiredLineColor: '000000',
                                                                 presetGeometry: 'rect',
                                                               },

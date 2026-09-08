@@ -31,6 +31,11 @@ const geometryOptions = [
   { value: 'trapezoid', label: 'Hinh thang' },
 ];
 
+const stylePresetOptions = [
+  { value: 'simpleFrameBlack', label: 'Simple Frame, Black - khung don vien den' },
+  { value: 'custom', label: 'Tuy chinh bang cac dieu kien ben duoi' },
+];
+
 const lineColorOptions = [
   { value: '000000', label: 'Den' },
   { value: 'FFFFFF', label: 'Trang' },
@@ -107,6 +112,19 @@ const PictureStyleEditor = ({
       presetGeometry: 'rect',
       ...config,
       ...patch,
+    });
+  };
+
+  const handleStylePresetChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const stylePreset = event.target.value;
+    patchConfig({
+      stylePreset,
+      ...(stylePreset === 'simpleFrameBlack'
+        ? {
+            requiredLineColor: '000000',
+            presetGeometry: 'rect',
+          }
+        : {}),
     });
   };
 
@@ -282,6 +300,23 @@ const PictureStyleEditor = ({
       </div>
 
       <div className="mt-4 grid gap-3 md:grid-cols-2">
+        <label className="text-xs font-semibold text-slate-600">
+          Kieu Picture Style can cham
+          <select
+            value={config?.stylePreset ?? 'simpleFrameBlack'}
+            onChange={handleStylePresetChange}
+            className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition hover:border-slate-300 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
+          >
+            {stylePresetOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <div className="rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-[11px] leading-5 text-amber-800">
+          Simple Frame, Black se fail neu anh co shadow/effect, nen Moderate Frame, Black khong duoc tinh dung.
+        </div>
         <label className="text-xs font-semibold text-slate-600">
           Source file
           <input

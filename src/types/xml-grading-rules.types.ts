@@ -89,6 +89,7 @@ export interface PictureStyleConfig {
   imageHash?: string;
   perceptualHash?: string;
   targetImageIndex?: number;
+  stylePreset?: string;
   requiredLineColor?: string;
   minLineWidth?: number;
   presetGeometry?: string;
