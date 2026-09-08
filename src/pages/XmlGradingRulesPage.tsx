@@ -14,11 +14,13 @@ import type {
   SpecialCondition,
   SpecialConditionType,
   PictureBulletConfig,
-  ImageInsertConfig
+  ImageInsertConfig,
+  PictureStyleConfig
 } from '../types/xml-grading-rules.types';
 import { notify } from '../utils/notify';
 import PictureBulletEditor from '../components/PictureBulletEditor';
 import InsertedImageEditor from '../components/InsertedImageEditor';
+import PictureStyleEditor from '../components/PictureStyleEditor';
 import { hasPermission } from '../utils/permissions';
 
 const compareModes: XmlCompareMode[] = ['xmlContainsNormalized', 'xmlContains', 'xmlMinOccurrences', 'xmlEquivalentWholeFile', 'exactStringContains'];
@@ -78,6 +80,18 @@ const specialConditionOptions: Array<{
       label: 'Hyperlink',
       description:
         'Kiem tra text hien thi va URL cua hyperlink trong Word.',
+    },
+    {
+      value: 'sectionBreakBeforeText',
+      label: 'Section Break Before Text',
+      description:
+        'Kiem tra section break dung loai nam ngay truoc doan text muc tieu trong Word.',
+    },
+    {
+      value: 'pictureStyle',
+      label: 'Picture Style',
+      description:
+        'Kiem tra anh muc tieu co vien/style dung theo XML DrawingML trong Word.',
     },
   ];
 
@@ -1128,8 +1142,38 @@ const XmlGradingRulesPage = () => {
                                                                 sourceFile: 'word/document.xml',
                                                                 relsFile: 'word/_rels/document.xml.rels',
                                                                 displayText: '',
+                                                                anchorTextBefore: '',
                                                                 url: '',
                                                                 caseSensitiveText: false,
+                                                              },
+                                                            });
+                                                          }
+                                                          if (value === 'sectionBreakBeforeText') {
+                                                            updateTaskSpecialCondition(pi, ti, {
+                                                              type: 'sectionBreakBeforeText',
+                                                              score: task.specialCondition?.score ?? 0,
+                                                              feedback: task.specialCondition?.feedback ?? emptyFeedback(),
+                                                              sectionBreakBeforeTextConfig: task.specialCondition?.sectionBreakBeforeTextConfig ?? {
+                                                                sourceFile: 'word/document.xml',
+                                                                targetText: '',
+                                                                breakType: 'continuous',
+                                                                targetOccurrence: 1,
+                                                                requireImmediateBefore: true,
+                                                                allowSameParagraphSectPr: true,
+                                                              },
+                                                            });
+                                                          }
+                                                          if (value === 'pictureStyle') {
+                                                            updateTaskSpecialCondition(pi, ti, {
+                                                              type: 'pictureStyle',
+                                                              score: task.specialCondition?.score ?? 0,
+                                                              feedback: task.specialCondition?.feedback ?? emptyFeedback(),
+                                                              pictureStyleConfig: task.specialCondition?.pictureStyleConfig ?? {
+                                                                sourceFile: 'word/document.xml',
+                                                                relsFile: 'word/_rels/document.xml.rels',
+                                                                targetImageIndex: 1,
+                                                                requiredLineColor: '000000',
+                                                                presetGeometry: 'rect',
                                                               },
                                                             });
                                                           }
@@ -1457,6 +1501,25 @@ const XmlGradingRulesPage = () => {
                                                     />
                                                   </label>
                                                   <label className="text-xs font-semibold text-slate-600">
+                                                    Anchor text before
+                                                    <input
+                                                      value={task.specialCondition.hyperlinkConfig?.anchorTextBefore ?? ''}
+                                                      onChange={(e) => {
+                                                        const currentConfig = task.specialCondition?.hyperlinkConfig ?? {};
+                                                        updateTaskSpecialCondition(pi, ti, {
+                                                          ...task.specialCondition!,
+                                                          type: 'hyperlink',
+                                                          hyperlinkConfig: {
+                                                            ...currentConfig,
+                                                            anchorTextBefore: e.target.value,
+                                                          },
+                                                        });
+                                                      }}
+                                                      placeholder="Nhap cum text dung truoc vi tri can link"
+                                                      className={inputClass}
+                                                    />
+                                                  </label>
+                                                  <label className="text-xs font-semibold text-slate-600">
                                                     URL
                                                     <input
                                                       value={task.specialCondition.hyperlinkConfig?.url ?? ''}
@@ -1533,9 +1596,152 @@ const XmlGradingRulesPage = () => {
                                                     }}
                                                     className="h-4 w-4 accent-blue-600"
                                                   />
-                                                  Case-sensitive display text
+                                                  Văn bản hiển thị phân biệt chữ hoa/thường
                                                 </label>
                                               </div>
+                                            )}
+                                            {task.specialCondition?.type === 'sectionBreakBeforeText' && (
+                                              <div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
+                                                <div className="grid gap-3 md:grid-cols-2">
+                                                  <label className="text-xs font-semibold text-slate-600">
+                                                    Source file
+                                                    <input
+                                                      value={task.specialCondition.sectionBreakBeforeTextConfig?.sourceFile ?? 'word/document.xml'}
+                                                      onChange={(e) => {
+                                                        const currentConfig = task.specialCondition?.sectionBreakBeforeTextConfig ?? {};
+                                                        updateTaskSpecialCondition(pi, ti, {
+                                                          ...task.specialCondition!,
+                                                          type: 'sectionBreakBeforeText',
+                                                          sectionBreakBeforeTextConfig: {
+                                                            ...currentConfig,
+                                                            sourceFile: e.target.value,
+                                                          },
+                                                        });
+                                                      }}
+                                                      placeholder="word/document.xml"
+                                                      className={inputClass}
+                                                    />
+                                                  </label>
+                                                  <label className="text-xs font-semibold text-slate-600">
+                                                    Target text
+                                                    <input
+                                                      value={task.specialCondition.sectionBreakBeforeTextConfig?.targetText ?? ''}
+                                                      onChange={(e) => {
+                                                        const currentConfig = task.specialCondition?.sectionBreakBeforeTextConfig ?? {};
+                                                        updateTaskSpecialCondition(pi, ti, {
+                                                          ...task.specialCondition!,
+                                                          type: 'sectionBreakBeforeText',
+                                                          sectionBreakBeforeTextConfig: {
+                                                            ...currentConfig,
+                                                            targetText: e.target.value,
+                                                          },
+                                                        });
+                                                      }}
+                                                      placeholder="Affordable Pricing"
+                                                      className={inputClass}
+                                                    />
+                                                  </label>
+                                                  <label className="text-xs font-semibold text-slate-600">
+                                                    Break type
+                                                    <select
+                                                      value={task.specialCondition.sectionBreakBeforeTextConfig?.breakType ?? 'continuous'}
+                                                      onChange={(e) => {
+                                                        const currentConfig = task.specialCondition?.sectionBreakBeforeTextConfig ?? {};
+                                                        updateTaskSpecialCondition(pi, ti, {
+                                                          ...task.specialCondition!,
+                                                          type: 'sectionBreakBeforeText',
+                                                          sectionBreakBeforeTextConfig: {
+                                                            ...currentConfig,
+                                                            breakType: e.target.value,
+                                                          },
+                                                        });
+                                                      }}
+                                                      className={inputClass}
+                                                    >
+                                                      <option value="continuous">continuous</option>
+                                                      <option value="nextPage">nextPage</option>
+                                                      <option value="evenPage">evenPage</option>
+                                                      <option value="oddPage">oddPage</option>
+                                                      <option value="nextColumn">nextColumn</option>
+                                                    </select>
+                                                  </label>
+                                                  <label className="text-xs font-semibold text-slate-600">
+                                                    Tần suất xuất hiện mục tiêu
+                                                    <input
+                                                      type="number"
+                                                      min={1}
+                                                      step={1}
+                                                      value={task.specialCondition.sectionBreakBeforeTextConfig?.targetOccurrence ?? 1}
+                                                      onChange={(e) => {
+                                                        const currentConfig = task.specialCondition?.sectionBreakBeforeTextConfig ?? {};
+                                                        updateTaskSpecialCondition(pi, ti, {
+                                                          ...task.specialCondition!,
+                                                          type: 'sectionBreakBeforeText',
+                                                          sectionBreakBeforeTextConfig: {
+                                                            ...currentConfig,
+                                                            targetOccurrence: e.target.value ? Number(e.target.value) : undefined,
+                                                          },
+                                                        });
+                                                      }}
+                                                      placeholder="1"
+                                                      className={inputClass}
+                                                    />
+                                                  </label>
+                                                </div>
+                                                <div className="mt-3 grid gap-3 md:grid-cols-2">
+                                                  <label className="flex items-center gap-2 text-xs font-medium text-slate-600">
+                                                    <input
+                                                      type="checkbox"
+                                                      checked={task.specialCondition.sectionBreakBeforeTextConfig?.requireImmediateBefore ?? true}
+                                                      onChange={(e) => {
+                                                        const currentConfig = task.specialCondition?.sectionBreakBeforeTextConfig ?? {};
+                                                        updateTaskSpecialCondition(pi, ti, {
+                                                          ...task.specialCondition!,
+                                                          type: 'sectionBreakBeforeText',
+                                                          sectionBreakBeforeTextConfig: {
+                                                            ...currentConfig,
+                                                            requireImmediateBefore: e.target.checked,
+                                                          },
+                                                        });
+                                                      }}
+                                                      className="h-4 w-4 accent-blue-600"
+                                                    />
+                                                    Yêu cầu thực hiện ngay trước đó
+                                                  </label>
+                                                  <label className="flex items-center gap-2 text-xs font-medium text-slate-600">
+                                                    <input
+                                                      type="checkbox"
+                                                      checked={task.specialCondition.sectionBreakBeforeTextConfig?.allowSameParagraphSectPr ?? true}
+                                                      onChange={(e) => {
+                                                        const currentConfig = task.specialCondition?.sectionBreakBeforeTextConfig ?? {};
+                                                        updateTaskSpecialCondition(pi, ti, {
+                                                          ...task.specialCondition!,
+                                                          type: 'sectionBreakBeforeText',
+                                                          sectionBreakBeforeTextConfig: {
+                                                            ...currentConfig,
+                                                            allowSameParagraphSectPr: e.target.checked,
+                                                          },
+                                                        });
+                                                      }}
+                                                      className="h-4 w-4 accent-blue-600"
+                                                    />
+                                                    Cho phép cùng một đoạn văn/phần
+                                                  </label>
+                                                </div>
+                                              </div>
+                                            )}
+                                            {task.specialCondition?.type === 'pictureStyle' && (
+                                              <PictureStyleEditor
+                                                config={task.specialCondition.pictureStyleConfig}
+                                                getAccessToken={getAccessToken}
+                                                onChange={(pictureStyleConfig: PictureStyleConfig) => {
+                                                  updateTaskSpecialCondition(pi, ti, {
+                                                    ...task.specialCondition!,
+                                                    type: 'pictureStyle',
+                                                    pictureStyleConfig,
+                                                  });
+                                                }}
+                                              />
                                             )}
                                           </div>
                                           <div className="mt-5">

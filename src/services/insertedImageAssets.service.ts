@@ -7,6 +7,7 @@ const INSERTED_IMAGE_ASSET_API_BASE_URL =
 export interface InsertedImageAssetUploadResult {
   assetId: string;
   imageHash: string;
+  perceptualHash: string;
   contentType: string;
   sizeBytes: number;
 }

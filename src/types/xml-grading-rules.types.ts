@@ -35,7 +35,9 @@ export type SpecialConditionType =
   | 'pictureBullet'
   | 'insertedImage'
   | 'convertTableToText'
-  | 'hyperlink';
+  | 'hyperlink'
+  | 'sectionBreakBeforeText'
+  | 'pictureStyle';
 
   export type ImageWrapType =
   | 'inline'
@@ -66,8 +68,30 @@ export interface HyperlinkConfig {
   sourceFile?: string;
   relsFile?: string;
   displayText?: string;
+  anchorTextBefore?: string;
   url?: string;
   caseSensitiveText?: boolean;
+}
+
+export interface SectionBreakBeforeTextConfig {
+  sourceFile?: string;
+  targetText?: string;
+  breakType?: string;
+  targetOccurrence?: number;
+  requireImmediateBefore?: boolean;
+  allowSameParagraphSectPr?: boolean;
+}
+
+export interface PictureStyleConfig {
+  sourceFile?: string;
+  relsFile?: string;
+  assetId?: string;
+  imageHash?: string;
+  perceptualHash?: string;
+  targetImageIndex?: number;
+  requiredLineColor?: string;
+  minLineWidth?: number;
+  presetGeometry?: string;
 }
 
 export interface SpecialCondition {
@@ -78,6 +102,8 @@ export interface SpecialCondition {
   imageInsertConfig?: ImageInsertConfig; // MỚI
   convertTableToTextConfig?: ConvertTableToTextConfig;
   hyperlinkConfig?: HyperlinkConfig;
+  sectionBreakBeforeTextConfig?: SectionBreakBeforeTextConfig;
+  pictureStyleConfig?: PictureStyleConfig;
 }
 
 export interface PictureBulletConfig {
@@ -116,6 +142,8 @@ export interface SpecialCondition {
   imageInsertConfig?: ImageInsertConfig;
   convertTableToTextConfig?: ConvertTableToTextConfig;
   hyperlinkConfig?: HyperlinkConfig;
+  sectionBreakBeforeTextConfig?: SectionBreakBeforeTextConfig;
+  pictureStyleConfig?: PictureStyleConfig;
 }
 
 export interface TaskXmlRule {
