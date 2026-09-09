@@ -1,4 +1,3 @@
-// src/pages/SchoolList.tsx
 import { useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
@@ -68,32 +67,35 @@ const SchoolList = () => {
     });
   }, [setSearchParams]);
 
-  usePageHeader({
-    title: selectedSchool ? selectedSchool.name : 'Quản lý trường học',
-    subtitle: selectedSchool
-      ? 'Danh sách lớp học trực thuộc'
-      : 'Danh sách các trường và cơ sở đào tạo trong hệ thống MOS Grader',
-    actions: selectedSchool
-      ? []
-      : [
-        {
-          id: 'refresh-schools',
-          label: 'Làm mới',
-          icon: 'refresh',
-          colorStyle: 'outlined',
-          disabled: isLoading,
-          onClick: fetchSchools,
+  const isViewingSchool = Boolean(selectedSchool || (schoolId && isLoading));
+
+  usePageHeader(
+    isViewingSchool
+      ? null
+      : {
+          title: 'Quản lý trường học',
+          subtitle: 'Danh sách các trường và cơ sở đào tạo trong hệ thống MOS Grader',
+          actions: [
+            {
+              id: 'refresh-schools',
+              label: 'Làm mới',
+              icon: 'refresh',
+              colorStyle: 'outlined',
+              disabled: isLoading,
+              onClick: fetchSchools,
+            },
+            {
+              id: 'add-school',
+              label: 'Thêm trường',
+              icon: 'add',
+              colorStyle: 'filled',
+              disabled: isLoading,
+              onClick: openAddModal,
+            },
+          ],
         },
-        {
-          id: 'add-school',
-          label: 'Thêm trường',
-          icon: 'add',
-          colorStyle: 'filled',
-          disabled: isLoading,
-          onClick: openAddModal,
-        },
-      ],
-  }, [selectedSchool, isLoading, handleBackToSchools, fetchSchools, openAddModal]);
+    [isViewingSchool, isLoading, fetchSchools, openAddModal]
+  );
 
   if (isLoading && schools.length === 0) {
     return (
@@ -162,11 +164,10 @@ const SchoolList = () => {
       ) : (
         <div className="space-y-4">
           <Button
-            type="button"
+            size='sm'
             colorStyle="tonal"
             onClick={handleBackToSchools}
-            icon={<Icon name="arrow_back" className="text-base" />}
-            className="rounded-full shadow-xs"
+            icon={<Icon name="arrow_back" size={20} />}
           >
             Quay lại danh sách trường
           </Button>

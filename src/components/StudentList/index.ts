@@ -8,3 +8,4 @@ export * from './StudentTableRow';
 export * from './AddStudentModal';
 export * from './EditStudentModal';
 export * from './PasteStudentModal';
+export * from './DeleteStudentDialog';

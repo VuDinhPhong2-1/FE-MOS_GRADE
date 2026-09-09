@@ -2,16 +2,20 @@ import { useEffect } from 'react';
 import { useSnackbar } from '@bug-on/m3-expressive';
 import { notifyEventName, type NotifyPayload, type NotifyType } from '../utils/notify';
 
-const typePrefixMap: Record<NotifyType, string> = {
+/**
+ * Headless event bridge kết nối custom event `mos-grader:notify` (từ notify utility)
+ * với useSnackbar() của @bug-on/m3-expressive.
+ *
+ * Lưu ý: Các thông báo loại 'error' được ErrorModal.tsx thụ lý riêng.
+ */
+const typePrefixMap: Partial<Record<NotifyType, string>> = {
   success: '✓  ',
   warning: '⚠️  ',
   info: 'ℹ️  ',
-  error: '✕  ',
 };
 
-const defaultDurationByType: Record<NotifyType, number> = {
+const defaultDurationByType: Partial<Record<NotifyType, number>> = {
   success: 3200,
-  error: 4200,
   warning: 3600,
   info: 3200,
 };

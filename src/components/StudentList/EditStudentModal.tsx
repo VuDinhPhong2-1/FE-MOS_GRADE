@@ -1,5 +1,22 @@
-import { useState, useEffect, type ChangeEvent, type FormEvent } from 'react';
-import { Icon, ProgressIndicator } from '@bug-on/m3-expressive';
+import { useState, useEffect, type FormEvent } from 'react';
+import {
+  Button,
+  Checkbox,
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogOverlay,
+  DialogPortal,
+  DialogTitle,
+  Icon,
+  IconButton,
+  Select,
+  TextField,
+  type SelectOption,
+} from '@bug-on/m3-expressive';
 import type { Student } from '../../types/student.types';
 import type { EditStudentForm, CompetencyLevel } from './types';
 import { VALID_STATUSES, VALID_COMPETENCY_LEVELS } from './types';
@@ -24,6 +41,16 @@ const defaultForm: EditStudentForm = {
   thi: false,
   classId: '',
 };
+
+const STATUS_OPTIONS: SelectOption[] = [
+  { value: 'Active', label: 'Hoạt động' },
+  { value: 'Inactive', label: 'Ngừng hoạt động' },
+];
+
+const COMPETENCY_OPTIONS: SelectOption[] = [
+  { value: '', label: 'Chưa đánh giá' },
+  ...VALID_COMPETENCY_LEVELS.map((level) => ({ value: level, label: level })),
+];
 
 export const EditStudentModal = ({
   student,
@@ -81,8 +108,6 @@ export const EditStudentModal = ({
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isOpen, hasUnsavedChanges]);
 
-  if (!isOpen || !student) return null;
-
   const handleClose = () => {
     if (isSubmitting) return;
     if (hasUnsavedChanges && !confirm('Bạn có thay đổi chưa lưu. Bạn có chắc muốn đóng?')) {
@@ -91,20 +116,9 @@ export const EditStudentModal = ({
     onClose();
   };
 
-  const handleFieldChange = (
-    event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
-  ) => {
-    const { name } = event.target;
-    const value =
-      event.target instanceof HTMLInputElement && event.target.type === 'checkbox'
-        ? event.target.checked
-        : event.target.value;
-    setError('');
-    setForm((prev) => ({ ...prev, [name]: value }));
-  };
-
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
+    if (!student) return;
     if (readOnly) {
       setError('Bạn chỉ có quyền xem lớp này.');
       return;
@@ -156,144 +170,160 @@ export const EditStudentModal = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-      <div className="w-full max-w-md rounded-2xl bg-white shadow-xl">
-        <div className="flex items-center justify-between border-b px-5 py-4">
-          <h2 className="text-lg font-semibold text-gray-900">Sửa học sinh</h2>
-          <button
-            type="button"
-            onClick={handleClose}
-            className="rounded p-1 text-gray-500 hover:bg-gray-100"
-            disabled={isSubmitting}
-          >
-            <Icon name="close" variant="rounded" size={18} />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4 px-5 py-4">
-          {error && (
-            <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-              {error}
-            </div>
-          )}
-
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Họ và tên đệm</label>
-            <input
-              name="middleName"
-              value={form.middleName}
-              onChange={handleFieldChange}
-              disabled={isSubmitting}
-              className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-              placeholder="Nguyễn Văn"
-            />
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Tên</label>
-            <input
-              name="firstName"
-              value={form.firstName}
-              onChange={handleFieldChange}
-              disabled={isSubmitting}
-              className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-              placeholder="A"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Trạng thái</label>
-            <select
-              name="status"
-              value={form.status}
-              onChange={handleFieldChange}
-              disabled={isSubmitting}
-              className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-            >
-              <option value="Active">Hoạt động</option>
-              <option value="Inactive">Ngừng hoạt động</option>
-            </select>
-          </div>
-
-          <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
-            <label className="inline-flex items-center gap-2 text-sm font-medium text-gray-700">
-              <input
-                type="checkbox"
-                name="thi"
-                checked={form.thi}
-                onChange={handleFieldChange}
-                disabled={isSubmitting}
-                className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-              />
-              Student takes exam
-            </label>
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Đánh giá năng lực</label>
-            <select
-              name="competencyLevel"
-              value={form.competencyLevel}
-              onChange={handleFieldChange}
-              disabled={isSubmitting}
-              className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-            >
-              <option value="">Chưa đánh giá</option>
-              {VALID_COMPETENCY_LEVELS.map((level) => (
-                <option key={level} value={level}>
-                  {level}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Ghi chú</label>
-            <textarea
-              name="notes"
-              value={form.notes}
-              onChange={handleFieldChange}
-              disabled={isSubmitting}
-              rows={3}
-              maxLength={500}
-              className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-              placeholder="Nhận xét thêm về học sinh..."
-            />
-          </div>
-
-          <div className="flex justify-end gap-2 border-t pt-4">
-            <button
+    <Dialog open={isOpen && Boolean(student)} onOpenChange={(open) => !open && handleClose()}>
+      <DialogPortal open={isOpen && Boolean(student)}>
+        <DialogOverlay />
+        <DialogContent
+          hideCloseButton
+          className="flex max-h-[90vh] w-[calc(100%-2rem)] max-w-lg flex-col overflow-hidden rounded-4xl bg-m3-surface-container-high p-0 text-m3-on-surface shadow-2xl"
+        >
+          <div className="flex items-center justify-between border-b border-m3-outline-variant/40 px-6 pt-5 pb-3">
+            <DialogHeader className="mb-0 flex-row items-center gap-3 space-y-0 text-left">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-m3-secondary text-m3-on-secondary">
+                <Icon name="edit" size={20} />
+              </div>
+              <div>
+                <DialogTitle className="text-lg font-bold text-m3-on-surface">
+                  Sửa học sinh
+                </DialogTitle>
+                <DialogDescription className="text-xs text-m3-on-surface-variant">
+                  Cập nhật thông tin chi tiết học sinh
+                </DialogDescription>
+              </div>
+            </DialogHeader>
+            <IconButton
               type="button"
+              size="sm"
+              colorStyle="standard"
+              aria-label="Đóng"
               onClick={handleClose}
               disabled={isSubmitting}
-              className="rounded-md bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 disabled:opacity-60"
             >
-              Hủy
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
-            >
-              {isSubmitting ? (
-                <>
-                  <ProgressIndicator
-                    variant="circular"
-                    shape="wavy"
-                    showTrack
-                    size={15}
-                    aria-label="Đang lưu..."
-                  />
-                  Đang lưu...
-                </>
-              ) : (
-                'Lưu'
-              )}
-            </button>
+              <Icon name="close" />
+            </IconButton>
           </div>
-        </form>
-      </div>
-    </div>
+
+          <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+            <DialogBody className="flex flex-1 flex-col gap-4 overflow-y-auto px-6 py-4">
+              {error && (
+                <div className="flex items-center gap-2 rounded-2xl bg-m3-error-container p-3 text-xs font-medium text-m3-on-error-container">
+                  <Icon name="error" size={16} />
+                  <span>{error}</span>
+                </div>
+              )}
+
+              <TextField
+                variant="outlined"
+                label="Họ và tên đệm"
+                placeholder="VD: Nguyễn Văn"
+                value={form.middleName}
+                onChange={(val) => {
+                  if (error) setError('');
+                  setForm((prev) => ({ ...prev, middleName: val }));
+                }}
+                disabled={isSubmitting}
+                fullWidth
+                className='pt-2'
+              />
+
+              <TextField
+                required
+                variant="outlined"
+                label="Tên"
+                placeholder="VD: An"
+                value={form.firstName}
+                onChange={(val) => {
+                  if (error) setError('');
+                  setForm((prev) => ({ ...prev, firstName: val }));
+                }}
+                disabled={isSubmitting}
+                fullWidth
+                className='pt-4'
+              />
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <Select
+                  variant="outlined"
+                  label="Trạng thái"
+                  options={STATUS_OPTIONS}
+                  value={form.status}
+                  onChange={(val) => {
+                    if (error) setError('');
+                    setForm((prev) => ({ ...prev, status: val }));
+                  }}
+                  disabled={isSubmitting}
+                  fullWidth
+                  className='pt-4'
+                />
+
+                <Select
+                  variant="outlined"
+                  label="Đánh giá năng lực"
+                  options={COMPETENCY_OPTIONS}
+                  value={form.competencyLevel}
+                  onChange={(val) => {
+                    if (error) setError('');
+                    setForm((prev) => ({
+                      ...prev,
+                      competencyLevel: val as CompetencyLevel,
+                    }));
+                  }}
+                  disabled={isSubmitting}
+                  fullWidth
+                  className='pt-4'
+                />
+              </div>
+
+              <Checkbox
+                checked={form.thi}
+                onCheckedChange={(checked) => {
+                  if (error) setError('');
+                  setForm((prev) => ({ ...prev, thi: checked }));
+                }}
+                disabled={isSubmitting}
+                label="Học sinh dự thi"
+              />
+
+              <TextField
+                type="textarea"
+                rows={3}
+                variant="outlined"
+                label="Ghi chú"
+                placeholder="Nhận xét thêm về học sinh..."
+                value={form.notes}
+                onChange={(val) => {
+                  if (error) setError('');
+                  setForm((prev) => ({ ...prev, notes: val }));
+                }}
+                disabled={isSubmitting}
+                maxLength={500}
+                fullWidth
+                className='pt-4'
+              />
+            </DialogBody>
+
+            <DialogFooter className="flex justify-end gap-2 border-t border-m3-outline-variant/40 px-6 py-4">
+              <Button
+                type="button"
+                colorStyle="text"
+                onClick={handleClose}
+                disabled={isSubmitting}
+              >
+                Hủy
+              </Button>
+              <Button
+                type="submit"
+                colorStyle="filled"
+                disabled={isSubmitting}
+                loading={isSubmitting}
+                icon={!isSubmitting ? <Icon name="save" size={18} /> : undefined}
+              >
+                {isSubmitting ? 'Đang lưu...' : 'Lưu'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </DialogPortal>
+    </Dialog>
   );
 };

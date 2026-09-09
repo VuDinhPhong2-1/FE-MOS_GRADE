@@ -46,12 +46,12 @@ export const Sidebar = ({ navItems, onNavigate, onOpenSettings }: SidebarProps) 
         variant="collapsed"
         header={
           <ShapeMedia
-            shape="clover4Leaf"
-            morphTo="pill"
+            shape="cookie4Sided"
+            morphTo="cookie12Sided"
             morphOn="hover"
             morphOptions={{
               duration: 0.4,
-              easing: [0.34, 1.56, 0.64, 1],
+              easing: [0.34, 1.56, 0.64, 1]
             }}
             className="flex size-14 items-center justify-center bg-m3-primary"
           >

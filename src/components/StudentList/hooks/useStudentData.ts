@@ -121,11 +121,6 @@ export const useStudentData = ({
         return;
       }
 
-      const fullName = `${student.middleName} ${student.firstName}`.trim();
-      if (!confirm(`Bạn có chắc muốn xóa học sinh "${fullName}"?`)) {
-        return;
-      }
-
       if (student.id.startsWith('temp-')) {
         setStudents((prev) => prev.filter((st) => st.id !== student.id));
         setFlashMessage('Đã xóa học sinh tạm khỏi danh sách.');

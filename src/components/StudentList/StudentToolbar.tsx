@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { Icon, ProgressIndicator } from '@bug-on/m3-expressive';
+import { Button, Icon, TextField } from '@bug-on/m3-expressive';
 
 interface StudentToolbarProps {
   searchKeyword: string;
@@ -29,52 +29,37 @@ const StudentToolbarComponent = ({
   onSaveStudents,
 }: StudentToolbarProps) => {
   return (
-    <section className="rounded-2xl bg-m3-surface-container-low p-3 sm:p-4 text-m3-on-surface">
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(260px,auto)]">
-        <div className="relative">
-          <Icon
-            name="search"
-            variant="rounded"
-            size={16}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-          />
-          <input
-            value={searchKeyword}
-            onChange={(event) => onSearchChange(event.target.value)}
-            placeholder="Tìm kiếm theo tên học sinh..."
-            className="w-full rounded-xl border border-slate-200 bg-white pl-9 pr-3 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
-          />
-        </div>
-        <div className="flex flex-col justify-center rounded-xl border border-slate-200 bg-white px-3 py-2">
-          <span className="text-sm font-medium text-slate-700">
+    <section className="rounded-2xl bg-m3-surface-container-low p-3 sm:p-4 text-m3-on-surface shadow-xs">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(260px,auto)] items-center">
+        <TextField
+          variant="outlined"
+          placeholder="Tìm kiếm theo tên học sinh..."
+          value={searchKeyword}
+          onChange={(val) => onSearchChange(val)}
+          leadingIcon={<Icon name="search" variant="rounded" size={20} />}
+          fullWidth
+        />
+        <div className="flex flex-col justify-center rounded-xl border border-m3-outline-variant/60 bg-m3-surface px-3 py-2 shadow-xs">
+          <span className="text-sm font-medium text-m3-on-surface">
             Hiển thị {displayedCount}/{totalCount} học sinh
           </span>
-          <span className="text-xs text-slate-500">
+          <span className="text-xs text-m3-on-surface-variant">
             Bấm tiêu đề cột <strong>Tên</strong> hoặc <strong>Trạng thái</strong> để sắp xếp
           </span>
         </div>
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-2">
-        <button
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <Button
+          colorStyle="tonal"
           onClick={onReload}
           disabled={isLoading}
-          className="inline-flex items-center gap-2 rounded-xl bg-slate-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+          loading={isLoading}
+          icon={!isLoading ? <Icon name="refresh" variant="rounded" size={18} /> : undefined}
           title="Tải lại danh sách"
         >
-          {isLoading ? (
-            <ProgressIndicator
-              variant="circular"
-              shape="wavy"
-              showTrack
-              size={18}
-              aria-label="Đang tải lại..."
-            />
-          ) : (
-            <Icon name="refresh" variant="rounded" size={18} />
-          )}
           Tải lại
-        </button>
+        </Button>
 
         {!readOnly && (
           <>
@@ -86,30 +71,34 @@ const StudentToolbarComponent = ({
               id="import-excel"
             />
 
-            <label
-              htmlFor="import-excel"
-              className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
+            <Button
+              asChild
+              colorStyle="filled"
+              icon={<Icon name="upload" variant="rounded" size={18} />}
             >
-              <Icon name="upload" variant="rounded" size={18} /> Nhập Excel
-            </label>
+              <label htmlFor="import-excel" className="cursor-pointer">
+                Nhập Excel
+              </label>
+            </Button>
 
-            <button
-              type="button"
+            <Button
+              colorStyle="tonal"
               onClick={onOpenPasteModal}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+              icon={<Icon name="content_paste" variant="rounded" size={18} />}
             >
-              <Icon name="content_paste" variant="rounded" size={18} /> Dán từ Excel
-            </button>
+              Dán từ Excel
+            </Button>
 
             {newCount > 0 && (
-              <button
+              <Button
+                colorStyle="filled"
                 onClick={onSaveStudents}
                 disabled={isLoading}
-                className="inline-flex items-center gap-2 rounded-xl bg-cyan-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-cyan-700 disabled:cursor-not-allowed disabled:bg-slate-400"
+                loading={isLoading}
+                icon={!isLoading ? <Icon name="save" variant="rounded" size={18} /> : undefined}
               >
-                <Icon name="save" variant="rounded" size={18} />
                 {isLoading ? 'Đang lưu...' : 'Lưu danh sách'}
-              </button>
+              </Button>
             )}
           </>
         )}

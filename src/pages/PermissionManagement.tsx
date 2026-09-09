@@ -83,7 +83,7 @@ const PERMISSION_INFO_MAP: Record<string, PermissionInfo> = {
     description: 'Cho phép xóa trường học.',
   },
   'students.view': {
-    label: 'Xem học sinh',
+    label: 'Danh sách học sinh',
     description: 'Cho phép xem danh sách và hồ sơ học sinh.',
   },
   'students.create': {

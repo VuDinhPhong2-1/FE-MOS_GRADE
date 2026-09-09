@@ -42,7 +42,7 @@ export function useClassList(selectedSchool: School) {
     schoolId: selectedSchool.id,
     description: '',
     maxStudents: undefined,
-    academicYear: '2024-2025',
+    academicYear: '2026 - 2027',
     grade: '',
   });
 
@@ -215,7 +215,7 @@ export function useClassList(selectedSchool: School) {
       schoolId: selectedSchool.id,
       description: '',
       maxStudents: undefined,
-      academicYear: '2024-2025',
+      academicYear: '2026 - 2027',
       grade: '',
     });
     setFormError('');
@@ -236,7 +236,7 @@ export function useClassList(selectedSchool: School) {
         schoolId: cls.schoolId,
         description: cls.description || '',
         maxStudents: cls.maxStudents,
-        academicYear: cls.academicYear || '2024-2025',
+        academicYear: cls.academicYear || '2026 - 2027',
         grade: cls.grade || '',
       });
       setFormError('');

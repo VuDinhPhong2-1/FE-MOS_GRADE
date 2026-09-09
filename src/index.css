@@ -1,21 +1,7 @@
-@import "tailwindcss" source(none);
-@import "@bug-on/m3-tailwind";
+@import "tailwindcss";
 @import "@bug-on/m3-expressive/index.css";
 @import "@bug-on/m3-expressive/typography.css";
-@source "../src/{App,main}.tsx";
-@source "../src/context/AuthContext.tsx";
-@source "../src/pages/{AuthPage,ClassGradingPage,Classlist,ClassScoreboardPage,Dashboard,GradingView,PermissionManagement,PublicExamPage,SchoolList,StudentList,TeacherSchedule}.tsx";
-@source "../src/components/{ClassAnalyticsPanel,ErrorModal,GradingModal,LocalAgentCompactPanel,LocalAgentPanel,ResultCard,ThemeToggle,ToastCenter,ViewAllScoresModal}.tsx";
-@source "../src/components/Layout/{Header,Layout,ProfileModal,Sidebar}.tsx";
-@source "../src/components/StudentList/**/*.{tsx,ts}";
-@source "../src/components/SchoolList/**/*.{tsx,ts}";
-@source "../src/components/TeacherSchedule/**/*.{tsx,ts}";
-
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
+/* @source "../src*.{ts,tsx}"; */
 
 html,
 body,
@@ -30,24 +16,10 @@ body {
 
 body {
   margin: 0;
-  font-family: "Google Sans Flex", "Be Vietnam Pro", system-ui, -apple-system, sans-serif;
+  font-family: "Google Sans Flex", system-ui, -apple-system, sans-serif;
   color: var(--md-sys-color-on-surface);
   background-color: var(--md-sys-color-surface);
   transition: background-color 0.25s ease, color 0.25s ease;
-}
-
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-button {
-  transition: 0.22s ease;
-}
-
-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.65;
 }
 
 table {
@@ -81,9 +53,3 @@ td {
   border: 2px solid transparent;
   background-clip: content-box;
 }
-
-/* M3 Expressive DatePicker: ngăn xuống dòng nhãn tháng/năm khi hiển thị tiếng Việt */
-button[aria-controls="date-picker-selection"] {
-  white-space: nowrap;
-}
-

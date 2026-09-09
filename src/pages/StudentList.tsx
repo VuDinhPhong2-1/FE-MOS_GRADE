@@ -1,6 +1,7 @@
-import { useState, useMemo, useCallback, type ChangeEvent } from 'react';
+import { useState, useMemo, useCallback, useEffect, type ChangeEvent } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx-js-style';
+import { Icon, useSnackbar } from '@bug-on/m3-expressive';
 import { useAuth } from '../context/AuthContext';
 import ClassAnalyticsPanel from '../components/ClassAnalyticsPanel';
 import type { Student } from '../types/student.types';
@@ -19,10 +20,12 @@ import {
   AddStudentModal,
   EditStudentModal,
   PasteStudentModal,
+  DeleteStudentDialog,
 } from '../components/StudentList';
 
 const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
   const { getAccessToken } = useAuth();
+  const { showSnackbar } = useSnackbar();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -34,6 +37,8 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [isPasteModalOpen, setIsPasteModalOpen] = useState(false);
+  const [studentToDelete, setStudentToDelete] = useState<Student | null>(null);
+  const [isDeletingStudent, setIsDeletingStudent] = useState(false);
 
   const {
     students,
@@ -223,16 +228,33 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
     [appendImportedStudents, setFlashMessage]
   );
 
+  const handleConfirmDeleteStudent = useCallback(async () => {
+    if (!studentToDelete) return;
+    setIsDeletingStudent(true);
+    try {
+      await handleDeleteStudent(studentToDelete);
+      setStudentToDelete(null);
+    } finally {
+      setIsDeletingStudent(false);
+    }
+  }, [studentToDelete, handleDeleteStudent]);
+
+  useEffect(() => {
+    if (flashMessage) {
+      void showSnackbar({
+        message: flashMessage,
+        withDismissAction: true,
+        duration: 3500,
+      });
+    }
+  }, [flashMessage, showSnackbar]);
+
   return (
     <div className="mx-auto w-full space-y-4 px-2 pb-4 sm:px-4">
-      {flashMessage && (
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 shadow-sm">
-          {flashMessage}
-        </div>
-      )}
       {readOnly && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 shadow-sm">
-          Bạn chỉ có quyền xem lớp này. Các chức năng chỉnh sửa đã bị khóa.
+        <div className="flex items-center gap-2 rounded-2xl border border-m3-outline-variant/60 bg-m3-surface-container px-4 py-3 text-sm text-m3-on-surface shadow-xs">
+          <Icon name="lock" variant="rounded" size={18} className="text-m3-secondary" />
+          <span>Bạn chỉ có quyền xem lớp này. Các chức năng chỉnh sửa đã bị khóa.</span>
         </div>
       )}
 
@@ -284,7 +306,7 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
         onCompetencyChange={handleInlineCompetencyChange}
         onExamToggle={handleInlineExamToggle}
         onEdit={handleOpenEditStudent}
-        onDelete={handleDeleteStudent}
+        onDelete={setStudentToDelete}
       />
 
       {/* Add Student Modal */}
@@ -314,6 +336,15 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
         readOnly={readOnly}
         onClose={() => setIsPasteModalOpen(false)}
         onImportStudents={handleImportFromPaste}
+      />
+
+      {/* Delete Student Confirmation Dialog */}
+      <DeleteStudentDialog
+        open={Boolean(studentToDelete)}
+        isDeleting={isDeletingStudent}
+        studentToDelete={studentToDelete}
+        onClose={() => setStudentToDelete(null)}
+        onConfirmDelete={handleConfirmDeleteStudent}
       />
     </div>
   );

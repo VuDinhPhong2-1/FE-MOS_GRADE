@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { Icon, ProgressIndicator } from '@bug-on/m3-expressive';
+import { Button, Icon } from '@bug-on/m3-expressive';
 
 interface StudentHeaderProps {
   className: string;
@@ -32,37 +32,37 @@ const StudentHeaderComponent = ({
 }: StudentHeaderProps) => {
   return (
     <section className="relative overflow-hidden rounded-3xl bg-m3-surface-container px-4 py-4 sm:px-6 sm:py-5 shadow-xs text-m3-on-surface">
-      <div className="pointer-events-none absolute -right-12 -top-16 h-40 w-40 rounded-full bg-sky-200/70 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-20 left-1/3 h-40 w-40 rounded-full bg-emerald-200/60 blur-3xl" />
+      <div className="pointer-events-none absolute -right-12 -top-16 h-40 w-40 rounded-full bg-m3-primary/10 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-20 left-1/3 h-40 w-40 rounded-full bg-m3-tertiary/10 blur-3xl" />
       <div className="relative flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
         <div className="space-y-3">
-          <div className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-sky-700">
+          <div className="inline-flex items-center gap-2 rounded-full border border-m3-primary/20 bg-m3-primary-container/40 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-m3-on-primary-container">
             <Icon name="auto_awesome" variant="rounded" size={14} />
             Không gian lớp học
           </div>
           <div>
-            <h1 className="text-xl font-extrabold tracking-tight text-slate-900 sm:text-2xl">
+            <h1 className="text-xl font-extrabold tracking-tight text-m3-on-surface sm:text-2xl">
               Bảng danh sách học sinh - {className}
             </h1>
-            <p className="mt-1 text-sm text-slate-600">
+            <p className="mt-1 text-sm text-m3-on-surface-variant">
               Quản lý danh sách, chấm điểm và đồng bộ dữ liệu ngay trên một màn hình.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <div className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white/90 px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm">
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-m3-outline-variant/60 bg-m3-surface-container-high px-3 py-1 text-xs font-semibold text-m3-on-surface shadow-xs">
               <Icon name="group" variant="rounded" size={14} />
               Tổng {totalCount} học sinh
             </div>
-            <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 shadow-sm">
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-m3-secondary/20 bg-m3-secondary-container px-3 py-1 text-xs font-semibold text-m3-on-secondary-container shadow-xs">
               <Icon name="how_to_reg" variant="rounded" size={14} />
               Hoạt động {activeCount}
             </div>
-            <div className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700 shadow-sm">
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-m3-error/20 bg-m3-error-container px-3 py-1 text-xs font-semibold text-m3-on-error-container shadow-xs">
               <Icon name="person_off" variant="rounded" size={14} />
               Ngừng {inactiveCount}
             </div>
             {newCount > 0 && (
-              <div className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 shadow-sm">
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-m3-tertiary/20 bg-m3-tertiary-container px-3 py-1 text-xs font-semibold text-m3-on-tertiary-container shadow-xs">
                 <Icon name="save" variant="rounded" size={14} />
                 Chưa lưu {newCount}
               </div>
@@ -72,54 +72,48 @@ const StudentHeaderComponent = ({
 
         <div className="grid w-full gap-2 sm:grid-cols-2 xl:w-auto xl:min-w-160">
           {!readOnly && (
-            <button
+            <Button
+              colorStyle="filled"
+              icon={<Icon name="person_add" variant="rounded" size={18} />}
               onClick={onOpenAddModal}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-600/25 transition hover:-translate-y-0.5 hover:bg-emerald-700"
+              fullWidth
             >
-              <Icon name="person_add" variant="rounded" size={18} />
               Thêm học sinh
-            </button>
+            </Button>
           )}
           {!readOnly && (
-            <button
+            <Button
+              colorStyle="tonal"
+              icon={<Icon name="fact_check" variant="rounded" size={18} />}
               onClick={onGrade}
               disabled={activeCount === 0}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/25 transition hover:-translate-y-0.5 hover:bg-blue-700 disabled:translate-y-0 disabled:cursor-not-allowed disabled:bg-slate-400 disabled:shadow-none"
               title="Chấm điểm cho học sinh đang hoạt động"
+              fullWidth
             >
-              <Icon name="fact_check" variant="rounded" size={18} />
               Chấm điểm cho lớp
-            </button>
+            </Button>
           )}
           {!readOnly && (
-            <button
-              type="button"
+            <Button
+              colorStyle="tonal"
+              icon={!isStudentMetadataSyncing ? <Icon name="refresh" variant="rounded" size={18} /> : undefined}
+              loading={isStudentMetadataSyncing}
               onClick={onSyncMetadata}
               disabled={isStudentMetadataSyncing || isLoading}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-sky-600/25 transition hover:-translate-y-0.5 hover:bg-sky-700 disabled:translate-y-0 disabled:cursor-not-allowed disabled:bg-slate-400 disabled:shadow-none"
               title="Đồng bộ xếp loại và ghi chú học sinh lên Google Sheet"
+              fullWidth
             >
-              {isStudentMetadataSyncing ? (
-                <ProgressIndicator
-                  variant="circular"
-                  shape="wavy"
-                  showTrack
-                  size={18}
-                  aria-label="Đang đồng bộ..."
-                />
-              ) : (
-                <Icon name="refresh" variant="rounded" size={18} />
-              )}
               {isStudentMetadataSyncing ? 'Đang đồng bộ...' : 'Đồng bộ XL + ghi chú GG Sheet'}
-            </button>
+            </Button>
           )}
-          <button
+          <Button
+            colorStyle="outlined"
+            icon={<Icon name="visibility" variant="rounded" size={18} />}
             onClick={onOpenViewScores}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50"
+            fullWidth
           >
-            <Icon name="visibility" variant="rounded" size={18} />
             Xem bảng điểm lớp
-          </button>
+          </Button>
         </div>
       </div>
     </section>

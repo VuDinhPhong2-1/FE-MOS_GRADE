@@ -25,8 +25,8 @@ export const ClassCard: React.FC<ClassCardProps> = memo(
     return (
       <Card
         variant="filled"
-        className={`group flex flex-col justify-between overflow-hidden rounded-4xl border-none bg-m3-surface-container p-5 text-m3-on-surface shadow-xs transition-all hover:shadow-md ${!cls.isActive ? 'opacity-65' : ''
-          }`}
+        className="group p-5 flex flex-col justify-between"
+        disableStateLayer={!cls.isActive}
       >
         <div className="space-y-4">
           {/* Card Header: Tên lớp & Badge trạng thái */}
@@ -40,12 +40,10 @@ export const ClassCard: React.FC<ClassCardProps> = memo(
               </p>
             </div>
             <Chip
-              variant="assist"
+              variant="suggestion"
               label={cls.isActive ? 'Hoạt động' : 'Ngừng'}
-              className={`pointer-events-none h-6 border-none px-2.5 text-xs font-bold shadow-xs ${cls.isActive
-                ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
-                : 'bg-m3-surface-container-high text-m3-on-surface-variant'
-                }`}
+              disabled={!cls.isActive}
+              className='pointer-events-none'
             />
           </div>
 
@@ -74,13 +72,13 @@ export const ClassCard: React.FC<ClassCardProps> = memo(
         <div className="mt-5 flex w-full flex-col items-center justify-between gap-2">
           <Button
             type="button"
-            colorStyle="tonal"
+            colorStyle="tertiary"
             size="md"
             fullWidth
             onClick={() => onSelect(cls)}
-            icon={<Icon name="groups" size={24} variant='rounded' />}
+            icon={<Icon name="groups" size={24} />}
           >
-            Xem học sinh
+            Danh sách học sinh
           </Button>
 
           {hasManagePermission ? (

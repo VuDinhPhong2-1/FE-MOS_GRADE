@@ -143,8 +143,8 @@ export default function Dashboard() {
           </div>
           <div className="flex shrink-0 items-center justify-center self-center lg:self-auto">
             <ShapeMedia
-              shape="softBurst"
-              morphTo="verySunny"
+              shape="verySunny"
+              morphTo="softBurst"
               morphOn="hover"
               morphOptions={{
                 duration: 0.4,
