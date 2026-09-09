@@ -5,6 +5,7 @@ import { usePageHeader } from '../context/PageActionsContext';
 import { xmlGradingRulesService } from '../services/xml-grading-rules.service';
 import type {
   GradingRuleSet,
+  GradingRuleSetSummary,
   ProjectXmlRule,
   TaskXmlRule,
   XmlCompareMode,
@@ -93,6 +94,24 @@ const specialConditionOptions: Array<{
       description:
         'Kiem tra anh muc tieu co vien/style dung theo XML DrawingML trong Word.',
     },
+    {
+      value: 'textBoxContainsText',
+      label: 'Textbox chua dung van ban',
+      description:
+        'Kiem tra doan van da duoc dua vao textbox, noi dung dung het va co the bat loi copy thay vi cut hoac paste khong mac dinh.',
+    },
+    {
+      value: 'pageMargins',
+      label: 'Le trang Word',
+      description:
+        'Kiem tra le tren/duoi/trai/phai cua tai lieu Word theo don vi twips.',
+    },
+    {
+      value: 'documentStyleSet',
+      label: 'Document Style Set',
+      description:
+        'Kiem tra style set cua Word bang cac dau hieu XML on dinh trong word/styles.xml.',
+    },
   ];
 
 const normalizeSubject = (value: string) => value.trim().toLowerCase();
@@ -115,6 +134,20 @@ const emptyCondition = (): XmlGradingCondition => ({
 const emptyFeedback = () => ({ successDetail: '', errorMessage: '', fixAction: '' });
 
 const cx = (...items: Array<string | false | null | undefined>) => items.filter(Boolean).join(' ');
+
+const toRuleSetSummary = (ruleSet: GradingRuleSet): GradingRuleSetSummary => ({
+  id: ruleSet.id,
+  subject: ruleSet.subject,
+  version: ruleSet.version,
+  isActive: ruleSet.isActive,
+  projectCount: ruleSet.projects.length,
+  taskCount: ruleSet.projects.reduce((sum, project) => sum + project.tasks.length, 0),
+  conditionCount: ruleSet.projects.reduce(
+    (sum, project) => sum + project.tasks.reduce((taskSum, task) => taskSum + task.conditions.length, 0),
+    0
+  ),
+  maxScore: ruleSet.projects.reduce((sum, project) => sum + Number(project.maxScore || 0), 0),
+});
 
 interface GradeTaskResultView {
   taskId?: string;
@@ -169,16 +202,18 @@ const prepareCondition = (condition: XmlGradingCondition): XmlGradingCondition =
 
 const XmlGradingRulesPage = () => {
   const { getAccessToken, user } = useAuth();
-  const [ruleSets, setRuleSets] = useState<GradingRuleSet[]>([]);
+  const [ruleSets, setRuleSets] = useState<GradingRuleSetSummary[]>([]);
   const [selected, setSelected] = useState<GradingRuleSet>(emptyRuleSet());
   const [subjectFilter, setSubjectFilter] = useState('');
   const [activeFilter, setActiveFilter] = useState<'all' | 'true' | 'false'>('all');
   const [loading, setLoading] = useState(false);
+  const [loadingRuleSetId, setLoadingRuleSetId] = useState('');
   const [saving, setSaving] = useState(false);
   const [validation, setValidation] = useState<XmlRuleValidationResult | null>(null);
   const [gradeProjectCode, setGradeProjectCode] = useState('');
   const [gradeFile, setGradeFile] = useState<File | null>(null);
   const [gradeJson, setGradeJson] = useState('');
+  const [isTestGrading, setIsTestGrading] = useState(false);
 
   // State quản lý xem JSON thô hoặc Giao diện trực quan
   const [viewRawJson, setViewRawJson] = useState(false);
@@ -200,6 +235,13 @@ const XmlGradingRulesPage = () => {
     selectedRef.current = selected;
   }, [selected]);
 
+  const startNewRuleSet = () => {
+    const next = emptyRuleSet();
+    selectedRef.current = next;
+    setSelected(next);
+    setValidation(null);
+  };
+
   usePageHeader({
     title: 'XML Grading Rules',
     subtitle: `Quản lý ruleset · project · task · điều kiện chấm (${selected.isActive ? 'ACTIVE' : 'INACTIVE'})`,
@@ -209,7 +251,7 @@ const XmlGradingRulesPage = () => {
         label: 'Tạo ruleset',
         icon: 'add',
         colorStyle: 'filled',
-        onClick: () => setSelected(emptyRuleSet()),
+        onClick: startNewRuleSet,
       },
     ],
   }, [selected.isActive]);
@@ -219,7 +261,7 @@ const XmlGradingRulesPage = () => {
   const loadRuleSets = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await xmlGradingRulesService.list(getAccessToken, {
+      const data = await xmlGradingRulesService.listSummaries(getAccessToken, {
         subject: subjectFilter.trim() || undefined,
         isActive: activeFilter === 'all' ? undefined : activeFilter === 'true',
       });
@@ -228,14 +270,6 @@ const XmlGradingRulesPage = () => {
 
       // Dùng ref thay vì selected.id từ closure cũ.
       // Tránh việc request reload sau Save lấy lại state cũ và làm UI nhảy/ghi đè.
-      const currentId = selectedRef.current.id;
-      if (currentId) {
-        const refreshed = data.find((item) => item.id === currentId);
-        if (refreshed) {
-          selectedRef.current = refreshed;
-          setSelected(refreshed);
-        }
-      }
     } catch (error) {
       notify.error(error instanceof Error ? error.message : 'Không tải được danh sách XML rules.');
     } finally {
@@ -251,23 +285,37 @@ const XmlGradingRulesPage = () => {
     setValidation(null);
     setRuleSets((items) => {
       if (!next.id) return items;
+      const summary = toRuleSetSummary(next);
       const exists = items.some((item) => item.id === next.id);
       return exists
-        ? items.map((item) => item.id === next.id ? next : item)
-        : [next, ...items];
+        ? items.map((item) => item.id === next.id ? summary : item)
+        : [summary, ...items];
     });
   };
 
   // Update state theo kiểu functional + cập nhật ref ngay lập tức.
   // Đây là phần quan trọng để tránh mất ký tự/field khi người dùng
   // vừa nhập Condition rồi bấm Save ngay.
+  const openRuleSet = async (summary: GradingRuleSetSummary) => {
+    setLoadingRuleSetId(summary.id);
+    try {
+      const detail = await xmlGradingRulesService.get(summary.id, getAccessToken);
+      replaceSelected(detail);
+    } catch (error) {
+      notify.error(error instanceof Error ? error.message : 'Khong tai duoc chi tiet XML ruleset.');
+    } finally {
+      setLoadingRuleSetId('');
+    }
+  };
+
   const updateSelected = (updater: (current: GradingRuleSet) => GradingRuleSet) => {
     const next = updater(selectedRef.current);
     selectedRef.current = next;
     setSelected(next);
     setValidation(null);
+    const summary = toRuleSetSummary(next);
     setRuleSets((items) =>
-      next.id ? items.map((item) => item.id === next.id ? next : item) : items
+      next.id ? items.map((item) => item.id === next.id ? summary : item) : items
     );
   };
 
@@ -331,7 +379,7 @@ const XmlGradingRulesPage = () => {
   const deleteRuleSet = async (id: string) => {
     if (!window.confirm('Xóa ruleset này?')) return;
     await xmlGradingRulesService.delete(id, getAccessToken);
-    setSelected(emptyRuleSet());
+    startNewRuleSet();
     await loadRuleSets();
     notify.success('Đã xóa ruleset.');
   };
@@ -353,12 +401,17 @@ const XmlGradingRulesPage = () => {
     const projectCode = gradeProjectCode || selected.projects[0]?.projectCode;
     if (!projectCode) return notify.warning('Vui lòng nhập/chọn projectCode.');
     if (!selected.isActive) return notify.warning('Ruleset hiện tại chưa bật Active. Backend chỉ dùng ruleset Active để chấm thử XML.');
+    if (isTestGrading) return;
+    setIsTestGrading(true);
+    setGradeJson('');
     try {
       const result = await xmlGradingRulesService.grade(selected.subject, projectCode, gradeFile, getAccessToken);
       setGradeJson(JSON.stringify(result, null, 2));
       notify.success('Test chấm XML hoàn tất.');
     } catch (error) {
       notify.error(error instanceof Error ? error.message : 'Test chấm thất bại.');
+    } finally {
+      setIsTestGrading(false);
     }
   };
 
@@ -442,7 +495,7 @@ const XmlGradingRulesPage = () => {
         label: 'Tạo ruleset',
         icon: 'add',
         colorStyle: 'filled',
-        onClick: () => setSelected(emptyRuleSet()),
+        onClick: startNewRuleSet,
       },
     ],
   }, [selected.isActive]);
@@ -691,10 +744,12 @@ const XmlGradingRulesPage = () => {
           <div className="max-h-[calc(100vh-280px)] space-y-1 overflow-y-auto pr-1">
             {ruleSets.map((item) => {
               const isSelected = selected.id === item.id;
+              const isLoadingDetail = loadingRuleSetId === item.id;
               return (
                 <button
                   key={item.id}
-                  onClick={() => replaceSelected(item)}
+                  onClick={() => void openRuleSet(item)}
+                  disabled={isLoadingDetail}
                   className={cx(
                     'w-full rounded-2xl border p-3 text-left transition',
                     isSelected
@@ -708,15 +763,19 @@ const XmlGradingRulesPage = () => {
                         {item.subject} · {item.version}
                       </div>
                       <div className="mt-0.5 text-[11px] text-m3-on-surface-variant">
-                        {item.projects.length} project · {item.projects.reduce((n, p) => n + p.tasks.length, 0)} task
+                        {item.projectCount} project · {item.taskCount} task
                       </div>
                     </div>
-                    <span
-                      className={cx(
-                        'mt-1 h-2 w-2 shrink-0 rounded-full',
-                        item.isActive ? 'bg-emerald-500' : 'bg-m3-outline-variant'
-                      )}
-                    />
+                    {isLoadingDetail ? (
+                      <Icon name="refresh" className="mt-0.5 shrink-0 animate-spin text-sm text-m3-primary" />
+                    ) : (
+                      <span
+                        className={cx(
+                          'mt-1 h-2 w-2 shrink-0 rounded-full',
+                          item.isActive ? 'bg-emerald-500' : 'bg-m3-outline-variant'
+                        )}
+                      />
+                    )}
                   </div>
                 </button>
               );
@@ -1175,6 +1234,52 @@ const XmlGradingRulesPage = () => {
                                                                 stylePreset: 'simpleFrameBlack',
                                                                 requiredLineColor: '000000',
                                                                 presetGeometry: 'rect',
+                                                              },
+                                                            });
+                                                          }
+                                                          if (value === 'textBoxContainsText') {
+                                                            updateTaskSpecialCondition(pi, ti, {
+                                                              type: 'textBoxContainsText',
+                                                              score: task.specialCondition?.score ?? 0,
+                                                              feedback: task.specialCondition?.feedback ?? emptyFeedback(),
+                                                              textBoxContainsTextConfig: task.specialCondition?.textBoxContainsTextConfig ?? {
+                                                                sourceFile: 'word/document.xml',
+                                                                expectedText: '',
+                                                                matchMode: 'exact',
+                                                                caseSensitive: false,
+                                                                targetOccurrence: 1,
+                                                                requireDefaultPaste: true,
+                                                                requireRemovedFromBody: true,
+                                                              },
+                                                            });
+                                                          }
+                                                          if (value === 'pageMargins') {
+                                                            updateTaskSpecialCondition(pi, ti, {
+                                                              type: 'pageMargins',
+                                                              score: task.specialCondition?.score ?? 0,
+                                                              feedback: task.specialCondition?.feedback ?? emptyFeedback(),
+                                                              pageMarginsConfig: task.specialCondition?.pageMarginsConfig ?? {
+                                                                sourceFile: 'word/document.xml',
+                                                                top: 1440,
+                                                                bottom: 1440,
+                                                                left: 2160,
+                                                                right: 2160,
+                                                                gutter: 0,
+                                                                requireAllSections: true,
+                                                              },
+                                                            });
+                                                          }
+                                                          if (value === 'documentStyleSet') {
+                                                            updateTaskSpecialCondition(pi, ti, {
+                                                              type: 'documentStyleSet',
+                                                              score: task.specialCondition?.score ?? 0,
+                                                              feedback: task.specialCondition?.feedback ?? emptyFeedback(),
+                                                              documentStyleSetConfig: task.specialCondition?.documentStyleSetConfig ?? {
+                                                                sourceFile: 'word/styles.xml',
+                                                                styleSetName: 'Lines (Simple)',
+                                                                expectedFragments: [],
+                                                                ignoreAttributes: ['rsid*', 'id'],
+                                                                matchPolicy: 'all',
                                                               },
                                                             });
                                                           }
@@ -1731,6 +1836,331 @@ const XmlGradingRulesPage = () => {
                                                 </div>
                                               </div>
                                             )}
+                                            {task.specialCondition?.type === 'textBoxContainsText' && (
+                                              <div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
+                                                <div className="grid gap-3 md:grid-cols-2">
+                                                  <label className="text-xs font-semibold text-slate-600">
+                                                    Source file
+                                                    <input
+                                                      value={task.specialCondition.textBoxContainsTextConfig?.sourceFile ?? 'word/document.xml'}
+                                                      onChange={(e) => {
+                                                        const currentConfig = task.specialCondition?.textBoxContainsTextConfig ?? {};
+                                                        updateTaskSpecialCondition(pi, ti, {
+                                                          ...task.specialCondition!,
+                                                          type: 'textBoxContainsText',
+                                                          textBoxContainsTextConfig: {
+                                                            ...currentConfig,
+                                                            sourceFile: e.target.value,
+                                                          },
+                                                        });
+                                                      }}
+                                                      placeholder="word/document.xml"
+                                                      className={inputClass}
+                                                    />
+                                                  </label>
+                                                  <label className="text-xs font-semibold text-slate-600">
+                                                    Match mode
+                                                    <select
+                                                      value={task.specialCondition.textBoxContainsTextConfig?.matchMode ?? 'exact'}
+                                                      onChange={(e) => {
+                                                        const currentConfig = task.specialCondition?.textBoxContainsTextConfig ?? {};
+                                                        updateTaskSpecialCondition(pi, ti, {
+                                                          ...task.specialCondition!,
+                                                          type: 'textBoxContainsText',
+                                                          textBoxContainsTextConfig: {
+                                                            ...currentConfig,
+                                                            matchMode: e.target.value as 'exact' | 'contains',
+                                                          },
+                                                        });
+                                                      }}
+                                                      className={inputClass}
+                                                    >
+                                                      <option value="exact">Dung nguyen doan</option>
+                                                      <option value="contains">Chi can chua doan nay</option>
+                                                    </select>
+                                                  </label>
+                                                  <label className="text-xs font-semibold text-slate-600 md:col-span-2">
+                                                    Expected text
+                                                    <textarea
+                                                      value={task.specialCondition.textBoxContainsTextConfig?.expectedText ?? ''}
+                                                      onChange={(e) => {
+                                                        const currentConfig = task.specialCondition?.textBoxContainsTextConfig ?? {};
+                                                        updateTaskSpecialCondition(pi, ti, {
+                                                          ...task.specialCondition!,
+                                                          type: 'textBoxContainsText',
+                                                          textBoxContainsTextConfig: {
+                                                            ...currentConfig,
+                                                            expectedText: e.target.value,
+                                                          },
+                                                        });
+                                                      }}
+                                                      placeholder="Nhap nguyen doan van bat dau bang Note:"
+                                                      rows={5}
+                                                      className={inputClass}
+                                                    />
+                                                  </label>
+                                                  <label className="text-xs font-semibold text-slate-600">
+                                                    Target occurrence
+                                                    <input
+                                                      type="number"
+                                                      min={1}
+                                                      step={1}
+                                                      value={task.specialCondition.textBoxContainsTextConfig?.targetOccurrence ?? 1}
+                                                      onChange={(e) => {
+                                                        const currentConfig = task.specialCondition?.textBoxContainsTextConfig ?? {};
+                                                        updateTaskSpecialCondition(pi, ti, {
+                                                          ...task.specialCondition!,
+                                                          type: 'textBoxContainsText',
+                                                          textBoxContainsTextConfig: {
+                                                            ...currentConfig,
+                                                            targetOccurrence: e.target.value ? Number(e.target.value) : undefined,
+                                                          },
+                                                        });
+                                                      }}
+                                                      className={inputClass}
+                                                    />
+                                                  </label>
+                                                </div>
+                                                <div className="mt-3 grid gap-3 md:grid-cols-3">
+                                                  <label className="flex items-center gap-2 text-xs font-medium text-slate-600">
+                                                    <input
+                                                      type="checkbox"
+                                                      checked={task.specialCondition.textBoxContainsTextConfig?.caseSensitive ?? false}
+                                                      onChange={(e) => {
+                                                        const currentConfig = task.specialCondition?.textBoxContainsTextConfig ?? {};
+                                                        updateTaskSpecialCondition(pi, ti, {
+                                                          ...task.specialCondition!,
+                                                          type: 'textBoxContainsText',
+                                                          textBoxContainsTextConfig: {
+                                                            ...currentConfig,
+                                                            caseSensitive: e.target.checked,
+                                                          },
+                                                        });
+                                                      }}
+                                                      className="h-4 w-4 accent-blue-600"
+                                                    />
+                                                    Phan biet hoa/thuong
+                                                  </label>
+                                                  <label className="flex items-center gap-2 text-xs font-medium text-slate-600">
+                                                    <input
+                                                      type="checkbox"
+                                                      checked={task.specialCondition.textBoxContainsTextConfig?.requireDefaultPaste ?? true}
+                                                      onChange={(e) => {
+                                                        const currentConfig = task.specialCondition?.textBoxContainsTextConfig ?? {};
+                                                        updateTaskSpecialCondition(pi, ti, {
+                                                          ...task.specialCondition!,
+                                                          type: 'textBoxContainsText',
+                                                          textBoxContainsTextConfig: {
+                                                            ...currentConfig,
+                                                            requireDefaultPaste: e.target.checked,
+                                                          },
+                                                        });
+                                                      }}
+                                                      className="h-4 w-4 accent-blue-600"
+                                                    />
+                                                    Bat paste mac dinh
+                                                  </label>
+                                                  <label className="flex items-center gap-2 text-xs font-medium text-slate-600">
+                                                    <input
+                                                      type="checkbox"
+                                                      checked={task.specialCondition.textBoxContainsTextConfig?.requireRemovedFromBody ?? true}
+                                                      onChange={(e) => {
+                                                        const currentConfig = task.specialCondition?.textBoxContainsTextConfig ?? {};
+                                                        updateTaskSpecialCondition(pi, ti, {
+                                                          ...task.specialCondition!,
+                                                          type: 'textBoxContainsText',
+                                                          textBoxContainsTextConfig: {
+                                                            ...currentConfig,
+                                                            requireRemovedFromBody: e.target.checked,
+                                                          },
+                                                        });
+                                                      }}
+                                                      className="h-4 w-4 accent-blue-600"
+                                                    />
+                                                    Khong con ngoai textbox
+                                                  </label>
+                                                </div>
+                                              </div>
+                                            )}
+                                            {task.specialCondition?.type === 'pageMargins' && (
+                                              <div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
+                                                <div className="grid gap-3 md:grid-cols-3">
+                                                  <label className="text-xs font-semibold text-slate-600 md:col-span-3">
+                                                    Source file
+                                                    <input
+                                                      value={task.specialCondition.pageMarginsConfig?.sourceFile ?? 'word/document.xml'}
+                                                      onChange={(e) => {
+                                                        const currentConfig = task.specialCondition?.pageMarginsConfig ?? {};
+                                                        updateTaskSpecialCondition(pi, ti, {
+                                                          ...task.specialCondition!,
+                                                          type: 'pageMargins',
+                                                          pageMarginsConfig: {
+                                                            ...currentConfig,
+                                                            sourceFile: e.target.value,
+                                                          },
+                                                        });
+                                                      }}
+                                                      placeholder="word/document.xml"
+                                                      className={inputClass}
+                                                    />
+                                                  </label>
+                                                  {[
+                                                    ['top', 'Le tren'],
+                                                    ['bottom', 'Le duoi'],
+                                                    ['left', 'Le trai'],
+                                                    ['right', 'Le phai'],
+                                                    ['gutter', 'Gutter'],
+                                                  ].map(([field, label]) => (
+                                                    <label key={field} className="text-xs font-semibold text-slate-600">
+                                                      {label} (twips)
+                                                      <input
+                                                        type="number"
+                                                        min={0}
+                                                        step={1}
+                                                        value={(task.specialCondition?.pageMarginsConfig as Record<string, number | undefined> | undefined)?.[field] ?? ''}
+                                                        onChange={(e) => {
+                                                          const currentConfig = task.specialCondition?.pageMarginsConfig ?? {};
+                                                          updateTaskSpecialCondition(pi, ti, {
+                                                            ...task.specialCondition!,
+                                                            type: 'pageMargins',
+                                                            pageMarginsConfig: {
+                                                              ...currentConfig,
+                                                              [field]: e.target.value ? Number(e.target.value) : undefined,
+                                                            },
+                                                          });
+                                                        }}
+                                                        placeholder={field === 'top' || field === 'bottom' ? '1440' : field === 'left' || field === 'right' ? '2160' : '0'}
+                                                        className={inputClass}
+                                                      />
+                                                    </label>
+                                                  ))}
+                                                </div>
+                                                <label className="mt-3 flex items-center gap-2 text-xs font-medium text-slate-600">
+                                                  <input
+                                                    type="checkbox"
+                                                    checked={task.specialCondition.pageMarginsConfig?.requireAllSections ?? true}
+                                                    onChange={(e) => {
+                                                      const currentConfig = task.specialCondition?.pageMarginsConfig ?? {};
+                                                      updateTaskSpecialCondition(pi, ti, {
+                                                        ...task.specialCondition!,
+                                                        type: 'pageMargins',
+                                                        pageMarginsConfig: {
+                                                          ...currentConfig,
+                                                          requireAllSections: e.target.checked,
+                                                        },
+                                                      });
+                                                    }}
+                                                    className="h-4 w-4 accent-blue-600"
+                                                  />
+                                                  Ap dung cho tat ca section
+                                                </label>
+                                              </div>
+                                            )}
+                                            {task.specialCondition?.type === 'documentStyleSet' && (
+                                              <div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
+                                                <div className="grid gap-3 md:grid-cols-2">
+                                                  <label className="text-xs font-semibold text-slate-600">
+                                                    Source file
+                                                    <input
+                                                      value={task.specialCondition.documentStyleSetConfig?.sourceFile ?? 'word/styles.xml'}
+                                                      onChange={(e) => {
+                                                        const currentConfig = task.specialCondition?.documentStyleSetConfig ?? {};
+                                                        updateTaskSpecialCondition(pi, ti, {
+                                                          ...task.specialCondition!,
+                                                          type: 'documentStyleSet',
+                                                          documentStyleSetConfig: {
+                                                            ...currentConfig,
+                                                            sourceFile: e.target.value,
+                                                          },
+                                                        });
+                                                      }}
+                                                      placeholder="word/styles.xml"
+                                                      className={inputClass}
+                                                    />
+                                                  </label>
+                                                  <label className="text-xs font-semibold text-slate-600">
+                                                    Style set name
+                                                    <input
+                                                      value={task.specialCondition.documentStyleSetConfig?.styleSetName ?? ''}
+                                                      onChange={(e) => {
+                                                        const currentConfig = task.specialCondition?.documentStyleSetConfig ?? {};
+                                                        updateTaskSpecialCondition(pi, ti, {
+                                                          ...task.specialCondition!,
+                                                          type: 'documentStyleSet',
+                                                          documentStyleSetConfig: {
+                                                            ...currentConfig,
+                                                            styleSetName: e.target.value,
+                                                          },
+                                                        });
+                                                      }}
+                                                      placeholder="Lines (Simple)"
+                                                      className={inputClass}
+                                                    />
+                                                  </label>
+                                                  <label className="text-xs font-semibold text-slate-600">
+                                                    Match policy
+                                                    <select
+                                                      value={task.specialCondition.documentStyleSetConfig?.matchPolicy ?? 'all'}
+                                                      onChange={(e) => {
+                                                        const currentConfig = task.specialCondition?.documentStyleSetConfig ?? {};
+                                                        updateTaskSpecialCondition(pi, ti, {
+                                                          ...task.specialCondition!,
+                                                          type: 'documentStyleSet',
+                                                          documentStyleSetConfig: {
+                                                            ...currentConfig,
+                                                            matchPolicy: e.target.value as XmlMatchPolicy,
+                                                          },
+                                                        });
+                                                      }}
+                                                      className={inputClass}
+                                                    >
+                                                      <option value="all">Tat ca fragment</option>
+                                                      <option value="any">Bat ky fragment nao</option>
+                                                    </select>
+                                                  </label>
+                                                  <label className="text-xs font-semibold text-slate-600">
+                                                    Ignore attributes
+                                                    <textarea
+                                                      value={(task.specialCondition.documentStyleSetConfig?.ignoreAttributes ?? []).join('\n')}
+                                                      onChange={(e) => {
+                                                        const currentConfig = task.specialCondition?.documentStyleSetConfig ?? {};
+                                                        updateTaskSpecialCondition(pi, ti, {
+                                                          ...task.specialCondition!,
+                                                          type: 'documentStyleSet',
+                                                          documentStyleSetConfig: {
+                                                            ...currentConfig,
+                                                            ignoreAttributes: e.target.value.split(/\r?\n/).map((line) => line.trim()).filter(Boolean),
+                                                          },
+                                                        });
+                                                      }}
+                                                      rows={3}
+                                                      placeholder={'rsid*\nid'}
+                                                      className={inputClass}
+                                                    />
+                                                  </label>
+                                                  <label className="text-xs font-semibold text-slate-600 md:col-span-2">
+                                                    Expected fragments
+                                                    <textarea
+                                                      value={(task.specialCondition.documentStyleSetConfig?.expectedFragments ?? []).join('\n---FRAGMENT---\n')}
+                                                      onChange={(e) => {
+                                                        const currentConfig = task.specialCondition?.documentStyleSetConfig ?? {};
+                                                        updateTaskSpecialCondition(pi, ti, {
+                                                          ...task.specialCondition!,
+                                                          type: 'documentStyleSet',
+                                                          documentStyleSetConfig: {
+                                                            ...currentConfig,
+                                                            expectedFragments: e.target.value.split(/\n---FRAGMENT---\n/).map((fragment) => fragment.trim()).filter(Boolean),
+                                                          },
+                                                        });
+                                                      }}
+                                                      rows={8}
+                                                      placeholder="Dan cac doan XML on dinh trong word/styles.xml cua file dap an Lines (Simple). Tach nhieu fragment bang dong ---FRAGMENT---"
+                                                      className={inputClass}
+                                                    />
+                                                  </label>
+                                                </div>
+                                              </div>
+                                            )}
                                             {task.specialCondition?.type === 'pictureStyle' && (
                                               <PictureStyleEditor
                                                 config={task.specialCondition.pictureStyleConfig}
@@ -2265,6 +2695,7 @@ const XmlGradingRulesPage = () => {
                   <select
                     value={gradeProjectCode}
                     onChange={(e) => setGradeProjectCode(e.target.value)}
+                    disabled={isTestGrading}
                     className={inputClass}
                   >
                     <option value="">Chọn project</option>
@@ -2282,17 +2713,37 @@ const XmlGradingRulesPage = () => {
                     type="file"
                     accept=".xlsx,.xlsm,.docx"
                     onChange={(e) => setGradeFile(e.target.files?.[0] || null)}
+                    disabled={isTestGrading}
                     className="mt-1 block w-full rounded-lg border border-dashed border-slate-300 bg-slate-50 px-3 py-2 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-white file:px-2 file:py-1 file:text-xs file:font-semibold"
                   />
                 </label>
 
                 <button
                   onClick={gradeWithXmlRules}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-m3-primary px-4 py-2 text-sm font-semibold text-m3-on-primary hover:bg-m3-primary/90"
+                  disabled={isTestGrading}
+                  className={cx(
+                    'inline-flex items-center justify-center gap-2 rounded-xl bg-m3-primary px-4 py-2 text-sm font-semibold text-m3-on-primary hover:bg-m3-primary/90',
+                    isTestGrading && 'cursor-wait opacity-70'
+                  )}
                 >
-                  <Icon name="upload" className="text-base" /> Chấm thử
+                  {isTestGrading ? (
+                    <>
+                      <Icon name="refresh" className="animate-spin text-base" /> Dang cham...
+                    </>
+                  ) : (
+                    <>
+                      <Icon name="upload" className="text-base" /> Chấm thử
+                    </>
+                  )}
                 </button>
               </div>
+
+              {isTestGrading && (
+                <div className="mt-4 flex items-center gap-2 rounded-2xl border border-m3-primary/20 bg-m3-primary/10 px-4 py-3 text-xs font-semibold text-m3-primary">
+                  <Icon name="refresh" className="animate-spin text-base" />
+                  <span>Dang cham file, vui long cho...</span>
+                </div>
+              )}
 
               {renderGradeResult()}
             </section>

@@ -89,6 +89,25 @@ const PRACTICE_OPTIONS = [
 ] as const;
 
 type PracticeCode = typeof PRACTICE_OPTIONS[number]['code'];
+const BULK_GRADING_CONCURRENCY = 3;
+
+const runLimitedConcurrency = async (
+    tasks: Array<() => Promise<void>>,
+    concurrency = BULK_GRADING_CONCURRENCY
+) => {
+    const workerCount = Math.min(Math.max(1, concurrency), tasks.length);
+    let nextIndex = 0;
+
+    await Promise.all(
+        Array.from({ length: workerCount }, async () => {
+            while (nextIndex < tasks.length) {
+                const task = tasks[nextIndex];
+                nextIndex += 1;
+                await task();
+            }
+        })
+    );
+};
 const SUBJECT_OPTIONS = [
     { code: 'excel', label: 'Excel' },
     { code: 'word', label: 'Word' },
@@ -1023,12 +1042,15 @@ const GradingModal: React.FC<GradingModalProps> = ({
 
         setIsApplyingManualMultiFileMatches(true);
         try {
-            for (const match of matches) {
-                if (!match.selectedAssignmentId) continue;
-                await uploadMultiStudentFile(match.selectedAssignmentId, match.studentId, match.file, {
-                    skipValidation: true,
-                });
-            }
+            await runLimitedConcurrency(
+                matches
+                    .filter((match) => match.selectedAssignmentId)
+                    .map((match) => () =>
+                        uploadMultiStudentFile(match.selectedAssignmentId, match.studentId, match.file, {
+                            skipValidation: true,
+                        })
+                    )
+            );
 
             const processedIds = new Set(matches.map((item) => item.id));
             setPendingManualMultiFileMatches((prev) =>
@@ -1151,6 +1173,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
         try {
             const maxCount = Math.min(files.length, gradingStudents.length);
             const invalidFiles: string[] = [];
+            const gradingTasks: Array<() => Promise<void>> = [];
 
             for (let i = 0; i < maxCount; i++) {
                 const file = files[i];
@@ -1161,8 +1184,10 @@ const GradingModal: React.FC<GradingModalProps> = ({
 
                 // Map theo thu tu danh sach hoc sinh tren bang.
                 const student = gradingStudents[i];
-                await uploadStudentFile(student.id, file, { skipValidation: true });
+                gradingTasks.push(() => uploadStudentFile(student.id, file, { skipValidation: true }));
             }
+
+            await runLimitedConcurrency(gradingTasks);
 
             const extraFiles = files.length - maxCount;
             if (invalidFiles.length > 0 || extraFiles > 0) {
@@ -1216,6 +1241,7 @@ const GradingModal: React.FC<GradingModalProps> = ({
 
         const maxCount = Math.min(files.length, gradingStudents.length - startIndex);
         const invalidFiles: string[] = [];
+        const gradingTasks: Array<() => Promise<void>> = [];
 
         for (let i = 0; i < maxCount; i++) {
             const file = files[i];
@@ -1224,8 +1250,10 @@ const GradingModal: React.FC<GradingModalProps> = ({
                 continue;
             }
             const targetStudent = gradingStudents[startIndex + i];
-            await uploadStudentFile(targetStudent.id, file, { skipValidation: true });
+            gradingTasks.push(() => uploadStudentFile(targetStudent.id, file, { skipValidation: true }));
         }
+
+        await runLimitedConcurrency(gradingTasks);
 
         const extraFiles = files.length - maxCount;
         if (invalidFiles.length > 0 || extraFiles > 0) {
@@ -1766,9 +1794,11 @@ const GradingModal: React.FC<GradingModalProps> = ({
             });
         }
 
-        for (const upload of smartMatchedUploads) {
-            await uploadMultiStudentFile(upload.targetAssignmentId, studentId, upload.file, { skipValidation: true });
-        }
+        await runLimitedConcurrency(
+            smartMatchedUploads.map((upload) => () =>
+                uploadMultiStudentFile(upload.targetAssignmentId, studentId, upload.file, { skipValidation: true })
+            )
+        );
 
         if (unresolvedFiles.length > 0) {
             setPendingManualMultiFileMatches((prev) => {

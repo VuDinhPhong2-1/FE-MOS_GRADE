@@ -3,6 +3,7 @@ import type { AccessTokenGetter } from './auth-fetch';
 import { authFetch } from './auth-fetch';
 import type {
   GradingRuleSet,
+  GradingRuleSetSummary,
   ProjectXmlRule,
   TaskXmlRule,
   XmlGradingCondition,
@@ -57,6 +58,12 @@ export const xmlGradingRulesService = {
     if (filters?.isActive !== undefined) params.set('isActive', String(filters.isActive));
     const query = params.toString();
     return requestJson<GradingRuleSet[]>(`${baseUrl}${query ? `?${query}` : ''}`, { method: 'GET' }, getAccessToken);
+  },
+  listSummaries: (getAccessToken: AccessTokenGetter, filters?: { subject?: string; isActive?: boolean }) => {
+    const params = new URLSearchParams({ summary: 'true' });
+    if (filters?.subject) params.set('subject', filters.subject);
+    if (filters?.isActive !== undefined) params.set('isActive', String(filters.isActive));
+    return requestJson<GradingRuleSetSummary[]>(`${baseUrl}?${params.toString()}`, { method: 'GET' }, getAccessToken);
   },
   get: (id: string, getAccessToken: AccessTokenGetter) =>
     requestJson<GradingRuleSet>(`${baseUrl}/${id}`, { method: 'GET' }, getAccessToken),

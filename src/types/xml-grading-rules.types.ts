@@ -37,7 +37,10 @@ export type SpecialConditionType =
   | 'convertTableToText'
   | 'hyperlink'
   | 'sectionBreakBeforeText'
-  | 'pictureStyle';
+  | 'pictureStyle'
+  | 'textBoxContainsText'
+  | 'pageMargins'
+  | 'documentStyleSet';
 
   export type ImageWrapType =
   | 'inline'
@@ -95,6 +98,34 @@ export interface PictureStyleConfig {
   presetGeometry?: string;
 }
 
+export interface TextBoxContainsTextConfig {
+  sourceFile?: string;
+  expectedText?: string;
+  matchMode?: 'exact' | 'contains';
+  caseSensitive?: boolean;
+  targetOccurrence?: number;
+  requireDefaultPaste?: boolean;
+  requireRemovedFromBody?: boolean;
+}
+
+export interface PageMarginsConfig {
+  sourceFile?: string;
+  top?: number;
+  bottom?: number;
+  left?: number;
+  right?: number;
+  gutter?: number;
+  requireAllSections?: boolean;
+}
+
+export interface DocumentStyleSetConfig {
+  sourceFile?: string;
+  styleSetName?: string;
+  expectedFragments?: string[];
+  ignoreAttributes?: string[];
+  matchPolicy?: XmlMatchPolicy;
+}
+
 export interface SpecialCondition {
   type: SpecialConditionType;
   score: number;
@@ -105,6 +136,9 @@ export interface SpecialCondition {
   hyperlinkConfig?: HyperlinkConfig;
   sectionBreakBeforeTextConfig?: SectionBreakBeforeTextConfig;
   pictureStyleConfig?: PictureStyleConfig;
+  textBoxContainsTextConfig?: TextBoxContainsTextConfig;
+  pageMarginsConfig?: PageMarginsConfig;
+  documentStyleSetConfig?: DocumentStyleSetConfig;
 }
 
 export interface PictureBulletConfig {
@@ -145,6 +179,9 @@ export interface SpecialCondition {
   hyperlinkConfig?: HyperlinkConfig;
   sectionBreakBeforeTextConfig?: SectionBreakBeforeTextConfig;
   pictureStyleConfig?: PictureStyleConfig;
+  textBoxContainsTextConfig?: TextBoxContainsTextConfig;
+  pageMarginsConfig?: PageMarginsConfig;
+  documentStyleSetConfig?: DocumentStyleSetConfig;
 }
 
 export interface TaskXmlRule {
@@ -172,6 +209,17 @@ export interface GradingRuleSet {
   version: string;
   isActive: boolean;
   projects: ProjectXmlRule[];
+}
+
+export interface GradingRuleSetSummary {
+  id: string;
+  subject: string;
+  version: string;
+  isActive: boolean;
+  projectCount: number;
+  taskCount: number;
+  conditionCount: number;
+  maxScore: number;
 }
 
 export interface XmlRuleValidationResult {
