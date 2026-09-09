@@ -107,6 +107,7 @@ export interface TextBoxContainsTextConfig {
   requireDefaultPaste?: boolean;
   requireRemovedFromBody?: boolean;
   forbiddenTextColors?: string[];
+  forbiddenRunProperties?: string[];
 }
 
 export interface PageMarginsConfig {

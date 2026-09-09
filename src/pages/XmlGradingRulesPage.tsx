@@ -1251,6 +1251,7 @@ const XmlGradingRulesPage = () => {
                                                                 requireDefaultPaste: true,
                                                                 requireRemovedFromBody: true,
                                                                 forbiddenTextColors: ['FFFFFF', 'background1', 'bg1', 'lt1'],
+                                                                forbiddenRunProperties: ['caps', 'smallCaps', 'b', 'i', 'u', 'color', 'highlight', 'rFonts', 'sz', 'szCs'],
                                                               },
                                                             });
                                                           }
@@ -1981,6 +1982,26 @@ const XmlGradingRulesPage = () => {
                                                     Khong con ngoai textbox
                                                   </label>
                                                 </div>
+                                                <label className="mt-3 block text-xs font-semibold text-slate-600">
+                                                  Run properties cam khi bat paste mac dinh
+                                                  <textarea
+                                                    value={(task.specialCondition.textBoxContainsTextConfig?.forbiddenRunProperties ?? ['caps', 'smallCaps', 'b', 'i', 'u', 'color', 'highlight', 'rFonts', 'sz', 'szCs']).join('\n')}
+                                                    onChange={(e) => {
+                                                      const currentConfig = task.specialCondition?.textBoxContainsTextConfig ?? {};
+                                                      updateTaskSpecialCondition(pi, ti, {
+                                                        ...task.specialCondition!,
+                                                        type: 'textBoxContainsText',
+                                                        textBoxContainsTextConfig: {
+                                                          ...currentConfig,
+                                                          forbiddenRunProperties: e.target.value.split(/\r?\n/).map((line) => line.trim()).filter(Boolean),
+                                                        },
+                                                      });
+                                                    }}
+                                                    rows={5}
+                                                    placeholder={'caps\nsmallCaps\nb\ni\nu\ncolor\nhighlight\nrFonts\nsz\nszCs'}
+                                                    className={inputClass}
+                                                  />
+                                                </label>
                                                 <label className="mt-3 block text-xs font-semibold text-slate-600">
                                                   Mau chu cam khi bat paste mac dinh
                                                   <textarea
