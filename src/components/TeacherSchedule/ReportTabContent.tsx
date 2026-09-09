@@ -1,4 +1,5 @@
-import { Icon, TabsContent } from '@bug-on/m3-expressive';
+import { useEffect, useMemo } from 'react';
+import { Icon } from '@bug-on/m3-expressive';
 import type {
   ScheduleAttendanceResponse,
   ScheduleEndLessonReport,
@@ -6,11 +7,14 @@ import type {
   ScheduleReportsPayload,
   ScheduleStartLessonReport,
 } from '../../types/schedule.types';
+import type { AttendanceDraftState, AttendancePanelTab } from './types';
 
 interface ReportTabContentProps {
+  activeStep: AttendancePanelTab;
   reportsDraft: ScheduleReportsPayload;
   hasRoomSnapshot: boolean;
   attendanceData: ScheduleAttendanceResponse;
+  attendanceDraft: Record<string, AttendanceDraftState>;
   onUpdateStartLessonField: (
     field: keyof ScheduleStartLessonReport,
     value: string
@@ -25,17 +29,399 @@ interface ReportTabContentProps {
   ) => void;
 }
 
+
+type AnyRecord = Record<string, unknown>;
+
+type ClassCount = {
+  className: string;
+  total: number;
+  absent: number;
+};
+
+const isRecord = (value: unknown): value is AnyRecord =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const toNumber = (value: unknown): number | null => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const parsed = Number(value.trim());
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  return null;
+};
+
+const readString = (source: AnyRecord, keys: string[]): string | null => {
+  for (const key of keys) {
+    const value = source[key];
+    if (typeof value === 'string' && value.trim()) {
+      return value.trim();
+    }
+  }
+
+  return null;
+};
+
+const readNumber = (source: AnyRecord, keys: string[]): number | null => {
+  for (const key of keys) {
+    const value = toNumber(source[key]);
+    if (value !== null) {
+      return value;
+    }
+  }
+
+  return null;
+};
+
+const getArrayFromPossibleKeys = (
+  source: AnyRecord,
+  keys: string[]
+): unknown[] | null => {
+  for (const key of keys) {
+    const value = source[key];
+    if (Array.isArray(value)) {
+      return value;
+    }
+  }
+
+  return null;
+};
+
+const readClassName = (source: AnyRecord): string | null => {
+  const directName = readString(source, [
+    'className',
+    'class_name',
+    'classTitle',
+    'classLabel',
+    'name',
+    'title',
+  ]);
+
+  if (directName) {
+    return directName;
+  }
+
+  const nestedKeys = ['class', 'classInfo', 'classroom', 'studentClass'];
+  for (const key of nestedKeys) {
+    const nestedValue = source[key];
+    if (!isRecord(nestedValue)) {
+      continue;
+    }
+
+    const nestedName = readString(nestedValue, [
+      'className',
+      'class_name',
+      'name',
+      'title',
+    ]);
+
+    if (nestedName) {
+      return nestedName;
+    }
+  }
+
+  return null;
+};
+
+const readStudentId = (student: AnyRecord): string | null => {
+  const value =
+    student.studentId ??
+    student.student_id ??
+    student.id ??
+    student._id ??
+    student.studentCode ??
+    student.code;
+
+  if (typeof value === 'string' && value.trim()) {
+    return value.trim();
+  }
+
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return String(value);
+  }
+
+  return null;
+};
+
+const isAbsentText = (value: unknown): boolean => {
+  if (typeof value !== 'string') {
+    return false;
+  }
+
+  const normalized = value.trim().toLowerCase();
+
+  return (
+    normalized === 'absent' ||
+    normalized === 'vắng' ||
+    normalized === 'vang' ||
+    normalized === 'a' ||
+    normalized.includes('absent') ||
+    normalized.includes('vắng') ||
+    normalized.includes('vang')
+  );
+};
+
+const isStudentAbsent = (
+  student: AnyRecord,
+  draft: AttendanceDraftState | undefined
+): boolean => {
+  // Ưu tiên draft vì đây là dữ liệu vừa được giáo viên tick trên giao diện.
+  if (draft?.status) {
+    return draft.status === 'Absent';
+  }
+
+  const booleanAbsent = student.isAbsent ?? student.absent ?? student.is_absent;
+  if (typeof booleanAbsent === 'boolean') {
+    return booleanAbsent;
+  }
+
+  return isAbsentText(
+    student.status ??
+      student.attendanceStatus ??
+      student.attendance_status ??
+      student.state ??
+      student.lessonStatus
+  );
+};
+
+const readArrayCount = (source: AnyRecord, keys: string[]): number | null => {
+  const arr = getArrayFromPossibleKeys(source, keys);
+  return arr ? arr.length : null;
+};
+
+const readAbsentCount = (source: AnyRecord): number => {
+  return (
+    readNumber(source, [
+      'absentStudentCount',
+      'absentStudentsCount',
+      'absentCount',
+      'absenceCount',
+      'missingStudentCount',
+      'missingCount',
+      'numberOfAbsentStudents',
+      'totalAbsentStudents',
+    ]) ??
+    readArrayCount(source, [
+      'absentStudents',
+      'absentStudentIds',
+      'absentStudentList',
+      'absenceStudents',
+      'absenceStudentIds',
+      'studentAbsences',
+    ]) ??
+    0
+  );
+};
+
+const readTotalCount = (source: AnyRecord): number | null => {
+  return (
+    readNumber(source, [
+      'totalStudents',
+      'studentCount',
+      'totalStudentCount',
+      'total',
+      'studentTotal',
+      'numberOfStudents',
+      'quantity',
+    ]) ??
+    readArrayCount(source, [
+      'students',
+      'studentAttendances',
+      'attendanceStudents',
+      'attendanceRecords',
+      'records',
+      'items',
+    ])
+  );
+};
+
+const formatClassCount = ({ className, total, absent }: ClassCount): string => {
+  const present = Math.max(total - absent, 0);
+  return `${className}(${present}/${total})`;
+};
+
+const buildClassSummaryFromStudents = (
+  students: unknown[],
+  attendanceDraft: Record<string, AttendanceDraftState>,
+  fallbackClassName: string
+): string => {
+  const classMap = new Map<string, ClassCount>();
+
+  students.forEach((student) => {
+    if (!isRecord(student)) {
+      return;
+    }
+
+    const className = readClassName(student) ?? fallbackClassName;
+    if (!className) {
+      return;
+    }
+
+    const studentId = readStudentId(student);
+    const draft = studentId ? attendanceDraft[studentId] : undefined;
+    const current = classMap.get(className) ?? {
+      className,
+      total: 0,
+      absent: 0,
+    };
+
+    current.total += 1;
+
+    if (isStudentAbsent(student, draft)) {
+      current.absent += 1;
+    }
+
+    classMap.set(className, current);
+  });
+
+  return Array.from(classMap.values()).map(formatClassCount).join(', ');
+};
+
+const buildClassSummaryFromClassItems = (items: unknown[]): string => {
+  const summaries = items
+    .map((item) => {
+      if (!isRecord(item)) {
+        return null;
+      }
+
+      const className = readClassName(item);
+      const total = readTotalCount(item);
+
+      if (!className || total === null) {
+        return null;
+      }
+
+      const absent = readAbsentCount(item);
+      return formatClassCount({ className, total, absent });
+    })
+    .filter((summary): summary is string => Boolean(summary));
+
+  return summaries.join(', ');
+};
+
+const buildClassStudentCountSummary = (
+  attendanceData: ScheduleAttendanceResponse,
+  attendanceDraft: Record<string, AttendanceDraftState>
+): string => {
+  if (!isRecord(attendanceData)) {
+    return '';
+  }
+
+  const attendanceRecord = attendanceData as unknown as AnyRecord;
+  const fallbackClassName = readString(attendanceRecord, [
+    'className',
+    'class_name',
+    'classLabel',
+    'classTitle',
+  ]) ?? '';
+
+  const possibleStudents = getArrayFromPossibleKeys(attendanceRecord, [
+    'students',
+    'studentAttendances',
+    'attendanceStudents',
+    'attendanceRecords',
+    'records',
+    'items',
+  ]);
+
+  if (possibleStudents?.length) {
+    const summary = buildClassSummaryFromStudents(
+      possibleStudents,
+      attendanceDraft,
+      fallbackClassName
+    );
+    if (summary) {
+      return summary;
+    }
+  }
+
+  const possibleClassItems = getArrayFromPossibleKeys(attendanceRecord, [
+    'classes',
+    'classSummaries',
+    'classAttendanceSummaries',
+    'roomClasses',
+    'sharedClasses',
+    'scheduleClasses',
+  ]);
+
+  if (possibleClassItems?.length) {
+    const summary = buildClassSummaryFromClassItems(possibleClassItems);
+    if (summary) {
+      return summary;
+    }
+  }
+
+  const roomSessionContext = attendanceRecord.roomSessionContext;
+  if (isRecord(roomSessionContext)) {
+    const sharedClasses = getArrayFromPossibleKeys(roomSessionContext, [
+      'sharedClasses',
+      'classes',
+      'roomClasses',
+      'scheduleClasses',
+    ]);
+
+    if (sharedClasses?.length) {
+      const summary = buildClassSummaryFromClassItems(sharedClasses);
+      if (summary) {
+        return summary;
+      }
+    }
+  }
+
+  const total = readTotalCount(attendanceRecord);
+  if (fallbackClassName && total !== null) {
+    return formatClassCount({
+      className: fallbackClassName,
+      total,
+      absent: readAbsentCount(attendanceRecord),
+    });
+  }
+
+  return '';
+};
+
 export const ReportTabContent = ({
+  activeStep,
   reportsDraft,
   hasRoomSnapshot,
   attendanceData,
+  attendanceDraft,
   onUpdateStartLessonField,
   onUpdateProfessionalField,
   onUpdateEndLessonField,
 }: ReportTabContentProps) => {
+  const classStudentCountSummary = useMemo(
+    () => buildClassStudentCountSummary(attendanceData, attendanceDraft),
+    [attendanceData, attendanceDraft]
+  );
+
+  useEffect(() => {
+    if (!classStudentCountSummary) {
+      return;
+    }
+
+    if (
+      reportsDraft.endLesson.classStudentCountSummary !==
+      classStudentCountSummary
+    ) {
+      onUpdateEndLessonField(
+        'classStudentCountSummary',
+        classStudentCountSummary
+      );
+    }
+  }, [
+    classStudentCountSummary,
+    reportsDraft.endLesson.classStudentCountSummary,
+    onUpdateEndLessonField,
+  ]);
+
   return (
     <>
-      <TabsContent value="startLesson" className="pt-3">
+      {activeStep === 'startLesson' && (
+      <div className="pt-3">
         <div className="space-y-4 rounded-3xl border border-m3-outline-variant/60 bg-m3-surface-container p-4 sm:p-5 shadow-xs">
           <div className="flex items-center gap-2">
             <Icon name="description" className="text-base text-m3-primary" />
@@ -178,9 +564,11 @@ export const ReportTabContent = ({
             </label>
           </div>
         </div>
-      </TabsContent>
+      </div>
+      )}
 
-      <TabsContent value="professional" className="pt-3">
+      {activeStep === 'professional' && (
+      <div className="pt-3">
         <div className="space-y-4 rounded-3xl border border-m3-outline-variant/60 bg-m3-surface-container p-4 sm:p-5 shadow-xs">
           <div className="flex items-center gap-2">
             <Icon name="menu_book" className="text-base text-m3-secondary" />
@@ -294,9 +682,11 @@ export const ReportTabContent = ({
             </label>
           </div>
         </div>
-      </TabsContent>
+      </div>
+      )}
 
-      <TabsContent value="endLesson" className="pt-3">
+      {activeStep === 'endLesson' && (
+      <div className="pt-3">
         <div className="space-y-4 rounded-3xl border border-m3-outline-variant/60 bg-m3-surface-container p-4 sm:p-5 shadow-xs">
           <div className="flex items-center gap-2">
             <Icon name="assignment" className="text-base text-m3-tertiary" />
@@ -363,13 +753,11 @@ export const ReportTabContent = ({
                 Số lượng học sinh các lớp cùng phòng
               </span>
               <input
-                value={reportsDraft.endLesson.classStudentCountSummary}
-                onChange={(e) =>
-                  onUpdateEndLessonField(
-                    'classStudentCountSummary',
-                    e.target.value
-                  )
+                value={
+                  classStudentCountSummary ||
+                  reportsDraft.endLesson.classStudentCountSummary
                 }
+                readOnly
                 className="rounded-xl border border-m3-outline-variant/60 bg-m3-surface px-3 py-2 text-sm text-m3-on-surface outline-none focus:border-m3-primary"
               />
             </label>
@@ -514,7 +902,8 @@ export const ReportTabContent = ({
             </label>
           </div>
         </div>
-      </TabsContent>
+      </div>
+      )}
     </>
   );
 };
