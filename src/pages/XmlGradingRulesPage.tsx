@@ -106,7 +106,7 @@ const specialConditionOptions: Array<{
       value: 'pageMargins',
       label: 'Le trang Word',
       description:
-        'Kiem tra le tren/duoi/trai/phai cua tai lieu Word theo don vi twips.',
+        'Kiem tra le tren/duoi/trai/phai cua tai lieu Word. Co the nhap inch hoac cm.',
     },
     {
       value: 'documentStyleSet',
@@ -199,6 +199,85 @@ const parseExpectedValuesInput = (value: string) =>
 
 const formatExpectedValuesInput = (values: string[]) =>
   (values ?? []).join('\n\n');
+
+const twipsPerInch = 1440;
+const centimetersPerInch = 2.54;
+
+const parseMarginInputToTwips = (value: string) => {
+  const raw = value.trim().replace(',', '.');
+  if (!raw) return undefined;
+
+  const match = raw.match(/^(-?\d+(?:\.\d*)?|\.\d+)\s*(cm|centimeter|centimeters|in|inh|inch|inches|")?$/i);
+  if (!match) return undefined;
+
+  const amount = Number(match[1]);
+  if (!Number.isFinite(amount) || amount < 0) return undefined;
+
+  const unit = (match[2] ?? 'in').toLowerCase();
+  const inches = unit === 'cm' || unit === 'centimeter' || unit === 'centimeters'
+    ? amount / centimetersPerInch
+    : amount;
+
+  return Math.round(inches * twipsPerInch);
+};
+
+const formatTwipsAsInches = (twips?: number) => {
+  if (twips === undefined || twips === null) return '';
+  const inches = twips / twipsPerInch;
+  const value = Number.isInteger(inches) ? `${inches}` : `${Number(inches.toFixed(3))}`;
+  return `${value} in`;
+};
+
+interface MarginUnitInputProps {
+  label: string;
+  value?: number;
+  placeholder: string;
+  inputClass: string;
+  onCommit: (value?: number) => void;
+}
+
+const MarginUnitInput = ({ label, value, placeholder, inputClass, onCommit }: MarginUnitInputProps) => {
+  const [draft, setDraft] = useState(formatTwipsAsInches(value));
+
+  useEffect(() => {
+    setDraft(formatTwipsAsInches(value));
+  }, [value]);
+
+  const commit = () => {
+    if (!draft.trim()) {
+      onCommit(undefined);
+      return;
+    }
+
+    const twips = parseMarginInputToTwips(draft);
+    if (twips === undefined) {
+      notify.error('Gia tri le khong hop le. Hay nhap vi du: 1 in, 1.5 in, 2.54 cm.');
+      return;
+    }
+
+    onCommit(twips);
+    setDraft(formatTwipsAsInches(twips));
+  };
+
+  return (
+    <label className="text-xs font-semibold text-slate-600">
+      {label}
+      <input
+        type="text"
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            e.currentTarget.blur();
+          }
+        }}
+        placeholder={placeholder}
+        className={inputClass}
+      />
+    </label>
+  );
+};
 
 const prepareCondition = (condition: XmlGradingCondition): XmlGradingCondition => ({
   ...condition,
@@ -2065,30 +2144,29 @@ const XmlGradingRulesPage = () => {
                                                     ['right', 'Le phai'],
                                                     ['gutter', 'Gutter'],
                                                   ].map(([field, label]) => (
-                                                    <label key={field} className="text-xs font-semibold text-slate-600">
-                                                      {label} (twips)
-                                                      <input
-                                                        type="number"
-                                                        min={0}
-                                                        step={1}
-                                                        value={(task.specialCondition?.pageMarginsConfig as Record<string, number | undefined> | undefined)?.[field] ?? ''}
-                                                        onChange={(e) => {
-                                                          const currentConfig = task.specialCondition?.pageMarginsConfig ?? {};
-                                                          updateTaskSpecialCondition(pi, ti, {
-                                                            ...task.specialCondition!,
-                                                            type: 'pageMargins',
-                                                            pageMarginsConfig: {
-                                                              ...currentConfig,
-                                                              [field]: e.target.value ? Number(e.target.value) : undefined,
-                                                            },
-                                                          });
-                                                        }}
-                                                        placeholder={field === 'top' || field === 'bottom' ? '1440' : field === 'left' || field === 'right' ? '2160' : '0'}
-                                                        className={inputClass}
-                                                      />
-                                                    </label>
+                                                    <MarginUnitInput
+                                                      key={field}
+                                                      label={label}
+                                                      value={(task.specialCondition?.pageMarginsConfig as Record<string, number | undefined> | undefined)?.[field]}
+                                                      placeholder={field === 'top' || field === 'bottom' ? '1 in hoặc 2.54 cm' : field === 'left' || field === 'right' ? '1.5 in hoặc 3.81 cm' : '0'}
+                                                      inputClass={inputClass}
+                                                      onCommit={(twips) => {
+                                                        const currentConfig = task.specialCondition?.pageMarginsConfig ?? {};
+                                                        updateTaskSpecialCondition(pi, ti, {
+                                                          ...task.specialCondition!,
+                                                          type: 'pageMargins',
+                                                          pageMarginsConfig: {
+                                                            ...currentConfig,
+                                                            [field]: twips,
+                                                          },
+                                                        });
+                                                      }}
+                                                    />
                                                   ))}
                                                 </div>
+                                                <p className="mt-2 text-xs text-slate-500">
+                                                  Nhap so mac dinh la inch. Vi du: 1, 1 in, 1.5 in, 2.54 cm, 3.81 cm.
+                                                </p>
                                                 <label className="mt-3 flex items-center gap-2 text-xs font-medium text-slate-600">
                                                   <input
                                                     type="checkbox"
