@@ -1250,6 +1250,7 @@ const XmlGradingRulesPage = () => {
                                                                 targetOccurrence: 1,
                                                                 requireDefaultPaste: true,
                                                                 requireRemovedFromBody: true,
+                                                                forbiddenTextColors: ['FFFFFF', 'background1', 'bg1', 'lt1'],
                                                               },
                                                             });
                                                           }
@@ -1980,6 +1981,26 @@ const XmlGradingRulesPage = () => {
                                                     Khong con ngoai textbox
                                                   </label>
                                                 </div>
+                                                <label className="mt-3 block text-xs font-semibold text-slate-600">
+                                                  Mau chu cam khi bat paste mac dinh
+                                                  <textarea
+                                                    value={(task.specialCondition.textBoxContainsTextConfig?.forbiddenTextColors ?? ['FFFFFF', 'background1', 'bg1', 'lt1']).join('\n')}
+                                                    onChange={(e) => {
+                                                      const currentConfig = task.specialCondition?.textBoxContainsTextConfig ?? {};
+                                                      updateTaskSpecialCondition(pi, ti, {
+                                                        ...task.specialCondition!,
+                                                        type: 'textBoxContainsText',
+                                                        textBoxContainsTextConfig: {
+                                                          ...currentConfig,
+                                                          forbiddenTextColors: e.target.value.split(/\r?\n/).map((line) => line.trim()).filter(Boolean),
+                                                        },
+                                                      });
+                                                    }}
+                                                    rows={4}
+                                                    placeholder={'FFFFFF\nbackground1\nbg1\nlt1'}
+                                                    className={inputClass}
+                                                  />
+                                                </label>
                                               </div>
                                             )}
                                             {task.specialCondition?.type === 'pageMargins' && (

@@ -106,6 +106,7 @@ export interface TextBoxContainsTextConfig {
   targetOccurrence?: number;
   requireDefaultPaste?: boolean;
   requireRemovedFromBody?: boolean;
+  forbiddenTextColors?: string[];
 }
 
 export interface PageMarginsConfig {
