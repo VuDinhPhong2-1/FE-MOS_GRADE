@@ -19,9 +19,11 @@ import type {
   PictureStyleConfig
 } from '../types/xml-grading-rules.types';
 import { notify } from '../utils/notify';
-import PictureBulletEditor from '../components/PictureBulletEditor';
-import InsertedImageEditor from '../components/InsertedImageEditor';
-import PictureStyleEditor from '../components/PictureStyleEditor';
+import {
+  InsertedImageEditor,
+  PictureBulletEditor,
+  PictureStyleEditor,
+} from '../features/xml-grading-rules';
 import { hasPermission } from '../utils/permissions';
 
 const compareModes: XmlCompareMode[] = ['xmlContainsNormalized', 'xmlContains', 'xmlMinOccurrences', 'xmlEquivalentWholeFile', 'exactStringContains'];

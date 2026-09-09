@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Icon } from '@bug-on/m3-expressive';
-import { notifyEventName, type NotifyPayload } from '../utils/notify';
+import { notifyEventName, type NotifyPayload } from '../../utils/notify';
 
 const ErrorModal: React.FC = () => {
   const [open, setOpen] = useState(false);

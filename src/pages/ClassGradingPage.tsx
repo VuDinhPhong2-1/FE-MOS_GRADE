@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Icon, ProgressIndicator } from '@bug-on/m3-expressive';
-import GradingModal from '../components/GradingModal';
+import { GradingModal } from '../features/grading';
 import { useAuth } from '../context/AuthContext';
 import { usePageHeader } from '../context/PageActionsContext';
 import studentService from '../services/student.service';

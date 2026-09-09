@@ -1,18 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { FC } from 'react';
 import { Icon } from '@bug-on/m3-expressive';
-import type { Assignment } from '../types/assignment.types';
-import type { Student } from '../types/student.types';
-import { exportToExcel, exportToPdf } from '../utils/exportUtils';
-import type { ExcelCellComment } from '../utils/exportUtils';
-import { useAuth } from '../context/AuthContext';
-import studentService from '../services/student.service';
-import { notify, type NotifyIssue } from '../utils/notify';
+import type { Assignment } from '../../types/assignment.types';
+import type { Student } from '../../types/student.types';
+import { exportToExcel, exportToPdf } from '../../utils/exportUtils';
+import type { ExcelCellComment } from '../../utils/exportUtils';
+import { useAuth } from '../../context/AuthContext';
+import studentService from '../../services/student.service';
+import { notify, type NotifyIssue } from '../../utils/notify';
 import {
   getNotifyIssuesFromTaskResults,
   normalizeIssueText,
-} from '../utils/gradingIssues';
-import type { AutoGradingTaskResultRequest } from '../types/score.types';
+} from '../../utils/gradingIssues';
+import type { AutoGradingTaskResultRequest } from '../../types/score.types';
 
 type CompetencyLevel = '' | 'A' | 'B' | 'C' | 'D';
 type AssignmentColumnDisplayMode = 'full' | 'hidden';
