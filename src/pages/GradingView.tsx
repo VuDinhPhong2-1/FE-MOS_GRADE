@@ -3,7 +3,7 @@ import { Icon, ProgressIndicator } from '@bug-on/m3-expressive';
 import { gradingService } from '../services/grading.service';
 import type { GradingResult } from '../types';
 import type { BugSeverity, CreateGradingTestBugNoteRequest, GradingTestBugNote } from '../types/grading-test-bug-note.types';
-import ResultCard from '../components/ResultCard';
+import { ResultCard } from '../features/grading';
 import { useAuth } from '../context/AuthContext';
 
 interface TestProjectOption {

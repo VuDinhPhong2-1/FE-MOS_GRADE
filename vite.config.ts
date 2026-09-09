@@ -1,6 +1,10 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import dns from 'node:dns'
+import https from 'node:https'
+
+dns.setDefaultResultOrder('ipv4first')
 
 export default defineConfig({
   plugins: [
@@ -48,6 +52,21 @@ export default defineConfig({
         target: 'https://api.mos-grader-app.info.vn',
         changeOrigin: true,
         secure: false,
+        timeout: 60000,
+        proxyTimeout: 60000,
+        agent: new https.Agent({
+          keepAlive: false,
+          family: 4,
+        }),
+        configure: (proxy) => {
+          proxy.on('error', (err, _req, res) => {
+            console.warn('[vite proxy warning]:', err.message);
+            if (res && 'writeHead' in res && !res.headersSent) {
+              res.writeHead(502, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ message: 'Proxy connection reset', error: err.message }));
+            }
+          });
+        },
       },
     },
   },

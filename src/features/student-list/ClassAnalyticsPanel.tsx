@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Icon, ProgressIndicator } from '@bug-on/m3-expressive';
-import { useAuth } from '../context/AuthContext';
-import { analyticsService } from '../services/analytics.service';
-import type { Assignment } from '../types/assignment.types';
-import type { ClassAnalyticsOverviewResponse, WeakTaskResponse } from '../types/analytics.types';
-import { mapOverviewToGaugeData, mapWeakTasksToBarChart } from '../utils/analyticsMappers';
+import { useAuth } from '../../context/AuthContext';
+import { analyticsService } from '../../services/analytics.service';
+import type { Assignment } from '../../types/assignment.types';
+import type { ClassAnalyticsOverviewResponse, WeakTaskResponse } from '../../types/analytics.types';
+import { mapOverviewToGaugeData, mapWeakTasksToBarChart } from '../../utils/analyticsMappers';
 
 interface ClassAnalyticsPanelProps {
   classId: string;
@@ -14,7 +14,7 @@ interface ClassAnalyticsPanelProps {
 const pct = (v: number) => `${Number.isFinite(v) ? v.toFixed(2) : '0.00'}%`;
 const barWidth = (v: number) => `${Math.max(0, Math.min(100, v))}%`;
 
-const ClassAnalyticsPanel = ({ classId, assignments }: ClassAnalyticsPanelProps) => {
+export const ClassAnalyticsPanel = ({ classId, assignments }: ClassAnalyticsPanelProps) => {
   const { getAccessToken } = useAuth();
 
   const [overview, setOverview] = useState<ClassAnalyticsOverviewResponse | null>(null);

@@ -2,15 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import { Icon, ProgressIndicator } from '@bug-on/m3-expressive';
 
 import type {
-  PictureBulletConfig
-} from '../types/xml-grading-rules.types';
-import { pictureBulletAssetsService } from '../services/pictureBulletAssets.service';
+  ImageInsertConfig,
+  ImageWrapType
+} from '../../types/xml-grading-rules.types';
+import { insertedImageAssetsService } from '../../services/insertedImageAssets.service';
 
-interface PictureBulletEditorProps {
-  config?: PictureBulletConfig;
-  onChange: (config: PictureBulletConfig) => void;
-  // Lấy từ useAuth().getAccessToken ở component cha (XmlGradingRulesPage),
-  // truyền xuống để gọi API upload/preview có xác thực.
+interface InsertedImageEditorProps {
+  config?: ImageInsertConfig;
+  onChange: (config: ImageInsertConfig) => void;
   getAccessToken: () => Promise<string | null> | string | null;
 }
 
@@ -24,11 +23,21 @@ const ACCEPTED_IMAGE_TYPES = [
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
-const PictureBulletEditor = ({
+const wrapOptions: Array<{ value: ImageWrapType; label: string }> = [
+  { value: 'inline', label: 'In Line with Text' },
+  { value: 'square', label: 'Square' },
+  { value: 'tight', label: 'Tight' },
+  { value: 'through', label: 'Through' },
+  { value: 'topAndBottom', label: 'Top and Bottom' },
+  { value: 'behind', label: 'Behind Text' },
+  { value: 'inFront', label: 'In Front of Text' },
+];
+
+const InsertedImageEditor = ({
   config,
   onChange,
   getAccessToken,
-}: PictureBulletEditorProps) => {
+}: InsertedImageEditorProps) => {
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -60,7 +69,7 @@ const PictureBulletEditor = ({
     let cancelled = false;
     loadedAssetIdRef.current = assetId;
 
-    pictureBulletAssetsService
+    insertedImageAssetsService
       .fetchPreviewUrl(assetId, getAccessToken)
       .then((url) => {
         if (cancelled) {
@@ -126,13 +135,13 @@ const PictureBulletEditor = ({
     setUploading(true);
 
     try {
-      const result = await pictureBulletAssetsService.upload(file, getAccessToken);
+      const result = await insertedImageAssetsService.upload(file, getAccessToken);
 
       loadedAssetIdRef.current = result.assetId;
 
       onChange({
         ...config,
-        level: config?.level ?? 0,
+        wrapType: config?.wrapType ?? 'tight',
         assetId: result.assetId,
         imageHash: result.imageHash,
       });
@@ -148,7 +157,7 @@ const PictureBulletEditor = ({
       // người dùng biết ảnh nào vừa chọn và có thể thử lại.
       onChange({
         ...config,
-        level: config?.level ?? 0,
+        wrapType: config?.wrapType ?? 'tight',
         assetId: undefined,
         imageHash: undefined,
       });
@@ -175,18 +184,18 @@ const PictureBulletEditor = ({
     }
 
     onChange({
-      level: config?.level ?? 0,
+      wrapType: config?.wrapType ?? 'tight',
       assetId: undefined,
       imageHash: undefined,
     });
   };
 
-  const handleLevelChange = (
+  const handleWrapTypeChange = (
     event: React.ChangeEvent<HTMLSelectElement>
   ) => {
     onChange({
       ...config,
-      level: Number(event.target.value),
+      wrapType: (event.target.value || undefined) as ImageWrapType | undefined,
     });
   };
 
@@ -202,22 +211,22 @@ const PictureBulletEditor = ({
 
         <div className="min-w-0">
           <p className="text-sm font-bold text-slate-800">
-            Cấu hình Picture Bullet
+            Cấu hình Chèn hình ảnh
           </p>
 
           <p className="mt-1 text-xs leading-5 text-slate-500">
-            Chọn hình ảnh chuẩn được sử dụng làm dấu đầu dòng
+            Chọn hình ảnh chuẩn (VD: Apps.jpg) và chế độ ngắt dòng cần kiểm tra
             trong bài Word của học viên.
           </p>
         </div>
       </div>
 
       {/* Configuration */}
-      <div className="mt-4 grid gap-4 md:grid-cols-[minmax(0,1fr)_160px]">
+      <div className="mt-4 grid gap-4 md:grid-cols-[minmax(0,1fr)_200px]">
         {/* Image upload */}
         <div>
           <p className="text-xs font-semibold text-slate-600">
-            Hình ảnh Bullet chuẩn
+            Hình ảnh chuẩn
           </p>
 
           <div className="mt-2">
@@ -285,43 +294,42 @@ const PictureBulletEditor = ({
           )}
         </div>
 
-        {/* Level */}
+        {/* Wrap type */}
         <div>
           <label className="text-xs font-semibold text-slate-600">
-            Level
+            Chế độ ngắt dòng (Wrap)
 
             <select
-              value={config?.level ?? 0}
-              onChange={handleLevelChange}
+              value={config?.wrapType ?? ''}
+              onChange={handleWrapTypeChange}
               className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition hover:border-slate-300 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
             >
-              {Array.from({ length: 9 }, (_, index) => index).map((level) => (
-                <option key={level} value={level}>
-                  Level {level}
+              <option value="">Không kiểm tra (chỉ cần đúng ảnh)</option>
+              {wrapOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
                 </option>
               ))}
             </select>
           </label>
 
           <p className="mt-1.5 text-[11px] leading-4 text-slate-400">
-            Cấp numbering cần kiểm tra trong Word.
+            VD Task 5: Apps.jpg + Tight → chọn "Tight" ở trên.
           </p>
         </div>
       </div>
 
-      {/* Preview — thu nhỏ lại: giảm min-h, padding và kích thước ảnh
-          so với bản trước (min-h-28 / max-h-20 max-w-20) để đỡ chiếm
-          diện tích khi có nhiều Task/Condition trên cùng màn hình. */}
+      {/* Preview */}
       <div className="mt-4">
         <p className="mb-2 text-xs font-semibold text-slate-600">
           Xem trước
         </p>
 
         {previewUrl ? (
-          <div className="relative flex h-64 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white p-2.5">
+          <div className="relative flex h-64 w-full items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white p-2.5">
             <img
               src={previewUrl}
-              alt="Picture bullet preview"
+              alt="Inserted image preview"
               className="h-full w-full object-contain"
             />
 
@@ -353,8 +361,8 @@ const PictureBulletEditor = ({
           </div>
         )}
       </div>
-    </div >
+    </div>
   );
 };
 
-export default PictureBulletEditor;
+export default InsertedImageEditor;

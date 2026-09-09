@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import { jwtDecode } from 'jwt-decode';
 import type { AuthContextType, User } from '../types/auth.types';
 import { AUTH_API_BASE_URL } from '../config/api';
-import RouteLoadingFallback from '../components/RouteLoadingFallback';
+import { RouteLoadingFallback } from '../components/common';
 
 interface JwtPayload {
   exp?: number;

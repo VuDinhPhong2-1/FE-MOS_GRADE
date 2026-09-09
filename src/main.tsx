@@ -4,8 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { MD3ThemeProvider } from '@bug-on/m3-expressive';
 import App from './App';
-import ToastCenter from './components/ToastCenter';
-import ErrorModal from './components/ErrorModal';
+import { ToastCenter, ErrorModal } from './components/common';
 import { installAlertInterceptor } from './utils/notify';
 import './index.css';
 

@@ -13,6 +13,8 @@ import {
   DialogTitle,
   Icon,
   IconButton,
+  List,
+  ListItem,
   ProgressIndicator,
   TextField,
 } from '@bug-on/m3-expressive';
@@ -116,7 +118,7 @@ export const HandoverModal: React.FC<HandoverModalProps> = ({
 
                 {isLoadingTeachers ? (
                   <div className="flex h-44 flex-col items-center justify-center gap-2 text-m3-on-surface-variant">
-                    <ProgressIndicator variant="circular" shape="wavy" size={36} aria-label="Đang tải danh sách giáo viên..." />
+                    <ProgressIndicator variant="circular" shape="wavy" size={40} aria-label="Đang tải danh sách giáo viên..." />
                     <span className="text-xs">Đang tải danh sách giáo viên...</span>
                   </div>
                 ) : filteredTeachers.length === 0 ? (
@@ -124,50 +126,52 @@ export const HandoverModal: React.FC<HandoverModalProps> = ({
                     Không tìm thấy giáo viên nào phù hợp.
                   </div>
                 ) : (
-                  <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
-                    {filteredTeachers.map((teacher) => {
-                      const isOwner = teacher.userId === handoverClass.ownerId;
-                      const granted = Boolean(handoverClass.managerTeacherIds?.includes(teacher.userId));
-                      const isBusy = handoverBusyTeacherId === teacher.userId;
+                  <div className="max-h-72 mt-2 overflow-y-auto pr-1">
+                    <List variant="expressive" listStyle="segmented" className="w-full">
+                      {filteredTeachers.map((teacher) => {
+                        const isOwner = teacher.userId === handoverClass.ownerId;
+                        const granted = Boolean(handoverClass.managerTeacherIds?.includes(teacher.userId));
+                        const isBusy = handoverBusyTeacherId === teacher.userId;
 
-                      return (
-                        <div
-                          key={teacher.userId}
-                          className="flex items-center justify-between rounded-2xl border border-m3-outline-variant/40 bg-m3-surface-container p-3 transition-colors hover:bg-m3-surface-container-highest/60"
-                        >
-                          <div className="min-w-0 pr-3">
-                            <p className="truncate text-sm font-semibold text-m3-on-surface">
-                              {teacher.fullName?.trim() || teacher.username}
-                            </p>
-                            <p className="truncate text-xs text-m3-on-surface-variant">
-                              {teacher.email || teacher.username}
-                            </p>
-                          </div>
-
-                          {isOwner ? (
-                            <Chip
-                              variant="assist"
-                              label="Giáo viên chính"
-                              className="pointer-events-none h-6 border-none bg-emerald-500/10 px-2.5 text-xs font-bold text-emerald-700 dark:text-emerald-300"
-                            />
-                          ) : (
-                            <Button
-                              type="button"
-                              colorStyle={granted ? 'outlined' : 'tonal'}
-                              size="sm"
-                              disabled={isBusy}
-                              loading={isBusy}
-                              onClick={() => onToggleHandover(teacher.userId, granted)}
-                              className={`rounded-full text-xs font-semibold ${
-                                granted ? 'border-m3-error text-m3-error hover:bg-m3-error-container/30' : ''
-                              }`}
-                            >
-                              {granted ? 'Thu hồi quyền' : 'Cấp quyền'}
-                            </Button>
-                          )}
-                        </div>
-                      );
-                    })}
+                        return (
+                          <ListItem
+                            key={teacher.userId}
+                            value={teacher.userId}
+                            headline={teacher.fullName?.trim() || teacher.username}
+                            supportingText={teacher.email || teacher.username}
+                            leadingType="avatar"
+                            leadingContent={
+                              <div className="flex h-full w-full items-center justify-center text-xs font-bold text-m3-primary">
+                                {(teacher.fullName?.trim() || teacher.username || 'U').charAt(0).toUpperCase()}
+                              </div>
+                            }
+                            trailingType="custom"
+                            trailingContent={
+                              isOwner ? (
+                                <Chip
+                                  variant="assist"
+                                  label="Giáo viên chính"
+                                  className="pointer-events-none h-6 border-none bg-emerald-500/10 px-2.5 text-xs font-bold text-emerald-700 dark:text-emerald-300"
+                                />
+                              ) : (
+                                <Button
+                                  type="button"
+                                  colorStyle={granted ? 'outlined' : 'tonal'}
+                                  size="sm"
+                                  disabled={isBusy}
+                                  loading={isBusy}
+                                  onClick={() => onToggleHandover(teacher.userId, granted)}
+                                  className={`rounded-full text-xs font-semibold ${granted ? 'border-m3-error text-m3-error hover:bg-m3-error-container/30' : ''
+                                    }`}
+                                >
+                                  {granted ? 'Thu hồi quyền' : 'Cấp quyền'}
+                                </Button>
+                              )
+                            }
+                          />
+                        );
+                      })}
+                    </List>
                   </div>
                 )}
               </DialogBody>

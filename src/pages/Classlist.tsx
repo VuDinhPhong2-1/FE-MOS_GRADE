@@ -23,7 +23,7 @@ import {
   DeleteClassDialog,
   HandoverModal,
   useClassList,
-} from '../features/classlist';
+} from '../features/class-list';
 
 interface ClassListProps {
   selectedSchool: School;

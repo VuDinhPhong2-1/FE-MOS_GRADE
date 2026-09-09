@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Icon, ProgressIndicator } from "@bug-on/m3-expressive";
-import { localAgentService } from "../services/local-agent.service";
-import type { LocalAgentState } from "../types/local-agent.types";
+import { localAgentService } from "../../services/local-agent.service";
+import type { LocalAgentState } from "../../types/local-agent.types";
 
 type LocalAgentPanelProps = {
   publicationToken: string;

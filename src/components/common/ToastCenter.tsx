@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useSnackbar } from '@bug-on/m3-expressive';
-import { notifyEventName, type NotifyPayload, type NotifyType } from '../utils/notify';
+import { notifyEventName, type NotifyPayload, type NotifyType } from '../../utils/notify';
 
 /**
  * Headless event bridge kết nối custom event `mos-grader:notify` (từ notify utility)

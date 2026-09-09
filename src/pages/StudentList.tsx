@@ -3,7 +3,6 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx-js-style';
 import { Icon, useSnackbar } from '@bug-on/m3-expressive';
 import { useAuth } from '../context/AuthContext';
-import ClassAnalyticsPanel from '../components/ClassAnalyticsPanel';
 import type { Student } from '../types/student.types';
 import {
   type StudentListProps,
@@ -21,7 +20,8 @@ import {
   EditStudentModal,
   PasteStudentModal,
   DeleteStudentDialog,
-} from '../components/StudentList';
+  ClassAnalyticsPanel,
+} from '../features/student-list';
 
 const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
   const { getAccessToken } = useAuth();

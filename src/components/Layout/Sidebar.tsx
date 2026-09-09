@@ -7,7 +7,7 @@ import {
   ShapeMedia,
   Text,
 } from '@bug-on/m3-expressive';
-import ThemeToggle from '../ThemeToggle';
+import { ThemeToggle } from '../common';
 
 export interface SidebarNavItem {
   id: string;

@@ -9,3 +9,4 @@ export * from './AddStudentModal';
 export * from './EditStudentModal';
 export * from './PasteStudentModal';
 export * from './DeleteStudentDialog';
+export * from './ClassAnalyticsPanel';

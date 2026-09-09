@@ -1,8 +1,8 @@
 import React, { Suspense, lazy, useMemo } from 'react';
 import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
-import Layout from './components/Layout/Layout';
+import { Layout } from './components/Layout';
 import type { SidebarNavItem } from './components/Layout/Sidebar';
-import RouteLoadingFallback from './components/RouteLoadingFallback';
+import { RouteLoadingFallback } from './components/common';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { PageActionsProvider } from './context/PageActionsContext';
 import { hasPermission } from './utils/permissions';
