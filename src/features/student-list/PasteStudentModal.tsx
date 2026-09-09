@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useMemo, useRef } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 import {
   Button,
   Dialog,
@@ -13,6 +14,7 @@ import {
   Icon,
   IconButton,
   TextField,
+  type TextFieldHandle,
 } from '@bug-on/m3-expressive';
 import type { Student } from '../../types/student.types';
 import {
@@ -35,6 +37,41 @@ export const PasteStudentModal = ({
 }: PasteStudentModalProps) => {
   const [pasteInput, setPasteInput] = useState('');
   const [error, setError] = useState('');
+  const textFieldRef = useRef<TextFieldHandle>(null);
+
+  const parsedRows = useMemo(() => parsePastedRows(pasteInput), [pasteInput]);
+  const parsedStudents = useMemo(() => mapRowsToTempStudents(parsedRows), [parsedRows]);
+
+  const handlePasteCapture = () => {
+    // Đưa con trỏ và cuộn ngay về đầu văn bản sau khi hoàn tất dán dữ liệu
+    requestAnimationFrame(() => {
+      const el = textFieldRef.current?.getInputElement();
+      if (el) {
+        el.setSelectionRange(0, 0);
+        el.scrollTop = 0;
+        const viewport = el.closest('[data-radix-scroll-area-viewport]');
+        if (viewport) {
+          viewport.scrollTop = 0;
+        }
+      }
+    });
+  };
+
+  const handlePasteFromClipboard = async () => {
+    if (readOnly) return;
+    try {
+      const text = await navigator.clipboard.readText();
+      if (!text || !text.trim()) {
+        setError('Bộ nhớ tạm không có nội dung văn bản.');
+        return;
+      }
+      setPasteInput(text);
+      setError('');
+      handlePasteCapture();
+    } catch {
+      setError('Không thể truy cập bộ nhớ tạm. Bạn vui lòng dán thủ công bằng phím tắt Ctrl + V.');
+    }
+  };
 
   const handleClose = () => {
     setPasteInput('');
@@ -50,15 +87,12 @@ export const PasteStudentModal = ({
       return;
     }
 
-    const rows = parsePastedRows(pasteInput);
-    const list = mapRowsToTempStudents(rows);
-
-    if (list.length === 0) {
+    if (parsedStudents.length === 0) {
       setError('Dữ liệu cần có tối thiểu 2 cột: Họ và tên đệm, Tên.');
       return;
     }
 
-    onImportStudents(list);
+    onImportStudents(parsedStudents);
     handleClose();
   };
 
@@ -103,19 +137,84 @@ export const PasteStudentModal = ({
               <strong className="text-m3-on-surface">Tên</strong>, rồi dán vào ô bên dưới.
             </p>
 
-            <TextField
-              type="textarea"
-              rows={12}
-              variant="outlined"
-              placeholder={'Ví dụ:\nNinh Hoàng\tAnh\nNguyễn Phan\tAnh'}
-              value={pasteInput}
-              onChange={(val) => {
-                if (error) setError('');
-                setPasteInput(val);
-              }}
-              fullWidth
-              className='pt-2'
-            />
+            <div onPaste={handlePasteCapture} className="w-full">
+              <TextField
+                ref={textFieldRef}
+                type="textarea"
+                rows={12}
+                variant="outlined"
+                scrollAreaType="none"
+                placeholder={'Ví dụ:\nNinh Hoàng\tAnh\nNguyễn Phan\tAnh'}
+                value={pasteInput}
+                onChange={(val) => {
+                  if (error) setError('');
+                  setPasteInput(val);
+                }}
+                fullWidth
+                className="pt-2 [&_textarea]:overflow-y-auto!"
+              />
+            </div>
+
+            {/* Nút Dán từ bộ nhớ tạm khi chưa có dữ liệu và Khối nhận diện khi đã có dữ liệu */}
+            <AnimatePresence mode="wait" initial={false}>
+              {!pasteInput.trim() ? (
+                <motion.div
+                  key="clipboard-action"
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={{ duration: 0.2, ease: 'easeOut' }}
+                  className="flex items-center justify-start"
+                >
+                  <Button
+                    type="button"
+                    colorStyle="tonal"
+                    icon={<Icon name="content_paste" />}
+                    onClick={handlePasteFromClipboard}
+                    disabled={readOnly}
+                    className="cursor-pointer"
+                  >
+                    Dán từ bộ nhớ tạm
+                  </Button>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="recognition-info"
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 6 }}
+                  transition={{ duration: 0.2, ease: 'easeOut' }}
+                  className="flex items-center justify-between rounded-2xl bg-m3-surface-container px-3.5 py-2.5 text-xs"
+                >
+                  <div className="flex items-center gap-2 text-m3-on-surface">
+                    <Icon name="check_circle" size={18} className="text-m3-primary" />
+                    <span>
+                      Đã nhận diện:{' '}
+                      <strong className="font-semibold text-m3-primary">
+                        {parsedStudents.length}
+                      </strong>{' '}
+                      học sinh
+                      {parsedRows.length > parsedStudents.length && (
+                        <span className="text-m3-on-surface-variant">
+                          {' '}
+                          ({parsedRows.length} dòng dữ liệu)
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPasteInput('');
+                      setError('');
+                    }}
+                    className="font-medium text-m3-error hover:underline cursor-pointer"
+                  >
+                    Xóa tất cả
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {error && (
               <div className="flex items-center gap-2 rounded-2xl bg-m3-error-container p-3 text-xs font-medium text-m3-on-error-container">
@@ -137,9 +236,11 @@ export const PasteStudentModal = ({
               type="button"
               colorStyle="filled"
               onClick={handleImport}
-              icon={<Icon name="content_paste" size={18} />}
+              icon={<Icon name="add" />}
+              disabled={readOnly || !pasteInput.trim() || parsedStudents.length === 0}
+              className="transition-all duration-200"
             >
-              Dán và thêm vào danh sách
+              Thêm vào danh sách
             </Button>
           </DialogFooter>
         </DialogContent>

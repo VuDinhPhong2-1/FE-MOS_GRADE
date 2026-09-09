@@ -8,18 +8,16 @@ import {
   IconButton,
   Select,
   TextField,
-  TimePicker,
-  TimePickerDialog,
   useDatePickerState,
-  useTimePickerState,
   type SelectOption,
 } from '@bug-on/m3-expressive';
+import { TimePickerDialogModal } from '../../components/common';
 import type { Class } from '../../types/class.types';
 import type { ComputerRoom } from '../../types/computer-room.types';
 import type { ScheduleItem } from '../../types/schedule.types';
 import type { School } from '../../types/school.types';
 import type { ScheduleFormState } from './types';
-import { formatDateViFromYmd, parseTimeToMinutes, toYmd } from './utils';
+import { formatDateViFromYmd, toYmd } from './utils';
 
 interface ScheduleFormModalProps {
   open: boolean;
@@ -77,45 +75,9 @@ export const ScheduleFormModal = ({
     setDatePickerOpen(false);
   }, [datePickerState.selectedDateMs, onFormChange]);
 
-  // State for Start Time Picker dialog
+  // State for Start & End Time Picker dialogs
   const [startTimePickerOpen, setStartTimePickerOpen] = useState(false);
-  const initialStartMinutes = useMemo(() => {
-    return parseTimeToMinutes(form.startTime) ?? 7 * 60;
-  }, [form.startTime]);
-
-  const startTimePickerState = useTimePickerState({
-    initialHour: Math.floor(initialStartMinutes / 60),
-    initialMinute: initialStartMinutes % 60,
-    is24hour: true,
-  });
-
-  const handleConfirmStartTime = useCallback(() => {
-    const formatted = `${String(startTimePickerState.hour).padStart(2, '0')}:${String(
-      startTimePickerState.minute
-    ).padStart(2, '0')}`;
-    onFormChange('startTime', formatted);
-    setStartTimePickerOpen(false);
-  }, [startTimePickerState.hour, startTimePickerState.minute, onFormChange]);
-
-  // State for End Time Picker dialog
   const [endTimePickerOpen, setEndTimePickerOpen] = useState(false);
-  const initialEndMinutes = useMemo(() => {
-    return parseTimeToMinutes(form.endTime) ?? 8 * 60 + 30;
-  }, [form.endTime]);
-
-  const endTimePickerState = useTimePickerState({
-    initialHour: Math.floor(initialEndMinutes / 60),
-    initialMinute: initialEndMinutes % 60,
-    is24hour: true,
-  });
-
-  const handleConfirmEndTime = useCallback(() => {
-    const formatted = `${String(endTimePickerState.hour).padStart(2, '0')}:${String(
-      endTimePickerState.minute
-    ).padStart(2, '0')}`;
-    onFormChange('endTime', formatted);
-    setEndTimePickerOpen(false);
-  }, [endTimePickerState.hour, endTimePickerState.minute, onFormChange]);
 
   // Select Options memoization
   const schoolOptions = useMemo<SelectOption[]>(() => {
@@ -197,6 +159,7 @@ export const ScheduleFormModal = ({
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 <Select
+                  variant="outlined"
                   label="Trường học *"
                   options={schoolOptions}
                   value={form.schoolId}
@@ -204,10 +167,10 @@ export const ScheduleFormModal = ({
                   searchable
                   placeholder="-- Chọn trường --"
                   required
-                  variant='filled'
                 />
 
                 <Select
+                  variant="outlined"
                   label="Lớp có sẵn"
                   options={classOptions}
                   value={form.classId}
@@ -229,6 +192,7 @@ export const ScheduleFormModal = ({
 
                 <div className="sm:col-span-2">
                   <TextField
+                    variant="outlined"
                     label="Tên lớp hiển thị *"
                     value={form.className}
                     onChange={(val) => onFormChange('className', val)}
@@ -253,6 +217,7 @@ export const ScheduleFormModal = ({
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 <TextField
+                  variant="outlined"
                   label="Môn học *"
                   value={form.subject}
                   onChange={(val) => onFormChange('subject', val)}
@@ -262,6 +227,7 @@ export const ScheduleFormModal = ({
                 />
 
                 <TextField
+                  variant="outlined"
                   label="Tiết mấy"
                   value={form.periodLabel}
                   onChange={(val) => onFormChange('periodLabel', val)}
@@ -270,6 +236,7 @@ export const ScheduleFormModal = ({
                 />
 
                 <Select
+                  variant="outlined"
                   label="Phòng máy cấu hình sẵn"
                   options={roomOptions}
                   value={form.roomId}
@@ -281,10 +248,10 @@ export const ScheduleFormModal = ({
                   loading={computerRoomsLoading}
                   placeholder="-- Chọn phòng máy --"
                   disabled={!form.schoolId || computerRoomsLoading}
-                  variant='filled'
                 />
 
                 <TextField
+                  variant="outlined"
                   label="Phòng học / phòng máy"
                   value={form.roomName}
                   onChange={(val) => {
@@ -324,6 +291,7 @@ export const ScheduleFormModal = ({
                   onClick={() => setDatePickerOpen(true)}
                 >
                   <TextField
+                    variant="outlined"
                     label="Ngày dạy *"
                     value={
                       form.date
@@ -358,6 +326,7 @@ export const ScheduleFormModal = ({
                   onClick={() => setStartTimePickerOpen(true)}
                 >
                   <TextField
+                    variant="outlined"
                     label="Giờ bắt đầu *"
                     value={form.startTime}
                     readOnly
@@ -388,6 +357,7 @@ export const ScheduleFormModal = ({
                   onClick={() => setEndTimePickerOpen(true)}
                 >
                   <TextField
+                    variant="outlined"
                     label="Giờ kết thúc *"
                     value={form.endTime}
                     readOnly
@@ -421,6 +391,7 @@ export const ScheduleFormModal = ({
                 <h4 className="text-sm font-bold text-m3-on-surface">Ghi chú</h4>
               </div>
               <TextField
+                variant="outlined"
                 label="Ghi chú thêm"
                 type="textarea"
                 rows={3}
@@ -509,62 +480,22 @@ export const ScheduleFormModal = ({
         </DatePickerDialog>
 
         {/* Modal Start Time Picker Dialog */}
-        <TimePickerDialog
+        <TimePickerDialogModal
           open={startTimePickerOpen}
           onDismiss={() => setStartTimePickerOpen(false)}
-          title="Chọn giờ bắt đầu"
-          confirmButton={
-            <Button
-              type="button"
-              colorStyle="filled"
-              size="sm"
-              onClick={handleConfirmStartTime}
-            >
-              Xác nhận
-            </Button>
-          }
-          dismissButton={
-            <Button
-              type="button"
-              colorStyle="text"
-              size="sm"
-              onClick={() => setStartTimePickerOpen(false)}
-            >
-              Hủy
-            </Button>
-          }
-        >
-          <TimePicker state={startTimePickerState} />
-        </TimePickerDialog>
+          label="giờ bắt đầu"
+          value={form.startTime}
+          onConfirm={(val) => onFormChange('startTime', val)}
+        />
 
         {/* Modal End Time Picker Dialog */}
-        <TimePickerDialog
+        <TimePickerDialogModal
           open={endTimePickerOpen}
           onDismiss={() => setEndTimePickerOpen(false)}
-          title="Chọn giờ kết thúc"
-          confirmButton={
-            <Button
-              type="button"
-              colorStyle="filled"
-              size="sm"
-              onClick={handleConfirmEndTime}
-            >
-              Xác nhận
-            </Button>
-          }
-          dismissButton={
-            <Button
-              type="button"
-              colorStyle="text"
-              size="sm"
-              onClick={() => setEndTimePickerOpen(false)}
-            >
-              Hủy
-            </Button>
-          }
-        >
-          <TimePicker state={endTimePickerState} />
-        </TimePickerDialog>
+          label="giờ kết thúc"
+          value={form.endTime}
+          onConfirm={(val) => onFormChange('endTime', val)}
+        />
       </div>
     </div>
   );
