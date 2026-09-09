@@ -16,7 +16,8 @@ import type {
   SpecialConditionType,
   PictureBulletConfig,
   ImageInsertConfig,
-  PictureStyleConfig
+  PictureStyleConfig,
+  PageBorderConfig
 } from '../types/xml-grading-rules.types';
 import { notify } from '../utils/notify';
 import {
@@ -113,6 +114,12 @@ const specialConditionOptions: Array<{
       label: 'Document Style Set',
       description:
         'Kiem tra style set cua Word bang cac dau hieu XML on dinh trong word/styles.xml.',
+    },
+    {
+      value: 'pageBorder',
+      label: 'Duong vien trang Word',
+      description:
+        'Kiem tra Page Border cua Word: 4 canh Box, kieu net, mau va do day vien.',
     },
   ];
 
@@ -277,6 +284,48 @@ const MarginUnitInput = ({ label, value, placeholder, inputClass, onCommit }: Ma
       />
     </label>
   );
+};
+
+const pageBorderColorPresets = [
+  {
+    label: 'Xanh nhat (Light Blue)',
+    requiredColor: '00B0F0',
+    allowedColors: ['00B0F0', '5B9BD5', '4F81BD', 'accent1'],
+  },
+  {
+    label: 'Den',
+    requiredColor: '000000',
+    allowedColors: ['000000', 'auto', 'text1', 'tx1', 'dk1'],
+  },
+  {
+    label: 'Do',
+    requiredColor: 'FF0000',
+    allowedColors: ['FF0000'],
+  },
+  {
+    label: 'Xanh la',
+    requiredColor: '00B050',
+    allowedColors: ['00B050'],
+  },
+];
+
+const pageBorderWidthOptions = [
+  { label: '0.5 pt', value: 4 },
+  { label: '0.75 pt', value: 6 },
+  { label: '1 pt', value: 8 },
+  { label: '1.5 pt', value: 12 },
+  { label: '2.25 pt', value: 18 },
+  { label: '3 pt', value: 24 },
+];
+
+const selectedPageBorderColorPreset = (config?: PageBorderConfig) => {
+  const requiredColor = (config?.requiredColor ?? '').trim().toLowerCase();
+  const allowedColors = (config?.allowedColors ?? []).map((value) => value.trim().toLowerCase()).join('|');
+
+  return pageBorderColorPresets.find((preset) =>
+    requiredColor === preset.requiredColor.toLowerCase()
+    || preset.allowedColors.map((value) => value.toLowerCase()).join('|') === allowedColors
+  )?.requiredColor ?? 'custom';
 };
 
 const prepareCondition = (condition: XmlGradingCondition): XmlGradingCondition => ({
@@ -1264,7 +1313,15 @@ const XmlGradingRulesPage = () => {
                                                               score: task.specialCondition?.score ?? 0,
                                                               feedback: task.specialCondition?.feedback ?? emptyFeedback(),
                                                               imageInsertConfig: task.specialCondition?.imageInsertConfig ?? {
+                                                                sourceFile: 'word/document.xml',
+                                                                relsFile: 'word/_rels/document.xml.rels',
                                                                 wrapType: 'tight',
+                                                                positionConfig: {
+                                                                  afterText: '',
+                                                                  beforeText: '',
+                                                                  requireBetween: false,
+                                                                  caseSensitive: false,
+                                                                },
                                                               },
                                                             });
                                                           }
@@ -1373,6 +1430,22 @@ const XmlGradingRulesPage = () => {
                                                                 expectedFragments: [],
                                                                 ignoreAttributes: ['rsid*', 'id'],
                                                                 matchPolicy: 'all',
+                                                              },
+                                                            });
+                                                          }
+                                                          if (value === 'pageBorder') {
+                                                            updateTaskSpecialCondition(pi, ti, {
+                                                              type: 'pageBorder',
+                                                              score: task.specialCondition?.score ?? 0,
+                                                              feedback: task.specialCondition?.feedback ?? emptyFeedback(),
+                                                              pageBorderConfig: task.specialCondition?.pageBorderConfig ?? {
+                                                                sourceFile: 'word/document.xml',
+                                                                requiredStyle: 'single',
+                                                                requiredWidth: 12,
+                                                                requiredColor: '00B0F0',
+                                                                allowedColors: ['00B0F0', '5B9BD5', '4F81BD', 'accent1'],
+                                                                requireBox: true,
+                                                                requireAllSections: true,
                                                               },
                                                             });
                                                           }
@@ -2186,6 +2259,188 @@ const XmlGradingRulesPage = () => {
                                                   />
                                                   Ap dung cho tat ca section
                                                 </label>
+                                              </div>
+                                            )}
+                                            {task.specialCondition?.type === 'pageBorder' && (
+                                              <div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
+                                                <div className="grid gap-3 md:grid-cols-2">
+                                                  <label className="text-xs font-semibold text-slate-600 md:col-span-2">
+                                                    Source file
+                                                    <input
+                                                      value={task.specialCondition.pageBorderConfig?.sourceFile ?? 'word/document.xml'}
+                                                      onChange={(e) => {
+                                                        const currentConfig = task.specialCondition?.pageBorderConfig ?? {};
+                                                        updateTaskSpecialCondition(pi, ti, {
+                                                          ...task.specialCondition!,
+                                                          type: 'pageBorder',
+                                                          pageBorderConfig: {
+                                                            ...currentConfig,
+                                                            sourceFile: e.target.value,
+                                                          },
+                                                        });
+                                                      }}
+                                                      placeholder="word/document.xml"
+                                                      className={inputClass}
+                                                    />
+                                                  </label>
+                                                  <label className="text-xs font-semibold text-slate-600">
+                                                    Kieu duong vien
+                                                    <select
+                                                      value={task.specialCondition.pageBorderConfig?.requiredStyle ?? 'single'}
+                                                      onChange={(e) => {
+                                                        const currentConfig = task.specialCondition?.pageBorderConfig ?? {};
+                                                        updateTaskSpecialCondition(pi, ti, {
+                                                          ...task.specialCondition!,
+                                                          type: 'pageBorder',
+                                                          pageBorderConfig: {
+                                                            ...currentConfig,
+                                                            requiredStyle: e.target.value,
+                                                          },
+                                                        });
+                                                      }}
+                                                      className={inputClass}
+                                                    >
+                                                      <option value="single">Duong lien</option>
+                                                      <option value="double">Duong doi</option>
+                                                      <option value="dotted">Cham tron</option>
+                                                      <option value="dashed">Net dut</option>
+                                                      <option value="dashSmallGap">Net dut ngan</option>
+                                                    </select>
+                                                  </label>
+                                                  <label className="text-xs font-semibold text-slate-600">
+                                                    Do day vien
+                                                    <select
+                                                      value={task.specialCondition.pageBorderConfig?.requiredWidth ?? 12}
+                                                      onChange={(e) => {
+                                                        const currentConfig = task.specialCondition?.pageBorderConfig ?? {};
+                                                        updateTaskSpecialCondition(pi, ti, {
+                                                          ...task.specialCondition!,
+                                                          type: 'pageBorder',
+                                                          pageBorderConfig: {
+                                                            ...currentConfig,
+                                                            requiredWidth: Number(e.target.value),
+                                                          },
+                                                        });
+                                                      }}
+                                                      className={inputClass}
+                                                    >
+                                                      {pageBorderWidthOptions.map((option) => (
+                                                        <option key={option.value} value={option.value}>
+                                                          {option.label}
+                                                        </option>
+                                                      ))}
+                                                    </select>
+                                                  </label>
+                                                  <label className="text-xs font-semibold text-slate-600">
+                                                    Mau vien
+                                                    <select
+                                                      value={selectedPageBorderColorPreset(task.specialCondition.pageBorderConfig)}
+                                                      onChange={(e) => {
+                                                        const currentConfig = task.specialCondition?.pageBorderConfig ?? {};
+                                                        const preset = pageBorderColorPresets.find((item) => item.requiredColor === e.target.value);
+                                                        updateTaskSpecialCondition(pi, ti, {
+                                                          ...task.specialCondition!,
+                                                          type: 'pageBorder',
+                                                          pageBorderConfig: {
+                                                            ...currentConfig,
+                                                            requiredColor: preset?.requiredColor ?? currentConfig.requiredColor,
+                                                            allowedColors: preset?.allowedColors ?? currentConfig.allowedColors,
+                                                          },
+                                                        });
+                                                      }}
+                                                      className={inputClass}
+                                                    >
+                                                      {pageBorderColorPresets.map((preset) => (
+                                                        <option key={preset.requiredColor} value={preset.requiredColor}>
+                                                          {preset.label}
+                                                        </option>
+                                                      ))}
+                                                      <option value="custom">Tuy chinh</option>
+                                                    </select>
+                                                  </label>
+                                                  <label className="text-xs font-semibold text-slate-600">
+                                                    Ma mau tuy chinh
+                                                    <input
+                                                      value={task.specialCondition.pageBorderConfig?.requiredColor ?? ''}
+                                                      onChange={(e) => {
+                                                        const currentConfig = task.specialCondition?.pageBorderConfig ?? {};
+                                                        updateTaskSpecialCondition(pi, ti, {
+                                                          ...task.specialCondition!,
+                                                          type: 'pageBorder',
+                                                          pageBorderConfig: {
+                                                            ...currentConfig,
+                                                            requiredColor: e.target.value,
+                                                          },
+                                                        });
+                                                      }}
+                                                      placeholder="00B0F0 hoac Light Blue"
+                                                      className={inputClass}
+                                                    />
+                                                  </label>
+                                                  <label className="text-xs font-semibold text-slate-600 md:col-span-2">
+                                                    Mau chap nhan them
+                                                    <textarea
+                                                      value={(task.specialCondition.pageBorderConfig?.allowedColors ?? []).join('\n')}
+                                                      onChange={(e) => {
+                                                        const currentConfig = task.specialCondition?.pageBorderConfig ?? {};
+                                                        updateTaskSpecialCondition(pi, ti, {
+                                                          ...task.specialCondition!,
+                                                          type: 'pageBorder',
+                                                          pageBorderConfig: {
+                                                            ...currentConfig,
+                                                            allowedColors: e.target.value.split(/\r?\n/).map((line) => line.trim()).filter(Boolean),
+                                                          },
+                                                        });
+                                                      }}
+                                                      rows={4}
+                                                      placeholder={'00B0F0\n5B9BD5\n4F81BD\naccent1'}
+                                                      className={inputClass}
+                                                    />
+                                                  </label>
+                                                </div>
+                                                <div className="mt-3 flex flex-wrap gap-4">
+                                                  <label className="flex items-center gap-2 text-xs font-medium text-slate-600">
+                                                    <input
+                                                      type="checkbox"
+                                                      checked={task.specialCondition.pageBorderConfig?.requireBox ?? true}
+                                                      onChange={(e) => {
+                                                        const currentConfig = task.specialCondition?.pageBorderConfig ?? {};
+                                                        updateTaskSpecialCondition(pi, ti, {
+                                                          ...task.specialCondition!,
+                                                          type: 'pageBorder',
+                                                          pageBorderConfig: {
+                                                            ...currentConfig,
+                                                            requireBox: e.target.checked,
+                                                          },
+                                                        });
+                                                      }}
+                                                      className="h-4 w-4 accent-blue-600"
+                                                    />
+                                                    Bat buoc du 4 canh Box
+                                                  </label>
+                                                  <label className="flex items-center gap-2 text-xs font-medium text-slate-600">
+                                                    <input
+                                                      type="checkbox"
+                                                      checked={task.specialCondition.pageBorderConfig?.requireAllSections ?? true}
+                                                      onChange={(e) => {
+                                                        const currentConfig = task.specialCondition?.pageBorderConfig ?? {};
+                                                        updateTaskSpecialCondition(pi, ti, {
+                                                          ...task.specialCondition!,
+                                                          type: 'pageBorder',
+                                                          pageBorderConfig: {
+                                                            ...currentConfig,
+                                                            requireAllSections: e.target.checked,
+                                                          },
+                                                        });
+                                                      }}
+                                                      className="h-4 w-4 accent-blue-600"
+                                                    />
+                                                    Ap dung cho tat ca section
+                                                  </label>
+                                                </div>
+                                                <p className="mt-2 text-xs text-slate-500">
+                                                  Trong OpenXML, do day page border luu theo 1/8 pt: 1.5 pt = 12.
+                                                </p>
                                               </div>
                                             )}
                                             {task.specialCondition?.type === 'documentStyleSet' && (

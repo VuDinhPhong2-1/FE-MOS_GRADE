@@ -40,7 +40,8 @@ export type SpecialConditionType =
   | 'pictureStyle'
   | 'textBoxContainsText'
   | 'pageMargins'
-  | 'documentStyleSet';
+  | 'documentStyleSet'
+  | 'pageBorder';
 
   export type ImageWrapType =
   | 'inline'
@@ -52,10 +53,27 @@ export type SpecialConditionType =
   | 'inFront';
 
   export interface ImageInsertConfig {
+  sourceFile?: string;
+  relsFile?: string;
   assetId?: string;
   imageHash?: string;
   /** Để trống nếu không cần kiểm tra chế độ ngắt dòng, chỉ kiểm tra đúng ảnh. */
   wrapType?: ImageWrapType;
+  positionConfig?: ImagePositionConfig;
+  sizeConfig?: ImageSizeConfig;
+}
+
+export interface ImagePositionConfig {
+  afterText?: string;
+  beforeText?: string;
+  requireBetween?: boolean;
+  caseSensitive?: boolean;
+}
+
+export interface ImageSizeConfig {
+  expectedWidthEmu?: number;
+  expectedHeightEmu?: number;
+  toleranceEmu?: number;
 }
 
 export interface ConvertTableToTextConfig {
@@ -128,6 +146,17 @@ export interface DocumentStyleSetConfig {
   matchPolicy?: XmlMatchPolicy;
 }
 
+export interface PageBorderConfig {
+  sourceFile?: string;
+  requiredStyle?: string;
+  requiredWidth?: number;
+  minWidth?: number;
+  requiredColor?: string;
+  allowedColors?: string[];
+  requireBox?: boolean;
+  requireAllSections?: boolean;
+}
+
 export interface SpecialCondition {
   type: SpecialConditionType;
   score: number;
@@ -141,6 +170,7 @@ export interface SpecialCondition {
   textBoxContainsTextConfig?: TextBoxContainsTextConfig;
   pageMarginsConfig?: PageMarginsConfig;
   documentStyleSetConfig?: DocumentStyleSetConfig;
+  pageBorderConfig?: PageBorderConfig;
 }
 
 export interface PictureBulletConfig {
@@ -184,6 +214,7 @@ export interface SpecialCondition {
   textBoxContainsTextConfig?: TextBoxContainsTextConfig;
   pageMarginsConfig?: PageMarginsConfig;
   documentStyleSetConfig?: DocumentStyleSetConfig;
+  pageBorderConfig?: PageBorderConfig;
 }
 
 export interface TaskXmlRule {
