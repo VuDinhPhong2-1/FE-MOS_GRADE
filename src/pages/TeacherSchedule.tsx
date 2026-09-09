@@ -20,7 +20,7 @@ import {
   useScheduleData,
   type ComputerRoomFormState,
   type ScheduleFormState,
-} from '../components/TeacherSchedule';
+} from '../features/teacher-schedule';
 
 const TeacherSchedule = () => {
   const { getAccessToken, user } = useAuth();

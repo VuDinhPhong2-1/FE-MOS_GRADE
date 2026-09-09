@@ -141,31 +141,42 @@ export function useClassList(selectedSchool: School) {
       });
   }, [classes, classSearch, selectedGradeFilter]);
 
-  const fetchClasses = useCallback(async () => {
-    setIsLoading(true);
-    setError('');
+  const fetchClasses = useCallback(
+    async (retryCount = 0) => {
+      if (retryCount === 0) {
+        setIsLoading(true);
+        setError('');
+      }
 
-    try {
-      const data = await classService.getClassesBySchool(selectedSchool.id, getAccessToken, showInactive);
-      const classListWithStudents = await Promise.all(
-        data.map(async (cls) => {
-          try {
-            const students = await studentService.getStudentsByClassId(cls.id, getAccessToken);
-            return { ...cls, currentStudents: students.length };
-          } catch {
-            return { ...cls, currentStudents: cls.studentIds?.length ?? cls.currentStudents ?? 0 };
-          }
-        })
-      );
+      try {
+        const data = await classService.getClassesBySchool(selectedSchool.id, getAccessToken, showInactive);
+        const classListWithStudents = await Promise.all(
+          data.map(async (cls) => {
+            try {
+              const students = await studentService.getStudentsByClassId(cls.id, getAccessToken);
+              return { ...cls, currentStudents: students.length };
+            } catch {
+              return { ...cls, currentStudents: cls.studentIds?.length ?? cls.currentStudents ?? 0 };
+            }
+          })
+        );
 
-      setClasses(classListWithStudents);
-    } catch (err) {
-      setError('Không thể tải danh sách lớp học');
-      console.error('Error fetching classes:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [selectedSchool.id, getAccessToken, showInactive]);
+        setClasses(classListWithStudents);
+        setError('');
+      } catch (err) {
+        // Tự động thử lại tối đa 2 lần nếu gặp lỗi ngắt socket / mạng chập chờn
+        if (retryCount < 2) {
+          await new Promise((resolve) => setTimeout(resolve, 400 * (retryCount + 1)));
+          return fetchClasses(retryCount + 1);
+        }
+        setError('Không thể tải danh sách lớp học');
+        console.error('Error fetching classes:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [selectedSchool.id, getAccessToken, showInactive]
+  );
 
   useEffect(() => {
     fetchClasses();

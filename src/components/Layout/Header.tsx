@@ -1,7 +1,7 @@
 import React from 'react';
 import { Icon, Button, IconButton } from '@bug-on/m3-expressive';
 import { usePageActionsContext } from '../../context/PageActionsContext';
-import ThemeToggle from '../ThemeToggle';
+import { ThemeToggle } from '../common';
 
 interface HeaderProps {
   onOpenProfile?: () => void;

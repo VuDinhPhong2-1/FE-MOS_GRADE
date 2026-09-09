@@ -1,5 +1,5 @@
 import { Icon, ProgressIndicator } from '@bug-on/m3-expressive';
-import type { LocalAgentState } from '../types/local-agent.types';
+import type { LocalAgentState } from '../../types/local-agent.types';
 
 type LocalAgentCompactPanelProps = {
   state: LocalAgentState;

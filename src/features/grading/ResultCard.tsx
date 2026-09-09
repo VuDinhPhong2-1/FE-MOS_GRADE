@@ -1,8 +1,8 @@
 import React from 'react';
-import type { GradingResult } from '../types';
+import type { GradingResult } from '../../types';
 import { Icon } from '@bug-on/m3-expressive';
 import { clsx } from 'clsx';
-import { stripGradingGuideSection } from '../utils/gradingText';
+import { stripGradingGuideSection } from '../../utils/gradingText';
 
 interface Props {
   result: GradingResult;

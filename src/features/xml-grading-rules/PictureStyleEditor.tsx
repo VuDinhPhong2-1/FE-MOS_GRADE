@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Icon, ProgressIndicator } from '@bug-on/m3-expressive';
 
-import type { PictureStyleConfig } from '../types/xml-grading-rules.types';
-import { insertedImageAssetsService } from '../services/insertedImageAssets.service';
+import type { PictureStyleConfig } from '../../types/xml-grading-rules.types';
+import { insertedImageAssetsService } from '../../services/insertedImageAssets.service';
 
 interface PictureStyleEditorProps {
   config?: PictureStyleConfig;

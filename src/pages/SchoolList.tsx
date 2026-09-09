@@ -16,7 +16,7 @@ import {
   SchoolFormModal,
   DeleteSchoolDialog,
   useSchoolData,
-} from '../components/SchoolList';
+} from '../features/school-list';
 
 const SchoolList = () => {
   const { getAccessToken, user } = useAuth();

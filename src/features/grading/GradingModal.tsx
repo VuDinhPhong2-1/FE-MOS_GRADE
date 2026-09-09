@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Icon, ProgressIndicator } from '@bug-on/m3-expressive';
 import * as XLSX from 'xlsx-js-style';
-import { useAuth } from '../context/AuthContext';
-import type { Assignment, GradingEndpointInfo, UpdateAssignmentRequest } from '../types/assignment.types';
-import type { Student } from '../types/student.types';
-import type { GradingResult, StudentGradingState } from '../types/grading.types';
-import type { AutoGradingTaskResultRequest, ScoreResponse } from '../types/score.types';
-import { assignmentService } from '../services/assignment.service';
-import { notify, type NotifyIssue } from '../utils/notify';
-import { scoreService } from '../services/score.service';
-import { gradingService } from '../services/grading.service';
-import { getNotifyIssuesFromTaskResults } from '../utils/gradingIssues';
+import { useAuth } from '../../context/AuthContext';
+import type { Assignment, GradingEndpointInfo, UpdateAssignmentRequest } from '../../types/assignment.types';
+import type { Student } from '../../types/student.types';
+import type { GradingResult, StudentGradingState } from '../../types/grading.types';
+import type { AutoGradingTaskResultRequest, ScoreResponse } from '../../types/score.types';
+import { assignmentService } from '../../services/assignment.service';
+import { notify, type NotifyIssue } from '../../utils/notify';
+import { scoreService } from '../../services/score.service';
+import { gradingService } from '../../services/grading.service';
+import { getNotifyIssuesFromTaskResults } from '../../utils/gradingIssues';
 import "./GradingModal.css";
 
 interface GradingModalProps {
