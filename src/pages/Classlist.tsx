@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   Button,
   Card,
@@ -44,8 +43,6 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
     setShowInactive,
     classSearch,
     setClassSearch,
-    classSearchActive,
-    setClassSearchActive,
     selectedGradeFilter,
     setSelectedGradeFilter,
     handleClearSearch,
@@ -89,14 +86,16 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
       subtitle: selectedClass ? 'Danh sách học sinh' : 'Danh sách lớp học trực thuộc',
       searchSlot: !selectedClass ? (
         <Search
+          id="classlist-search"
           query={classSearch}
           onQueryChange={setClassSearch}
           onSearch={setClassSearch}
-          active={classSearchActive}
-          onActiveChange={setClassSearchActive}
+          active={false}
+          onActiveChange={() => { }}
           placeholder="Tìm theo tên lớp..."
           aria-label="Tìm kiếm lớp học"
           className="w-64 xl:w-72"
+          styleType="contained"
         />
       ) : undefined,
       actions: !selectedClass
@@ -106,10 +105,10 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
             label: 'Lọc',
             icon: 'tune',
             customNode: (
-              <Menu>
+              <Menu variant='expressive' colorVariant='vibrant'>
                 <MenuTrigger asChild>
                   <IconButton
-                    colorStyle="standard"
+                    colorStyle="tonal"
                     size="md"
                     aria-label="Bộ lọc lớp học"
                     title="Bộ lọc lớp học"
@@ -117,7 +116,7 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
                     <Icon name="tune" size={20} />
                   </IconButton>
                 </MenuTrigger>
-                <MenuContent align="end" className="w-64">
+                <MenuContent align="end" className="w-64" separatorStyle='gap'>
                   <MenuGroup label="Trạng thái lớp">
                     <MenuItem
                       selected={showInactive}
@@ -127,7 +126,7 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
                       Hiển thị lớp không hoạt động
                     </MenuItem>
                   </MenuGroup>
-                  <MenuDivider />
+                  <MenuDivider isGapVariant className='bg-transparent' />
                   <MenuGroup label="Lọc theo khối">
                     <MenuItem
                       selected={selectedGradeFilter === ''}
@@ -159,7 +158,7 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
                     </MenuItem>
                   </MenuGroup>
                 </MenuContent>
-              </Menu>
+              </Menu >
             ),
             onClick: () => {
               setShowInactive((prev) => !prev);
@@ -183,13 +182,11 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
       selectedClass,
       selectedSchool.name,
       classSearch,
-      classSearchActive,
       showInactive,
       selectedGradeFilter,
       canCreateClass,
       handleOpenAddModal,
       setClassSearch,
-      setClassSearchActive,
       setShowInactive,
       setSelectedGradeFilter,
     ]

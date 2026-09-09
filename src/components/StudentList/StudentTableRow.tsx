@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { Icon, ProgressIndicator } from '@bug-on/m3-expressive';
+import { Button, Icon, ProgressIndicator, Switch } from '@bug-on/m3-expressive';
 import type { Student } from '../../types/student.types';
 import type { CompetencyLevel } from './types';
 import {
@@ -34,12 +34,15 @@ const StudentTableRowComponent = ({
 
   return (
     <tr
-      className={`transition-colors ${isActive ? 'hover:bg-sky-50/70' : 'bg-rose-50/70 hover:bg-rose-100/70'
-        }`}
+      className={`transition-colors ${
+        isActive
+          ? 'hover:bg-m3-surface-container-high/60'
+          : 'bg-m3-error-container/15 hover:bg-m3-error-container/25'
+      }`}
     >
-      <td className="px-3 py-4 text-slate-500 sm:px-6">{index + 1}</td>
-      <td className="px-3 py-4 font-medium text-slate-900 sm:px-6">{student.middleName}</td>
-      <td className="px-3 py-4 font-medium text-slate-900 sm:px-6">{student.firstName}</td>
+      <td className="px-3 py-4 text-m3-on-surface-variant sm:px-6">{index + 1}</td>
+      <td className="px-3 py-4 font-medium text-m3-on-surface sm:px-6">{student.middleName}</td>
+      <td className="px-3 py-4 font-medium text-m3-on-surface sm:px-6">{student.firstName}</td>
 
       {/* Competency Level */}
       <td className="px-3 py-4 text-center sm:px-6">
@@ -50,7 +53,7 @@ const StudentTableRowComponent = ({
             onChange={(event) =>
               onCompetencyChange(student, event.target.value as CompetencyLevel)
             }
-            className={`w-18 rounded-full border px-2 py-1 text-center text-xs font-semibold outline-none transition ${competencyBadgeClass(
+            className={`w-18 rounded-full border border-m3-outline-variant/60 px-2 py-1 text-center text-xs font-semibold outline-none transition ${competencyBadgeClass(
               student.competencyLevel
             )} ${isSaving ? 'cursor-not-allowed opacity-70' : 'hover:brightness-95'}`}
             title={
@@ -66,12 +69,12 @@ const StudentTableRowComponent = ({
               </option>
             ))}
           </select>
-          {isSaving && <span className="text-[10px] text-slate-500">Đang lưu...</span>}
+          {isSaving && <span className="text-[10px] text-m3-on-surface-variant">Đang lưu...</span>}
         </div>
       </td>
 
       {/* Notes */}
-      <td className="px-3 py-4 text-slate-700 sm:px-6">
+      <td className="px-3 py-4 text-m3-on-surface-variant sm:px-6">
         <div className="max-w-65 truncate" title={student.notes || ''}>
           {student.notes?.trim() || '--'}
         </div>
@@ -80,48 +83,33 @@ const StudentTableRowComponent = ({
       {/* Status */}
       <td className="px-3 py-4 text-center sm:px-6">
         <span
-          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${isActive
-              ? 'bg-emerald-100 text-emerald-700 ring-emerald-200'
-              : 'bg-rose-100 text-rose-700 ring-rose-200'
-            }`}
+          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${
+            isActive
+              ? 'bg-m3-secondary-container text-m3-on-secondary-container ring-m3-secondary/20'
+              : 'bg-m3-error-container text-m3-on-error-container ring-m3-error/20'
+          }`}
         >
-          {isActive ? (
-            <Icon name="check_circle" variant="rounded" size={13} />
-          ) : (
-            <Icon name="cancel" variant="rounded" size={13} />
-          )}
+          <Icon
+            name={isActive ? 'check_circle' : 'cancel'}
+            variant="rounded"
+            size={13}
+          />
           {isActive ? 'Hoạt động' : 'Ngừng'}
         </span>
       </td>
 
       {/* Exam Switch */}
       <td className="px-3 py-4 text-center sm:px-6">
-        <button
-          type="button"
-          role="switch"
-          aria-checked={student.thi ?? false}
-          onClick={() => onExamToggle(student)}
-          disabled={readOnly || isSaving}
-          className={`inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-xs font-semibold transition ${student.thi
-              ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-              : 'border-slate-200 bg-slate-100 text-slate-600'
-            } ${readOnly || isSaving ? 'cursor-not-allowed opacity-60' : 'hover:brightness-95'}`}
-          title={
-            student.thi
-              ? 'Click to switch to Not Taking Exam'
-              : 'Click to switch to Taking Exam'
-          }
-        >
-          <span
-            className={`relative h-4 w-8 rounded-full transition ${student.thi ? 'bg-emerald-500' : 'bg-slate-400'
-              }`}
-          >
-            <span
-              className={`absolute top-0.5 h-3 w-3 rounded-full bg-white shadow transition ${student.thi ? 'left-4' : 'left-0.5'
-                }`}
-            />
+        <div className="inline-flex items-center justify-center gap-2">
+          <Switch
+            checked={Boolean(student.thi)}
+            onCheckedChange={() => onExamToggle(student)}
+            disabled={readOnly || isSaving}
+            ariaLabel={student.thi ? 'Học sinh dự thi' : 'Học sinh không dự thi'}
+          />
+          <span className="text-xs font-medium text-m3-on-surface-variant">
+            {student.thi ? 'Taking Exam' : 'Not Taking Exam'}
           </span>
-          <span>{student.thi ? 'Taking Exam' : 'Not Taking Exam'}</span>
           {isSaving && (
             <ProgressIndicator
               variant="circular"
@@ -131,33 +119,34 @@ const StudentTableRowComponent = ({
               aria-label="Đang lưu..."
             />
           )}
-        </button>
+        </div>
       </td>
 
       {/* Actions */}
       <td className="px-3 py-4 text-center sm:px-6">
         {!readOnly ? (
-          <div className="inline-flex items-center gap-2">
-            <button
-              type="button"
+          <div className="inline-flex items-center gap-1.5">
+            <Button
+              colorStyle="tonal"
+              size="xs"
               onClick={() => onEdit(student)}
               disabled={isTemp}
-              className="inline-flex items-center gap-1 rounded-lg bg-blue-100 px-3 py-1.5 text-xs font-medium text-blue-700 transition hover:bg-blue-200 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+              icon={<Icon name="edit" variant="rounded" size={14} />}
             >
-              <Icon name="edit" variant="rounded" size={14} />
               Sửa
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              colorStyle="text"
+              size="xs"
+              className="text-m3-error hover:bg-m3-error-container/40"
               onClick={() => onDelete(student)}
-              className="inline-flex items-center gap-1 rounded-lg bg-rose-100 px-3 py-1.5 text-xs font-medium text-rose-700 transition hover:bg-rose-200"
+              icon={<Icon name="delete" variant="rounded" size={14} />}
             >
-              <Icon name="delete" variant="rounded" size={14} />
               Xóa
-            </button>
+            </Button>
           </div>
         ) : (
-          <span className="text-xs text-slate-400">Chỉ xem</span>
+          <span className="text-xs text-m3-on-surface-variant">Chỉ xem</span>
         )}
       </td>
     </tr>

@@ -1,5 +1,5 @@
 import React, { memo, useMemo } from 'react';
-import { Card, CardContent, Icon } from '@bug-on/m3-expressive';
+import { Card, CardContent, Icon, ShapeMedia, type IconProps, type ShapeMediaProps } from '@bug-on/m3-expressive';
 import type { Class } from '../../../types/class.types';
 
 interface ClassStatsGridProps {
@@ -9,19 +9,30 @@ interface ClassStatsGridProps {
 interface StatItemProps {
   label: string;
   value: string | number;
-  icon: string;
-  iconBgClass: string;
-  iconColorClass: string;
+  icon: IconProps['name'];
+  iconBgClass?: string;
+  iconColorClass?: string;
   textColorClass?: string;
+  shape: ShapeMediaProps['shape'];
+  morphTo?: ShapeMediaProps['morphTo'];
+  morphOn?: ShapeMediaProps['morphOn'];
+  morphOptions?: ShapeMediaProps['morphOptions'];
 }
 
 const StatCard: React.FC<StatItemProps> = ({
   label,
   value,
   icon,
-  iconBgClass,
-  iconColorClass,
-  textColorClass,
+  iconBgClass = "bg-m3-primary",
+  iconColorClass = "text-m3-on-primary",
+  textColorClass = 'text-m3-on-surface',
+  shape,
+  morphTo,
+  morphOn = "hover",
+  morphOptions = {
+    duration: 0.4,
+    easing: [0.34, 1.56, 0.64, 1]
+  }
 }) => (
   <Card variant="filled" className="rounded-3xl border-none bg-m3-surface-container p-5 text-m3-on-surface shadow-xs">
     <CardContent className="p-0">
@@ -30,9 +41,15 @@ const StatCard: React.FC<StatItemProps> = ({
           <p className="text-xs font-semibold uppercase tracking-wider text-m3-on-surface-variant">{label}</p>
           <p className={`mt-1 text-2xl font-bold tracking-tight ${textColorClass || ''}`}>{value}</p>
         </div>
-        <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${iconBgClass} ${iconColorClass}`}>
+        <ShapeMedia
+          shape={shape}
+          morphTo={morphTo}
+          morphOn={morphOn}
+          morphOptions={morphOptions}
+          className={`flex h-12 w-12 items-center justify-center ${iconBgClass} ${iconColorClass}`}
+        >
           <Icon name={icon} size={24} />
-        </div>
+        </ShapeMedia>
       </div>
     </CardContent>
   </Card>
@@ -51,32 +68,29 @@ export const ClassStatsGrid: React.FC<ClassStatsGridProps> = memo(({ classes }) 
         label="Tổng số lớp"
         value={classes.length}
         icon="menu_book"
-        iconBgClass="bg-m3-primary/10"
-        iconColorClass="text-m3-primary"
+        shape="softBoom"
+        morphTo="flower"
       />
       <StatCard
         label="Đang hoạt động"
         value={activeCount}
         icon="group"
-        iconBgClass="bg-emerald-500/10"
-        iconColorClass="text-emerald-600 dark:text-emerald-400"
-        textColorClass="text-emerald-600 dark:text-emerald-400"
+        shape="softBoom"
+        morphTo="flower"
       />
       <StatCard
         label="Tổng học sinh"
         value={totalStudents}
         icon="person"
-        iconBgClass="bg-amber-500/10"
-        iconColorClass="text-amber-600 dark:text-amber-400"
-        textColorClass="text-amber-600 dark:text-amber-400"
+        shape="softBoom"
+        morphTo="flower"
       />
       <StatCard
         label="Năm học"
-        value="2024-2025"
+        value="2026 - 2027"
         icon="calendar_today"
-        iconBgClass="bg-sky-500/10"
-        iconColorClass="text-sky-600 dark:text-sky-400"
-        textColorClass="text-sky-600 dark:text-sky-400"
+        shape="softBoom"
+        morphTo="flower"
       />
     </div>
   );

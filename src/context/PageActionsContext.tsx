@@ -51,12 +51,13 @@ export const usePageActionsContext = (): PageActionsContextType => {
  * Hook cho phép mỗi page đăng ký Title, Subtitle và các action buttons lên Header / FABMenu
  */
 export const usePageHeader = (
-  pageConfig: PageHeaderConfig,
+  pageConfig: PageHeaderConfig | null | undefined,
   deps: React.DependencyList = []
 ) => {
   const { setConfig } = usePageActionsContext();
 
   useEffect(() => {
+    if (!pageConfig) return;
     setConfig({
       title: pageConfig.title,
       subtitle: pageConfig.subtitle,

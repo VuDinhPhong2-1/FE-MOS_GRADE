@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   Button,
   Checkbox,
@@ -61,8 +60,8 @@ export const ClassFormModal: React.FC<ClassFormModalProps> = ({
           {/* Header */}
           <div className="flex items-center justify-between px-6 pt-5 pb-3">
             <DialogHeader className="mb-0 flex-row items-center gap-3 space-y-0 text-left">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-m3-primary/10 text-m3-primary">
-                <Icon name={editingClass ? 'edit_square' : 'add_circle'} className="text-xl" />
+              <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-m3-primary text-m3-on-primary">
+                <Icon name={editingClass ? 'edit_square' : 'add_circle'} size={24} />
               </div>
               <div>
                 <DialogTitle className="text-lg font-bold text-m3-on-surface">
@@ -82,13 +81,13 @@ export const ClassFormModal: React.FC<ClassFormModalProps> = ({
               aria-label="Đóng hộp thoại lớp"
               onClick={onClose}
             >
-              <Icon name="close" className="text-lg" />
+              <Icon name="close" />
             </IconButton>
           </div>
 
           {/* Form */}
           <form onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col">
-            <DialogBody className="flex flex-1 flex-col gap-5 overflow-y-auto px-6 pt-3 pb-6">
+            <DialogBody className="flex flex-1 flex-col gap-4 overflow-y-auto px-6 pt-3 pb-6">
               {formError && (
                 <div className="flex items-center gap-2 rounded-2xl bg-m3-error-container p-3 text-xs font-medium text-m3-on-error-container">
                   <Icon name="error" size={16} />
@@ -98,7 +97,8 @@ export const ClassFormModal: React.FC<ClassFormModalProps> = ({
 
               <TextField
                 variant="outlined"
-                label="Tên lớp *"
+                label="Tên lớp"
+                required
                 placeholder="VD: Lớp 10A1"
                 value={formData.name}
                 onChange={(val) => {
@@ -111,7 +111,7 @@ export const ClassFormModal: React.FC<ClassFormModalProps> = ({
                 className="pt-2"
               />
 
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <Select
                   variant="outlined"
                   label="Khối"
@@ -123,10 +123,11 @@ export const ClassFormModal: React.FC<ClassFormModalProps> = ({
                   }}
                   disabled={isSubmitting}
                   fullWidth
-                  className="pt-2"
+                  className="pt-4"
                 />
 
                 <TextField
+                  required
                   variant="outlined"
                   label="Sĩ số tối đa"
                   placeholder="VD: 45"
@@ -142,14 +143,14 @@ export const ClassFormModal: React.FC<ClassFormModalProps> = ({
                   disabled={isSubmitting}
                   leadingIcon={<Icon name="group" />}
                   fullWidth
-                  className="pt-2"
+                  className="pt-4"
                 />
               </div>
 
               <TextField
                 variant="outlined"
                 label="Năm học"
-                placeholder="VD: 2024-2025"
+                placeholder="VD: 2026 - 2027"
                 value={formData.academicYear || ''}
                 onChange={(val) => {
                   if (formError) setFormError('');
@@ -158,10 +159,10 @@ export const ClassFormModal: React.FC<ClassFormModalProps> = ({
                 disabled={isSubmitting}
                 leadingIcon={<Icon name="calendar_today" />}
                 fullWidth
-                className="pt-2"
+                className="pt-4"
               />
 
-              <div className="flex items-start gap-2.5 rounded-2xl bg-m3-surface-container p-3 text-xs text-m3-on-surface-variant">
+              <div className="flex items-center gap-2.5 rounded-2xl p-3 text-xs text-m3-on-surface">
                 <Icon name="info" className="mt-0.5 shrink-0 text-base text-m3-primary" />
                 <span>
                   {attendanceSpreadsheetId
@@ -182,7 +183,7 @@ export const ClassFormModal: React.FC<ClassFormModalProps> = ({
                 disabled={isSubmitting}
                 leadingIcon={<Icon name="notes" />}
                 fullWidth
-                className="pt-2"
+                className="pt-4"
               />
 
               {editingClass && (

@@ -195,7 +195,7 @@ export default function AuthPage() {
               Hệ thống quản lý và chấm điểm MOS
             </h1>
             <p className="mt-2.5 text-sm opacity-90 leading-relaxed">
-              Theo dõi lớp học, chấm điểm bài tập tự động và tổng hợp kết quả trực quan theo tiêu chuẩn Material Design 3 Expressive.
+              Theo dõi lớp học, chấm điểm bài tập tự động và tổng hợp kết quả trực quan.
             </p>
           </div>
 

@@ -23,6 +23,7 @@ export const SchoolTable = memo(function SchoolTable({
         <div className="absolute top-0 left-0 right-0 z-10">
           <ProgressIndicator
             variant="linear"
+            trackShape='flat'
             shape="wavy"
             aria-label="Đang tải dữ liệu trường học"
             className="w-full"

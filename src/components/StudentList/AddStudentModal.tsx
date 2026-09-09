@@ -1,5 +1,22 @@
 import { useState, useEffect, type FormEvent } from 'react';
-import { Icon, ProgressIndicator } from '@bug-on/m3-expressive';
+import {
+  Button,
+  Checkbox,
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogOverlay,
+  DialogPortal,
+  DialogTitle,
+  Icon,
+  IconButton,
+  Select,
+  TextField,
+  type SelectOption,
+} from '@bug-on/m3-expressive';
 import type { AddStudentForm, CompetencyLevel } from './types';
 import { VALID_STATUSES, VALID_COMPETENCY_LEVELS } from './types';
 import studentService from '../../services/student.service';
@@ -22,6 +39,16 @@ const initialForm: AddStudentForm = {
   thi: false,
 };
 
+const STATUS_OPTIONS: SelectOption[] = [
+  { value: 'Active', label: 'Hoạt động' },
+  { value: 'Inactive', label: 'Ngừng hoạt động' },
+];
+
+const COMPETENCY_OPTIONS: SelectOption[] = [
+  { value: '', label: 'Chưa đánh giá' },
+  ...VALID_COMPETENCY_LEVELS.map((level) => ({ value: level, label: level })),
+];
+
 export const AddStudentModal = ({
   isOpen,
   classId,
@@ -40,8 +67,6 @@ export const AddStudentModal = ({
       setError('');
     }
   }, [isOpen]);
-
-  if (!isOpen) return null;
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -92,153 +117,161 @@ export const AddStudentModal = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-      <div className="w-full max-w-md rounded-2xl bg-white shadow-xl">
-        <div className="flex items-center justify-between border-b px-5 py-4">
-          <h2 className="text-lg font-semibold text-gray-900">Thêm học sinh</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded p-1 text-gray-500 hover:bg-gray-100"
-            disabled={isSubmitting}
-          >
-            <Icon name="close" variant="rounded" size={18} />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4 px-5 py-4">
-          {error && (
-            <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-              {error}
-            </div>
-          )}
-
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Họ và tên đệm</label>
-            <input
-              value={form.middleName}
-              onChange={(event) =>
-                setForm((prev) => ({ ...prev, middleName: event.target.value }))
-              }
-              disabled={isSubmitting}
-              className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-              placeholder="Nguyễn Văn"
-            />
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Tên</label>
-            <input
-              value={form.firstName}
-              onChange={(event) =>
-                setForm((prev) => ({ ...prev, firstName: event.target.value }))
-              }
-              disabled={isSubmitting}
-              className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-              placeholder="An"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Trạng thái</label>
-            <select
-              value={form.status}
-              onChange={(event) =>
-                setForm((prev) => ({ ...prev, status: event.target.value }))
-              }
-              disabled={isSubmitting}
-              className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-            >
-              <option value="Active">Hoạt động</option>
-              <option value="Inactive">Ngừng hoạt động</option>
-            </select>
-          </div>
-
-          <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
-            <label className="inline-flex items-center gap-2 text-sm font-medium text-gray-700">
-              <input
-                type="checkbox"
-                checked={form.thi}
-                onChange={(event) =>
-                  setForm((prev) => ({ ...prev, thi: event.target.checked }))
-                }
-                disabled={isSubmitting}
-                className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-              />
-              Student takes exam
-            </label>
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Đánh giá năng lực</label>
-            <select
-              value={form.competencyLevel}
-              onChange={(event) =>
-                setForm((prev) => ({
-                  ...prev,
-                  competencyLevel: event.target.value as CompetencyLevel,
-                }))
-              }
-              disabled={isSubmitting}
-              className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-            >
-              <option value="">Chưa đánh giá</option>
-              {VALID_COMPETENCY_LEVELS.map((level) => (
-                <option key={level} value={level}>
-                  {level}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Ghi chú</label>
-            <textarea
-              value={form.notes}
-              onChange={(event) =>
-                setForm((prev) => ({ ...prev, notes: event.target.value }))
-              }
-              disabled={isSubmitting}
-              rows={3}
-              maxLength={500}
-              className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-              placeholder="Nhận xét thêm về học sinh..."
-            />
-          </div>
-
-          <div className="flex justify-end gap-2 border-t pt-4">
-            <button
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogPortal open={isOpen}>
+        <DialogOverlay />
+        <DialogContent
+          hideCloseButton
+          className="flex max-h-[90vh] w-[calc(100%-2rem)] max-w-lg flex-col overflow-hidden rounded-4xl bg-m3-surface-container-high p-0 text-m3-on-surface shadow-2xl"
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between border-b border-m3-outline-variant/40 px-6 pt-5 pb-3">
+            <DialogHeader className="mb-0 flex-row items-center gap-3 space-y-0 text-left">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-m3-primary text-m3-on-primary">
+                <Icon name="person_add" size={20} />
+              </div>
+              <div>
+                <DialogTitle className="text-lg font-bold text-m3-on-surface">
+                  Thêm học sinh
+                </DialogTitle>
+                <DialogDescription className="text-xs text-m3-on-surface-variant">
+                  Nhập thông tin học sinh mới vào lớp học
+                </DialogDescription>
+              </div>
+            </DialogHeader>
+            <IconButton
               type="button"
+              size="sm"
+              colorStyle="standard"
+              aria-label="Đóng"
               onClick={onClose}
               disabled={isSubmitting}
-              className="rounded-md bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 disabled:opacity-60"
             >
-              Hủy
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="inline-flex items-center gap-2 rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
-            >
-              {isSubmitting ? (
-                <>
-                  <ProgressIndicator
-                    variant="circular"
-                    shape="wavy"
-                    showTrack
-                    size={15}
-                    aria-label="Đang thêm..."
-                  />
-                  Đang thêm...
-                </>
-              ) : (
-                'Thêm học sinh'
-              )}
-            </button>
+              <Icon name="close" />
+            </IconButton>
           </div>
-        </form>
-      </div>
-    </div>
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+            <DialogBody className="flex flex-1 flex-col gap-4 overflow-y-auto px-6 py-4">
+              {error && (
+                <div className="flex items-center gap-2 rounded-2xl bg-m3-error-container p-3 text-xs font-medium text-m3-on-error-container">
+                  <Icon name="error" size={16} />
+                  <span>{error}</span>
+                </div>
+              )}
+
+              <TextField
+                variant="outlined"
+                label="Họ và tên đệm"
+                placeholder="VD: Nguyễn Văn"
+                value={form.middleName}
+                onChange={(val) => {
+                  if (error) setError('');
+                  setForm((prev) => ({ ...prev, middleName: val }));
+                }}
+                disabled={isSubmitting}
+                fullWidth
+                className="pt-2"
+              />
+
+              <TextField
+                required
+                variant="outlined"
+                label="Tên"
+                placeholder="VD: An"
+                value={form.firstName}
+                onChange={(val) => {
+                  if (error) setError('');
+                  setForm((prev) => ({ ...prev, firstName: val }));
+                }}
+                disabled={isSubmitting}
+                fullWidth
+                className="pt-4"
+              />
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <Select
+                  variant="outlined"
+                  label="Trạng thái"
+                  options={STATUS_OPTIONS}
+                  value={form.status}
+                  onChange={(val) => {
+                    if (error) setError('');
+                    setForm((prev) => ({ ...prev, status: val }));
+                  }}
+                  disabled={isSubmitting}
+                  fullWidth
+                  className="pt-4"
+                />
+
+                <Select
+                  variant="outlined"
+                  label="Đánh giá năng lực"
+                  options={COMPETENCY_OPTIONS}
+                  value={form.competencyLevel}
+                  onChange={(val) => {
+                    if (error) setError('');
+                    setForm((prev) => ({
+                      ...prev,
+                      competencyLevel: val as CompetencyLevel,
+                    }));
+                  }}
+                  disabled={isSubmitting}
+                  fullWidth
+                  className="pt-4"
+                />
+              </div>
+
+              <Checkbox
+                checked={form.thi}
+                onCheckedChange={(checked) =>
+                  setForm((prev) => ({ ...prev, thi: checked }))
+                }
+                disabled={isSubmitting}
+                label="Học sinh dự thi"
+              />
+
+              <TextField
+                type="textarea"
+                rows={3}
+                variant="outlined"
+                label="Ghi chú"
+                placeholder="Nhận xét thêm về học sinh..."
+                value={form.notes}
+                onChange={(val) => {
+                  if (error) setError('');
+                  setForm((prev) => ({ ...prev, notes: val }));
+                }}
+                disabled={isSubmitting}
+                maxLength={500}
+                fullWidth
+                className="pt-4"
+              />
+            </DialogBody>
+
+            <DialogFooter className="flex justify-end gap-2 border-t border-m3-outline-variant/40 px-6 py-4">
+              <Button
+                type="button"
+                colorStyle="text"
+                onClick={onClose}
+                disabled={isSubmitting}
+              >
+                Hủy
+              </Button>
+              <Button
+                type="submit"
+                colorStyle="filled"
+                disabled={isSubmitting}
+                loading={isSubmitting}
+                icon={!isSubmitting ? <Icon name="person_add" size={18} /> : undefined}
+              >
+                {isSubmitting ? 'Đang thêm...' : 'Thêm học sinh'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </DialogPortal>
+    </Dialog>
   );
 };
