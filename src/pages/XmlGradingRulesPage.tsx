@@ -188,6 +188,16 @@ const expectedVariantsForEdit = (condition: XmlGradingCondition) => {
   }));
 };
 
+const parseExpectedValuesInput = (value: string) =>
+  value
+    .replace(/\r\n/g, '\n')
+    .split(/\n\s*\n/)
+    .map((fragment) => fragment.trim())
+    .filter(Boolean);
+
+const formatExpectedValuesInput = (values: string[]) =>
+  (values ?? []).join('\n\n');
+
 const prepareCondition = (condition: XmlGradingCondition): XmlGradingCondition => ({
   ...condition,
   expectedVariants: expectedVariantsForEdit(condition)
@@ -1251,7 +1261,7 @@ const XmlGradingRulesPage = () => {
                                                                 requireDefaultPaste: true,
                                                                 requireRemovedFromBody: true,
                                                                 forbiddenTextColors: ['FFFFFF', 'background1', 'bg1', 'lt1'],
-                                                                forbiddenRunProperties: ['caps', 'smallCaps', 'b', 'i', 'u', 'color', 'highlight', 'rFonts', 'sz', 'szCs'],
+                                                                forbiddenRunProperties: [],
                                                               },
                                                             });
                                                           }
@@ -1985,7 +1995,7 @@ const XmlGradingRulesPage = () => {
                                                 <label className="mt-3 block text-xs font-semibold text-slate-600">
                                                   Run properties cam khi bat paste mac dinh
                                                   <textarea
-                                                    value={(task.specialCondition.textBoxContainsTextConfig?.forbiddenRunProperties ?? ['caps', 'smallCaps', 'b', 'i', 'u', 'color', 'highlight', 'rFonts', 'sz', 'szCs']).join('\n')}
+                                                    value={(task.specialCondition.textBoxContainsTextConfig?.forbiddenRunProperties ?? []).join('\n')}
                                                     onChange={(e) => {
                                                       const currentConfig = task.specialCondition?.textBoxContainsTextConfig ?? {};
                                                       updateTaskSpecialCondition(pi, ti, {
@@ -1998,7 +2008,7 @@ const XmlGradingRulesPage = () => {
                                                       });
                                                     }}
                                                     rows={5}
-                                                    placeholder={'caps\nsmallCaps\nb\ni\nu\ncolor\nhighlight\nrFonts\nsz\nszCs'}
+                                                    placeholder={'De trong neu khong co dau hieu XML sai on dinh'}
                                                     className={inputClass}
                                                   />
                                                 </label>
@@ -2325,18 +2335,18 @@ const XmlGradingRulesPage = () => {
                                                     <label className="mt-3 block text-xs font-semibold text-slate-600">
                                                       Giá trị cần tìm trong XML
                                                       <textarea
-                                                        value={expectedVariantsForEdit(condition)[0].expectedValues.join('\n')}
+                                                        value={formatExpectedValuesInput(expectedVariantsForEdit(condition)[0].expectedValues)}
                                                         onChange={(e) => {
                                                           const variants = expectedVariantsForEdit(condition);
                                                           mutateCondition(pi, ti, ci, {
                                                             expectedVariants: [
-                                                              { expectedValues: e.target.value.split('\n') },
+                                                              { expectedValues: parseExpectedValuesInput(e.target.value) },
                                                               ...variants.slice(1),
                                                             ],
                                                           });
                                                         }}
                                                         rows={3}
-                                                        placeholder="Mỗi giá trị một dòng..."
+                                                        placeholder="Mot cum XML lien nhau la 1 gia tri. Cach nhau bang 1 dong trong de them gia tri khac..."
                                                         className={cx(inputClass, 'resize-y font-mono')}
                                                       />
                                                     </label>
@@ -2382,17 +2392,17 @@ const XmlGradingRulesPage = () => {
                                                                 </button>
                                                               </div>
                                                               <textarea
-                                                                value={variant.expectedValues.join('\n')}
+                                                                value={formatExpectedValuesInput(variant.expectedValues)}
                                                                 onChange={(e) => {
                                                                   const variants = expectedVariantsForEdit(condition).map((item, index) =>
                                                                     index === variantIndex
-                                                                      ? { expectedValues: e.target.value.split('\n') }
+                                                                      ? { expectedValues: parseExpectedValuesInput(e.target.value) }
                                                                       : item
                                                                   );
                                                                   mutateCondition(pi, ti, ci, { expectedVariants: variants });
                                                                 }}
                                                                 rows={3}
-                                                                placeholder="Moi gia tri mot dong..."
+                                                                placeholder="Mot cum XML lien nhau la 1 gia tri. Cach nhau bang 1 dong trong de them gia tri khac..."
                                                                 className={cx(inputClass, 'resize-y font-mono')}
                                                               />
                                                             </div>
