@@ -1,5 +1,4 @@
 import {
-  Button,
   Card,
   CardContent,
   Icon,
@@ -206,18 +205,11 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
   if (selectedClass) {
     const selectedClassReadOnly = !canManageClass(selectedClass);
     return (
-      <div className="space-y-4">
-        <Button
-          type="button"
-          colorStyle="tonal"
-          onClick={handleBackToClassList}
-          icon={<Icon name="arrow_back" className="text-base" />}
-          className="rounded-full shadow-xs"
-        >
-          Quay lại danh sách lớp
-        </Button>
-        <StudentList selectedClass={selectedClass} readOnly={selectedClassReadOnly} />
-      </div>
+      <StudentList
+        selectedClass={selectedClass}
+        readOnly={selectedClassReadOnly}
+        onBack={handleBackToClassList}
+      />
     );
   }
 

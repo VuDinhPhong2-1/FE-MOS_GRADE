@@ -1,18 +1,11 @@
 import { memo } from 'react';
-import { Button, Icon, TextField } from '@bug-on/m3-expressive';
+import { Icon, TextField } from '@bug-on/m3-expressive';
 
 interface StudentToolbarProps {
   searchKeyword: string;
   onSearchChange: (keyword: string) => void;
   displayedCount: number;
   totalCount: number;
-  isLoading: boolean;
-  readOnly: boolean;
-  newCount: number;
-  onReload: () => void;
-  onFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onOpenPasteModal: () => void;
-  onSaveStudents: () => void;
 }
 
 const StudentToolbarComponent = ({
@@ -20,13 +13,6 @@ const StudentToolbarComponent = ({
   onSearchChange,
   displayedCount,
   totalCount,
-  isLoading,
-  readOnly,
-  newCount,
-  onReload,
-  onFileUpload,
-  onOpenPasteModal,
-  onSaveStudents,
 }: StudentToolbarProps) => {
   return (
     <section className="rounded-2xl bg-m3-surface-container-low p-3 sm:p-4 text-m3-on-surface shadow-xs">
@@ -47,61 +33,6 @@ const StudentToolbarComponent = ({
             Bấm tiêu đề cột <strong>Tên</strong> hoặc <strong>Trạng thái</strong> để sắp xếp
           </span>
         </div>
-      </div>
-
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <Button
-          colorStyle="tonal"
-          onClick={onReload}
-          disabled={isLoading}
-          loading={isLoading}
-          icon={!isLoading ? <Icon name="refresh" variant="rounded" size={18} /> : undefined}
-          title="Tải lại danh sách"
-        >
-          Tải lại
-        </Button>
-
-        {!readOnly && (
-          <>
-            <input
-              type="file"
-              onChange={onFileUpload}
-              accept=".xlsx, .xls, .txt"
-              className="hidden"
-              id="import-excel"
-            />
-
-            <Button
-              asChild
-              colorStyle="filled"
-              icon={<Icon name="upload" variant="rounded" size={18} />}
-            >
-              <label htmlFor="import-excel" className="cursor-pointer">
-                Nhập Excel
-              </label>
-            </Button>
-
-            <Button
-              colorStyle="tonal"
-              onClick={onOpenPasteModal}
-              icon={<Icon name="content_paste" variant="rounded" size={18} />}
-            >
-              Dán từ Excel
-            </Button>
-
-            {newCount > 0 && (
-              <Button
-                colorStyle="filled"
-                onClick={onSaveStudents}
-                disabled={isLoading}
-                loading={isLoading}
-                icon={!isLoading ? <Icon name="save" variant="rounded" size={18} /> : undefined}
-              >
-                {isLoading ? 'Đang lưu...' : 'Lưu danh sách'}
-              </Button>
-            )}
-          </>
-        )}
       </div>
     </section>
   );

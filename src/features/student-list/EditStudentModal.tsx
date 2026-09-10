@@ -1,4 +1,4 @@
-import { useState, useEffect, type FormEvent } from 'react';
+import { useState, useEffect, type FormEvent, memo } from 'react';
 import {
   Button,
   Checkbox,
@@ -52,7 +52,7 @@ const COMPETENCY_OPTIONS: SelectOption[] = [
   ...VALID_COMPETENCY_LEVELS.map((level) => ({ value: level, label: level })),
 ];
 
-export const EditStudentModal = ({
+const EditStudentModalComponent = ({
   student,
   isOpen,
   classId,
@@ -175,7 +175,7 @@ export const EditStudentModal = ({
         <DialogOverlay />
         <DialogContent
           hideCloseButton
-          className="flex max-h-[90vh] w-[calc(100%-2rem)] max-w-lg flex-col overflow-hidden rounded-4xl bg-m3-surface-container-high p-0 text-m3-on-surface shadow-2xl"
+          className="flex max-h-[90vh] w-[calc(100%-2rem)] max-w-lg flex-col overflow-hidden rounded-4xl bg-m3-surface-container-high p-0 text-m3-on-surface shadow-2xl transform-gpu will-change-transform"
         >
           <div className="flex items-center justify-between border-b border-m3-outline-variant/40 px-6 pt-5 pb-3">
             <DialogHeader className="mb-0 flex-row items-center gap-3 space-y-0 text-left">
@@ -253,6 +253,8 @@ export const EditStudentModal = ({
                   }}
                   disabled={isSubmitting}
                   fullWidth
+                  menuVariant="baseline"
+                  colorVariant="standard"
                   className='pt-4'
                 />
 
@@ -270,6 +272,8 @@ export const EditStudentModal = ({
                   }}
                   disabled={isSubmitting}
                   fullWidth
+                  menuVariant="baseline"
+                  colorVariant="standard"
                   className='pt-4'
                 />
               </div>
@@ -327,3 +331,6 @@ export const EditStudentModal = ({
     </Dialog>
   );
 };
+
+export const EditStudentModal = memo(EditStudentModalComponent);
+

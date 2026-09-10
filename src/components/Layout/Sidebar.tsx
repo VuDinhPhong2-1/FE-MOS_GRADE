@@ -1,13 +1,11 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Icon,
-  IconButton,
   NavigationRail,
   NavigationRailItem,
   ShapeMedia,
   Text,
 } from '@bug-on/m3-expressive';
-import { ThemeToggle } from '../common';
 
 export interface SidebarNavItem {
   id: string;
@@ -20,10 +18,9 @@ export interface SidebarNavItem {
 interface SidebarProps {
   navItems: SidebarNavItem[];
   onNavigate?: () => void;
-  onOpenSettings?: () => void;
 }
 
-export const Sidebar = ({ navItems, onNavigate, onOpenSettings }: SidebarProps) => {
+export const Sidebar = ({ navItems, onNavigate }: SidebarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -59,19 +56,6 @@ export const Sidebar = ({ navItems, onNavigate, onOpenSettings }: SidebarProps) 
               M
             </Text>
           </ShapeMedia>
-        }
-        footer={
-          <div className="flex w-full flex-col items-center justify-center gap-2 pt-3 pb-2">
-            <IconButton
-              onClick={onOpenSettings}
-              aria-label="Cài đặt tài khoản"
-              title="Cài đặt tài khoản"
-              size='md'
-            >
-              <Icon name="settings" size={24} variant='rounded' />
-            </IconButton>
-            <ThemeToggle />
-          </div>
         }
         className="bg-m3-surface-container-low py-4"
       >

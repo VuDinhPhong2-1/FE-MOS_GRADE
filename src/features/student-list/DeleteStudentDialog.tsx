@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import {
   Button,
   Dialog,
@@ -19,7 +20,7 @@ export interface DeleteStudentDialogProps {
   onConfirmDelete: () => Promise<void> | void;
 }
 
-export const DeleteStudentDialog = ({
+const DeleteStudentDialogComponent = ({
   open,
   isDeleting,
   studentToDelete,
@@ -42,7 +43,7 @@ export const DeleteStudentDialog = ({
         <DialogOverlay />
         <DialogContent
           hideCloseButton
-          className="flex max-h-[90vh] w-[calc(100%-2rem)] max-w-md flex-col overflow-hidden rounded-4xl bg-m3-surface-container-high p-6 text-m3-on-surface shadow-2xl"
+          className="flex max-h-[90vh] w-[calc(100%-2rem)] max-w-md flex-col overflow-hidden rounded-4xl bg-m3-surface-container-high p-6 text-m3-on-surface shadow-2xl transform-gpu will-change-transform"
         >
           <div className="flex flex-col gap-4">
             <div className="flex items-center gap-3">
@@ -96,3 +97,6 @@ export const DeleteStudentDialog = ({
     </Dialog>
   );
 };
+
+export const DeleteStudentDialog = memo(DeleteStudentDialogComponent);
+

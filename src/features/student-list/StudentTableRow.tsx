@@ -1,5 +1,12 @@
 import { memo } from 'react';
-import { Button, Icon, ProgressIndicator, Switch } from '@bug-on/m3-expressive';
+import {
+  Button,
+  Icon,
+  PlainTooltip,
+  ProgressIndicator,
+  Switch,
+  TooltipBox,
+} from '@bug-on/m3-expressive';
 import type { Student } from '../../types/student.types';
 import type { CompetencyLevel } from './types';
 import {
@@ -47,28 +54,35 @@ const StudentTableRowComponent = ({
       {/* Competency Level */}
       <td className="px-3 py-4 text-center sm:px-6">
         <div className="flex flex-col items-center gap-1">
-          <select
-            value={student.competencyLevel || ''}
-            disabled={readOnly || isSaving}
-            onChange={(event) =>
-              onCompetencyChange(student, event.target.value as CompetencyLevel)
-            }
-            className={`w-18 rounded-full border border-m3-outline-variant/60 px-2 py-1 text-center text-xs font-semibold outline-none transition ${competencyBadgeClass(
-              student.competencyLevel
-            )} ${isSaving ? 'cursor-not-allowed opacity-70' : 'hover:brightness-95'}`}
-            title={
-              isTemp
-                ? 'Học sinh tạm, sẽ lưu cùng danh sách học sinh.'
-                : 'Cập nhật nhanh năng lực'
-            }
-          >
-            <option value="">--</option>
-            {VALID_COMPETENCY_LEVELS.map((level) => (
-              <option key={level} value={level}>
-                {level}
-              </option>
-            ))}
-          </select>
+          <div className="relative inline-flex items-center">
+            <select
+              value={student.competencyLevel || ''}
+              disabled={readOnly || isSaving}
+              onChange={(event) =>
+                onCompetencyChange(student, event.target.value as CompetencyLevel)
+              }
+              className={`appearance-none rounded-full border border-m3-outline-variant/60 py-1 pl-3 pr-7 text-center text-xs font-semibold outline-none transition cursor-pointer ${competencyBadgeClass(
+                student.competencyLevel
+              )} ${isSaving ? 'cursor-not-allowed opacity-70' : 'hover:brightness-95 focus:ring-2 focus:ring-m3-primary/30'}`}
+              title={
+                isTemp
+                  ? 'Học sinh tạm, sẽ lưu cùng danh sách học sinh.'
+                  : 'Cập nhật nhanh năng lực'
+              }
+            >
+              <option value="">--</option>
+              {VALID_COMPETENCY_LEVELS.map((level) => (
+                <option key={level} value={level}>
+                  {level}
+                </option>
+              ))}
+            </select>
+            <Icon
+              name="expand_more"
+              size={16}
+              className="pointer-events-none absolute right-1.5 text-m3-on-surface-variant"
+            />
+          </div>
           {isSaving && <span className="text-[10px] text-m3-on-surface-variant">Đang lưu...</span>}
         </div>
       </td>
@@ -126,24 +140,28 @@ const StudentTableRowComponent = ({
       <td className="px-3 py-4 text-center sm:px-6">
         {!readOnly ? (
           <div className="inline-flex items-center gap-1.5">
-            <Button
-              colorStyle="tonal"
-              size="xs"
-              onClick={() => onEdit(student)}
-              disabled={isTemp}
-              icon={<Icon name="edit" variant="rounded" size={14} />}
-            >
-              Sửa
-            </Button>
-            <Button
-              colorStyle="text"
-              size="xs"
-              className="text-m3-error hover:bg-m3-error-container/40"
-              onClick={() => onDelete(student)}
-              icon={<Icon name="delete" variant="rounded" size={14} />}
-            >
-              Xóa
-            </Button>
+            <TooltipBox tooltip={<PlainTooltip>Sửa học sinh</PlainTooltip>} placement="top">
+              <Button
+                colorStyle="tonal"
+                size="xs"
+                onClick={() => onEdit(student)}
+                disabled={isTemp}
+                icon={<Icon name="edit" variant="rounded" size={14} />}
+              >
+                Sửa
+              </Button>
+            </TooltipBox>
+            <TooltipBox tooltip={<PlainTooltip>Xóa học sinh</PlainTooltip>} placement="top">
+              <Button
+                colorStyle="text"
+                size="xs"
+                className="text-m3-error hover:bg-m3-error-container/40"
+                onClick={() => onDelete(student)}
+                icon={<Icon name="delete" variant="rounded" size={14} />}
+              >
+                Xóa
+              </Button>
+            </TooltipBox>
           </div>
         ) : (
           <span className="text-xs text-m3-on-surface-variant">Chỉ xem</span>

@@ -1,7 +1,6 @@
 import { useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
-  Button,
   Card,
   CardContent,
   Icon,
@@ -58,42 +57,33 @@ const SchoolList = () => {
     });
   }, [setSearchParams]);
 
-  const handleBackToSchools = useCallback(() => {
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      next.delete('schoolId');
-      next.delete('classId');
-      return next;
-    });
-  }, [setSearchParams]);
-
   const isViewingSchool = Boolean(selectedSchool || (schoolId && isLoading));
 
   usePageHeader(
     isViewingSchool
       ? null
       : {
-          title: 'Quản lý trường học',
-          subtitle: 'Danh sách các trường và cơ sở đào tạo trong hệ thống MOS Grader',
-          actions: [
-            {
-              id: 'refresh-schools',
-              label: 'Làm mới',
-              icon: 'refresh',
-              colorStyle: 'outlined',
-              disabled: isLoading,
-              onClick: fetchSchools,
-            },
-            {
-              id: 'add-school',
-              label: 'Thêm trường',
-              icon: 'add',
-              colorStyle: 'filled',
-              disabled: isLoading,
-              onClick: openAddModal,
-            },
-          ],
-        },
+        title: 'Quản lý trường học',
+        subtitle: 'Danh sách các trường và cơ sở đào tạo trong hệ thống MOS Grader',
+        actions: [
+          {
+            id: 'refresh-schools',
+            label: 'Làm mới',
+            icon: 'refresh',
+            colorStyle: 'outlined',
+            disabled: isLoading,
+            onClick: fetchSchools,
+          },
+          {
+            id: 'add-school',
+            label: 'Thêm trường',
+            icon: 'add',
+            colorStyle: 'filled',
+            disabled: isLoading,
+            onClick: openAddModal,
+          },
+        ],
+      },
     [isViewingSchool, isLoading, fetchSchools, openAddModal]
   );
 
@@ -162,17 +152,7 @@ const SchoolList = () => {
           />
         </>
       ) : (
-        <div className="space-y-4">
-          <Button
-            size='sm'
-            colorStyle="tonal"
-            onClick={handleBackToSchools}
-            icon={<Icon name="arrow_back" size={20} />}
-          >
-            Quay lại danh sách trường
-          </Button>
-          <ClassList selectedSchool={selectedSchool} />
-        </div>
+        <ClassList selectedSchool={selectedSchool} />
       )}
     </div>
   );

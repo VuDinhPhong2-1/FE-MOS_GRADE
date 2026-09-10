@@ -4,6 +4,7 @@ import type { Class } from '../../types/class.types';
 export interface StudentListProps {
   selectedClass: Class;
   readOnly?: boolean;
+  onBack?: () => void;
 }
 
 export type CompetencyLevel = '' | 'A' | 'B' | 'C' | 'D';

@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Icon, ProgressIndicator } from '@bug-on/m3-expressive';
+import { useEffect, useMemo, useState, memo } from 'react';
+import { Icon, ProgressIndicator, Select, type SelectOption } from '@bug-on/m3-expressive';
 import { useAuth } from '../../context/AuthContext';
 import { analyticsService } from '../../services/analytics.service';
 import type { Assignment } from '../../types/assignment.types';
@@ -12,9 +12,14 @@ interface ClassAnalyticsPanelProps {
 }
 
 const pct = (v: number) => `${Number.isFinite(v) ? v.toFixed(2) : '0.00'}%`;
-const barWidth = (v: number) => `${Math.max(0, Math.min(100, v))}%`;
 
-export const ClassAnalyticsPanel = ({ classId, assignments }: ClassAnalyticsPanelProps) => {
+const TOP_OPTIONS: SelectOption[] = [
+  { value: '5', label: 'Top 5 câu sai nhiều' },
+  { value: '10', label: 'Top 10 câu sai nhiều' },
+  { value: '15', label: 'Top 15 câu sai nhiều' },
+];
+
+const ClassAnalyticsPanelComponent = ({ classId, assignments }: ClassAnalyticsPanelProps) => {
   const { getAccessToken } = useAuth();
 
   const [overview, setOverview] = useState<ClassAnalyticsOverviewResponse | null>(null);
@@ -30,6 +35,11 @@ export const ClassAnalyticsPanel = ({ classId, assignments }: ClassAnalyticsPane
       .filter((x) => !!x);
     return Array.from(new Set(values));
   }, [assignments]);
+
+  const endpointSelectOptions: SelectOption[] = useMemo(() => [
+    { value: '', label: 'Tất cả dự án' },
+    ...endpointOptions.map((ep) => ({ value: ep, label: ep })),
+  ], [endpointOptions]);
 
   useEffect(() => {
     if (!classId) return;
@@ -60,8 +70,8 @@ export const ClassAnalyticsPanel = ({ classId, assignments }: ClassAnalyticsPane
 
   return (
     <section className="relative overflow-hidden rounded-4xl bg-m3-surface-container p-4 sm:p-6 shadow-xs">
-      <div className="pointer-events-none absolute -left-12 -top-12 h-28 w-28 rounded-full bg-m3-primary/10 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-12 right-1/4 h-24 w-24 rounded-full bg-m3-tertiary/10 blur-3xl" />
+      <div className="pointer-events-none absolute -left-12 -top-12 h-28 w-28 rounded-full bg-m3-primary/10 blur-3xl gpu-layer-isolate" />
+      <div className="pointer-events-none absolute -bottom-12 right-1/4 h-24 w-24 rounded-full bg-m3-tertiary/10 blur-3xl gpu-layer-isolate" />
 
       <div className="relative">
         <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
@@ -75,28 +85,33 @@ export const ClassAnalyticsPanel = ({ classId, assignments }: ClassAnalyticsPane
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            <select
-              value={projectEndpoint}
-              onChange={(e) => setProjectEndpoint(e.target.value)}
-              className="rounded-xl bg-m3-surface-container-high px-3 py-2 text-sm text-m3-on-surface shadow-xs outline-none focus:ring-2 focus:ring-m3-primary/30"
-            >
-              <option value="">Tất cả dự án</option>
-              {endpointOptions.map((ep) => (
-                <option key={ep} value={ep}>
-                  {ep}
-                </option>
-              ))}
-            </select>
-            <select
-              value={top}
-              onChange={(e) => setTop(Number(e.target.value))}
-              className="rounded-xl bg-m3-surface-container-high px-3 py-2 text-sm text-m3-on-surface shadow-xs outline-none focus:ring-2 focus:ring-m3-primary/30"
-            >
-              <option value={5}>Top 5 câu sai nhiều</option>
-              <option value={10}>Top 10 câu sai nhiều</option>
-              <option value={15}>Top 15 câu sai nhiều</option>
-            </select>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <div className="w-full sm:w-48">
+              <Select
+                variant="outlined"
+                options={endpointSelectOptions}
+                value={projectEndpoint}
+                onChange={(val) => setProjectEndpoint(val)}
+                fullWidth
+                dense
+                menuVariant="baseline"
+                colorVariant="standard"
+                showDividers={false}
+              />
+            </div>
+            <div className="w-full sm:w-52">
+              <Select
+                variant="outlined"
+                options={TOP_OPTIONS}
+                value={String(top)}
+                onChange={(val) => setTop(Number(val) || 10)}
+                fullWidth
+                dense
+                menuVariant="baseline"
+                colorVariant="standard"
+                showDividers={false}
+              />
+            </div>
           </div>
         </div>
 
@@ -166,19 +181,20 @@ export const ClassAnalyticsPanel = ({ classId, assignments }: ClassAnalyticsPane
                   <div className="text-sm text-m3-on-surface-variant">Không có dữ liệu câu yếu.</div>
                 )}
                 {weakTaskChartRows.map((row) => (
-                  <div key={row.x}>
-                    <div className="mb-1 flex justify-between text-xs">
+                  <div key={row.x} className="space-y-1.5">
+                    <div className="flex justify-between text-xs">
                       <span className="font-semibold text-m3-on-surface">{row.x}</span>
-                      <span className="text-m3-on-surface-variant">
+                      <span className="font-medium text-m3-error">
                         {pct(row.y)} ({row.failed}/{row.attempts})
                       </span>
                     </div>
-                    <div className="h-2.5 rounded-full bg-rose-100 dark:bg-rose-950/40">
-                      <div
-                        className="h-2.5 rounded-full bg-linear-to-r from-rose-500 to-orange-500"
-                        style={{ width: barWidth(row.y) }}
-                      />
-                    </div>
+                    <ProgressIndicator
+                      variant="linear"
+                      shape="flat"
+                      value={Math.max(0, Math.min(100, row.y))}
+                      aria-label={`Tỉ lệ sai câu ${row.x}: ${pct(row.y)}`}
+                      className="h-2 w-full rounded-full bg-m3-error-container/30 [&>div]:bg-m3-error"
+                    />
                   </div>
                 ))}
               </div>
@@ -196,4 +212,5 @@ export const ClassAnalyticsPanel = ({ classId, assignments }: ClassAnalyticsPane
   );
 };
 
+export const ClassAnalyticsPanel = memo(ClassAnalyticsPanelComponent);
 export default ClassAnalyticsPanel;

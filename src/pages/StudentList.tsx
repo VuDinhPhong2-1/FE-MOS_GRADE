@@ -15,6 +15,7 @@ import {
   mapRowsToTempStudents,
   StudentHeader,
   StudentToolbar,
+  StudentActionToolbar,
   StudentTable,
   AddStudentModal,
   EditStudentModal,
@@ -23,7 +24,7 @@ import {
   ClassAnalyticsPanel,
 } from '../features/student-list';
 
-const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
+const StudentList = ({ selectedClass, readOnly = false, onBack }: StudentListProps) => {
   const { getAccessToken } = useAuth();
   const { showSnackbar } = useSnackbar();
   const navigate = useNavigate();
@@ -125,12 +126,20 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
 
   const handleGrade = useCallback(() => {
     if (readOnly) {
-      alert('Bạn chỉ có quyền xem lớp này.');
+      void showSnackbar({
+        message: 'Bạn chỉ có quyền xem lớp này.',
+        withDismissAction: true,
+        duration: 3500,
+      });
       return;
     }
 
     if (activeStudents.length === 0) {
-      alert('Không có học sinh đang hoạt động để chấm điểm!');
+      void showSnackbar({
+        message: 'Không có học sinh đang hoạt động để chấm điểm!',
+        withDismissAction: true,
+        duration: 3500,
+      });
       return;
     }
 
@@ -142,7 +151,7 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
         returnPath,
       },
     });
-  }, [readOnly, activeStudents.length, selectedClassId, selectedClassName, returnPath, navigate]);
+  }, [readOnly, activeStudents.length, selectedClassId, selectedClassName, returnPath, navigate, showSnackbar]);
 
   const handleFileUpload = useCallback(
     (e: ChangeEvent<HTMLInputElement>) => {
@@ -182,19 +191,27 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
   const handleOpenEditStudent = useCallback(
     (student: Student) => {
       if (readOnly) {
-        alert('Bạn chỉ có quyền xem lớp này.');
+        void showSnackbar({
+          message: 'Bạn chỉ có quyền xem lớp này.',
+          withDismissAction: true,
+          duration: 3500,
+        });
         return;
       }
 
       if (student.id.startsWith('temp-')) {
-        alert('Học sinh chưa được lưu lên hệ thống, không thể sửa.');
+        void showSnackbar({
+          message: 'Học sinh chưa được lưu lên hệ thống, không thể sửa.',
+          withDismissAction: true,
+          duration: 3500,
+        });
         return;
       }
 
       setEditingStudent(student);
       setIsEditModalOpen(true);
     },
-    [readOnly]
+    [readOnly, showSnackbar]
   );
 
   const handleCloseEditModal = useCallback(() => {
@@ -228,6 +245,34 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
     [appendImportedStudents, setFlashMessage]
   );
 
+  const handleOpenAddModal = useCallback(() => {
+    setIsAddModalOpen(true);
+  }, []);
+
+  const handleCloseAddModal = useCallback(() => {
+    setIsAddModalOpen(false);
+  }, []);
+
+  const handleOpenPasteModal = useCallback(() => {
+    setIsPasteModalOpen(true);
+  }, []);
+
+  const handleClosePasteModal = useCallback(() => {
+    setIsPasteModalOpen(false);
+  }, []);
+
+  const handleCloseDeleteDialog = useCallback(() => {
+    setStudentToDelete(null);
+  }, []);
+
+  const handleBack = useCallback(() => {
+    if (onBack) {
+      onBack();
+    } else {
+      navigate(-1);
+    }
+  }, [onBack, navigate]);
+
   const handleConfirmDeleteStudent = useCallback(async () => {
     if (!studentToDelete) return;
     setIsDeletingStudent(true);
@@ -250,7 +295,7 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
   }, [flashMessage, showSnackbar]);
 
   return (
-    <div className="mx-auto w-full space-y-4 px-2 pb-4 sm:px-4">
+    <div className="mx-auto w-full space-y-4 pb-24 sm:pb-28">
       {readOnly && (
         <div className="flex items-center gap-2 rounded-2xl border border-m3-outline-variant/60 bg-m3-surface-container px-4 py-3 text-sm text-m3-on-surface shadow-xs">
           <Icon name="lock" variant="rounded" size={18} className="text-m3-secondary" />
@@ -258,37 +303,41 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
         </div>
       )}
 
-      {/* Hero Header & Action Buttons */}
+      {/* Hero Header without action buttons */}
       <StudentHeader
         className={selectedClass.name}
         totalCount={students.length}
         activeCount={activeStudents.length}
         inactiveCount={inactiveStudentsCount}
         newCount={studentNewList.length}
-        readOnly={readOnly}
-        isStudentMetadataSyncing={isStudentMetadataSyncing}
-        isLoading={isLoading}
-        onOpenAddModal={() => setIsAddModalOpen(true)}
-        onGrade={handleGrade}
-        onSyncMetadata={handleSyncStudentMetadataToGoogleSheet}
-        onOpenViewScores={handleOpenViewScoresModal}
       />
 
       {/* Class Analytics Panel */}
       <ClassAnalyticsPanel classId={selectedClass.id} assignments={assignments} />
 
-      {/* Search, Filter & Toolbar Actions */}
+      {/* Search & Filter Toolbar */}
       <StudentToolbar
         searchKeyword={searchKeyword}
         onSearchChange={setSearchKeyword}
         displayedCount={displayedStudents.length}
         totalCount={students.length}
-        isLoading={isLoading}
+      />
+
+      {/* Floating Action Toolbar (Thêm học sinh, Chấm điểm, Xem điểm, Tải lại, Nhập/Dán Excel, Đồng bộ GG Sheet) */}
+      <StudentActionToolbar
         readOnly={readOnly}
+        isLoading={isLoading}
+        isStudentMetadataSyncing={isStudentMetadataSyncing}
+        activeCount={activeStudents.length}
         newCount={studentNewList.length}
+        onBack={handleBack}
+        onOpenAddModal={handleOpenAddModal}
+        onGrade={handleGrade}
+        onOpenViewScores={handleOpenViewScoresModal}
         onReload={loadStudents}
         onFileUpload={handleFileUpload}
-        onOpenPasteModal={() => setIsPasteModalOpen(true)}
+        onOpenPasteModal={handleOpenPasteModal}
+        onSyncMetadata={handleSyncStudentMetadataToGoogleSheet}
         onSaveStudents={handleSaveStudents}
       />
 
@@ -315,7 +364,7 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
         classId={selectedClass.id}
         readOnly={readOnly}
         getAccessToken={getAccessToken}
-        onClose={() => setIsAddModalOpen(false)}
+        onClose={handleCloseAddModal}
         onSuccess={handleAddSuccess}
       />
 
@@ -334,7 +383,7 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
       <PasteStudentModal
         isOpen={isPasteModalOpen}
         readOnly={readOnly}
-        onClose={() => setIsPasteModalOpen(false)}
+        onClose={handleClosePasteModal}
         onImportStudents={handleImportFromPaste}
       />
 
@@ -343,7 +392,7 @@ const StudentList = ({ selectedClass, readOnly = false }: StudentListProps) => {
         open={Boolean(studentToDelete)}
         isDeleting={isDeletingStudent}
         studentToDelete={studentToDelete}
-        onClose={() => setStudentToDelete(null)}
+        onClose={handleCloseDeleteDialog}
         onConfirmDelete={handleConfirmDeleteStudent}
       />
     </div>
