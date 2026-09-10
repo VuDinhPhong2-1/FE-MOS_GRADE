@@ -1613,9 +1613,12 @@ const XmlGradingRulesPage = () => {
                                                               feedback: task.specialCondition?.feedback ?? emptyFeedback(),
                                                               excelDataModelImportConfig: task.specialCondition?.excelDataModelImportConfig ?? {
                                                                 sourceFileName: '',
+                                                                expectedWorksheetName: '',
                                                                 expectedConnectionName: '',
                                                                 requireConnection: true,
                                                                 requireDataModel: true,
+                                                                requireImportedWorksheet: true,
+                                                                requireQueryTable: true,
                                                               },
                                                             });
                                                           }
@@ -2967,6 +2970,22 @@ const XmlGradingRulesPage = () => {
                                                       />
                                                     </label>
                                                     <label className="text-xs font-semibold text-slate-600">
+                                                      Expected worksheet name
+                                                      <input
+                                                        value={task.specialCondition.excelDataModelImportConfig?.expectedWorksheetName ?? ''}
+                                                        onChange={(e) => {
+                                                          const currentConfig = task.specialCondition?.excelDataModelImportConfig ?? {};
+                                                          updateTaskSpecialCondition(pi, ti, {
+                                                            ...task.specialCondition!,
+                                                            type: 'excelDataModelImport',
+                                                            excelDataModelImportConfig: { ...currentConfig, expectedWorksheetName: e.target.value },
+                                                          });
+                                                        }}
+                                                        placeholder="Accessories"
+                                                        className={inputClass}
+                                                      />
+                                                    </label>
+                                                    <label className="text-xs font-semibold text-slate-600">
                                                       Expected connection name
                                                       <input
                                                         value={task.specialCondition.excelDataModelImportConfig?.expectedConnectionName ?? ''}
@@ -2996,6 +3015,36 @@ const XmlGradingRulesPage = () => {
                                                         }}
                                                       />
                                                       Require connection
+                                                    </label>
+                                                    <label className="flex items-center gap-2 text-xs font-medium text-slate-600">
+                                                      <input
+                                                        type="checkbox"
+                                                        checked={task.specialCondition.excelDataModelImportConfig?.requireImportedWorksheet ?? true}
+                                                        onChange={(e) => {
+                                                          const currentConfig = task.specialCondition?.excelDataModelImportConfig ?? {};
+                                                          updateTaskSpecialCondition(pi, ti, {
+                                                            ...task.specialCondition!,
+                                                            type: 'excelDataModelImport',
+                                                            excelDataModelImportConfig: { ...currentConfig, requireImportedWorksheet: e.target.checked },
+                                                          });
+                                                        }}
+                                                      />
+                                                      Require imported worksheet
+                                                    </label>
+                                                    <label className="flex items-center gap-2 text-xs font-medium text-slate-600">
+                                                      <input
+                                                        type="checkbox"
+                                                        checked={task.specialCondition.excelDataModelImportConfig?.requireQueryTable ?? true}
+                                                        onChange={(e) => {
+                                                          const currentConfig = task.specialCondition?.excelDataModelImportConfig ?? {};
+                                                          updateTaskSpecialCondition(pi, ti, {
+                                                            ...task.specialCondition!,
+                                                            type: 'excelDataModelImport',
+                                                            excelDataModelImportConfig: { ...currentConfig, requireQueryTable: e.target.checked },
+                                                          });
+                                                        }}
+                                                      />
+                                                      Require query table
                                                     </label>
                                                     <label className="flex items-center gap-2 text-xs font-medium text-slate-600">
                                                       <input

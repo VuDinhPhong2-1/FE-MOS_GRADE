@@ -186,9 +186,12 @@ export interface ExcelClearCellFormattingConfig {
 
 export interface ExcelDataModelImportConfig {
   sourceFileName?: string;
+  expectedWorksheetName?: string;
   expectedConnectionName?: string;
   requireConnection?: boolean;
   requireDataModel?: boolean;
+  requireImportedWorksheet?: boolean;
+  requireQueryTable?: boolean;
 }
 
 export interface ExcelCompatibilityReportConfig {
