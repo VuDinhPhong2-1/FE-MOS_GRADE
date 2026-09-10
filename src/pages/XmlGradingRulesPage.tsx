@@ -121,6 +121,41 @@ const specialConditionOptions: Array<{
       description:
         'Kiem tra Page Border cua Word: 4 canh Box, kieu net, mau va do day vien.',
     },
+    {
+      value: 'excelTableName',
+      label: 'Excel Table Name',
+      description:
+        'Kiem tra table trong Excel da duoc doi dung ten, co the gioi han theo worksheet.',
+      subjects: ['excel'],
+    },
+    {
+      value: 'excelWorksheetPageSetup',
+      label: 'Excel Page Setup',
+      description:
+        'Kiem tra thiet lap trang tinh Excel, hien ho tro orientation portrait/landscape.',
+      subjects: ['excel'],
+    },
+    {
+      value: 'excelClearCellFormatting',
+      label: 'Excel Clear Formatting',
+      description:
+        'Kiem tra mot range tren worksheet da duoc xoa dinh dang ve style mac dinh.',
+      subjects: ['excel'],
+    },
+    {
+      value: 'excelDataModelImport',
+      label: 'Excel Data Model Import',
+      description:
+        'Kiem tra workbook co connection import tu file nguon va dau hieu Data Model.',
+      subjects: ['excel'],
+    },
+    {
+      value: 'excelCompatibilityReport',
+      label: 'Excel Compatibility Report',
+      description:
+        'Kiem tra workbook co worksheet/van ban ket qua Compatibility Checker.',
+      subjects: ['excel'],
+    },
   ];
 
 const normalizeSubject = (value: string) => value.trim().toLowerCase();
@@ -1535,6 +1570,67 @@ const XmlGradingRulesPage = () => {
                                                               },
                                                             });
                                                           }
+                                                          if (value === 'excelTableName') {
+                                                            updateTaskSpecialCondition(pi, ti, {
+                                                              type: 'excelTableName',
+                                                              score: task.specialCondition?.score ?? 0,
+                                                              feedback: task.specialCondition?.feedback ?? emptyFeedback(),
+                                                              excelTableNameConfig: task.specialCondition?.excelTableNameConfig ?? {
+                                                                worksheetName: '',
+                                                                expectedName: '',
+                                                                originalName: '',
+                                                                requireOriginalNameAbsent: true,
+                                                              },
+                                                            });
+                                                          }
+                                                          if (value === 'excelWorksheetPageSetup') {
+                                                            updateTaskSpecialCondition(pi, ti, {
+                                                              type: 'excelWorksheetPageSetup',
+                                                              score: task.specialCondition?.score ?? 0,
+                                                              feedback: task.specialCondition?.feedback ?? emptyFeedback(),
+                                                              excelWorksheetPageSetupConfig: task.specialCondition?.excelWorksheetPageSetupConfig ?? {
+                                                                worksheetName: '',
+                                                                orientation: 'landscape',
+                                                              },
+                                                            });
+                                                          }
+                                                          if (value === 'excelClearCellFormatting') {
+                                                            updateTaskSpecialCondition(pi, ti, {
+                                                              type: 'excelClearCellFormatting',
+                                                              score: task.specialCondition?.score ?? 0,
+                                                              feedback: task.specialCondition?.feedback ?? emptyFeedback(),
+                                                              excelClearCellFormattingConfig: task.specialCondition?.excelClearCellFormattingConfig ?? {
+                                                                worksheetName: '',
+                                                                range: 'A4:D4',
+                                                                defaultStyleId: 0,
+                                                              },
+                                                            });
+                                                          }
+                                                          if (value === 'excelDataModelImport') {
+                                                            updateTaskSpecialCondition(pi, ti, {
+                                                              type: 'excelDataModelImport',
+                                                              score: task.specialCondition?.score ?? 0,
+                                                              feedback: task.specialCondition?.feedback ?? emptyFeedback(),
+                                                              excelDataModelImportConfig: task.specialCondition?.excelDataModelImportConfig ?? {
+                                                                sourceFileName: '',
+                                                                expectedConnectionName: '',
+                                                                requireConnection: true,
+                                                                requireDataModel: true,
+                                                              },
+                                                            });
+                                                          }
+                                                          if (value === 'excelCompatibilityReport') {
+                                                            updateTaskSpecialCondition(pi, ti, {
+                                                              type: 'excelCompatibilityReport',
+                                                              score: task.specialCondition?.score ?? 0,
+                                                              feedback: task.specialCondition?.feedback ?? emptyFeedback(),
+                                                              excelCompatibilityReportConfig: task.specialCondition?.excelCompatibilityReportConfig ?? {
+                                                                worksheetName: '',
+                                                                expectedTexts: [],
+                                                                requireNewWorksheet: true,
+                                                              },
+                                                            });
+                                                          }
                                                         }}
                                                         className="mt-1 w-full appearance-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 pr-10 text-sm font-medium text-slate-800 shadow-sm outline-none transition hover:border-slate-300 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
                                                       >
@@ -2637,6 +2733,344 @@ const XmlGradingRulesPage = () => {
                                                   });
                                                 }}
                                               />
+                                            )}
+                                            {task.specialCondition?.type?.startsWith('excel') && (
+                                              <div className="mt-4 rounded-2xl border border-emerald-100 bg-emerald-50/40 p-4">
+                                                {task.specialCondition.type === 'excelTableName' && (
+                                                  <div className="grid gap-3 md:grid-cols-2">
+                                                    <label className="text-xs font-semibold text-slate-600">
+                                                      Worksheet name
+                                                      <input
+                                                        value={task.specialCondition.excelTableNameConfig?.worksheetName ?? ''}
+                                                        onChange={(e) => {
+                                                          const currentConfig = task.specialCondition?.excelTableNameConfig ?? {};
+                                                          updateTaskSpecialCondition(pi, ti, {
+                                                            ...task.specialCondition!,
+                                                            type: 'excelTableName',
+                                                            excelTableNameConfig: { ...currentConfig, worksheetName: e.target.value },
+                                                          });
+                                                        }}
+                                                        placeholder="Rental Rates"
+                                                        className={inputClass}
+                                                      />
+                                                    </label>
+                                                    <label className="text-xs font-semibold text-slate-600">
+                                                      Source file
+                                                      <input
+                                                        value={task.specialCondition.excelTableNameConfig?.sourceFile ?? ''}
+                                                        onChange={(e) => {
+                                                          const currentConfig = task.specialCondition?.excelTableNameConfig ?? {};
+                                                          updateTaskSpecialCondition(pi, ti, {
+                                                            ...task.specialCondition!,
+                                                            type: 'excelTableName',
+                                                            excelTableNameConfig: { ...currentConfig, sourceFile: e.target.value },
+                                                          });
+                                                        }}
+                                                        placeholder="xl/tables/table1.xml"
+                                                        className={inputClass}
+                                                      />
+                                                    </label>
+                                                    <label className="text-xs font-semibold text-slate-600">
+                                                      Expected name
+                                                      <input
+                                                        value={task.specialCondition.excelTableNameConfig?.expectedName ?? ''}
+                                                        onChange={(e) => {
+                                                          const currentConfig = task.specialCondition?.excelTableNameConfig ?? {};
+                                                          updateTaskSpecialCondition(pi, ti, {
+                                                            ...task.specialCondition!,
+                                                            type: 'excelTableName',
+                                                            excelTableNameConfig: { ...currentConfig, expectedName: e.target.value },
+                                                          });
+                                                        }}
+                                                        placeholder="Rates"
+                                                        className={inputClass}
+                                                      />
+                                                    </label>
+                                                    <label className="text-xs font-semibold text-slate-600">
+                                                      Original name
+                                                      <input
+                                                        value={task.specialCondition.excelTableNameConfig?.originalName ?? ''}
+                                                        onChange={(e) => {
+                                                          const currentConfig = task.specialCondition?.excelTableNameConfig ?? {};
+                                                          updateTaskSpecialCondition(pi, ti, {
+                                                            ...task.specialCondition!,
+                                                            type: 'excelTableName',
+                                                            excelTableNameConfig: { ...currentConfig, originalName: e.target.value },
+                                                          });
+                                                        }}
+                                                        placeholder="Table1"
+                                                        className={inputClass}
+                                                      />
+                                                    </label>
+                                                    <label className="flex items-center gap-2 text-xs font-medium text-slate-600">
+                                                      <input
+                                                        type="checkbox"
+                                                        checked={task.specialCondition.excelTableNameConfig?.requireOriginalNameAbsent ?? true}
+                                                        onChange={(e) => {
+                                                          const currentConfig = task.specialCondition?.excelTableNameConfig ?? {};
+                                                          updateTaskSpecialCondition(pi, ti, {
+                                                            ...task.specialCondition!,
+                                                            type: 'excelTableName',
+                                                            excelTableNameConfig: { ...currentConfig, requireOriginalNameAbsent: e.target.checked },
+                                                          });
+                                                        }}
+                                                      />
+                                                      Require original name absent
+                                                    </label>
+                                                  </div>
+                                                )}
+
+                                                {task.specialCondition.type === 'excelWorksheetPageSetup' && (
+                                                  <div className="grid gap-3 md:grid-cols-3">
+                                                    <label className="text-xs font-semibold text-slate-600">
+                                                      Worksheet name
+                                                      <input
+                                                        value={task.specialCondition.excelWorksheetPageSetupConfig?.worksheetName ?? ''}
+                                                        onChange={(e) => {
+                                                          const currentConfig = task.specialCondition?.excelWorksheetPageSetupConfig ?? {};
+                                                          updateTaskSpecialCondition(pi, ti, {
+                                                            ...task.specialCondition!,
+                                                            type: 'excelWorksheetPageSetup',
+                                                            excelWorksheetPageSetupConfig: { ...currentConfig, worksheetName: e.target.value },
+                                                          });
+                                                        }}
+                                                        placeholder="Rental Rates"
+                                                        className={inputClass}
+                                                      />
+                                                    </label>
+                                                    <label className="text-xs font-semibold text-slate-600">
+                                                      Source file
+                                                      <input
+                                                        value={task.specialCondition.excelWorksheetPageSetupConfig?.sourceFile ?? ''}
+                                                        onChange={(e) => {
+                                                          const currentConfig = task.specialCondition?.excelWorksheetPageSetupConfig ?? {};
+                                                          updateTaskSpecialCondition(pi, ti, {
+                                                            ...task.specialCondition!,
+                                                            type: 'excelWorksheetPageSetup',
+                                                            excelWorksheetPageSetupConfig: { ...currentConfig, sourceFile: e.target.value },
+                                                          });
+                                                        }}
+                                                        placeholder="xl/worksheets/sheet1.xml"
+                                                        className={inputClass}
+                                                      />
+                                                    </label>
+                                                    <label className="text-xs font-semibold text-slate-600">
+                                                      Orientation
+                                                      <select
+                                                        value={task.specialCondition.excelWorksheetPageSetupConfig?.orientation ?? 'landscape'}
+                                                        onChange={(e) => {
+                                                          const currentConfig = task.specialCondition?.excelWorksheetPageSetupConfig ?? {};
+                                                          updateTaskSpecialCondition(pi, ti, {
+                                                            ...task.specialCondition!,
+                                                            type: 'excelWorksheetPageSetup',
+                                                            excelWorksheetPageSetupConfig: {
+                                                              ...currentConfig,
+                                                              orientation: e.target.value as 'portrait' | 'landscape',
+                                                            },
+                                                          });
+                                                        }}
+                                                        className={inputClass}
+                                                      >
+                                                        <option value="landscape">Landscape</option>
+                                                        <option value="portrait">Portrait</option>
+                                                      </select>
+                                                    </label>
+                                                  </div>
+                                                )}
+
+                                                {task.specialCondition.type === 'excelClearCellFormatting' && (
+                                                  <div className="grid gap-3 md:grid-cols-4">
+                                                    <label className="text-xs font-semibold text-slate-600">
+                                                      Worksheet name
+                                                      <input
+                                                        value={task.specialCondition.excelClearCellFormattingConfig?.worksheetName ?? ''}
+                                                        onChange={(e) => {
+                                                          const currentConfig = task.specialCondition?.excelClearCellFormattingConfig ?? {};
+                                                          updateTaskSpecialCondition(pi, ti, {
+                                                            ...task.specialCondition!,
+                                                            type: 'excelClearCellFormatting',
+                                                            excelClearCellFormattingConfig: { ...currentConfig, worksheetName: e.target.value },
+                                                          });
+                                                        }}
+                                                        placeholder="Rental Rates"
+                                                        className={inputClass}
+                                                      />
+                                                    </label>
+                                                    <label className="text-xs font-semibold text-slate-600">
+                                                      Source file
+                                                      <input
+                                                        value={task.specialCondition.excelClearCellFormattingConfig?.sourceFile ?? ''}
+                                                        onChange={(e) => {
+                                                          const currentConfig = task.specialCondition?.excelClearCellFormattingConfig ?? {};
+                                                          updateTaskSpecialCondition(pi, ti, {
+                                                            ...task.specialCondition!,
+                                                            type: 'excelClearCellFormatting',
+                                                            excelClearCellFormattingConfig: { ...currentConfig, sourceFile: e.target.value },
+                                                          });
+                                                        }}
+                                                        placeholder="xl/worksheets/sheet1.xml"
+                                                        className={inputClass}
+                                                      />
+                                                    </label>
+                                                    <label className="text-xs font-semibold text-slate-600">
+                                                      Range
+                                                      <input
+                                                        value={task.specialCondition.excelClearCellFormattingConfig?.range ?? ''}
+                                                        onChange={(e) => {
+                                                          const currentConfig = task.specialCondition?.excelClearCellFormattingConfig ?? {};
+                                                          updateTaskSpecialCondition(pi, ti, {
+                                                            ...task.specialCondition!,
+                                                            type: 'excelClearCellFormatting',
+                                                            excelClearCellFormattingConfig: { ...currentConfig, range: e.target.value },
+                                                          });
+                                                        }}
+                                                        placeholder="A4:D4"
+                                                        className={inputClass}
+                                                      />
+                                                    </label>
+                                                    <label className="text-xs font-semibold text-slate-600">
+                                                      Default style id
+                                                      <input
+                                                        type="number"
+                                                        min={0}
+                                                        value={task.specialCondition.excelClearCellFormattingConfig?.defaultStyleId ?? 0}
+                                                        onChange={(e) => {
+                                                          const currentConfig = task.specialCondition?.excelClearCellFormattingConfig ?? {};
+                                                          updateTaskSpecialCondition(pi, ti, {
+                                                            ...task.specialCondition!,
+                                                            type: 'excelClearCellFormatting',
+                                                            excelClearCellFormattingConfig: { ...currentConfig, defaultStyleId: Number(e.target.value) },
+                                                          });
+                                                        }}
+                                                        className={inputClass}
+                                                      />
+                                                    </label>
+                                                  </div>
+                                                )}
+
+                                                {task.specialCondition.type === 'excelDataModelImport' && (
+                                                  <div className="grid gap-3 md:grid-cols-2">
+                                                    <label className="text-xs font-semibold text-slate-600">
+                                                      Source file name
+                                                      <input
+                                                        value={task.specialCondition.excelDataModelImportConfig?.sourceFileName ?? ''}
+                                                        onChange={(e) => {
+                                                          const currentConfig = task.specialCondition?.excelDataModelImportConfig ?? {};
+                                                          updateTaskSpecialCondition(pi, ti, {
+                                                            ...task.specialCondition!,
+                                                            type: 'excelDataModelImport',
+                                                            excelDataModelImportConfig: { ...currentConfig, sourceFileName: e.target.value },
+                                                          });
+                                                        }}
+                                                        placeholder="Accessories.csv"
+                                                        className={inputClass}
+                                                      />
+                                                    </label>
+                                                    <label className="text-xs font-semibold text-slate-600">
+                                                      Expected connection name
+                                                      <input
+                                                        value={task.specialCondition.excelDataModelImportConfig?.expectedConnectionName ?? ''}
+                                                        onChange={(e) => {
+                                                          const currentConfig = task.specialCondition?.excelDataModelImportConfig ?? {};
+                                                          updateTaskSpecialCondition(pi, ti, {
+                                                            ...task.specialCondition!,
+                                                            type: 'excelDataModelImport',
+                                                            excelDataModelImportConfig: { ...currentConfig, expectedConnectionName: e.target.value },
+                                                          });
+                                                        }}
+                                                        placeholder="Accessories"
+                                                        className={inputClass}
+                                                      />
+                                                    </label>
+                                                    <label className="flex items-center gap-2 text-xs font-medium text-slate-600">
+                                                      <input
+                                                        type="checkbox"
+                                                        checked={task.specialCondition.excelDataModelImportConfig?.requireConnection ?? true}
+                                                        onChange={(e) => {
+                                                          const currentConfig = task.specialCondition?.excelDataModelImportConfig ?? {};
+                                                          updateTaskSpecialCondition(pi, ti, {
+                                                            ...task.specialCondition!,
+                                                            type: 'excelDataModelImport',
+                                                            excelDataModelImportConfig: { ...currentConfig, requireConnection: e.target.checked },
+                                                          });
+                                                        }}
+                                                      />
+                                                      Require connection
+                                                    </label>
+                                                    <label className="flex items-center gap-2 text-xs font-medium text-slate-600">
+                                                      <input
+                                                        type="checkbox"
+                                                        checked={task.specialCondition.excelDataModelImportConfig?.requireDataModel ?? true}
+                                                        onChange={(e) => {
+                                                          const currentConfig = task.specialCondition?.excelDataModelImportConfig ?? {};
+                                                          updateTaskSpecialCondition(pi, ti, {
+                                                            ...task.specialCondition!,
+                                                            type: 'excelDataModelImport',
+                                                            excelDataModelImportConfig: { ...currentConfig, requireDataModel: e.target.checked },
+                                                          });
+                                                        }}
+                                                      />
+                                                      Require Data Model
+                                                    </label>
+                                                  </div>
+                                                )}
+
+                                                {task.specialCondition.type === 'excelCompatibilityReport' && (
+                                                  <div className="grid gap-3 md:grid-cols-2">
+                                                    <label className="text-xs font-semibold text-slate-600">
+                                                      Worksheet name
+                                                      <input
+                                                        value={task.specialCondition.excelCompatibilityReportConfig?.worksheetName ?? ''}
+                                                        onChange={(e) => {
+                                                          const currentConfig = task.specialCondition?.excelCompatibilityReportConfig ?? {};
+                                                          updateTaskSpecialCondition(pi, ti, {
+                                                            ...task.specialCondition!,
+                                                            type: 'excelCompatibilityReport',
+                                                            excelCompatibilityReportConfig: { ...currentConfig, worksheetName: e.target.value },
+                                                          });
+                                                        }}
+                                                        placeholder="Compatibility Report"
+                                                        className={inputClass}
+                                                      />
+                                                    </label>
+                                                    <label className="flex items-center gap-2 text-xs font-medium text-slate-600">
+                                                      <input
+                                                        type="checkbox"
+                                                        checked={task.specialCondition.excelCompatibilityReportConfig?.requireNewWorksheet ?? true}
+                                                        onChange={(e) => {
+                                                          const currentConfig = task.specialCondition?.excelCompatibilityReportConfig ?? {};
+                                                          updateTaskSpecialCondition(pi, ti, {
+                                                            ...task.specialCondition!,
+                                                            type: 'excelCompatibilityReport',
+                                                            excelCompatibilityReportConfig: { ...currentConfig, requireNewWorksheet: e.target.checked },
+                                                          });
+                                                        }}
+                                                      />
+                                                      Require new worksheet
+                                                    </label>
+                                                    <label className="text-xs font-semibold text-slate-600 md:col-span-2">
+                                                      Expected texts
+                                                      <textarea
+                                                        value={(task.specialCondition.excelCompatibilityReportConfig?.expectedTexts ?? []).join('\n')}
+                                                        onChange={(e) => {
+                                                          const currentConfig = task.specialCondition?.excelCompatibilityReportConfig ?? {};
+                                                          updateTaskSpecialCondition(pi, ti, {
+                                                            ...task.specialCondition!,
+                                                            type: 'excelCompatibilityReport',
+                                                            excelCompatibilityReportConfig: {
+                                                              ...currentConfig,
+                                                              expectedTexts: e.target.value.split(/\r?\n/).map((line) => line.trim()).filter(Boolean),
+                                                            },
+                                                          });
+                                                        }}
+                                                        rows={4}
+                                                        placeholder={'Compatibility Checker\nSignificant loss of functionality'}
+                                                        className={cx(inputClass, 'resize-y')}
+                                                      />
+                                                    </label>
+                                                  </div>
+                                                )}
+                                              </div>
                                             )}
                                           </div>
                                           <div className="mt-5">

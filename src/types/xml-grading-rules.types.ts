@@ -41,7 +41,12 @@ export type SpecialConditionType =
   | 'textBoxContainsText'
   | 'pageMargins'
   | 'documentStyleSet'
-  | 'pageBorder';
+  | 'pageBorder'
+  | 'excelTableName'
+  | 'excelWorksheetPageSetup'
+  | 'excelClearCellFormatting'
+  | 'excelDataModelImport'
+  | 'excelCompatibilityReport';
 
   export type ImageWrapType =
   | 'inline'
@@ -158,6 +163,40 @@ export interface PageBorderConfig {
   requireAllSections?: boolean;
 }
 
+export interface ExcelTableNameConfig {
+  worksheetName?: string;
+  sourceFile?: string;
+  expectedName?: string;
+  originalName?: string;
+  requireOriginalNameAbsent?: boolean;
+}
+
+export interface ExcelWorksheetPageSetupConfig {
+  worksheetName?: string;
+  sourceFile?: string;
+  orientation?: 'portrait' | 'landscape';
+}
+
+export interface ExcelClearCellFormattingConfig {
+  worksheetName?: string;
+  sourceFile?: string;
+  range?: string;
+  defaultStyleId?: number;
+}
+
+export interface ExcelDataModelImportConfig {
+  sourceFileName?: string;
+  expectedConnectionName?: string;
+  requireConnection?: boolean;
+  requireDataModel?: boolean;
+}
+
+export interface ExcelCompatibilityReportConfig {
+  worksheetName?: string;
+  expectedTexts?: string[];
+  requireNewWorksheet?: boolean;
+}
+
 export interface SpecialCondition {
   type: SpecialConditionType;
   score: number;
@@ -172,6 +211,11 @@ export interface SpecialCondition {
   pageMarginsConfig?: PageMarginsConfig;
   documentStyleSetConfig?: DocumentStyleSetConfig;
   pageBorderConfig?: PageBorderConfig;
+  excelTableNameConfig?: ExcelTableNameConfig;
+  excelWorksheetPageSetupConfig?: ExcelWorksheetPageSetupConfig;
+  excelClearCellFormattingConfig?: ExcelClearCellFormattingConfig;
+  excelDataModelImportConfig?: ExcelDataModelImportConfig;
+  excelCompatibilityReportConfig?: ExcelCompatibilityReportConfig;
 }
 
 export interface PictureBulletConfig {
@@ -216,6 +260,11 @@ export interface SpecialCondition {
   pageMarginsConfig?: PageMarginsConfig;
   documentStyleSetConfig?: DocumentStyleSetConfig;
   pageBorderConfig?: PageBorderConfig;
+  excelTableNameConfig?: ExcelTableNameConfig;
+  excelWorksheetPageSetupConfig?: ExcelWorksheetPageSetupConfig;
+  excelClearCellFormattingConfig?: ExcelClearCellFormattingConfig;
+  excelDataModelImportConfig?: ExcelDataModelImportConfig;
+  excelCompatibilityReportConfig?: ExcelCompatibilityReportConfig;
 }
 
 export interface TaskXmlRule {
