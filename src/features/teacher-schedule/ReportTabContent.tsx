@@ -947,7 +947,7 @@ export const ReportTabContent = ({
               <label className="grid gap-1 text-sm">
                 <span className="font-medium text-m3-on-surface">Tài liệu dạy</span>
                 <input
-                  value={reportsDraft.professional.teachingMaterials}
+                  value={'THDD'}
                   onChange={(e) =>
                     onUpdateProfessionalField('teachingMaterials', e.target.value)
                   }
