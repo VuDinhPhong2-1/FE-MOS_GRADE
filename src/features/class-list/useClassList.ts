@@ -26,7 +26,7 @@ export function useClassList(selectedSchool: School) {
   const [error, setError] = useState('');
 
   // Filters state
-  const [showInactive, setShowInactive] = useState(false);
+  const [classStatusFilter, setClassStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [classSearch, setClassSearch] = useState('');
   const [classSearchActive, setClassSearchActive] = useState(false);
   const [selectedGradeFilter, setSelectedGradeFilter] = useState('');
@@ -119,7 +119,11 @@ export function useClassList(selectedSchool: School) {
       .filter((cls) => {
         const matchesSearch = !searchKeyword || normalizeSearchText(cls.name).includes(searchKeyword);
         const matchesGrade = !selectedGradeFilter || (cls.grade && cls.grade.includes(selectedGradeFilter));
-        return matchesSearch && matchesGrade;
+        const matchesStatus =
+          classStatusFilter === 'all' ||
+          (classStatusFilter === 'active' && cls.isActive) ||
+          (classStatusFilter === 'inactive' && !cls.isActive);
+        return matchesSearch && matchesGrade && matchesStatus;
       })
       .sort((classA, classB) => {
         const gradeA = getGradeOrderValue(classA.grade);
@@ -139,7 +143,7 @@ export function useClassList(selectedSchool: School) {
 
         return classA.name.localeCompare(classB.name, 'vi', { numeric: true, sensitivity: 'base' });
       });
-  }, [classes, classSearch, selectedGradeFilter]);
+  }, [classes, classSearch, classStatusFilter, selectedGradeFilter]);
 
   const fetchClasses = useCallback(
     async (retryCount = 0) => {
@@ -149,7 +153,7 @@ export function useClassList(selectedSchool: School) {
       }
 
       try {
-        const data = await classService.getClassesBySchool(selectedSchool.id, getAccessToken, showInactive);
+        const data = await classService.getClassesBySchool(selectedSchool.id, getAccessToken, true);
         const classListWithStudents = await Promise.all(
           data.map(async (cls) => {
             try {
@@ -175,7 +179,7 @@ export function useClassList(selectedSchool: School) {
         setIsLoading(false);
       }
     },
-    [selectedSchool.id, getAccessToken, showInactive]
+    [selectedSchool.id, getAccessToken]
   );
 
   useEffect(() => {
@@ -432,8 +436,8 @@ export function useClassList(selectedSchool: School) {
     canManageClass,
     canHandoverClass,
     // Filters
-    showInactive,
-    setShowInactive,
+    classStatusFilter,
+    setClassStatusFilter,
     classSearch,
     setClassSearch,
     classSearchActive,

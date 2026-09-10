@@ -24,7 +24,6 @@ import {
 
 const TeacherSchedule = () => {
   const { getAccessToken, user } = useAuth();
-  const todayYmd = useMemo(() => toYmd(new Date()), []);
   const teacherDisplayName = user?.fullName || user?.username || '';
 
   // Timer tick for real-time lesson status (ongoing / upcoming / done)
@@ -38,6 +37,7 @@ const TeacherSchedule = () => {
     const now = new Date(nowTick);
     return now.getHours() * 60 + now.getMinutes();
   }, [nowTick]);
+  const todayYmd = useMemo(() => toYmd(new Date(nowTick)), [nowTick]);
 
   // Hook: Schedule data, week navigation & bulk actions
   const {

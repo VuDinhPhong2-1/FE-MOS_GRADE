@@ -132,6 +132,7 @@ export interface ScheduleEndLessonReport {
   classStudentCountSummary: string;
   studentMaterialCoverageRate: string;
   brokenMachinesSummary: string;
+  missingMachinesForStudents: string;
   netSupportStatus: string;
   audioStatus: string;
   coolingStatus: string;

@@ -39,8 +39,8 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
     canCreateClass,
     canManageClass,
     canHandoverClass,
-    showInactive,
-    setShowInactive,
+    classStatusFilter,
+    setClassStatusFilter,
     classSearch,
     setClassSearch,
     selectedGradeFilter,
@@ -119,11 +119,25 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
                 <MenuContent align="end" className="w-64" separatorStyle='gap'>
                   <MenuGroup label="Trạng thái lớp">
                     <MenuItem
-                      selected={showInactive}
+                      selected={classStatusFilter === 'all'}
                       keepOpen
-                      onClick={() => setShowInactive((prev) => !prev)}
+                      onClick={() => setClassStatusFilter('all')}
                     >
-                      Hiển thị lớp không hoạt động
+                      Tất cả trạng thái
+                    </MenuItem>
+                    <MenuItem
+                      selected={classStatusFilter === 'active'}
+                      keepOpen
+                      onClick={() => setClassStatusFilter('active')}
+                    >
+                      Đang hoạt động
+                    </MenuItem>
+                    <MenuItem
+                      selected={classStatusFilter === 'inactive'}
+                      keepOpen
+                      onClick={() => setClassStatusFilter('inactive')}
+                    >
+                      Ngừng hoạt động
                     </MenuItem>
                   </MenuGroup>
                   <MenuDivider isGapVariant className='bg-transparent' />
@@ -160,9 +174,6 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
                 </MenuContent>
               </Menu >
             ),
-            onClick: () => {
-              setShowInactive((prev) => !prev);
-            },
           },
           ...(canCreateClass
             ? [
@@ -182,12 +193,12 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
       selectedClass,
       selectedSchool.name,
       classSearch,
-      showInactive,
+      classStatusFilter,
       selectedGradeFilter,
       canCreateClass,
       handleOpenAddModal,
       setClassSearch,
-      setShowInactive,
+      setClassStatusFilter,
       setSelectedGradeFilter,
     ]
   );

@@ -309,14 +309,100 @@ const pageBorderColorPresets = [
   },
 ];
 
-const pageBorderWidthOptions = [
-  { label: '0.5 pt', value: 4 },
-  { label: '0.75 pt', value: 6 },
-  { label: '1 pt', value: 8 },
-  { label: '1.5 pt', value: 12 },
-  { label: '2.25 pt', value: 18 },
-  { label: '3 pt', value: 24 },
-];
+const parsePageBorderWidthInput = (value: string) => {
+  const raw = value
+    .trim()
+    .replace(',', '.')
+    .replace(/½/g, ' 1/2')
+    .replace(/¼/g, ' 1/4')
+    .replace(/¾/g, ' 3/4')
+    .replace(/\b(wide|rộng|rong)\b/gi, '')
+    .replace(/\s+/g, ' ')
+    .toLowerCase()
+    .trim();
+  if (!raw) return undefined;
+
+  const xmlMatch = raw.match(/^(\d+)\s*(xml|sz|eighth|eighths)?$/);
+  if (xmlMatch && xmlMatch[2]) {
+    const width = Number(xmlMatch[1]);
+    return Number.isFinite(width) && width > 0 ? width : undefined;
+  }
+
+  const fractionMatch = raw.match(/^(?:(\d+)\s*)?(\d+)\s*\/\s*(\d+)\s*(pt|point|points)?$/);
+  if (fractionMatch) {
+    const whole = Number(fractionMatch[1] ?? 0);
+    const numerator = Number(fractionMatch[2]);
+    const denominator = Number(fractionMatch[3]);
+    if (!Number.isFinite(whole) || !Number.isFinite(numerator) || !Number.isFinite(denominator) || denominator <= 0) {
+      return undefined;
+    }
+
+    return Math.round((whole + numerator / denominator) * 8);
+  }
+
+  const pointMatch = raw.match(/^(\d+(?:\.\d*)?|\.\d+)\s*(pt|point|points)?$/);
+  if (!pointMatch) return undefined;
+
+  const points = Number(pointMatch[1]);
+  if (!Number.isFinite(points) || points <= 0) return undefined;
+
+  return Math.round(points * 8);
+};
+
+const formatPageBorderWidth = (value?: number) => {
+  if (!value) return '';
+  const points = value / 8;
+  return `${Number(points.toFixed(3))} pt`;
+};
+
+interface PageBorderWidthInputProps {
+  value?: number;
+  inputClass: string;
+  onCommit: (value?: number) => void;
+}
+
+const PageBorderWidthInput = ({ value, inputClass, onCommit }: PageBorderWidthInputProps) => {
+  const [draft, setDraft] = useState(formatPageBorderWidth(value));
+
+  useEffect(() => {
+    setDraft(formatPageBorderWidth(value));
+  }, [value]);
+
+  const commit = () => {
+    if (!draft.trim()) {
+      onCommit(undefined);
+      return;
+    }
+
+    const width = parsePageBorderWidthInput(draft);
+    if (width === undefined) {
+      notify.error('Do day vien khong hop le. Hay nhap vi du: 1.5 pt, 1 1/2 pt, 1 1/2pt wide, 12 xml.');
+      return;
+    }
+
+    onCommit(width);
+    setDraft(formatPageBorderWidth(width));
+  };
+
+  return (
+    <label className="text-xs font-semibold text-slate-600">
+      Do day vien
+      <input
+        type="text"
+        value={draft}
+        onChange={(event) => setDraft(event.target.value)}
+        onBlur={commit}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') {
+            event.currentTarget.blur();
+          }
+        }}
+        placeholder="1.5 pt hoac 1 1/2 pt"
+        className={inputClass}
+      />
+    </label>
+  );
+};
 
 const selectedPageBorderColorPreset = (config?: PageBorderConfig) => {
   const requiredColor = (config?.requiredColor ?? '').trim().toLowerCase();
@@ -2307,30 +2393,21 @@ const XmlGradingRulesPage = () => {
                                                       <option value="dashSmallGap">Net dut ngan</option>
                                                     </select>
                                                   </label>
-                                                  <label className="text-xs font-semibold text-slate-600">
-                                                    Do day vien
-                                                    <select
-                                                      value={task.specialCondition.pageBorderConfig?.requiredWidth ?? 12}
-                                                      onChange={(e) => {
-                                                        const currentConfig = task.specialCondition?.pageBorderConfig ?? {};
-                                                        updateTaskSpecialCondition(pi, ti, {
-                                                          ...task.specialCondition!,
-                                                          type: 'pageBorder',
-                                                          pageBorderConfig: {
-                                                            ...currentConfig,
-                                                            requiredWidth: Number(e.target.value),
-                                                          },
-                                                        });
-                                                      }}
-                                                      className={inputClass}
-                                                    >
-                                                      {pageBorderWidthOptions.map((option) => (
-                                                        <option key={option.value} value={option.value}>
-                                                          {option.label}
-                                                        </option>
-                                                      ))}
-                                                    </select>
-                                                  </label>
+                                                  <PageBorderWidthInput
+                                                    value={task.specialCondition.pageBorderConfig?.requiredWidth ?? 12}
+                                                    inputClass={inputClass}
+                                                    onCommit={(width) => {
+                                                      const currentConfig = task.specialCondition?.pageBorderConfig ?? {};
+                                                      updateTaskSpecialCondition(pi, ti, {
+                                                        ...task.specialCondition!,
+                                                        type: 'pageBorder',
+                                                        pageBorderConfig: {
+                                                          ...currentConfig,
+                                                          requiredWidth: width,
+                                                        },
+                                                      });
+                                                    }}
+                                                  />
                                                   <label className="text-xs font-semibold text-slate-600">
                                                     Mau vien
                                                     <select

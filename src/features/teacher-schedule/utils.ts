@@ -5,7 +5,7 @@ import type {
   ScheduleReportsPayload,
   ScheduleStartLessonReport,
 } from '../../types/schedule.types';
-import type { AttendanceDraftState, ComputerRoomFormState, ScheduleFormState } from './types';
+import type { AttendanceDraftState, ComputerRoomFormState, LessonTimelineStatus, ScheduleFormState } from './types';
 
 export const weekdayLabels: Record<number, string> = {
   0: 'CN',
@@ -118,6 +118,42 @@ export const parseTimeToMinutes = (timeValue: string): number | null => {
   return hour * 60 + minute;
 };
 
+export const getLessonTimelineStatus = (
+  lessonYmd: string,
+  todayYmd: string,
+  nowMinutesInDay: number,
+  startTime: string,
+  endTime: string
+): LessonTimelineStatus => {
+  if (lessonYmd && todayYmd) {
+    if (lessonYmd < todayYmd) return 'done';
+    if (lessonYmd > todayYmd) return 'upcoming';
+  }
+
+  const startMinutes = parseTimeToMinutes(startTime);
+  const endMinutes = parseTimeToMinutes(endTime);
+
+  if (startMinutes === null || endMinutes === null) {
+    return 'upcoming';
+  }
+
+  if (nowMinutesInDay > endMinutes) return 'done';
+  if (nowMinutesInDay >= startMinutes) return 'ongoing';
+  return 'upcoming';
+};
+
+export const lessonTimelineStatusLabels: Record<LessonTimelineStatus, string> = {
+  done: 'Đã học',
+  ongoing: 'Đang học',
+  upcoming: 'Sắp tới',
+};
+
+export const lessonTimelineStatusClasses: Record<LessonTimelineStatus, string> = {
+  done: 'bg-m3-surface-container-highest text-m3-on-surface-variant',
+  ongoing: 'bg-m3-primary-container text-m3-on-primary-container',
+  upcoming: 'bg-m3-secondary-container text-m3-on-secondary-container',
+};
+
 export const parseNonNegativeInt = (value: string, fallback = 0): number => {
   const parsed = Number.parseInt(value, 10);
   if (Number.isNaN(parsed)) return fallback;
@@ -206,6 +242,18 @@ export const calculateMissingMachinesByFormula = (data: ScheduleAttendanceRespon
   return Math.max(classSize - availableStudentMachines, 0);
 };
 
+export const formatBrokenMachinesSummary = (
+  brokenMachineCount?: number,
+  brokenMachinesDetail?: string
+): string => {
+  if (typeof brokenMachineCount !== 'number' || !Number.isFinite(brokenMachineCount)) {
+    return '';
+  }
+
+  const detail = brokenMachinesDetail?.trim();
+  return detail ? `${brokenMachineCount} (${detail})` : String(brokenMachineCount);
+};
+
 export const startLessonRoomAutoFields: (keyof ScheduleStartLessonReport)[] = [
   'roomName',
   'totalMachines',
@@ -221,6 +269,7 @@ export const endLessonRoomAutoFields: (keyof ScheduleEndLessonReport)[] = [
   'roomName',
   'totalMachines',
   'brokenMachinesSummary',
+  'missingMachinesForStudents',
   'netSupportStatus',
   'audioStatus',
   'coolingStatus',
@@ -273,6 +322,7 @@ export const emptyEndLessonReport = (): ScheduleEndLessonReport => ({
   classStudentCountSummary: '',
   studentMaterialCoverageRate: '',
   brokenMachinesSummary: '',
+  missingMachinesForStudents: '',
   netSupportStatus: '',
   audioStatus: '',
   coolingStatus: '',
@@ -294,10 +344,9 @@ export const buildReportsDraft = (data: ScheduleAttendanceResponse, teacherName:
   const roomSnapshot = data.computerRoom;
   const roomNameDefault = roomSnapshot?.name || data.roomName || '';
   const totalMachinesDefault = roomSnapshot?.totalMachinesText || '';
-  const brokenMachinesDefault =
-    roomSnapshot && Number.isFinite(roomSnapshot.brokenMachineCount)
-      ? `${roomSnapshot.brokenMachineCount}`
-      : '';
+  const brokenMachinesDefault = roomSnapshot
+    ? formatBrokenMachinesSummary(roomSnapshot.brokenMachineCount, roomSnapshot.brokenMachinesDetail)
+    : '';
   const missingMachinesByFormula = calculateMissingMachinesByFormula(data);
   const missingMachinesDefault =
     missingMachinesByFormula !== null
@@ -350,6 +399,8 @@ export const buildReportsDraft = (data: ScheduleAttendanceResponse, teacherName:
         brokenMachinesDefault,
         source.endLesson?.brokenMachinesSummary
       ),
+      missingMachinesForStudents:
+        resolveSnapshotValue(missingMachinesDefault, source.endLesson?.missingMachinesForStudents),
       netSupportStatus: resolveSnapshotValue(
         roomSnapshot?.netSupportStatus,
         source.endLesson?.netSupportStatus

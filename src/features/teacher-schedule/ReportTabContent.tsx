@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Icon } from '@bug-on/m3-expressive';
 import type {
   ScheduleAttendanceResponse,
@@ -7,7 +7,9 @@ import type {
   ScheduleReportsPayload,
   ScheduleStartLessonReport,
 } from '../../types/schedule.types';
+import { notify } from '../../utils/notify';
 import type { AttendanceDraftState, AttendancePanelTab } from './types';
+import { formatBrokenMachinesSummary } from './utils';
 
 interface ReportTabContentProps {
   activeStep: AttendancePanelTab;
@@ -37,6 +39,10 @@ type ClassCount = {
   total: number;
   absent: number;
 };
+
+const FIXED_PLANNED_LESSONS = '60';
+const FIXED_PRACTICE_COMPLETIONS = '0';
+const FIXED_GMETRIX_RESULT_RATE = '0%';
 
 const isRecord = (value: unknown): value is AnyRecord =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -240,7 +246,7 @@ const readTotalCount = (source: AnyRecord): number | null => {
 
 const formatClassCount = ({ className, total, absent }: ClassCount): string => {
   const present = Math.max(total - absent, 0);
-  return `${className}(${present}/${total})`;
+  return `${className} (${present}/${total})`;
 };
 
 const buildClassSummaryFromStudents = (
@@ -383,6 +389,127 @@ const buildClassStudentCountSummary = (
   return '';
 };
 
+const fallbackText = (value: string | number | undefined | null): string => {
+  const normalized = `${value ?? ''}`.trim();
+  return normalized || 'Không';
+};
+
+const buildStartLessonZaloReport = (
+  report: ScheduleStartLessonReport,
+  roomSummary: {
+    roomName: string;
+    totalMachines: string;
+    brokenMachinesSummary: string;
+    missingMachinesForStudents: string;
+    netSupportStatus: string;
+    audioStatus: string;
+    coolingStatus: string;
+  }
+): string =>
+  [
+    'BÁO CÁO ĐẦU BUỔI DẠY',
+    `- Tên Giáo Viên: ${fallbackText(report.teacherName)}`,
+    `- Tên Trợ Giảng: ${fallbackText(report.assistantName)}`,
+    `- Phòng Máy: ${fallbackText(roomSummary.roomName)}`,
+    `- Tổng số máy: ${fallbackText(roomSummary.totalMachines)}`,
+    `- Tổng số máy bị lỗi: ${fallbackText(roomSummary.brokenMachinesSummary)}`,
+    `- Số máy còn thiếu cho HS: ${fallbackText(roomSummary.missingMachinesForStudents)}`,
+    `- Tình trạng NetSupport: ${fallbackText(roomSummary.netSupportStatus)}`,
+    `- Tình trạng loa, âm ly: ${fallbackText(roomSummary.audioStatus)}`,
+    `- Tình trạng máy lạnh, máy quạt: ${fallbackText(roomSummary.coolingStatus)}`,
+  ].join('\n');
+
+const buildProfessionalZaloReport = (
+  report: ScheduleProfessionalReport
+): string =>
+  [
+    'BÁO CÁO CHUYÊN MÔN',
+    `- Tên Giáo Viên: ${fallbackText(report.teacherName)}`,
+    `- Lớp: ${fallbackText(report.className)}`,
+    `- Môn: ${fallbackText(report.subjectName)}`,
+    `- Tài liệu dạy: ${fallbackText(report.teachingMaterials)}`,
+    `- Nội dung dạy: ${fallbackText(report.teachingContent)}`,
+    `- Số tiết dự kiến: ${FIXED_PLANNED_LESSONS}`,
+    `- Số tiết đã dạy: ${fallbackText(report.taughtLessons)}`,
+    `- Số lần hoàn thành 100% TH: ${FIXED_PRACTICE_COMPLETIONS}`,
+    `- Tỷ lệ kết quả điểm GMetrix: ${FIXED_GMETRIX_RESULT_RATE}`,
+  ].join('\n');
+
+const buildEndLessonZaloReport = (
+  report: ScheduleEndLessonReport,
+  roomSummary: {
+    roomName: string;
+    totalMachines: string;
+    brokenMachinesSummary: string;
+    missingMachinesForStudents: string;
+    netSupportStatus: string;
+    audioStatus: string;
+    coolingStatus: string;
+    devicesPoweredOffStatus: string;
+    seatingOrderStatus: string;
+    roomHygieneStatus: string;
+  },
+  classStudentCountSummary: string
+): string =>
+  [
+    'BÁO CÁO CUỐI BUỔI DẠY',
+    `- Tên Giáo Viên: ${fallbackText(report.teacherName)}`,
+    `- Tên Trợ Giảng: ${fallbackText(report.assistantName)}`,
+    `- Phòng Máy: ${fallbackText(roomSummary.roomName)}`,
+    `- Tổng số máy: ${fallbackText(roomSummary.totalMachines)}`,
+    `- Số lượng HS: ${fallbackText(classStudentCountSummary || report.classStudentCountSummary)}`,
+    `- Tỷ lệ học sinh có tài liệu: ${fallbackText(report.studentMaterialCoverageRate)}`,
+    `- Tổng số máy bị lỗi: ${fallbackText(roomSummary.brokenMachinesSummary)}`,
+    `- Số máy còn thiếu cho HS: ${fallbackText(roomSummary.missingMachinesForStudents || report.missingMachinesForStudents)}`,
+    `- Tình trạng NetSupport: ${fallbackText(roomSummary.netSupportStatus)}`,
+    `- Tình trạng Loa, Âm ly: ${fallbackText(roomSummary.audioStatus)}`,
+    `- Tình trạng máy lạnh, máy quạt: ${fallbackText(roomSummary.coolingStatus)}`,
+    `- Đã tắt các thiết bị điện chưa: ${fallbackText(roomSummary.devicesPoweredOffStatus)}`,
+    `- HS sắp xếp ghế ngồi gọn gàng: ${fallbackText(roomSummary.seatingOrderStatus)}`,
+    `- HS vệ sinh phòng máy: ${fallbackText(roomSummary.roomHygieneStatus)}`,
+    `- Tuân thủ nội quy của HS: ${fallbackText(report.studentRuleComplianceStatus)}`,
+    `- Danh sách vi phạm: ${fallbackText(report.violationListSummary)}`,
+  ].join('\n');
+
+const escapeHtml = (value: string): string =>
+  value.replace(/[&<>"']/g, (char) => {
+    const entityMap: Record<string, string> = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#039;',
+    };
+
+    return entityMap[char] || char;
+  });
+
+const printPlainReport = (title: string, content: string) => {
+  const printWindow = window.open('', '_blank', 'width=820,height=900');
+  if (!printWindow) {
+    notify.error('Không thể mở cửa sổ in. Vui lòng cho phép popup cho trang này.');
+    return;
+  }
+
+  printWindow.document.write(`<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>${title}</title>
+  <style>
+    body { font-family: Arial, sans-serif; color: #111827; padding: 32px; }
+    pre { white-space: pre-wrap; font: 16px/1.55 Arial, sans-serif; }
+  </style>
+</head>
+<body>
+  <pre>${escapeHtml(content)}</pre>
+</body>
+</html>`);
+  printWindow.document.close();
+  printWindow.focus();
+  printWindow.print();
+};
+
 export const ReportTabContent = ({
   activeStep,
   reportsDraft,
@@ -393,6 +520,8 @@ export const ReportTabContent = ({
   onUpdateProfessionalField,
   onUpdateEndLessonField,
 }: ReportTabContentProps) => {
+  const [previewOpen, setPreviewOpen] = useState(false);
+
   const classStudentCountSummary = useMemo(
     () => buildClassStudentCountSummary(attendanceData, attendanceDraft),
     [attendanceData, attendanceDraft]
@@ -418,13 +547,124 @@ export const ReportTabContent = ({
       return null;
     }
 
-    const brokenCount = computerRoom.brokenMachineCount ?? 0;
-    const brokenDetail = computerRoom.brokenMachinesDetail?.trim();
-
-    return brokenDetail
-      ? `${brokenCount} (${brokenDetail})`
-      : String(brokenCount);
+    return formatBrokenMachinesSummary(
+      computerRoom.brokenMachineCount,
+      computerRoom.brokenMachinesDetail
+    );
   }, [attendanceData.computerRoom]);
+
+  const roomSummary = useMemo(() => {
+    const room = attendanceData.computerRoom;
+    const startReport = reportsDraft.startLesson;
+    const endReport = reportsDraft.endLesson;
+    return {
+      roomName:
+        room?.name ||
+        attendanceData.roomName ||
+        (activeStep === 'endLesson' ? endReport.roomName : startReport.roomName),
+      totalMachines:
+        room?.totalMachinesText ||
+        (activeStep === 'endLesson' ? endReport.totalMachines : startReport.totalMachines),
+      brokenMachinesSummary:
+        brokenMachinesSummary ??
+        (activeStep === 'endLesson'
+          ? endReport.brokenMachinesSummary
+          : startReport.brokenMachinesSummary),
+      missingMachinesForStudents:
+        missingMachinesForStudents !== null
+          ? String(missingMachinesForStudents)
+          : activeStep === 'endLesson'
+            ? endReport.missingMachinesForStudents
+            : startReport.missingMachinesForStudents,
+      netSupportStatus:
+        room?.netSupportStatus ||
+        (activeStep === 'endLesson' ? endReport.netSupportStatus : startReport.netSupportStatus),
+      audioStatus:
+        room?.audioStatus ||
+        (activeStep === 'endLesson' ? endReport.audioStatus : startReport.audioStatus),
+      coolingStatus:
+        room?.coolingStatus ||
+        (activeStep === 'endLesson' ? endReport.coolingStatus : startReport.coolingStatus),
+      devicesPoweredOffStatus: room?.devicesPoweredOffStatus || endReport.devicesPoweredOffStatus,
+      seatingOrderStatus: room?.seatingOrderStatus || endReport.seatingOrderStatus,
+      roomHygieneStatus: room?.roomHygieneStatus || endReport.roomHygieneStatus,
+    };
+  }, [
+    activeStep,
+    attendanceData.computerRoom,
+    attendanceData.roomName,
+    brokenMachinesSummary,
+    missingMachinesForStudents,
+    reportsDraft.endLesson,
+    reportsDraft.startLesson,
+  ]);
+
+  const activeReportText = useMemo(() => {
+    if (activeStep === 'startLesson') {
+      return buildStartLessonZaloReport(reportsDraft.startLesson, roomSummary);
+    }
+
+    if (activeStep === 'professional') {
+      return buildProfessionalZaloReport(reportsDraft.professional);
+    }
+
+    return buildEndLessonZaloReport(
+      reportsDraft.endLesson,
+      roomSummary,
+      classStudentCountSummary
+    );
+  }, [activeStep, classStudentCountSummary, reportsDraft, roomSummary]);
+
+  const activeReportTitle =
+    activeStep === 'startLesson'
+      ? 'Báo cáo đầu buổi'
+      : activeStep === 'professional'
+        ? 'Báo cáo chuyên môn'
+        : 'Báo cáo cuối buổi';
+
+  const handleCopyReport = async () => {
+    try {
+      await navigator.clipboard.writeText(activeReportText);
+      notify.success('Đã sao chép nội dung báo cáo');
+    } catch {
+      notify.error('Không thể sao chép báo cáo');
+    }
+  };
+
+  const reportActions = (
+    <div className="flex flex-wrap items-center justify-end gap-2">
+      <button
+        type="button"
+        onClick={() => setPreviewOpen((current) => !current)}
+        className="inline-flex items-center gap-1.5 rounded-xl border border-m3-outline-variant/70 bg-m3-surface px-3 py-2 text-xs font-bold text-m3-on-surface transition hover:border-m3-primary hover:text-m3-primary"
+      >
+        <Icon name="visibility" className="text-base" />
+        {previewOpen ? 'Ẩn xem trước' : 'Xem trước'}
+      </button>
+      <button
+        type="button"
+        onClick={handleCopyReport}
+        className="inline-flex items-center gap-1.5 rounded-xl border border-m3-outline-variant/70 bg-m3-surface px-3 py-2 text-xs font-bold text-m3-on-surface transition hover:border-m3-primary hover:text-m3-primary"
+      >
+        <Icon name="content_copy" className="text-base" />
+        Sao chép Zalo
+      </button>
+      <button
+        type="button"
+        onClick={() => printPlainReport(activeReportTitle, activeReportText)}
+        className="inline-flex items-center gap-1.5 rounded-xl bg-m3-primary px-3 py-2 text-xs font-bold text-m3-on-primary transition hover:brightness-105"
+      >
+        <Icon name="print" className="text-base" />
+        In báo cáo
+      </button>
+    </div>
+  );
+
+  const reportPreview = previewOpen ? (
+    <pre className="whitespace-pre-wrap rounded-2xl border border-m3-outline-variant/60 bg-m3-surface p-4 text-sm leading-6 text-m3-on-surface">
+      {activeReportText}
+    </pre>
+  ) : null;
 
   useEffect(() => {
     if (missingMachinesForStudents === null) {
@@ -509,6 +749,8 @@ export const ReportTabContent = ({
               <Icon name="description" className="text-base text-m3-primary" />
               <h4 className="font-bold text-m3-primary">BÁO CÁO ĐẦU BUỔI DẠY</h4>
             </div>
+            {reportActions}
+            {reportPreview}
             {hasRoomSnapshot && (
               <p className="text-xs text-m3-primary/80">
                 Các trường liên quan phòng máy được tự động lấy từ cấu hình phòng
@@ -667,6 +909,8 @@ export const ReportTabContent = ({
               <Icon name="menu_book" className="text-base text-m3-secondary" />
               <h4 className="font-bold text-m3-secondary">BÁO CÁO CHUYÊN MÔN</h4>
             </div>
+            {reportActions}
+            {reportPreview}
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="grid gap-1 text-sm">
                 <span className="font-medium text-m3-on-surface">
@@ -703,8 +947,10 @@ export const ReportTabContent = ({
               <label className="grid gap-1 text-sm">
                 <span className="font-medium text-m3-on-surface">Tài liệu dạy</span>
                 <input
-                  value={"Tin học Đại Dương"}
-                  readOnly
+                  value={reportsDraft.professional.teachingMaterials}
+                  onChange={(e) =>
+                    onUpdateProfessionalField('teachingMaterials', e.target.value)
+                  }
                   className="rounded-xl border border-m3-outline-variant/60 bg-m3-surface px-3 py-2 text-sm text-m3-on-surface outline-none focus:border-m3-primary"
                 />
               </label>
@@ -725,9 +971,9 @@ export const ReportTabContent = ({
                   Số tiết dự kiến
                 </span>
                 <input
-                  value={60}
+                  value={FIXED_PLANNED_LESSONS}
                   readOnly
-                  className="rounded-xl border border-m3-outline-variant/60 bg-m3-surface px-3 py-2 text-sm text-m3-on-surface outline-none focus:border-m3-primary"
+                  className="rounded-xl border border-m3-outline-variant/60 bg-m3-surface-container-low px-3 py-2 text-sm text-m3-on-surface outline-none"
                 />
               </label>
               <label className="grid gap-1 text-sm">
@@ -747,14 +993,9 @@ export const ReportTabContent = ({
                   Số lần hoàn thành OTTH
                 </span>
                 <input
-                  value={'0'}
-                  onChange={(e) =>
-                    onUpdateProfessionalField(
-                      'ongoingPracticeCompletions',
-                      e.target.value
-                    )
-                  }
-                  className="rounded-xl border border-m3-outline-variant/60 bg-m3-surface px-3 py-2 text-sm text-m3-on-surface outline-none focus:border-m3-primary"
+                  value={FIXED_PRACTICE_COMPLETIONS}
+                  readOnly
+                  className="rounded-xl border border-m3-outline-variant/60 bg-m3-surface-container-low px-3 py-2 text-sm text-m3-on-surface outline-none"
                 />
               </label>
               <label className="grid gap-1 text-sm">
@@ -762,11 +1003,9 @@ export const ReportTabContent = ({
                   Tỷ lệ kết quả Gmetrix
                 </span>
                 <input
-                  value={'0'}
-                  onChange={(e) =>
-                    onUpdateProfessionalField('gmetrixResultRate', e.target.value)
-                  }
-                  className="rounded-xl border border-m3-outline-variant/60 bg-m3-surface px-3 py-2 text-sm text-m3-on-surface outline-none focus:border-m3-primary"
+                  value={FIXED_GMETRIX_RESULT_RATE}
+                  readOnly
+                  className="rounded-xl border border-m3-outline-variant/60 bg-m3-surface-container-low px-3 py-2 text-sm text-m3-on-surface outline-none"
                 />
               </label>
             </div>
@@ -781,6 +1020,8 @@ export const ReportTabContent = ({
               <Icon name="assignment" className="text-base text-m3-tertiary" />
               <h4 className="font-bold text-m3-tertiary">BÁO CÁO CUỐI BUỔI DẠY</h4>
             </div>
+            {reportActions}
+            {reportPreview}
             {hasRoomSnapshot && (
               <p className="text-xs text-m3-tertiary/80">
                 Các trường liên quan phòng máy được tự động lấy từ cấu hình phòng
@@ -855,14 +1096,13 @@ export const ReportTabContent = ({
                   Tỷ lệ học sinh có tài liệu
                 </span>
                 <input
-                  value={'0%'}
-                  readOnly
-                  // onChange={(e) =>
-                  //   onUpdateEndLessonField(
-                  //     'studentMaterialCoverageRate',
-                  //     e.target.value
-                  //   )
-                  // }
+                  value={reportsDraft.endLesson.studentMaterialCoverageRate}
+                  onChange={(e) =>
+                    onUpdateEndLessonField(
+                      'studentMaterialCoverageRate',
+                      e.target.value
+                    )
+                  }
                   className="rounded-xl border border-m3-outline-variant/60 bg-m3-surface px-3 py-2 text-sm text-m3-on-surface outline-none focus:border-m3-primary"
                 />
               </label>
@@ -884,6 +1124,28 @@ export const ReportTabContent = ({
                     }
                   }}
                   readOnly={brokenMachinesSummary !== null}
+                  className="rounded-xl border border-m3-outline-variant/60 bg-m3-surface px-3 py-2 text-sm text-m3-on-surface outline-none focus:border-m3-primary read-only:cursor-default read-only:bg-m3-surface-container-low"
+                />
+              </label>
+              <label className="grid gap-1 text-sm">
+                <span className="font-medium text-m3-on-surface">
+                  Số máy còn thiếu cho HS
+                </span>
+                <input
+                  value={
+                    missingMachinesForStudents !== null
+                      ? String(missingMachinesForStudents)
+                      : reportsDraft.endLesson.missingMachinesForStudents
+                  }
+                  onChange={(e) => {
+                    if (missingMachinesForStudents === null) {
+                      onUpdateEndLessonField(
+                        'missingMachinesForStudents',
+                        e.target.value
+                      );
+                    }
+                  }}
+                  readOnly={missingMachinesForStudents !== null}
                   className="rounded-xl border border-m3-outline-variant/60 bg-m3-surface px-3 py-2 text-sm text-m3-on-surface outline-none focus:border-m3-primary read-only:cursor-default read-only:bg-m3-surface-container-low"
                 />
               </label>
@@ -972,7 +1234,7 @@ export const ReportTabContent = ({
                 <span className="font-medium text-m3-on-surface">
                   Tuân thủ nội quy của HS
                 </span>
-                <input
+                <select
                   value={reportsDraft.endLesson.studentRuleComplianceStatus}
                   onChange={(e) =>
                     onUpdateEndLessonField(
@@ -981,7 +1243,12 @@ export const ReportTabContent = ({
                     )
                   }
                   className="rounded-xl border border-m3-outline-variant/60 bg-m3-surface px-3 py-2 text-sm text-m3-on-surface outline-none focus:border-m3-primary"
-                />
+                >
+                  <option value="">Chọn mức độ</option>
+                  <option value="Tốt">Tốt</option>
+                  <option value="Khá">Khá</option>
+                  <option value="Kém">Kém</option>
+                </select>
               </label>
               <label className="grid gap-1 text-sm sm:col-span-2">
                 <span className="font-medium text-m3-on-surface">

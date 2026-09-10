@@ -38,4 +38,4 @@ export interface AttendanceDraftState {
 
 export type AttendancePanelTab = 'attendance' | 'startLesson' | 'professional' | 'endLesson';
 
-export type TodayLessonTimeline = 'done' | 'ongoing' | 'upcoming';
+export type LessonTimelineStatus = 'done' | 'ongoing' | 'upcoming';

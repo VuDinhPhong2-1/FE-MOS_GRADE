@@ -10,12 +10,13 @@ import {
   useDatePickerState,
 } from '@bug-on/m3-expressive';
 import type { ScheduleItem } from '../../types/schedule.types';
-import type { TodayLessonTimeline } from './types';
 import {
   formatDateViFromYmd,
+  getLessonTimelineStatus,
   getWeekdayLabelFromYmd,
+  lessonTimelineStatusClasses,
+  lessonTimelineStatusLabels,
   parseApiDateToLocalYmd,
-  parseTimeToMinutes,
   utcMsToYmd,
   ymdToUtcMs,
 } from './utils';
@@ -197,6 +198,9 @@ export const ScheduleTable = ({
                   </div>
                 </th>
                 <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-m3-on-surface-variant">
+                  Trạng thái
+                </th>
+                <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-m3-on-surface-variant">
                   Ngày
                 </th>
                 <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-m3-on-surface-variant">
@@ -222,9 +226,6 @@ export const ScheduleTable = ({
                 </th>
                 <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-m3-on-surface-variant">
                   Ghi chú
-                </th>
-                <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-m3-on-surface-variant">
-                  Trạng thái
                 </th>
                 <th className="px-3 py-3 text-right font-semibold text-m3-on-surface-variant">
                   Hành động
@@ -270,16 +271,13 @@ export const ScheduleTable = ({
                   const isSelected = selectedScheduleIds.includes(item.id);
                   const localYmd = parseApiDateToLocalYmd(item.date);
                   const isToday = localYmd === todayYmd;
-                  const startMinutes = parseTimeToMinutes(item.startTime);
-                  const endMinutes = parseTimeToMinutes(item.endTime);
-                  const todayLessonTimeline: TodayLessonTimeline | null =
-                    isToday && startMinutes !== null && endMinutes !== null
-                      ? nowMinutesInDay > endMinutes
-                        ? 'done'
-                        : nowMinutesInDay >= startMinutes
-                          ? 'ongoing'
-                          : 'upcoming'
-                      : null;
+                  const lessonStatus = getLessonTimelineStatus(
+                    localYmd,
+                    todayYmd,
+                    nowMinutesInDay,
+                    item.startTime,
+                    item.endTime
+                  );
                   return (
                     <tr
                       key={item.id}
@@ -304,27 +302,19 @@ export const ScheduleTable = ({
                           />
                         </div>
                       </td>
+                      <td className="px-3 py-3">
+                        <span
+                          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${lessonTimelineStatusClasses[lessonStatus]}`}
+                        >
+                          {lessonTimelineStatusLabels[lessonStatus]}
+                        </span>
+                      </td>
                       <td className="px-3 py-3 text-m3-on-surface">
                         <div className="flex items-center gap-2">
                           <span>{formatDateViFromYmd(localYmd)}</span>
                           {isToday ? (
                             <span className="rounded-full bg-m3-tertiary/15 px-2 py-0.5 text-[11px] font-semibold text-m3-tertiary">
                               Hôm nay
-                            </span>
-                          ) : null}
-                          {todayLessonTimeline === 'ongoing' ? (
-                            <span className="rounded-full bg-m3-primary/15 px-2 py-0.5 text-[11px] font-semibold text-m3-primary">
-                              Đang dạy
-                            </span>
-                          ) : null}
-                          {todayLessonTimeline === 'done' ? (
-                            <span className="rounded-full bg-m3-surface-container-highest px-2 py-0.5 text-[11px] font-semibold text-m3-on-surface-variant">
-                              Đã dạy
-                            </span>
-                          ) : null}
-                          {todayLessonTimeline === 'upcoming' ? (
-                            <span className="rounded-full bg-m3-secondary/15 px-2 py-0.5 text-[11px] font-semibold text-m3-secondary">
-                              Sắp tới
                             </span>
                           ) : null}
                         </div>
@@ -356,17 +346,6 @@ export const ScheduleTable = ({
                       </td>
                       <td className="max-w-65 truncate px-3 py-3 text-m3-on-surface-variant">
                         {item.notes || '-'}
-                      </td>
-                      <td className="px-3 py-3">
-                        <span
-                          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
-                            item.isActive
-                              ? 'bg-m3-primary-container text-m3-on-primary-container'
-                              : 'bg-m3-surface-container-highest text-m3-on-surface-variant'
-                          }`}
-                        >
-                          {item.isActive ? 'Hoạt động' : 'Tạm ẩn'}
-                        </span>
                       </td>
                       <td className="px-3 py-3 text-right">
                         <div className="inline-flex items-center gap-1">

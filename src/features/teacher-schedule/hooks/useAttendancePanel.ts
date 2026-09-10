@@ -1,5 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
+import { computerRoomService } from '../../../services/computer-room.service';
 import { scheduleService } from '../../../services/schedule.service';
+import type { ComputerRoom } from '../../../types/computer-room.types';
 import type {
   AttendanceStatus,
   SaveScheduleAttendanceItem,
@@ -21,6 +23,39 @@ import {
   startLessonRoomAutoFields,
   vietnameseCollator,
 } from '../utils';
+
+const FIXED_PROFESSIONAL_REPORT_FIELDS = {
+  plannedLessons: '60',
+  ongoingPracticeCompletions: '0',
+  gmetrixResultRate: '0%',
+} as const;
+
+const mergeComputerRoomDetail = (
+  attendance: ScheduleAttendanceResponse,
+  room: ComputerRoom
+): ScheduleAttendanceResponse => {
+  if (!attendance.computerRoom) {
+    return attendance;
+  }
+
+  return {
+    ...attendance,
+    computerRoom: {
+      ...attendance.computerRoom,
+      brokenMachinesDetail:
+        room.brokenMachinesDetail ?? attendance.computerRoom.brokenMachinesDetail,
+      brokenMachineCount: room.brokenMachineCount,
+      totalMachinesText: room.totalMachinesText || attendance.computerRoom.totalMachinesText,
+      netSupportStatus: room.netSupportStatus || attendance.computerRoom.netSupportStatus,
+      audioStatus: room.audioStatus || attendance.computerRoom.audioStatus,
+      coolingStatus: room.coolingStatus || attendance.computerRoom.coolingStatus,
+      devicesPoweredOffStatus:
+        room.devicesPoweredOffStatus || attendance.computerRoom.devicesPoweredOffStatus,
+      seatingOrderStatus: room.seatingOrderStatus || attendance.computerRoom.seatingOrderStatus,
+      roomHygieneStatus: room.roomHygieneStatus || attendance.computerRoom.roomHygieneStatus,
+    },
+  };
+};
 
 interface UseAttendancePanelProps {
   getAccessToken: () => Promise<string | null>;
@@ -61,7 +96,29 @@ export const useAttendancePanel = ({
         setAttendanceData(null);
         setAttendanceKeyword('');
         setAttendanceTab('attendance');
-        const response = await scheduleService.getAttendance(item.id, getAccessToken);
+        let response = await scheduleService.getAttendance(item.id, getAccessToken);
+
+        if (
+          response.computerRoom &&
+          !response.computerRoom.brokenMachinesDetail &&
+          response.schoolId
+        ) {
+          const rooms = await computerRoomService
+            .getBySchool(response.schoolId, getAccessToken, true)
+            .catch(() => []);
+          const matchedRoom = rooms.find(
+            (room) =>
+              room.id === response.roomId ||
+              room.id === response.computerRoom?.id ||
+              room.name.trim().toLowerCase() ===
+                response.computerRoom?.name.trim().toLowerCase()
+          );
+
+          if (matchedRoom) {
+            response = mergeComputerRoomDetail(response, matchedRoom);
+          }
+        }
+
         setAttendanceData(response);
         setAttendanceDraft(buildAttendanceDraft(response));
         setReportsDraft(buildReportsDraft(response, teacherDisplayName));
@@ -212,7 +269,13 @@ export const useAttendancePanel = ({
       const response = await scheduleService.saveAttendance(
         attendanceData.scheduleId,
         payload,
-        reportsDraft,
+        {
+          ...reportsDraft,
+          professional: {
+            ...reportsDraft.professional,
+            ...FIXED_PROFESSIONAL_REPORT_FIELDS,
+          },
+        },
         getAccessToken
       );
       setAttendanceData(response);
