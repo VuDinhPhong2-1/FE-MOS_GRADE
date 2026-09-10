@@ -57,6 +57,7 @@ export type SpecialConditionType =
   relsFile?: string;
   assetId?: string;
   imageHash?: string;
+  perceptualHash?: string;
   /** Để trống nếu không cần kiểm tra chế độ ngắt dòng, chỉ kiểm tra đúng ảnh. */
   wrapType?: ImageWrapType;
   positionConfig?: ImagePositionConfig;

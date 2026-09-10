@@ -22,6 +22,8 @@ const ACCEPTED_IMAGE_TYPES = [
 ];
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const emuPerInch = 914400;
+const centimetersPerInch = 2.54;
 
 const wrapOptions: Array<{ value: ImageWrapType; label: string }> = [
   { value: 'inline', label: 'In Line with Text' },
@@ -32,6 +34,30 @@ const wrapOptions: Array<{ value: ImageWrapType; label: string }> = [
   { value: 'behind', label: 'Behind Text' },
   { value: 'inFront', label: 'In Front of Text' },
 ];
+
+const parseLengthToEmu = (value: string) => {
+  const raw = value.trim().replace(',', '.');
+  if (!raw) return undefined;
+
+  const match = raw.match(/^(\d+(?:\.\d*)?|\.\d+)\s*(cm|centimeter|centimeters|in|inch|inches|")?$/i);
+  if (!match) return undefined;
+
+  const amount = Number(match[1]);
+  if (!Number.isFinite(amount) || amount <= 0) return undefined;
+
+  const unit = (match[2] ?? 'in').toLowerCase();
+  const inches = unit === 'cm' || unit === 'centimeter' || unit === 'centimeters'
+    ? amount / centimetersPerInch
+    : amount;
+
+  return Math.round(inches * emuPerInch);
+};
+
+const formatEmuAsInches = (value?: number) => {
+  if (!value) return '';
+  const inches = value / emuPerInch;
+  return `${Number(inches.toFixed(3))} in`;
+};
 
 const InsertedImageEditor = ({
   config,
@@ -44,6 +70,9 @@ const InsertedImageEditor = ({
   const [fileName, setFileName] = useState<string>('');
   const [error, setError] = useState<string>('');
   const [uploading, setUploading] = useState(false);
+  const [widthDraft, setWidthDraft] = useState(formatEmuAsInches(config?.sizeConfig?.expectedWidthEmu));
+  const [heightDraft, setHeightDraft] = useState(formatEmuAsInches(config?.sizeConfig?.expectedHeightEmu));
+  const [toleranceDraft, setToleranceDraft] = useState(formatEmuAsInches(config?.sizeConfig?.toleranceEmu));
 
   // Ref theo dõi assetId đã tải preview, tránh việc effect chạy lại vô ích
   // hoặc ghi đè preview đang có do người dùng vừa chọn file mới.
@@ -56,6 +85,16 @@ const InsertedImageEditor = ({
       }
     };
   }, [previewUrl]);
+
+  useEffect(() => {
+    setWidthDraft(formatEmuAsInches(config?.sizeConfig?.expectedWidthEmu));
+    setHeightDraft(formatEmuAsInches(config?.sizeConfig?.expectedHeightEmu));
+    setToleranceDraft(formatEmuAsInches(config?.sizeConfig?.toleranceEmu));
+  }, [
+    config?.sizeConfig?.expectedWidthEmu,
+    config?.sizeConfig?.expectedHeightEmu,
+    config?.sizeConfig?.toleranceEmu,
+  ]);
 
   // Khi mở 1 Task đã có sẵn assetId (ruleset cũ đã upload ảnh trước đó),
   // tự động tải lại ảnh để hiển thị preview thay vì để trống.
@@ -141,9 +180,12 @@ const InsertedImageEditor = ({
 
       onChange({
         ...config,
+        sourceFile: config?.sourceFile ?? 'word/document.xml',
+        relsFile: config?.relsFile ?? 'word/_rels/document.xml.rels',
         wrapType: config?.wrapType ?? 'tight',
         assetId: result.assetId,
         imageHash: result.imageHash,
+        perceptualHash: result.perceptualHash,
       });
     } catch (uploadError) {
       setError(
@@ -157,9 +199,12 @@ const InsertedImageEditor = ({
       // người dùng biết ảnh nào vừa chọn và có thể thử lại.
       onChange({
         ...config,
+        sourceFile: config?.sourceFile ?? 'word/document.xml',
+        relsFile: config?.relsFile ?? 'word/_rels/document.xml.rels',
         wrapType: config?.wrapType ?? 'tight',
         assetId: undefined,
         imageHash: undefined,
+        perceptualHash: undefined,
       });
     } finally {
       setUploading(false);
@@ -184,9 +229,13 @@ const InsertedImageEditor = ({
     }
 
     onChange({
+      ...config,
+      sourceFile: config?.sourceFile ?? 'word/document.xml',
+      relsFile: config?.relsFile ?? 'word/_rels/document.xml.rels',
       wrapType: config?.wrapType ?? 'tight',
       assetId: undefined,
       imageHash: undefined,
+      perceptualHash: undefined,
     });
   };
 
@@ -195,8 +244,52 @@ const InsertedImageEditor = ({
   ) => {
     onChange({
       ...config,
+      sourceFile: config?.sourceFile ?? 'word/document.xml',
+      relsFile: config?.relsFile ?? 'word/_rels/document.xml.rels',
       wrapType: (event.target.value || undefined) as ImageWrapType | undefined,
     });
+  };
+
+  const handleBasicFieldChange = (patch: Partial<ImageInsertConfig>) => {
+    onChange({
+      ...config,
+      sourceFile: config?.sourceFile ?? 'word/document.xml',
+      relsFile: config?.relsFile ?? 'word/_rels/document.xml.rels',
+      ...patch,
+    });
+  };
+
+  const commitSizeField = (
+    field: 'expectedWidthEmu' | 'expectedHeightEmu' | 'toleranceEmu',
+    draft: string,
+    setDraft: (value: string) => void
+  ) => {
+    if (!draft.trim()) {
+      onChange({
+        ...config,
+        sizeConfig: {
+          ...(config?.sizeConfig ?? {}),
+          [field]: undefined,
+        },
+      });
+      return;
+    }
+
+    const emu = parseLengthToEmu(draft);
+    if (emu === undefined) {
+      setError('Kich thuoc khong hop le. Hay nhap vi du: 2 in, 5.08 cm.');
+      return;
+    }
+
+    setError('');
+    onChange({
+      ...config,
+      sizeConfig: {
+        ...(config?.sizeConfig ?? {}),
+        [field]: emu,
+      },
+    });
+    setDraft(formatEmuAsInches(emu));
   };
 
   const hasSavedImage = Boolean(config?.assetId && config?.imageHash);
@@ -222,6 +315,28 @@ const InsertedImageEditor = ({
       </div>
 
       {/* Configuration */}
+      <div className="mt-4 grid gap-3 md:grid-cols-2">
+        <label className="text-xs font-semibold text-slate-600">
+          Source file
+          <input
+            value={config?.sourceFile ?? 'word/document.xml'}
+            onChange={(event) => handleBasicFieldChange({ sourceFile: event.target.value })}
+            placeholder="word/document.xml"
+            className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition hover:border-slate-300 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
+          />
+        </label>
+
+        <label className="text-xs font-semibold text-slate-600">
+          Rels file
+          <input
+            value={config?.relsFile ?? 'word/_rels/document.xml.rels'}
+            onChange={(event) => handleBasicFieldChange({ relsFile: event.target.value })}
+            placeholder="word/_rels/document.xml.rels"
+            className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition hover:border-slate-300 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
+          />
+        </label>
+      </div>
+
       <div className="mt-4 grid gap-4 md:grid-cols-[minmax(0,1fr)_200px]">
         {/* Image upload */}
         <div>
@@ -316,6 +431,156 @@ const InsertedImageEditor = ({
           <p className="mt-1.5 text-[11px] leading-4 text-slate-400">
             VD Task 5: Apps.jpg + Tight → chọn "Tight" ở trên.
           </p>
+        </div>
+      </div>
+
+      <div className="mt-4 rounded-xl border border-slate-200 bg-white p-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-xs font-bold text-slate-700">Kiem tra vi tri chen anh</p>
+            <p className="mt-1 text-[11px] leading-4 text-slate-400">
+              Dung cho yeu cau chen anh giua tieu de va doan van dau tien.
+            </p>
+          </div>
+          <label className="flex items-center gap-2 text-xs font-semibold text-slate-600">
+            <input
+              type="checkbox"
+              checked={config?.positionConfig?.requireBetween ?? false}
+              onChange={(event) => {
+                handleBasicFieldChange({
+                  positionConfig: {
+                    ...(config?.positionConfig ?? {}),
+                    requireBetween: event.target.checked,
+                  },
+                });
+              }}
+              className="h-4 w-4 accent-violet-600"
+            />
+            Bat kiem tra vi tri
+          </label>
+        </div>
+
+        <div className="mt-3 grid gap-3 md:grid-cols-2">
+          <label className="text-xs font-semibold text-slate-600">
+            Sau doan co text
+            <input
+              value={config?.positionConfig?.afterText ?? ''}
+              onChange={(event) => {
+                handleBasicFieldChange({
+                  positionConfig: {
+                    ...(config?.positionConfig ?? {}),
+                    afterText: event.target.value,
+                  },
+                });
+              }}
+              placeholder="Apps For Android and iPhones"
+              className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition hover:border-slate-300 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
+            />
+          </label>
+
+          <label className="text-xs font-semibold text-slate-600">
+            Truoc doan co text
+            <input
+              value={config?.positionConfig?.beforeText ?? ''}
+              onChange={(event) => {
+                handleBasicFieldChange({
+                  positionConfig: {
+                    ...(config?.positionConfig ?? {}),
+                    beforeText: event.target.value,
+                  },
+                });
+              }}
+              placeholder="Apple iOS currently offers"
+              className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition hover:border-slate-300 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
+            />
+          </label>
+        </div>
+
+        <label className="mt-3 flex items-center gap-2 text-xs font-medium text-slate-600">
+          <input
+            type="checkbox"
+            checked={config?.positionConfig?.caseSensitive ?? false}
+            onChange={(event) => {
+              handleBasicFieldChange({
+                positionConfig: {
+                  ...(config?.positionConfig ?? {}),
+                  caseSensitive: event.target.checked,
+                },
+              });
+            }}
+            className="h-4 w-4 accent-violet-600"
+          />
+          Phan biet hoa/thuong khi tim text moc
+        </label>
+      </div>
+
+      <div className="mt-4 rounded-xl border border-slate-200 bg-white p-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-xs font-bold text-slate-700">Kich thuoc anh tuy chon</p>
+            <p className="mt-1 text-[11px] leading-4 text-slate-400">
+              De trong neu de khong yeu cau resize. Co the nhap inch hoac cm.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setWidthDraft('');
+              setHeightDraft('');
+              setToleranceDraft('');
+              onChange({
+                ...config,
+                sizeConfig: undefined,
+              });
+            }}
+            className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[11px] font-semibold text-slate-500 transition hover:bg-slate-50"
+          >
+            Bo kich thuoc
+          </button>
+        </div>
+
+        <div className="mt-3 grid gap-3 md:grid-cols-3">
+          <label className="text-xs font-semibold text-slate-600">
+            Chieu rong
+            <input
+              value={widthDraft}
+              onChange={(event) => setWidthDraft(event.target.value)}
+              onBlur={() => commitSizeField('expectedWidthEmu', widthDraft, setWidthDraft)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') event.currentTarget.blur();
+              }}
+              placeholder="2 in hoac 5.08 cm"
+              className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition hover:border-slate-300 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
+            />
+          </label>
+
+          <label className="text-xs font-semibold text-slate-600">
+            Chieu cao
+            <input
+              value={heightDraft}
+              onChange={(event) => setHeightDraft(event.target.value)}
+              onBlur={() => commitSizeField('expectedHeightEmu', heightDraft, setHeightDraft)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') event.currentTarget.blur();
+              }}
+              placeholder="1.2 in hoac 3.05 cm"
+              className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition hover:border-slate-300 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
+            />
+          </label>
+
+          <label className="text-xs font-semibold text-slate-600">
+            Sai so
+            <input
+              value={toleranceDraft}
+              onChange={(event) => setToleranceDraft(event.target.value)}
+              onBlur={() => commitSizeField('toleranceEmu', toleranceDraft, setToleranceDraft)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') event.currentTarget.blur();
+              }}
+              placeholder="0.05 in"
+              className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition hover:border-slate-300 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
+            />
+          </label>
         </div>
       </div>
 
