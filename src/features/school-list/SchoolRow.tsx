@@ -1,6 +1,6 @@
 import { Chip, Icon, IconButton } from "@bug-on/m3-expressive";
 import type React from "react";
-import { memo } from "react";
+import { memo, useCallback } from "react";
 import type { SchoolRowProps } from "./types";
 
 export const SchoolRow = memo(function SchoolRow({
@@ -13,26 +13,35 @@ export const SchoolRow = memo(function SchoolRow({
 	onEdit,
 	onDelete,
 }: SchoolRowProps) {
-	const handleRowClick = () => {
+	const handleRowClick = useCallback(() => {
 		onSelect(school);
-	};
+	}, [onSelect, school]);
 
-	const handleKeyDown = (event: React.KeyboardEvent<HTMLTableRowElement>) => {
-		if (event.key === "Enter" || event.key === " ") {
-			event.preventDefault();
-			onSelect(school);
-		}
-	};
+	const handleKeyDown = useCallback(
+		(event: React.KeyboardEvent<HTMLTableRowElement>) => {
+			if (event.key === "Enter" || event.key === " ") {
+				event.preventDefault();
+				onSelect(school);
+			}
+		},
+		[onSelect, school],
+	);
 
-	const handleEdit = (e: React.MouseEvent) => {
-		e.stopPropagation();
-		onEdit(school);
-	};
+	const handleEdit = useCallback(
+		(e: React.MouseEvent) => {
+			e.stopPropagation();
+			onEdit(school);
+		},
+		[onEdit, school],
+	);
 
-	const handleDelete = (e: React.MouseEvent) => {
-		e.stopPropagation();
-		onDelete(school);
-	};
+	const handleDelete = useCallback(
+		(e: React.MouseEvent) => {
+			e.stopPropagation();
+			onDelete(school);
+		},
+		[onDelete, school],
+	);
 
 	return (
 		<tr
