@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { Chip, Icon } from '@bug-on/m3-expressive';
+import { Card, Chip, Icon } from '@bug-on/m3-expressive';
 
 interface StudentHeaderProps {
   className: string;
@@ -17,21 +17,15 @@ const StudentHeaderComponent = ({
   newCount,
 }: StudentHeaderProps) => {
   return (
-    <section className="relative overflow-hidden rounded-3xl bg-m3-surface-container px-4 py-4 sm:px-6 sm:py-5 shadow-xs text-m3-on-surface">
-      <div className="pointer-events-none absolute -right-12 -top-16 h-40 w-40 rounded-full bg-m3-primary/10 blur-3xl gpu-layer-isolate" />
-      <div className="pointer-events-none absolute -bottom-20 left-1/3 h-40 w-40 rounded-full bg-m3-tertiary/10 blur-3xl gpu-layer-isolate" />
+    <Card variant='filled' className="relative overflow-hidden px-4 py-4 sm:px-6 sm:py-5">
       <div className="relative flex flex-col gap-4">
-        <div className="space-y-3">
-          <div className="inline-flex items-center gap-2 rounded-full border border-m3-primary/20 bg-m3-primary-container/40 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-m3-on-primary-container">
-            <Icon name="auto_awesome" variant="rounded" size={14} />
-            Không gian lớp học
-          </div>
+        <div className="flex flex-row justify-between items-center">
           <div>
             <h1 className="text-xl font-extrabold tracking-tight text-m3-on-surface sm:text-2xl">
               Bảng danh sách học sinh - {className}
             </h1>
             <p className="mt-1 text-sm text-m3-on-surface-variant">
-              Quản lý danh sách, chấm điểm và đồng bộ dữ liệu ngay trên một màn hình.
+              Quản lý danh sách, chấm điểm và đồng bộ dữ liệu.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -60,7 +54,7 @@ const StudentHeaderComponent = ({
           </div>
         </div>
       </div>
-    </section>
+    </Card>
   );
 };
 

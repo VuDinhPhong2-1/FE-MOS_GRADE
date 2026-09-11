@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { Icon, TextField } from '@bug-on/m3-expressive';
+import { Card, Icon, TextField } from '@bug-on/m3-expressive';
 
 interface StudentToolbarProps {
   searchKeyword: string;
@@ -15,17 +15,18 @@ const StudentToolbarComponent = ({
   totalCount,
 }: StudentToolbarProps) => {
   return (
-    <section className="rounded-2xl bg-m3-surface-container-low p-3 sm:p-4 text-m3-on-surface shadow-xs">
+    <Card variant='filled' className="p-3 sm:p-4">
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(260px,auto)] items-center">
         <TextField
           variant="outlined"
           placeholder="Tìm kiếm theo tên học sinh..."
           value={searchKeyword}
           onChange={(val) => onSearchChange(val)}
-          leadingIcon={<Icon name="search" variant="rounded" size={20} />}
+          leadingIcon={<Icon name="search" size={20} />}
           fullWidth
+          dense
         />
-        <div className="flex flex-col justify-center rounded-xl border border-m3-outline-variant/60 bg-m3-surface px-3 py-2 shadow-xs">
+        <div className="flex flex-col justify-center px-3 py-2">
           <span className="text-sm font-medium text-m3-on-surface">
             Hiển thị {displayedCount}/{totalCount} học sinh
           </span>
@@ -34,7 +35,7 @@ const StudentToolbarComponent = ({
           </span>
         </div>
       </div>
-    </section>
+    </Card>
   );
 };
 

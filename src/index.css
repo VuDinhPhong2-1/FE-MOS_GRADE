@@ -53,18 +53,3 @@ td {
   border: 2px solid transparent;
   background-clip: content-box;
 }
-
-/* GPU Compositing Optimization for Dialogs & Dropdown Menus */
-[role="dialog"],
-[role="menu"] {
-  transform: translateZ(0);
-  will-change: transform, opacity;
-  backface-visibility: hidden;
-}
-
-/* Layer Isolation for heavy background blurs and floating toolbars */
-.gpu-layer-isolate {
-  transform: translateZ(0);
-  contain: layout paint style;
-  will-change: transform;
-}

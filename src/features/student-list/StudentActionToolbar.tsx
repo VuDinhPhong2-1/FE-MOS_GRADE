@@ -1,11 +1,12 @@
 import { memo, useRef, type ChangeEvent } from 'react';
 import {
-  HorizontalFloatingToolbar,
   ToolbarIconButton,
   ToolbarDivider,
   TooltipBox,
   PlainTooltip,
   Icon,
+  FAB,
+  HorizontalFloatingToolbarWithFab,
 } from '@bug-on/m3-expressive';
 
 export interface StudentActionToolbarProps {
@@ -64,39 +65,40 @@ const StudentActionToolbarComponent = ({
       )}
 
       {/* Floating Action Toolbar */}
-      <div className="fixed bottom-6 lg:bottom-8 left-1/2 -translate-x-1/2 z-40 flex items-center justify-center max-w-[calc(100vw-2rem)] gpu-layer-isolate">
-        <HorizontalFloatingToolbar
+      <div className="fixed bottom-14 lg:bottom-5 left-1/2 -translate-x-1/2 z-40 flex items-center justify-center max-w-[calc(100vw-2rem)]">
+        <HorizontalFloatingToolbarWithFab
           expanded={true}
           shape="full"
-          variant="standard"
-          className="shadow-xl backdrop-blur-sm border border-m3-outline-variant/40 bg-m3-surface-container/40 px-1"
+          variant="xr"
           aria-label="Thanh công cụ tác vụ học sinh"
+          fabPosition='start'
+          floatingActionButton={
+            <FAB
+              colorStyle='tertiary'
+              aria-label='Quay lại'
+              size="md"
+              onClick={onBack}
+              icon={<Icon name="arrow_back" size={24} />}
+            />
+          }
         >
-          {/* Nút Quay lại danh sách lớp / trang trước */}
-          {onBack && (
-            <TooltipBox tooltip={<PlainTooltip>Quay lại</PlainTooltip>} placement="top">
-              <ToolbarIconButton
-                aria-label="Quay lại"
-                onClick={onBack}
-                emphasis="standard"
-              >
-                <Icon name="arrow_back" variant="rounded" size={24} />
-              </ToolbarIconButton>
-            </TooltipBox>
-          )}
 
-          {/* Thêm học sinh (Action chính có visual emphasis cao nhất) */}
-          {!readOnly && (
-            <TooltipBox tooltip={<PlainTooltip>Thêm học sinh</PlainTooltip>} placement="top">
-              <ToolbarIconButton
-                aria-label="Thêm học sinh"
-                onClick={onOpenAddModal}
-                emphasis="filled"
-              >
-                <Icon name="person_add" variant="rounded" size={24} />
-              </ToolbarIconButton>
-            </TooltipBox>
-          )}
+          {/* Tải lại danh sách */}
+          <TooltipBox tooltip={<PlainTooltip>Tải lại danh sách</PlainTooltip>} placement="top">
+            <ToolbarIconButton
+              aria-label="Tải lại danh sách"
+              onClick={onReload}
+              disabled={isLoading}
+              emphasis="standard"
+            >
+              <Icon
+                name="refresh"
+                variant="rounded"
+                size={24}
+                className={isLoading ? 'animate-spin' : undefined}
+              />
+            </ToolbarIconButton>
+          </TooltipBox>
 
           {/* Chấm điểm cho lớp */}
           {!readOnly && (
@@ -132,22 +134,33 @@ const StudentActionToolbarComponent = ({
 
           <ToolbarDivider />
 
-          {/* Tải lại danh sách */}
-          <TooltipBox tooltip={<PlainTooltip>Tải lại danh sách</PlainTooltip>} placement="top">
-            <ToolbarIconButton
-              aria-label="Tải lại danh sách"
-              onClick={onReload}
-              disabled={isLoading}
-              emphasis="standard"
+          {/* Đồng bộ XL + ghi chú Google Sheet */}
+          {!readOnly && (
+            <TooltipBox
+              tooltip={
+                <PlainTooltip>
+                  {isStudentMetadataSyncing
+                    ? 'Đang đồng bộ...'
+                    : 'Đồng bộ XL + ghi chú GG Sheet'}
+                </PlainTooltip>
+              }
+              placement="top"
             >
-              <Icon
-                name="refresh"
-                variant="rounded"
-                size={24}
-                className={isLoading ? 'animate-spin' : undefined}
-              />
-            </ToolbarIconButton>
-          </TooltipBox>
+              <ToolbarIconButton
+                aria-label="Đồng bộ XL + ghi chú GG Sheet"
+                onClick={onSyncMetadata}
+                disabled={isStudentMetadataSyncing || isLoading}
+                emphasis="standard"
+              >
+                <Icon
+                  name="sync"
+                  variant="rounded"
+                  size={24}
+                  className={isStudentMetadataSyncing ? 'animate-spin' : undefined}
+                />
+              </ToolbarIconButton>
+            </TooltipBox>
+          )}
 
           {/* Nhập file Excel */}
           {!readOnly && (
@@ -175,30 +188,17 @@ const StudentActionToolbarComponent = ({
             </TooltipBox>
           )}
 
-          {/* Đồng bộ XL + ghi chú Google Sheet */}
+
+
+          {/* Thêm học sinh (Action chính có visual emphasis cao nhất) */}
           {!readOnly && (
-            <TooltipBox
-              tooltip={
-                <PlainTooltip>
-                  {isStudentMetadataSyncing
-                    ? 'Đang đồng bộ...'
-                    : 'Đồng bộ XL + ghi chú GG Sheet'}
-                </PlainTooltip>
-              }
-              placement="top"
-            >
+            <TooltipBox tooltip={<PlainTooltip>Thêm học sinh</PlainTooltip>} placement="top">
               <ToolbarIconButton
-                aria-label="Đồng bộ XL + ghi chú GG Sheet"
-                onClick={onSyncMetadata}
-                disabled={isStudentMetadataSyncing || isLoading}
-                emphasis="standard"
+                aria-label="Thêm học sinh"
+                onClick={onOpenAddModal}
+                emphasis="filled"
               >
-                <Icon
-                  name="sync"
-                  variant="rounded"
-                  size={24}
-                  className={isStudentMetadataSyncing ? 'animate-spin' : undefined}
-                />
+                <Icon name="person_add" className='text-m3-on-surface' size={24} />
               </ToolbarIconButton>
             </TooltipBox>
           )}
@@ -229,7 +229,7 @@ const StudentActionToolbarComponent = ({
               </ToolbarIconButton>
             </TooltipBox>
           )}
-        </HorizontalFloatingToolbar>
+        </HorizontalFloatingToolbarWithFab>
       </div>
     </>
   );

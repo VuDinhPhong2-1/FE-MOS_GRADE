@@ -2,8 +2,8 @@ import { memo } from 'react';
 import {
   Button,
   Icon,
+  LoadingIndicator,
   PlainTooltip,
-  ProgressIndicator,
   Switch,
   TooltipBox,
 } from '@bug-on/m3-expressive';
@@ -41,11 +41,10 @@ const StudentTableRowComponent = ({
 
   return (
     <tr
-      className={`transition-colors ${
-        isActive
-          ? 'hover:bg-m3-surface-container-high/60'
-          : 'bg-m3-error-container/15 hover:bg-m3-error-container/25'
-      }`}
+      className={`transition-colors ${isActive
+        ? 'hover:bg-m3-surface-container-high/60'
+        : 'bg-m3-error-container/15 hover:bg-m3-error-container/25'
+        }`}
     >
       <td className="px-3 py-4 text-m3-on-surface-variant sm:px-6">{index + 1}</td>
       <td className="px-3 py-4 font-medium text-m3-on-surface sm:px-6">{student.middleName}</td>
@@ -97,11 +96,10 @@ const StudentTableRowComponent = ({
       {/* Status */}
       <td className="px-3 py-4 text-center sm:px-6">
         <span
-          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${
-            isActive
-              ? 'bg-m3-secondary-container text-m3-on-secondary-container ring-m3-secondary/20'
-              : 'bg-m3-error-container text-m3-on-error-container ring-m3-error/20'
-          }`}
+          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${isActive
+            ? 'bg-m3-secondary-container text-m3-on-secondary-container'
+            : 'bg-m3-error-container text-m3-on-error-container'
+            }`}
         >
           <Icon
             name={isActive ? 'check_circle' : 'cancel'}
@@ -114,21 +112,18 @@ const StudentTableRowComponent = ({
 
       {/* Exam Switch */}
       <td className="px-3 py-4 text-center sm:px-6">
-        <div className="inline-flex items-center justify-center gap-2">
+        <div className="inline-flex w-full items-center justify-start gap-2">
           <Switch
             checked={Boolean(student.thi)}
             onCheckedChange={() => onExamToggle(student)}
             disabled={readOnly || isSaving}
             ariaLabel={student.thi ? 'Học sinh dự thi' : 'Học sinh không dự thi'}
           />
-          <span className="text-xs font-medium text-m3-on-surface-variant">
+          <span className="text-xs text-left font-medium text-m3-on-surface-variant">
             {student.thi ? 'Taking Exam' : 'Not Taking Exam'}
           </span>
           {isSaving && (
-            <ProgressIndicator
-              variant="circular"
-              shape="wavy"
-              showTrack
+            <LoadingIndicator
               size={12}
               aria-label="Đang lưu..."
             />
