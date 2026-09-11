@@ -1,5 +1,4 @@
-import React from 'react';
-import { Icon, Button, IconButton } from '@bug-on/m3-expressive';
+import { Icon, IconButton } from '@bug-on/m3-expressive';
 import { usePageActionsContext } from '../../context/PageActionsContext';
 import { ThemeToggle } from '../common';
 
@@ -9,7 +8,6 @@ interface HeaderProps {
 
 const Header = ({ onOpenProfile }: HeaderProps) => {
   const { config } = usePageActionsContext();
-  const actions = config.actions || [];
 
   return (
     <header
@@ -39,52 +37,18 @@ const Header = ({ onOpenProfile }: HeaderProps) => {
         )}
       </div>
 
-      {/* Right side: Desktop Search + Desktop Actions + Mobile ThemeToggle + Mobile Settings Button */}
+      {/* Right side: Fixed ThemeToggle + Settings IconButton for both Desktop and Mobile */}
       <div className="ml-auto flex shrink-0 items-center gap-2">
-        {/* Desktop Search Slot */}
-        {config.searchSlot && (
-          <div className="hidden items-center lg:flex">
-            {config.searchSlot}
-          </div>
-        )}
+        <ThemeToggle />
 
-        {/* Desktop Page Actions Container */}
-        {actions.length > 0 && (
-          <div className="hidden items-center gap-2 lg:flex">
-            {actions.map((act) => {
-              if (act.customNode) {
-                return <React.Fragment key={act.id}>{act.customNode}</React.Fragment>;
-              }
-              return (
-                <Button
-                  key={act.id}
-                  colorStyle={act.colorStyle || act.variant || 'filled'}
-                  size="md"
-                  onClick={act.onClick}
-                  disabled={act.disabled}
-                  className={act.className}
-                  icon={act.icon && <Icon name={act.icon} size={24} />}
-                >
-                  {act.label}
-                </Button>
-              );
-            })}
-          </div>
-        )}
-
-        {/* ThemeToggle: hiển thị ở Header trên mobile, ẩn trên desktop (vì đã có ở Navigation Rail) */}
-        <ThemeToggle className='lg:hidden' />
-
-        {/* Mobile Settings: trên desktop đã có nút Settings trong Sidebar, trên mobile hiển thị icon button settings ở Header */}
         <IconButton
           colorStyle="filled"
-          size='md'
+          size="md"
           onClick={onOpenProfile}
           aria-label="Cài đặt tài khoản"
           title="Cài đặt tài khoản"
-          className='lg:hidden'
         >
-          <Icon name="settings" size={24} variant='rounded' />
+          <Icon name="settings" size={24} variant="rounded" />
         </IconButton>
       </div>
     </header>

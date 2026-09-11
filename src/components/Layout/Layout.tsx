@@ -48,7 +48,6 @@ const Layout = ({ children, navItems }: LayoutProps) => {
       {/* Desktop NavigationRail (Collapsed cố định) */}
       <Sidebar
         navItems={navItems}
-        onOpenSettings={() => setIsProfileOpen(true)}
       />
 
       {/* Main Content Area */}

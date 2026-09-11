@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, memo } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import {
   Button,
@@ -29,7 +29,7 @@ interface PasteStudentModalProps {
   onImportStudents: (students: Student[]) => void;
 }
 
-export const PasteStudentModal = ({
+const PasteStudentModalComponent = ({
   isOpen,
   readOnly,
   onClose,
@@ -102,7 +102,7 @@ export const PasteStudentModal = ({
         <DialogOverlay />
         <DialogContent
           hideCloseButton
-          className="flex max-h-[90vh] w-[calc(100%-2rem)] max-w-2xl flex-col overflow-hidden rounded-4xl bg-m3-surface-container-high p-0 text-m3-on-surface shadow-2xl"
+          className="flex max-h-[90vh] w-[calc(100%-2rem)] max-w-2xl flex-col overflow-hidden rounded-4xl bg-m3-surface-container-high p-0 text-m3-on-surface shadow-2xl transform-gpu will-change-transform"
         >
           {/* Header */}
           <div className="flex items-center justify-between border-b border-m3-outline-variant/40 px-6 pt-5 pb-3">
@@ -151,7 +151,7 @@ export const PasteStudentModal = ({
                   setPasteInput(val);
                 }}
                 fullWidth
-                className="pt-2 [&_textarea]:overflow-y-auto!"
+                className="pt-2"
               />
             </div>
 
@@ -202,16 +202,18 @@ export const PasteStudentModal = ({
                       )}
                     </span>
                   </div>
-                  <button
+                  <Button
                     type="button"
+                    colorStyle="text"
+                    size="xs"
                     onClick={() => {
                       setPasteInput('');
                       setError('');
                     }}
-                    className="font-medium text-m3-error hover:underline cursor-pointer"
+                    className="text-m3-error hover:bg-m3-error-container/40 cursor-pointer"
                   >
                     Xóa tất cả
-                  </button>
+                  </Button>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -248,3 +250,6 @@ export const PasteStudentModal = ({
     </Dialog>
   );
 };
+
+export const PasteStudentModal = memo(PasteStudentModalComponent);
+

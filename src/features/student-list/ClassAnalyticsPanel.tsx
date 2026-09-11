@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Icon, ProgressIndicator } from '@bug-on/m3-expressive';
+import { useEffect, useMemo, useState, memo } from 'react';
+import { Card, Icon, ProgressIndicator, Select, type SelectOption } from '@bug-on/m3-expressive';
 import { useAuth } from '../../context/AuthContext';
 import { analyticsService } from '../../services/analytics.service';
 import type { Assignment } from '../../types/assignment.types';
@@ -12,9 +12,14 @@ interface ClassAnalyticsPanelProps {
 }
 
 const pct = (v: number) => `${Number.isFinite(v) ? v.toFixed(2) : '0.00'}%`;
-const barWidth = (v: number) => `${Math.max(0, Math.min(100, v))}%`;
 
-export const ClassAnalyticsPanel = ({ classId, assignments }: ClassAnalyticsPanelProps) => {
+const TOP_OPTIONS: SelectOption[] = [
+  { value: '5', label: 'Top 5 câu sai nhiều' },
+  { value: '10', label: 'Top 10 câu sai nhiều' },
+  { value: '15', label: 'Top 15 câu sai nhiều' },
+];
+
+const ClassAnalyticsPanelComponent = ({ classId, assignments }: ClassAnalyticsPanelProps) => {
   const { getAccessToken } = useAuth();
 
   const [overview, setOverview] = useState<ClassAnalyticsOverviewResponse | null>(null);
@@ -30,6 +35,11 @@ export const ClassAnalyticsPanel = ({ classId, assignments }: ClassAnalyticsPane
       .filter((x) => !!x);
     return Array.from(new Set(values));
   }, [assignments]);
+
+  const endpointSelectOptions: SelectOption[] = useMemo(() => [
+    { value: '', label: 'Tất cả dự án' },
+    ...endpointOptions.map((ep) => ({ value: ep, label: ep })),
+  ], [endpointOptions]);
 
   useEffect(() => {
     if (!classId) return;
@@ -59,10 +69,7 @@ export const ClassAnalyticsPanel = ({ classId, assignments }: ClassAnalyticsPane
   const weakTaskChartRows = useMemo(() => mapWeakTasksToBarChart(weakTasks), [weakTasks]);
 
   return (
-    <section className="relative overflow-hidden rounded-4xl bg-m3-surface-container p-4 sm:p-6 shadow-xs">
-      <div className="pointer-events-none absolute -left-12 -top-12 h-28 w-28 rounded-full bg-m3-primary/10 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-12 right-1/4 h-24 w-24 rounded-full bg-m3-tertiary/10 blur-3xl" />
-
+    <Card variant='filled' className="relative overflow-hidden p-4 sm:p-6">
       <div className="relative">
         <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
           <div>
@@ -75,32 +82,35 @@ export const ClassAnalyticsPanel = ({ classId, assignments }: ClassAnalyticsPane
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            <select
-              value={projectEndpoint}
-              onChange={(e) => setProjectEndpoint(e.target.value)}
-              className="rounded-xl bg-m3-surface-container-high px-3 py-2 text-sm text-m3-on-surface shadow-xs outline-none focus:ring-2 focus:ring-m3-primary/30"
-            >
-              <option value="">Tất cả dự án</option>
-              {endpointOptions.map((ep) => (
-                <option key={ep} value={ep}>
-                  {ep}
-                </option>
-              ))}
-            </select>
-            <select
-              value={top}
-              onChange={(e) => setTop(Number(e.target.value))}
-              className="rounded-xl bg-m3-surface-container-high px-3 py-2 text-sm text-m3-on-surface shadow-xs outline-none focus:ring-2 focus:ring-m3-primary/30"
-            >
-              <option value={5}>Top 5 câu sai nhiều</option>
-              <option value={10}>Top 10 câu sai nhiều</option>
-              <option value={15}>Top 15 câu sai nhiều</option>
-            </select>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <div className="w-full sm:w-48">
+              <Select
+                variant="outlined"
+                options={endpointSelectOptions}
+                value={projectEndpoint}
+                onChange={(val) => setProjectEndpoint(val)}
+                fullWidth
+                dense
+                colorVariant="vibrant"
+                showDividers={false}
+              />
+            </div>
+            <div className="w-full sm:w-54">
+              <Select
+                variant="outlined"
+                options={TOP_OPTIONS}
+                value={String(top)}
+                onChange={(val) => setTop(Number(val) || 10)}
+                fullWidth
+                dense
+                colorVariant="vibrant"
+                showDividers={false}
+              />
+            </div>
           </div>
         </div>
 
-        <div className="mb-4 rounded-2xl bg-m3-primary-container/40 px-3.5 py-2.5 text-xs text-m3-on-primary-container shadow-2xs">
+        <div className="mb-4 rounded-full bg-m3-primary-container/40 px-3.5 py-2.5 text-xs text-m3-on-primary-container">
           Các chỉ số bên dưới được tính theo <strong>lượt chấm</strong> (mỗi lần nộp/chấm lại được tính là 1 lượt).
         </div>
 
@@ -113,49 +123,52 @@ export const ClassAnalyticsPanel = ({ classId, assignments }: ClassAnalyticsPane
 
         {loading ? (
           <div className="flex flex-col items-center justify-center gap-3 rounded-2xl bg-m3-surface-container-low px-4 py-8 text-sm text-m3-on-surface-variant">
-            <ProgressIndicator variant="circular" shape="wavy" size={28} aria-label="Đang tải dữ liệu phân tích..." />
+            <ProgressIndicator variant="circular" shape="wavy" size={32} aria-label="Đang tải dữ liệu phân tích..." />
             <span>Đang tải dữ liệu phân tích...</span>
           </div>
         ) : (
           <>
             <div className="mb-5 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-              <div
-                className="rounded-2xl bg-linear-to-br from-m3-primary-container/30 to-m3-surface-container-high p-4 shadow-2xs"
+              <Card
+                variant='outlined'
+                className="p-4"
                 title="Trung bình % của tất cả lượt chấm trong lớp"
               >
                 <div className="text-xs font-medium text-m3-on-surface-variant">Điểm TB theo lượt chấm</div>
                 <div className="text-2xl font-bold text-m3-primary">{pct(overview?.averagePercentage || 0)}</div>
                 <div className="mt-1 text-[11px] text-m3-on-surface-variant/70">TB % của tất cả lượt chấm</div>
-              </div>
-              <div
-                className="rounded-2xl bg-linear-to-br from-emerald-500/10 to-m3-surface-container-high p-4 shadow-2xs"
+              </Card>
+              <Card variant='outlined'
+                className="p-4"
                 title="Tỷ lệ lượt chấm có điểm từ 60% trở lên"
               >
                 <div className="text-xs font-medium text-m3-on-surface-variant">Tỷ lệ đạt (&gt;= 60%)</div>
                 <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{pct(overview?.passRate || 0)}</div>
                 <div className="mt-1 text-[11px] text-m3-on-surface-variant/70">Số lượt đạt / tổng lượt</div>
-              </div>
-              <div
-                className="rounded-2xl bg-linear-to-br from-amber-500/10 to-m3-surface-container-high p-4 shadow-2xs"
+              </Card>
+              <Card
+                variant='outlined'
+                className="p-4"
                 title="Tỷ lệ lượt chấm dưới 40%"
               >
                 <div className="text-xs font-medium text-m3-on-surface-variant">Tỷ lệ cảnh báo (&lt; 40%)</div>
-                <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">{pct(overview?.warningRate || 0)}</div>
+                <div className="text-2xl font-bold text-m3-error">{pct(overview?.warningRate || 0)}</div>
                 <div className="mt-1 text-[11px] text-m3-on-surface-variant/70">Số lượt dưới 40%</div>
-              </div>
-              <div
-                className="rounded-2xl border border-m3-outline-variant/40 bg-linear-to-br from-m3-surface-container-highest to-m3-surface-container-high p-4 shadow-xs"
+              </Card>
+              <Card
+                variant='outlined'
+                className="p-4"
                 title="Tổng số lượt chấm đã được lưu"
               >
                 <div className="text-xs font-medium text-m3-on-surface-variant">Tổng lượt chấm</div>
                 <div className="text-2xl font-bold text-m3-on-surface">{overview?.totalAttempts || 0}</div>
                 <div className="mt-1 text-[11px] text-m3-on-surface-variant/70">Không phải số học sinh</div>
-              </div>
+              </Card>
             </div>
 
-            <div className="rounded-2xl border border-m3-outline-variant/50 bg-m3-surface-container-high p-4 shadow-xs">
+            <Card variant='outlined' className="p-4">
               <div className="mb-3 flex items-center gap-2 font-semibold text-m3-on-surface">
-                <Icon name="warning" className="text-amber-500 text-lg" />
+                <Icon name="warning" className="text-m3-error text-lg" />
                 Các câu yếu nhất (lần chấm mới nhất mỗi học sinh)
               </div>
               <div className="mb-2 text-[11px] text-m3-on-surface-variant">
@@ -166,34 +179,36 @@ export const ClassAnalyticsPanel = ({ classId, assignments }: ClassAnalyticsPane
                   <div className="text-sm text-m3-on-surface-variant">Không có dữ liệu câu yếu.</div>
                 )}
                 {weakTaskChartRows.map((row) => (
-                  <div key={row.x}>
-                    <div className="mb-1 flex justify-between text-xs">
+                  <div key={row.x} className="space-y-1.5">
+                    <div className="flex justify-between text-xs">
                       <span className="font-semibold text-m3-on-surface">{row.x}</span>
-                      <span className="text-m3-on-surface-variant">
+                      <span className="font-medium text-m3-error">
                         {pct(row.y)} ({row.failed}/{row.attempts})
                       </span>
                     </div>
-                    <div className="h-2.5 rounded-full bg-rose-100 dark:bg-rose-950/40">
-                      <div
-                        className="h-2.5 rounded-full bg-linear-to-r from-rose-500 to-orange-500"
-                        style={{ width: barWidth(row.y) }}
-                      />
-                    </div>
+                    <ProgressIndicator
+                      variant="linear"
+                      shape="flat"
+                      value={Math.max(0, Math.min(100, row.y))}
+                      aria-label={`Tỉ lệ sai câu ${row.x}: ${pct(row.y)}`}
+                      className="h-2 w-full rounded-full bg-m3-error-container/30 [&>div]:bg-m3-error"
+                    />
                   </div>
                 ))}
               </div>
-            </div>
+            </Card>
 
             {gaugeData.length > 0 && (
-              <div className="mt-4 rounded-xl bg-m3-surface-container-low px-3.5 py-2.5 text-xs text-m3-on-surface-variant">
+              <div className="mt-4 rounded-full bg-m3-surface-container-low px-3.5 py-2.5 text-xs text-m3-on-surface-variant">
                 Chỉ số quy đổi (theo lượt chấm): {gaugeData.map((g) => `${g.label}: ${pct(g.value)}`).join(' | ')}
               </div>
             )}
           </>
         )}
       </div>
-    </section>
+    </Card>
   );
 };
 
+export const ClassAnalyticsPanel = memo(ClassAnalyticsPanelComponent);
 export default ClassAnalyticsPanel;

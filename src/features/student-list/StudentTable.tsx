@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { ProgressIndicator } from '@bug-on/m3-expressive';
+import { Icon, ProgressIndicator } from '@bug-on/m3-expressive';
 import type { Student } from '../../types/student.types';
 import type {
   CompetencyLevel,
@@ -59,13 +59,21 @@ const StudentTableComponent = ({
                 <button
                   type="button"
                   onClick={onToggleNameSort}
-                  className="inline-flex items-center gap-1 text-m3-on-surface font-semibold hover:text-m3-primary transition-colors"
+                  className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-m3-on-surface font-semibold hover:bg-m3-surface-container hover:text-m3-primary transition-colors cursor-pointer"
                   title="Sắp xếp theo tên"
                 >
                   <span>Tên</span>
-                  <span className="text-[10px] text-m3-on-surface-variant">
-                    {nameSortDirection === 'asc' ? '▲' : nameSortDirection === 'desc' ? '▼' : '⇅'}
-                  </span>
+                  <Icon
+                    name={
+                      nameSortDirection === 'asc'
+                        ? 'arrow_upward'
+                        : nameSortDirection === 'desc'
+                          ? 'arrow_downward'
+                          : 'unfold_more'
+                    }
+                    size={16}
+                    className={nameSortDirection !== 'none' ? 'text-m3-primary' : 'text-m3-on-surface-variant'}
+                  />
                 </button>
               </th>
               <th className="px-3 py-3 text-center text-[11px] font-semibold uppercase tracking-wider text-m3-on-surface-variant sm:px-6">
@@ -78,17 +86,21 @@ const StudentTableComponent = ({
                 <button
                   type="button"
                   onClick={onToggleStatusSort}
-                  className="inline-flex items-center gap-1 text-m3-on-surface font-semibold hover:text-m3-primary transition-colors"
+                  className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-m3-on-surface font-semibold hover:bg-m3-surface-container hover:text-m3-primary transition-colors cursor-pointer"
                   title="Sắp xếp theo trạng thái"
                 >
                   <span>Trạng thái</span>
-                  <span className="text-[10px] text-m3-on-surface-variant">
-                    {statusSortDirection === 'active-first'
-                      ? '▲'
-                      : statusSortDirection === 'inactive-first'
-                        ? '▼'
-                        : '⇅'}
-                  </span>
+                  <Icon
+                    name={
+                      statusSortDirection === 'active-first'
+                        ? 'arrow_upward'
+                        : statusSortDirection === 'inactive-first'
+                          ? 'arrow_downward'
+                          : 'unfold_more'
+                    }
+                    size={16}
+                    className={statusSortDirection !== 'none' ? 'text-m3-primary' : 'text-m3-on-surface-variant'}
+                  />
                 </button>
               </th>
               <th className="px-3 py-3 text-center text-[11px] font-semibold uppercase tracking-wider text-m3-on-surface-variant sm:px-6">

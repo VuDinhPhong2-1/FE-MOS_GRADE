@@ -3,6 +3,7 @@ export * from './hooks/useStudentData';
 export * from './utils/studentExcelParser';
 export * from './StudentHeader';
 export * from './StudentToolbar';
+export * from './StudentActionToolbar';
 export * from './StudentTable';
 export * from './StudentTableRow';
 export * from './AddStudentModal';
