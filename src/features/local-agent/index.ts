@@ -1,2 +1,2 @@
-export * from './LocalAgentPanel';
-export * from './LocalAgentCompactPanel';
+export * from "./LocalAgentCompactPanel";
+export * from "./LocalAgentPanel";

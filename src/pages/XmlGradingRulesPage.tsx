@@ -1,3769 +1,6266 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Icon } from '@bug-on/m3-expressive';
-import { useAuth } from '../context/AuthContext';
-import { usePageHeader } from '../context/PageActionsContext';
-import { xmlGradingRulesService } from '../services/xml-grading-rules.service';
-import type {
-  GradingRuleSet,
-  GradingRuleSetSummary,
-  ProjectXmlRule,
-  TaskXmlRule,
-  XmlCompareMode,
-  XmlGradingCondition,
-  XmlMatchPolicy,
-  XmlRuleValidationResult,
-  SpecialCondition,
-  SpecialConditionType,
-  PictureBulletConfig,
-  ImageInsertConfig,
-  PictureStyleConfig,
-  PageBorderConfig
-} from '../types/xml-grading-rules.types';
-import { notify } from '../utils/notify';
+import { Icon } from "@bug-on/m3-expressive";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useAuth } from "../context/AuthContext";
+import { usePageHeader } from "../context/PageActionsContext";
 import {
-  InsertedImageEditor,
-  PictureBulletEditor,
-  PictureStyleEditor,
-} from '../features/xml-grading-rules';
-import { hasPermission } from '../utils/permissions';
+	InsertedImageEditor,
+	PictureBulletEditor,
+	PictureStyleEditor,
+} from "../features/xml-grading-rules";
+import { xmlGradingRulesService } from "../services/xml-grading-rules.service";
+import type {
+	GradingRuleSet,
+	GradingRuleSetSummary,
+	ImageInsertConfig,
+	PageBorderConfig,
+	PictureBulletConfig,
+	PictureStyleConfig,
+	ProjectXmlRule,
+	SpecialCondition,
+	SpecialConditionType,
+	TaskXmlRule,
+	XmlCompareMode,
+	XmlGradingCondition,
+	XmlMatchPolicy,
+	XmlRuleValidationResult,
+} from "../types/xml-grading-rules.types";
+import { notify } from "../utils/notify";
+import { hasPermission } from "../utils/permissions";
 
-const compareModes: XmlCompareMode[] = ['xmlContainsNormalized', 'xmlContains', 'xmlMinOccurrences', 'xmlEquivalentWholeFile', 'exactStringContains'];
-const matchPolicies: XmlMatchPolicy[] = ['all', 'any', 'ordered'];
+const compareModes: XmlCompareMode[] = [
+	"xmlContainsNormalized",
+	"xmlContains",
+	"xmlMinOccurrences",
+	"xmlEquivalentWholeFile",
+	"exactStringContains",
+];
+const matchPolicies: XmlMatchPolicy[] = ["all", "any", "ordered"];
 
 const compareModesLabels: Record<XmlCompareMode, string> = {
-  'xmlContainsNormalized':
-    'Tìm XML, bỏ qua khác biệt về khoảng trắng và format',
+	xmlContainsNormalized: "Tìm XML, bỏ qua khác biệt về khoảng trắng và format",
 
-  'xmlContains':
-    'Tìm đúng đoạn XML đã nhập, chỉ bỏ khoảng trắng đầu và cuối',
+	xmlContains: "Tìm đúng đoạn XML đã nhập, chỉ bỏ khoảng trắng đầu và cuối",
 
-  'xmlMinOccurrences':
-    'Đếm số lần xuất hiện tối thiểu sau khi chuẩn hóa XML',
+	xmlMinOccurrences: "Đếm số lần xuất hiện tối thiểu sau khi chuẩn hóa XML",
 
-  'xmlEquivalentWholeFile':
-    'Đọc XML và so sánh toàn bộ cấu trúc, không phụ thuộc format',
+	xmlEquivalentWholeFile:
+		"Đọc XML và so sánh toàn bộ cấu trúc, không phụ thuộc format",
 
-  'exactStringContains':
-    'Tìm đúng chuỗi ký tự, không thay đổi hoặc chuẩn hóa nội dung'
+	exactStringContains:
+		"Tìm đúng chuỗi ký tự, không thay đổi hoặc chuẩn hóa nội dung",
 };
 
 const matchPoliciesLabels: Record<XmlMatchPolicy, string> = {
-  'all': 'Tất cả điều kiện',
-  'any': 'Bất kỳ điều kiện nào',
-  'ordered': 'Theo thứ tự'
+	all: "Tất cả điều kiện",
+	any: "Bất kỳ điều kiện nào",
+	ordered: "Theo thứ tự",
 };
 
 // Danh sách các loại điều kiện đặc biệt hỗ trợ theo từng Task.
 // Thêm loại mới chỉ cần bổ sung thêm 1 phần tử vào mảng này.
 const specialConditionOptions: Array<{
-  value: SpecialConditionType;
-  label: string;
-  description: string;
-  subjects?: string[];
+	value: SpecialConditionType;
+	label: string;
+	description: string;
+	subjects?: string[];
 }> = [
-    {
-      value: 'pictureBullet',
-      label: 'Dấu đầu dòng bằng hình ảnh',
-      description:
-        'Kiểm tra paragraph có sử dụng đúng hình ảnh làm dấu đầu dòng hay không.',
-    },
-    {
-      value: 'insertedImage',
-      label: 'Chèn đúng hình ảnh vào tài liệu',
-      description:
-        'Kiểm tra tài liệu có chèn đúng file ảnh yêu cầu (so khớp theo nội dung ảnh) và đúng chế độ ngắt dòng văn bản (Tight/Square/Through/Top and Bottom/Inline...) hay không.',
-    },
-    {
-      value: 'convertTableToText',
-      label: 'Convert Table to Text',
-      description:
-        'Kiem tra bang Word da duoc chuyen thanh cac dong van ban va tach cot bang tab.',
-    },
-    {
-      value: 'hyperlink',
-      label: 'Hyperlink',
-      description:
-        'Kiem tra text hien thi va URL cua hyperlink trong Word.',
-    },
-    {
-      value: 'sectionBreakBeforeText',
-      label: 'Section Break Before Text',
-      description:
-        'Kiem tra section break dung loai nam ngay truoc doan text muc tieu trong Word.',
-    },
-    {
-      value: 'pictureStyle',
-      label: 'Picture Style',
-      description:
-        'Kiem tra anh muc tieu co vien/style dung theo XML DrawingML trong Word.',
-    },
-    {
-      value: 'textBoxContainsText',
-      label: 'Textbox chua dung van ban',
-      description:
-        'Kiem tra doan van da duoc dua vao textbox, noi dung dung het va co the bat loi copy thay vi cut hoac paste khong mac dinh.',
-    },
-    {
-      value: 'pageMargins',
-      label: 'Le trang Word',
-      description:
-        'Kiem tra le tren/duoi/trai/phai cua tai lieu Word. Co the nhap inch hoac cm.',
-    },
-    {
-      value: 'documentStyleSet',
-      label: 'Document Style Set',
-      description:
-        'Kiem tra style set cua Word bang cac dau hieu XML on dinh trong word/styles.xml.',
-    },
-    {
-      value: 'pageBorder',
-      label: 'Duong vien trang Word',
-      description:
-        'Kiem tra Page Border cua Word: 4 canh Box, kieu net, mau va do day vien.',
-    },
-    {
-      value: 'excelTableName',
-      label: 'Excel Table Name',
-      description:
-        'Kiem tra table trong Excel da duoc doi dung ten, co the gioi han theo worksheet.',
-      subjects: ['excel'],
-    },
-    {
-      value: 'excelWorksheetPageSetup',
-      label: 'Excel Page Setup',
-      description:
-        'Kiem tra thiet lap trang tinh Excel, hien ho tro orientation portrait/landscape.',
-      subjects: ['excel'],
-    },
-    {
-      value: 'excelClearCellFormatting',
-      label: 'Excel Clear Formatting',
-      description:
-        'Kiem tra mot range tren worksheet da duoc xoa dinh dang ve style mac dinh.',
-      subjects: ['excel'],
-    },
-    {
-      value: 'excelDataModelImport',
-      label: 'Excel Data Model Import',
-      description:
-        'Kiem tra workbook co connection import tu file nguon va dau hieu Data Model.',
-      subjects: ['excel'],
-    },
-    {
-      value: 'excelCompatibilityReport',
-      label: 'Excel Compatibility Report',
-      description:
-        'Kiem tra workbook co worksheet/van ban ket qua Compatibility Checker.',
-      subjects: ['excel'],
-    },
-  ];
+	{
+		value: "pictureBullet",
+		label: "Dấu đầu dòng bằng hình ảnh",
+		description:
+			"Kiểm tra paragraph có sử dụng đúng hình ảnh làm dấu đầu dòng hay không.",
+	},
+	{
+		value: "insertedImage",
+		label: "Chèn đúng hình ảnh vào tài liệu",
+		description:
+			"Kiểm tra tài liệu có chèn đúng file ảnh yêu cầu (so khớp theo nội dung ảnh) và đúng chế độ ngắt dòng văn bản (Tight/Square/Through/Top and Bottom/Inline...) hay không.",
+	},
+	{
+		value: "convertTableToText",
+		label: "Convert Table to Text",
+		description:
+			"Kiem tra bang Word da duoc chuyen thanh cac dong van ban va tach cot bang tab.",
+	},
+	{
+		value: "hyperlink",
+		label: "Hyperlink",
+		description: "Kiem tra text hien thi va URL cua hyperlink trong Word.",
+	},
+	{
+		value: "sectionBreakBeforeText",
+		label: "Section Break Before Text",
+		description:
+			"Kiem tra section break dung loai nam ngay truoc doan text muc tieu trong Word.",
+	},
+	{
+		value: "pictureStyle",
+		label: "Picture Style",
+		description:
+			"Kiem tra anh muc tieu co vien/style dung theo XML DrawingML trong Word.",
+	},
+	{
+		value: "textBoxContainsText",
+		label: "Textbox chua dung van ban",
+		description:
+			"Kiem tra doan van da duoc dua vao textbox, noi dung dung het va co the bat loi copy thay vi cut hoac paste khong mac dinh.",
+	},
+	{
+		value: "pageMargins",
+		label: "Le trang Word",
+		description:
+			"Kiem tra le tren/duoi/trai/phai cua tai lieu Word. Co the nhap inch hoac cm.",
+	},
+	{
+		value: "documentStyleSet",
+		label: "Document Style Set",
+		description:
+			"Kiem tra style set cua Word bang cac dau hieu XML on dinh trong word/styles.xml.",
+	},
+	{
+		value: "pageBorder",
+		label: "Duong vien trang Word",
+		description:
+			"Kiem tra Page Border cua Word: 4 canh Box, kieu net, mau va do day vien.",
+	},
+	{
+		value: "excelTableName",
+		label: "Excel Table Name",
+		description:
+			"Kiem tra table trong Excel da duoc doi dung ten, co the gioi han theo worksheet.",
+		subjects: ["excel"],
+	},
+	{
+		value: "excelWorksheetPageSetup",
+		label: "Excel Page Setup",
+		description:
+			"Kiem tra thiet lap trang tinh Excel, hien ho tro orientation portrait/landscape.",
+		subjects: ["excel"],
+	},
+	{
+		value: "excelClearCellFormatting",
+		label: "Excel Clear Formatting",
+		description:
+			"Kiem tra mot range tren worksheet da duoc xoa dinh dang ve style mac dinh.",
+		subjects: ["excel"],
+	},
+	{
+		value: "excelDataModelImport",
+		label: "Excel Data Model Import",
+		description:
+			"Kiem tra workbook co connection import tu file nguon va dau hieu Data Model.",
+		subjects: ["excel"],
+	},
+	{
+		value: "excelCompatibilityReport",
+		label: "Excel Compatibility Report",
+		description:
+			"Kiem tra workbook co worksheet/van ban ket qua Compatibility Checker.",
+		subjects: ["excel"],
+	},
+];
 
 const normalizeSubject = (value: string) => value.trim().toLowerCase();
 
 const specialConditionOptionsForSubject = (subject: string) => {
-  const normalizedSubject = normalizeSubject(subject);
-  return specialConditionOptions.filter((option) =>
-    (option.subjects ?? ['word']).includes(normalizedSubject)
-  );
+	const normalizedSubject = normalizeSubject(subject);
+	return specialConditionOptions.filter((option) =>
+		(option.subjects ?? ["word"]).includes(normalizedSubject),
+	);
 };
 
-const emptyRuleSet = (): GradingRuleSet => ({ id: '', subject: 'excel', version: 'v1', isActive: false, projects: [] });
-const emptyProject = (): ProjectXmlRule => ({ projectCode: 'project22', projectName: '', maxScore: 125, tasks: [] });
-const emptyTask = (): TaskXmlRule => ({ taskId: '', taskName: '', maxScore: 1, conditions: [] });
+const emptyRuleSet = (): GradingRuleSet => ({
+	id: "",
+	subject: "excel",
+	version: "v1",
+	isActive: false,
+	projects: [],
+});
+const emptyProject = (): ProjectXmlRule => ({
+	projectCode: "project22",
+	projectName: "",
+	maxScore: 125,
+	tasks: [],
+});
+const emptyTask = (): TaskXmlRule => ({
+	taskId: "",
+	taskName: "",
+	maxScore: 1,
+	conditions: [],
+});
 const emptyCondition = (): XmlGradingCondition => ({
-  conditionId: '', score: 1, sourceFile: 'xl/worksheets/sheet1.xml', expectedVariants: [{ expectedValues: [''] }], ignoreAttributes: [], compareMode: 'xmlContainsNormalized', matchPolicy: 'all',
-  feedback: { successDetail: '', errorMessage: '', fixAction: '' }, stopTaskIfFailed: false,
+	conditionId: "",
+	score: 1,
+	sourceFile: "xl/worksheets/sheet1.xml",
+	expectedVariants: [{ expectedValues: [""] }],
+	ignoreAttributes: [],
+	compareMode: "xmlContainsNormalized",
+	matchPolicy: "all",
+	feedback: { successDetail: "", errorMessage: "", fixAction: "" },
+	stopTaskIfFailed: false,
 });
 
-const emptyFeedback = () => ({ successDetail: '', errorMessage: '', fixAction: '' });
+const emptyFeedback = () => ({
+	successDetail: "",
+	errorMessage: "",
+	fixAction: "",
+});
 
-const cx = (...items: Array<string | false | null | undefined>) => items.filter(Boolean).join(' ');
+const cx = (...items: Array<string | false | null | undefined>) =>
+	items.filter(Boolean).join(" ");
 
 const toRuleSetSummary = (ruleSet: GradingRuleSet): GradingRuleSetSummary => ({
-  id: ruleSet.id,
-  subject: ruleSet.subject,
-  version: ruleSet.version,
-  isActive: ruleSet.isActive,
-  projectCount: ruleSet.projects.length,
-  taskCount: ruleSet.projects.reduce((sum, project) => sum + project.tasks.length, 0),
-  conditionCount: ruleSet.projects.reduce(
-    (sum, project) => sum + project.tasks.reduce((taskSum, task) => taskSum + task.conditions.length, 0),
-    0
-  ),
-  maxScore: ruleSet.projects.reduce((sum, project) => sum + Number(project.maxScore || 0), 0),
+	id: ruleSet.id,
+	subject: ruleSet.subject,
+	version: ruleSet.version,
+	isActive: ruleSet.isActive,
+	projectCount: ruleSet.projects.length,
+	taskCount: ruleSet.projects.reduce(
+		(sum, project) => sum + project.tasks.length,
+		0,
+	),
+	conditionCount: ruleSet.projects.reduce(
+		(sum, project) =>
+			sum +
+			project.tasks.reduce(
+				(taskSum, task) => taskSum + task.conditions.length,
+				0,
+			),
+		0,
+	),
+	maxScore: ruleSet.projects.reduce(
+		(sum, project) => sum + Number(project.maxScore || 0),
+		0,
+	),
 });
 
 interface GradeTaskResultView {
-  taskId?: string;
-  taskName?: string;
-  score?: number;
-  maxScore?: number;
-  isPassed?: boolean;
-  details?: string[];
-  errors?: string[];
-  fixActions?: string[];
+	taskId?: string;
+	taskName?: string;
+	score?: number;
+	maxScore?: number;
+	isPassed?: boolean;
+	details?: string[];
+	errors?: string[];
+	fixActions?: string[];
 }
 
 interface GradeResultView {
-  projectId?: string;
-  projectName?: string;
-  totalScore?: number;
-  maxScore?: number;
-  percentage?: number;
-  isPassed?: boolean;
-  status?: string;
-  taskResults?: GradeTaskResultView[];
+	projectId?: string;
+	projectName?: string;
+	totalScore?: number;
+	maxScore?: number;
+	percentage?: number;
+	isPassed?: boolean;
+	status?: string;
+	taskResults?: GradeTaskResultView[];
 }
 
 type LegacyXmlGradingCondition = XmlGradingCondition & {
-  expectedValues?: string[];
+	expectedValues?: string[];
 };
 
 const expectedVariantsForEdit = (condition: XmlGradingCondition) => {
-  const legacyCondition = condition as LegacyXmlGradingCondition;
-  const rawVariants = condition.expectedVariants?.length
-    ? condition.expectedVariants
-    : legacyCondition.expectedValues?.length
-      ? [{ expectedValues: legacyCondition.expectedValues }]
-      : [{ expectedValues: [''] }];
+	const legacyCondition = condition as LegacyXmlGradingCondition;
+	const rawVariants = condition.expectedVariants?.length
+		? condition.expectedVariants
+		: legacyCondition.expectedValues?.length
+			? [{ expectedValues: legacyCondition.expectedValues }]
+			: [{ expectedValues: [""] }];
 
-  return rawVariants.map((variant) => ({
-    expectedValues: Array.isArray(variant?.expectedValues) ? variant.expectedValues : [''],
-  }));
+	return rawVariants.map((variant) => ({
+		expectedValues: Array.isArray(variant?.expectedValues)
+			? variant.expectedValues
+			: [""],
+	}));
 };
 
 const parseExpectedValuesInput = (value: string) =>
-  value
-    .replace(/\r\n/g, '\n')
-    .split(/\n\s*\n/)
-    .map((fragment) => fragment.trim())
-    .filter(Boolean);
+	value
+		.replace(/\r\n/g, "\n")
+		.split(/\n\s*\n/)
+		.map((fragment) => fragment.trim())
+		.filter(Boolean);
 
 const formatExpectedValuesInput = (values: string[]) =>
-  (values ?? []).join('\n\n');
+	(values ?? []).join("\n\n");
 
 const twipsPerInch = 1440;
 const centimetersPerInch = 2.54;
 
 const parseMarginInputToTwips = (value: string) => {
-  const raw = value.trim().replace(',', '.');
-  if (!raw) return undefined;
+	const raw = value.trim().replace(",", ".");
+	if (!raw) return undefined;
 
-  const match = raw.match(/^(-?\d+(?:\.\d*)?|\.\d+)\s*(cm|centimeter|centimeters|in|inh|inch|inches|")?$/i);
-  if (!match) return undefined;
+	const match = raw.match(
+		/^(-?\d+(?:\.\d*)?|\.\d+)\s*(cm|centimeter|centimeters|in|inh|inch|inches|")?$/i,
+	);
+	if (!match) return undefined;
 
-  const amount = Number(match[1]);
-  if (!Number.isFinite(amount) || amount < 0) return undefined;
+	const amount = Number(match[1]);
+	if (!Number.isFinite(amount) || amount < 0) return undefined;
 
-  const unit = (match[2] ?? 'in').toLowerCase();
-  const inches = unit === 'cm' || unit === 'centimeter' || unit === 'centimeters'
-    ? amount / centimetersPerInch
-    : amount;
+	const unit = (match[2] ?? "in").toLowerCase();
+	const inches =
+		unit === "cm" || unit === "centimeter" || unit === "centimeters"
+			? amount / centimetersPerInch
+			: amount;
 
-  return Math.round(inches * twipsPerInch);
+	return Math.round(inches * twipsPerInch);
 };
 
 const formatTwipsAsInches = (twips?: number) => {
-  if (twips === undefined || twips === null) return '';
-  const inches = twips / twipsPerInch;
-  const value = Number.isInteger(inches) ? `${inches}` : `${Number(inches.toFixed(3))}`;
-  return `${value} in`;
+	if (twips === undefined || twips === null) return "";
+	const inches = twips / twipsPerInch;
+	const value = Number.isInteger(inches)
+		? `${inches}`
+		: `${Number(inches.toFixed(3))}`;
+	return `${value} in`;
 };
 
 interface MarginUnitInputProps {
-  label: string;
-  value?: number;
-  placeholder: string;
-  inputClass: string;
-  onCommit: (value?: number) => void;
+	label: string;
+	value?: number;
+	placeholder: string;
+	inputClass: string;
+	onCommit: (value?: number) => void;
 }
 
-const MarginUnitInput = ({ label, value, placeholder, inputClass, onCommit }: MarginUnitInputProps) => {
-  const [draft, setDraft] = useState(formatTwipsAsInches(value));
+const MarginUnitInput = ({
+	label,
+	value,
+	placeholder,
+	inputClass,
+	onCommit,
+}: MarginUnitInputProps) => {
+	const [draft, setDraft] = useState(formatTwipsAsInches(value));
 
-  useEffect(() => {
-    setDraft(formatTwipsAsInches(value));
-  }, [value]);
+	useEffect(() => {
+		setDraft(formatTwipsAsInches(value));
+	}, [value]);
 
-  const commit = () => {
-    if (!draft.trim()) {
-      onCommit(undefined);
-      return;
-    }
+	const commit = () => {
+		if (!draft.trim()) {
+			onCommit(undefined);
+			return;
+		}
 
-    const twips = parseMarginInputToTwips(draft);
-    if (twips === undefined) {
-      notify.error('Gia tri le khong hop le. Hay nhap vi du: 1 in, 1.5 in, 2.54 cm.');
-      return;
-    }
+		const twips = parseMarginInputToTwips(draft);
+		if (twips === undefined) {
+			notify.error(
+				"Gia tri le khong hop le. Hay nhap vi du: 1 in, 1.5 in, 2.54 cm.",
+			);
+			return;
+		}
 
-    onCommit(twips);
-    setDraft(formatTwipsAsInches(twips));
-  };
+		onCommit(twips);
+		setDraft(formatTwipsAsInches(twips));
+	};
 
-  return (
-    <label className="text-xs font-semibold text-slate-600">
-      {label}
-      <input
-        type="text"
-        value={draft}
-        onChange={(e) => setDraft(e.target.value)}
-        onBlur={commit}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') {
-            e.currentTarget.blur();
-          }
-        }}
-        placeholder={placeholder}
-        className={inputClass}
-      />
-    </label>
-  );
+	return (
+		<label className="text-xs font-semibold text-slate-600">
+			{label}
+			<input
+				type="text"
+				value={draft}
+				onChange={(e) => setDraft(e.target.value)}
+				onBlur={commit}
+				onKeyDown={(e) => {
+					if (e.key === "Enter") {
+						e.currentTarget.blur();
+					}
+				}}
+				placeholder={placeholder}
+				className={inputClass}
+			/>
+		</label>
+	);
 };
 
 const pageBorderColorPresets = [
-  {
-    label: 'Xanh nhat (Light Blue)',
-    requiredColor: '00B0F0',
-    allowedColors: ['00B0F0', '5B9BD5', '4F81BD', 'accent1'],
-  },
-  {
-    label: 'Den',
-    requiredColor: '000000',
-    allowedColors: ['000000', 'auto', 'text1', 'tx1', 'dk1'],
-  },
-  {
-    label: 'Do',
-    requiredColor: 'FF0000',
-    allowedColors: ['FF0000'],
-  },
-  {
-    label: 'Xanh la',
-    requiredColor: '00B050',
-    allowedColors: ['00B050'],
-  },
+	{
+		label: "Xanh nhat (Light Blue)",
+		requiredColor: "00B0F0",
+		allowedColors: ["00B0F0", "5B9BD5", "4F81BD", "accent1"],
+	},
+	{
+		label: "Den",
+		requiredColor: "000000",
+		allowedColors: ["000000", "auto", "text1", "tx1", "dk1"],
+	},
+	{
+		label: "Do",
+		requiredColor: "FF0000",
+		allowedColors: ["FF0000"],
+	},
+	{
+		label: "Xanh la",
+		requiredColor: "00B050",
+		allowedColors: ["00B050"],
+	},
 ];
 
 const parsePageBorderWidthInput = (value: string) => {
-  const raw = value
-    .trim()
-    .replace(',', '.')
-    .replace(/½/g, ' 1/2')
-    .replace(/¼/g, ' 1/4')
-    .replace(/¾/g, ' 3/4')
-    .replace(/\b(wide|rộng|rong)\b/gi, '')
-    .replace(/\s+/g, ' ')
-    .toLowerCase()
-    .trim();
-  if (!raw) return undefined;
+	const raw = value
+		.trim()
+		.replace(",", ".")
+		.replace(/½/g, " 1/2")
+		.replace(/¼/g, " 1/4")
+		.replace(/¾/g, " 3/4")
+		.replace(/\b(wide|rộng|rong)\b/gi, "")
+		.replace(/\s+/g, " ")
+		.toLowerCase()
+		.trim();
+	if (!raw) return undefined;
 
-  const xmlMatch = raw.match(/^(\d+)\s*(xml|sz|eighth|eighths)?$/);
-  if (xmlMatch && xmlMatch[2]) {
-    const width = Number(xmlMatch[1]);
-    return Number.isFinite(width) && width > 0 ? width : undefined;
-  }
+	const xmlMatch = raw.match(/^(\d+)\s*(xml|sz|eighth|eighths)?$/);
+	if (xmlMatch && xmlMatch[2]) {
+		const width = Number(xmlMatch[1]);
+		return Number.isFinite(width) && width > 0 ? width : undefined;
+	}
 
-  const fractionMatch = raw.match(/^(?:(\d+)\s*)?(\d+)\s*\/\s*(\d+)\s*(pt|point|points)?$/);
-  if (fractionMatch) {
-    const whole = Number(fractionMatch[1] ?? 0);
-    const numerator = Number(fractionMatch[2]);
-    const denominator = Number(fractionMatch[3]);
-    if (!Number.isFinite(whole) || !Number.isFinite(numerator) || !Number.isFinite(denominator) || denominator <= 0) {
-      return undefined;
-    }
+	const fractionMatch = raw.match(
+		/^(?:(\d+)\s*)?(\d+)\s*\/\s*(\d+)\s*(pt|point|points)?$/,
+	);
+	if (fractionMatch) {
+		const whole = Number(fractionMatch[1] ?? 0);
+		const numerator = Number(fractionMatch[2]);
+		const denominator = Number(fractionMatch[3]);
+		if (
+			!Number.isFinite(whole) ||
+			!Number.isFinite(numerator) ||
+			!Number.isFinite(denominator) ||
+			denominator <= 0
+		) {
+			return undefined;
+		}
 
-    return Math.round((whole + numerator / denominator) * 8);
-  }
+		return Math.round((whole + numerator / denominator) * 8);
+	}
 
-  const pointMatch = raw.match(/^(\d+(?:\.\d*)?|\.\d+)\s*(pt|point|points)?$/);
-  if (!pointMatch) return undefined;
+	const pointMatch = raw.match(/^(\d+(?:\.\d*)?|\.\d+)\s*(pt|point|points)?$/);
+	if (!pointMatch) return undefined;
 
-  const points = Number(pointMatch[1]);
-  if (!Number.isFinite(points) || points <= 0) return undefined;
+	const points = Number(pointMatch[1]);
+	if (!Number.isFinite(points) || points <= 0) return undefined;
 
-  return Math.round(points * 8);
+	return Math.round(points * 8);
 };
 
 const formatPageBorderWidth = (value?: number) => {
-  if (!value) return '';
-  const points = value / 8;
-  return `${Number(points.toFixed(3))} pt`;
+	if (!value) return "";
+	const points = value / 8;
+	return `${Number(points.toFixed(3))} pt`;
 };
 
 interface PageBorderWidthInputProps {
-  value?: number;
-  inputClass: string;
-  onCommit: (value?: number) => void;
+	value?: number;
+	inputClass: string;
+	onCommit: (value?: number) => void;
 }
 
-const PageBorderWidthInput = ({ value, inputClass, onCommit }: PageBorderWidthInputProps) => {
-  const [draft, setDraft] = useState(formatPageBorderWidth(value));
+const PageBorderWidthInput = ({
+	value,
+	inputClass,
+	onCommit,
+}: PageBorderWidthInputProps) => {
+	const [draft, setDraft] = useState(formatPageBorderWidth(value));
 
-  useEffect(() => {
-    setDraft(formatPageBorderWidth(value));
-  }, [value]);
+	useEffect(() => {
+		setDraft(formatPageBorderWidth(value));
+	}, [value]);
 
-  const commit = () => {
-    if (!draft.trim()) {
-      onCommit(undefined);
-      return;
-    }
+	const commit = () => {
+		if (!draft.trim()) {
+			onCommit(undefined);
+			return;
+		}
 
-    const width = parsePageBorderWidthInput(draft);
-    if (width === undefined) {
-      notify.error('Do day vien khong hop le. Hay nhap vi du: 1.5 pt, 1 1/2 pt, 1 1/2pt wide, 12 xml.');
-      return;
-    }
+		const width = parsePageBorderWidthInput(draft);
+		if (width === undefined) {
+			notify.error(
+				"Do day vien khong hop le. Hay nhap vi du: 1.5 pt, 1 1/2 pt, 1 1/2pt wide, 12 xml.",
+			);
+			return;
+		}
 
-    onCommit(width);
-    setDraft(formatPageBorderWidth(width));
-  };
+		onCommit(width);
+		setDraft(formatPageBorderWidth(width));
+	};
 
-  return (
-    <label className="text-xs font-semibold text-slate-600">
-      Do day vien
-      <input
-        type="text"
-        value={draft}
-        onChange={(event) => setDraft(event.target.value)}
-        onBlur={commit}
-        onKeyDown={(event) => {
-          if (event.key === 'Enter') {
-            event.currentTarget.blur();
-          }
-        }}
-        placeholder="1.5 pt hoac 1 1/2 pt"
-        className={inputClass}
-      />
-    </label>
-  );
+	return (
+		<label className="text-xs font-semibold text-slate-600">
+			Do day vien
+			<input
+				type="text"
+				value={draft}
+				onChange={(event) => setDraft(event.target.value)}
+				onBlur={commit}
+				onKeyDown={(event) => {
+					if (event.key === "Enter") {
+						event.currentTarget.blur();
+					}
+				}}
+				placeholder="1.5 pt hoac 1 1/2 pt"
+				className={inputClass}
+			/>
+		</label>
+	);
 };
 
 const selectedPageBorderColorPreset = (config?: PageBorderConfig) => {
-  const requiredColor = (config?.requiredColor ?? '').trim().toLowerCase();
-  const allowedColors = (config?.allowedColors ?? []).map((value) => value.trim().toLowerCase()).join('|');
+	const requiredColor = (config?.requiredColor ?? "").trim().toLowerCase();
+	const allowedColors = (config?.allowedColors ?? [])
+		.map((value) => value.trim().toLowerCase())
+		.join("|");
 
-  return pageBorderColorPresets.find((preset) =>
-    requiredColor === preset.requiredColor.toLowerCase()
-    || preset.allowedColors.map((value) => value.toLowerCase()).join('|') === allowedColors
-  )?.requiredColor ?? 'custom';
+	return (
+		pageBorderColorPresets.find(
+			(preset) =>
+				requiredColor === preset.requiredColor.toLowerCase() ||
+				preset.allowedColors.map((value) => value.toLowerCase()).join("|") ===
+					allowedColors,
+		)?.requiredColor ?? "custom"
+	);
 };
 
-const prepareCondition = (condition: XmlGradingCondition): XmlGradingCondition => ({
-  ...condition,
-  expectedVariants: expectedVariantsForEdit(condition)
-    .map((variant) => ({
-      expectedValues: (variant.expectedValues ?? []).map((value) => value.trim()).filter(Boolean),
-    }))
-    .filter((variant) => variant.expectedValues.length > 0),
-  ignoreAttributes: (condition.ignoreAttributes ?? []).map((value) => value.trim()).filter(Boolean),
-  minOccurrences: condition.minOccurrences && condition.minOccurrences > 0 ? condition.minOccurrences : undefined,
-  maxOccurrences: condition.maxOccurrences && condition.maxOccurrences > 0 ? condition.maxOccurrences : undefined,
+const prepareCondition = (
+	condition: XmlGradingCondition,
+): XmlGradingCondition => ({
+	...condition,
+	expectedVariants: expectedVariantsForEdit(condition)
+		.map((variant) => ({
+			expectedValues: (variant.expectedValues ?? [])
+				.map((value) => value.trim())
+				.filter(Boolean),
+		}))
+		.filter((variant) => variant.expectedValues.length > 0),
+	ignoreAttributes: (condition.ignoreAttributes ?? [])
+		.map((value) => value.trim())
+		.filter(Boolean),
+	minOccurrences:
+		condition.minOccurrences && condition.minOccurrences > 0
+			? condition.minOccurrences
+			: undefined,
+	maxOccurrences:
+		condition.maxOccurrences && condition.maxOccurrences > 0
+			? condition.maxOccurrences
+			: undefined,
 });
 
 const XmlGradingRulesPage = () => {
-  const { getAccessToken, user } = useAuth();
-  const [ruleSets, setRuleSets] = useState<GradingRuleSetSummary[]>([]);
-  const [selected, setSelected] = useState<GradingRuleSet>(emptyRuleSet());
-  const [subjectFilter, setSubjectFilter] = useState('');
-  const [activeFilter, setActiveFilter] = useState<'all' | 'true' | 'false'>('all');
-  const [loading, setLoading] = useState(false);
-  const [loadingRuleSetId, setLoadingRuleSetId] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [validation, setValidation] = useState<XmlRuleValidationResult | null>(null);
-  const [gradeProjectCode, setGradeProjectCode] = useState('');
-  const [gradeFile, setGradeFile] = useState<File | null>(null);
-  const [gradeJson, setGradeJson] = useState('');
-  const [isTestGrading, setIsTestGrading] = useState(false);
-
-  // State quản lý xem JSON thô hoặc Giao diện trực quan
-  const [viewRawJson, setViewRawJson] = useState(false);
-  const [expandedProjects, setExpandedProjects] = useState<Record<number, boolean>>({});
-  const [expandedTasks, setExpandedTasks] = useState<Record<string, boolean>>({});
-  // Ẩn/hiện riêng khối "Điều kiện đặc biệt" của từng Task, độc lập với
-  // việc Task đang expand/collapse. Mặc định mở (true) để giữ hành vi cũ.
-  const [expandedSpecialConditions, setExpandedSpecialConditions] = useState<Record<string, boolean>>({});
-  const [expandedConditionBasics, setExpandedConditionBasics] = useState<Record<string, boolean>>({});
-  const [activeTab, setActiveTab] = useState<'editor' | 'validation' | 'test'>('editor');
-  const [showAdvanced, setShowAdvanced] = useState<Record<string, boolean>>({});
-  const [saveError, setSaveError] = useState('');
-  const selectedRef = useRef(selected);
-  const saveScrollYRef = useRef(0);
-
-  // Luôn giữ snapshot mới nhất để thao tác Save không dùng state cũ
-  // trong trường hợp người dùng vừa nhập Condition rồi click Save ngay.
-  useEffect(() => {
-    selectedRef.current = selected;
-  }, [selected]);
-
-  const startNewRuleSet = () => {
-    const next = emptyRuleSet();
-    selectedRef.current = next;
-    setSelected(next);
-    setValidation(null);
-  };
-
-  usePageHeader({
-    title: 'XML Grading Rules',
-    subtitle: `Quản lý ruleset · project · task · điều kiện chấm (${selected.isActive ? 'ACTIVE' : 'INACTIVE'})`,
-    actions: [
-      {
-        id: 'create-ruleset',
-        label: 'Tạo ruleset',
-        icon: 'add',
-        colorStyle: 'filled',
-        onClick: startNewRuleSet,
-      },
-    ],
-  }, [selected.isActive]);
-
-  const canUsePage = hasPermission(user, 'xmlrules.view');
-
-  const loadRuleSets = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await xmlGradingRulesService.listSummaries(getAccessToken, {
-        subject: subjectFilter.trim() || undefined,
-        isActive: activeFilter === 'all' ? undefined : activeFilter === 'true',
-      });
-
-      setRuleSets(data);
-
-      // Dùng ref thay vì selected.id từ closure cũ.
-      // Tránh việc request reload sau Save lấy lại state cũ và làm UI nhảy/ghi đè.
-    } catch (error) {
-      notify.error(error instanceof Error ? error.message : 'Không tải được danh sách XML rules.');
-    } finally {
-      setLoading(false);
-    }
-  }, [activeFilter, getAccessToken, subjectFilter]);
-
-  useEffect(() => { void loadRuleSets(); }, [loadRuleSets]);
-
-  const replaceSelected = (next: GradingRuleSet) => {
-    selectedRef.current = next;
-    setSelected(next);
-    setValidation(null);
-    setRuleSets((items) => {
-      if (!next.id) return items;
-      const summary = toRuleSetSummary(next);
-      const exists = items.some((item) => item.id === next.id);
-      return exists
-        ? items.map((item) => item.id === next.id ? summary : item)
-        : [summary, ...items];
-    });
-  };
-
-  // Update state theo kiểu functional + cập nhật ref ngay lập tức.
-  // Đây là phần quan trọng để tránh mất ký tự/field khi người dùng
-  // vừa nhập Condition rồi bấm Save ngay.
-  const openRuleSet = async (summary: GradingRuleSetSummary) => {
-    setLoadingRuleSetId(summary.id);
-    try {
-      const detail = await xmlGradingRulesService.get(summary.id, getAccessToken);
-      replaceSelected(detail);
-    } catch (error) {
-      notify.error(error instanceof Error ? error.message : 'Khong tai duoc chi tiet XML ruleset.');
-    } finally {
-      setLoadingRuleSetId('');
-    }
-  };
-
-  const updateSelected = (updater: (current: GradingRuleSet) => GradingRuleSet) => {
-    const next = updater(selectedRef.current);
-    selectedRef.current = next;
-    setSelected(next);
-    setValidation(null);
-    const summary = toRuleSetSummary(next);
-    setRuleSets((items) =>
-      next.id ? items.map((item) => item.id === next.id ? summary : item) : items
-    );
-  };
-
-  const saveRuleSet = async () => {
-    // Giữ nguyên vị trí scroll: Save không được kéo người dùng về input
-    // hoặc nhảy đến Condition vừa sửa.
-    saveScrollYRef.current = window.scrollY;
-    setSaveError('');
-
-    const current = selectedRef.current;
-
-    // Không tự thêm validation HTML/required ở đây.
-    // Backend/service hiện tại vẫn là nguồn xác thực chính.
-    // Điều này tránh browser tự focus + scroll về một input Condition.
-
-    setSaving(true);
-
-    try {
-      // Chuẩn hóa từ snapshot mới nhất, không lấy selected từ closure cũ.
-      const payload = {
-        ...current,
-        projects: current.projects.map((project) => ({
-          ...project,
-          tasks: project.tasks.map((task) => ({
-            ...task,
-            conditions: task.conditions.map(prepareCondition),
-          })),
-        })),
-      };
-
-      const saved = current.id
-        ? await xmlGradingRulesService.update(current.id, payload, getAccessToken)
-        : await xmlGradingRulesService.create(payload, getAccessToken);
-
-      replaceSelected(saved);
-      selectedRef.current = saved;
-
-      // Reload danh sách ở background; selectedRef đã trỏ tới saved
-      // nên request reload không thể quay lại state cũ.
-      await loadRuleSets();
-      notify.success('Đã lưu ruleset XML.');
-
-      // Sau khi save thành công vẫn giữ nguyên vị trí người dùng đang làm việc.
-      requestAnimationFrame(() => {
-        window.scrollTo({ top: saveScrollYRef.current, behavior: 'auto' });
-      });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Lưu ruleset thất bại.';
-      setSaveError(message);
-      notify.error(message);
-
-      // API lỗi không được làm UI nhảy xuống Condition.
-      requestAnimationFrame(() => {
-        window.scrollTo({ top: saveScrollYRef.current, behavior: 'auto' });
-      });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const deleteRuleSet = async (id: string) => {
-    if (!window.confirm('Xóa ruleset này?')) return;
-    await xmlGradingRulesService.delete(id, getAccessToken);
-    startNewRuleSet();
-    await loadRuleSets();
-    notify.success('Đã xóa ruleset.');
-  };
-
-  const validateRuleSet = async () => {
-    try {
-      const result = await xmlGradingRulesService.validate(selected, getAccessToken);
-      setValidation(result);
-      notify.success('Ruleset hợp lệ.');
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Validate thất bại.';
-      setValidation({ isValid: false, errors: [message], warnings: [] });
-      notify.error(message);
-    }
-  };
-
-  const gradeWithXmlRules = async () => {
-    if (!gradeFile) return notify.warning('Vui lòng chọn file Office cần test chấm.');
-    const projectCode = gradeProjectCode || selected.projects[0]?.projectCode;
-    if (!projectCode) return notify.warning('Vui lòng nhập/chọn projectCode.');
-    if (!selected.isActive) return notify.warning('Ruleset hiện tại chưa bật Active. Backend chỉ dùng ruleset Active để chấm thử XML.');
-    if (isTestGrading) return;
-    setIsTestGrading(true);
-    setGradeJson('');
-    try {
-      const result = await xmlGradingRulesService.grade(selected.subject, projectCode, gradeFile, getAccessToken);
-      setGradeJson(JSON.stringify(result, null, 2));
-      notify.success('Test chấm XML hoàn tất.');
-    } catch (error) {
-      notify.error(error instanceof Error ? error.message : 'Test chấm thất bại.');
-    } finally {
-      setIsTestGrading(false);
-    }
-  };
-
-  const mutateProject = (index: number, patch: Partial<ProjectXmlRule>) => {
-    updateSelected((current) => ({
-      ...current,
-      projects: current.projects.map((project, i) =>
-        i === index ? { ...project, ...patch } : project
-      ),
-    }));
-  };
-
-  const mutateTask = (pi: number, ti: number, patch: Partial<TaskXmlRule>) => {
-    updateSelected((current) => ({
-      ...current,
-      projects: current.projects.map((project, projectIndex) =>
-        projectIndex !== pi
-          ? project
-          : {
-            ...project,
-            tasks: project.tasks.map((task, taskIndex) =>
-              taskIndex === ti ? { ...task, ...patch } : task
-            ),
-          }
-      ),
-    }));
-  };
-
-  const mutateCondition = (
-    pi: number,
-    ti: number,
-    ci: number,
-    patch: Partial<XmlGradingCondition>
-  ) => {
-    updateSelected((current) => ({
-      ...current,
-      projects: current.projects.map((project, projectIndex) =>
-        projectIndex !== pi
-          ? project
-          : {
-            ...project,
-            tasks: project.tasks.map((task, taskIndex) =>
-              taskIndex !== ti
-                ? task
-                : {
-                  ...task,
-                  conditions: task.conditions.map((condition, conditionIndex) =>
-                    conditionIndex === ci
-                      ? { ...condition, ...patch }
-                      : condition
-                  ),
-                }
-            ),
-          }
-      ),
-    }));
-  };
-
-  // Cập nhật Special Condition của riêng 1 Task (không dùng chung toàn trang).
-  const updateTaskSpecialCondition = (
-    pi: number,
-    ti: number,
-    specialCondition?: SpecialCondition
-  ) => {
-    mutateTask(pi, ti, {
-      specialCondition,
-    });
-  };
-
-  // Ẩn/hiện riêng khối "Điều kiện đặc biệt" — mặc định mở (true) nếu
-  // chưa từng bấm toggle, để không thay đổi hành vi hiển thị hiện tại.
-  const toggleSpecialCondition = (key: string) =>
-    setExpandedSpecialConditions((prev) => ({ ...prev, [key]: !(prev[key] ?? true) }));
-
-  usePageHeader({
-    title: 'XML Grading Rules',
-    subtitle: `Quản lý ruleset · project · task · điều kiện chấm (${selected.isActive ? 'ACTIVE' : 'INACTIVE'})`,
-    actions: [
-      {
-        id: 'create-ruleset',
-        label: 'Tạo ruleset',
-        icon: 'add',
-        colorStyle: 'filled',
-        onClick: startNewRuleSet,
-      },
-    ],
-  }, [selected.isActive]);
-
-  if (!canUsePage) {
-    return <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-amber-800">Chỉ tài khoản Admin được quản lý XML grading rules.</div>;
-  }
-
-  const copyJsonToClipboard = async () => {
-    try {
-      await navigator.clipboard.writeText(gradeJson);
-      notify.success('Đã sao chép JSON kết quả vào clipboard.');
-    } catch {
-      notify.error('Sao chép thất bại.');
-    }
-  };
-
-  const downloadJson = (filename = 'grade-result.json') => {
-    const blob = new Blob([gradeJson], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  // --- GIAO DIỆN HIỂN THỊ KẾT QUẢ CHẤM ĐIỂM CHI TIẾT ---
-  const renderGradeResult = () => {
-    if (!gradeJson) return null;
-
-    let parsed: GradeResultView | null = null;
-    try {
-      parsed = JSON.parse(gradeJson) as GradeResultView;
-    } catch {
-      parsed = null;
-    }
-
-    if (!parsed) {
-      return (
-        <div className="mt-4 rounded-xl border border-slate-800 bg-slate-950 p-4 text-xs text-slate-100">
-          <pre className="max-h-96 overflow-auto font-mono text-slate-300">{gradeJson}</pre>
-        </div>
-      );
-    }
-
-    // Trích xuất dữ liệu tổng quan
-    const totalScore = parsed.totalScore ?? 0;
-    const maxScore = parsed.maxScore ?? 125;
-    const percentage = parsed.percentage ?? (maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0);
-    const isPassed = typeof parsed.isPassed === 'boolean'
-      ? parsed.isPassed
-      : (parsed.status === 'Excellent' || parsed.status === 'PASSED' || percentage >= 70);
-
-    const tasksList = parsed.taskResults ?? [];
-
-    return (
-      <div className="mt-5 space-y-4 rounded-xl border border-slate-200 bg-slate-50/50 p-4 shadow-sm">
-        {/* Thanh công cụ / Header */}
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
-          <div className="flex items-center gap-2">
-            <h3 className="text-base font-bold text-slate-800">Kết Quả Chấm Điểm</h3>
-            <span className={cx("rounded-full px-2.5 py-0.5 text-xs font-semibold", isPassed ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800")}>
-              {isPassed ? "ĐẠT (PASSED)" : "KHÔNG ĐẠT (FAILED)"}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <button onClick={() => setViewRawJson(!viewRawJson)} className="rounded-lg border border-m3-outline-variant bg-m3-surface px-3 py-1 text-xs font-medium text-m3-on-surface hover:bg-m3-surface-container">
-              {viewRawJson ? "Giao diện Bảng" : "Xem JSON"}
-            </button>
-            <button onClick={copyJsonToClipboard} title="Sao chép JSON" className="rounded-lg border border-m3-outline-variant bg-m3-surface p-1.5 text-m3-on-surface-variant hover:bg-m3-surface-container"><Icon name="content_copy" className="text-sm" /></button>
-            <button onClick={() => downloadJson()} title="Tải xuống JSON" className="rounded-lg border border-m3-outline-variant bg-m3-surface p-1.5 text-m3-on-surface-variant hover:bg-m3-surface-container"><Icon name="download" className="text-sm" /></button>
-          </div>
-        </div>
-
-        {viewRawJson ? (
-          <div className="rounded-lg border border-slate-900 bg-slate-950 p-3 text-xs text-slate-100">
-            <pre className="max-h-96 overflow-auto font-mono">{JSON.stringify(parsed, null, 2)}</pre>
-          </div>
-        ) : (
-          <>
-            {/* Các ô thẻ thông số tổng quan */}
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-xl border border-emerald-100 bg-emerald-50/60 p-3">
-                <div className="text-xs font-medium text-emerald-800">Tổng điểm</div>
-                <div className="mt-1 text-2xl font-black text-emerald-700">
-                  {totalScore} <span className="text-sm font-normal text-emerald-600">/ {maxScore}</span>
-                </div>
-              </div>
-
-              <div className="rounded-xl border border-blue-100 bg-blue-50/60 p-3">
-                <div className="text-xs font-medium text-blue-800">Tỷ lệ đạt</div>
-                <div className="mt-1 text-2xl font-black text-blue-700">{percentage}%</div>
-                <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-blue-200">
-                  <div className="h-full bg-blue-600 transition-all duration-500" style={{ width: `${Math.min(percentage, 100)}%` }} />
-                </div>
-              </div>
-
-              <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
-                <div className="text-xs font-medium text-slate-500">Mã bài kiểm tra</div>
-                <div className="mt-1 font-mono text-sm font-bold text-slate-800">{parsed.projectId || 'N/A'}</div>
-                <div className="text-xs text-slate-500">{parsed.projectName}</div>
-              </div>
-            </div>
-
-            {/* BẢNG KẾT QUẢ CHẤM ĐIỂM CHI TIẾT */}
-            <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
-              <table className="w-full text-left text-xs text-slate-600">
-                <thead className="border-b border-slate-200 bg-slate-100/80 font-semibold uppercase tracking-wider text-slate-700">
-                  <tr>
-                    <th className="px-3 py-2.5 w-12 text-center">STT</th>
-                    <th className="px-3 py-2.5 w-32">Mã Task</th>
-                    <th className="px-4 py-2.5">Nhiệm vụ (Task Name)</th>
-                    <th className="px-3 py-2.5 w-24 text-center">Trạng thái</th>
-                    <th className="px-3 py-2.5 w-28 text-right">Điểm số</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {Array.isArray(tasksList) && tasksList.length > 0 ? (
-                    tasksList.map((task: GradeTaskResultView, idx: number) => {
-                      const taskPassed = task.isPassed ?? ((task.score ?? 0) > 0);
-                      return (
-                        <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
-                          <td className="px-3 py-3 text-center font-medium text-slate-400">{idx + 1}</td>
-                          <td className="px-3 py-3 font-mono font-medium text-slate-800">{task.taskId}</td>
-                          <td className="px-4 py-3">
-                            <div className="font-medium text-slate-900 leading-snug">{task.taskName}</div>
-
-                            {/* Chi tiết điều kiện XML / Details */}
-                            {Array.isArray(task.details) && task.details.length > 0 && (
-                              <div className="mt-1.5 space-y-1">
-                                {task.details.map((detail: string, dIdx: number) => (
-                                  <div key={dIdx} className="text-[11px] font-mono text-slate-500 bg-slate-50 border border-slate-100 p-1 rounded">
-                                    {detail}
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-
-                            {/* Lỗi (nếu có) */}
-                            {Array.isArray(task.errors) && task.errors.length > 0 && (
-                              <div className="mt-1.5 text-[11px] text-rose-600 bg-rose-50 border border-rose-100 p-1 rounded">
-                                {task.errors.join(', ')}
-                              </div>
-                            )}
-                            {Array.isArray(task.errors) && task.errors.length > 0 && (
-                              <div className="mt-1.5 text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-100 p-1 rounded">
-                                {(task.fixActions ?? []).join(', ')}
-                              </div>
-                            )}
-                          </td>
-                          <td className="px-3 py-3 text-center">
-                            <span className={cx(
-                              "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold",
-                              taskPassed ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"
-                            )}>
-                              {taskPassed ? <Icon name="check_circle" className="text-xs" /> : <Icon name="cancel" className="text-xs" />}
-                              {taskPassed ? "Đạt" : "Sai"}
-                            </span>
-                          </td>
-                          <td className="px-3 py-3 text-right font-bold text-slate-800">
-                            <span className={taskPassed ? "text-emerald-700" : "text-rose-600"}>{task.score ?? 0}</span>
-                            <span className="text-slate-400 font-normal"> / {task.maxScore ?? 0}</span>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  ) : (
-                    <tr>
-                      <td colSpan={5} className="py-6 text-center text-slate-400">Không có dữ liệu task trong kết quả.</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </>
-        )}
-      </div>
-    );
-  };
-
-
-  const toggleProject = (index: number) =>
-    setExpandedProjects((prev) => ({ ...prev, [index]: !(prev[index] ?? false) }));
-
-  const toggleTask = (key: string) =>
-    setExpandedTasks((prev) => ({ ...prev, [key]: !(prev[key] ?? false) }));
-
-  const toggleConditionBasics = (key: string) =>
-    setExpandedConditionBasics((prev) => ({ ...prev, [key]: !(prev[key] ?? false) }));
-
-  const toggleAdvanced = (key: string) =>
-    setShowAdvanced((prev) => ({ ...prev, [key]: !prev[key] }));
-
-  const projectCount = selected.projects.length;
-  const taskCount = selected.projects.reduce((sum, project) => sum + project.tasks.length, 0);
-  const conditionCount = selected.projects.reduce(
-    (sum, project) => sum + project.tasks.reduce((taskSum, task) => taskSum + task.conditions.length, 0),
-    0
-  );
-  const selectedMaxScore = selected.projects.reduce((sum, project) => sum + Number(project.maxScore || 0), 0);
-
-  const statusBadge = selected.isActive
-    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-    : 'border-slate-200 bg-slate-100 text-slate-600';
-
-  const inputClass =
-    'mt-1 w-full rounded-xl bg-m3-surface-container-high px-3.5 py-2 text-sm text-m3-on-surface outline-none transition placeholder:text-m3-on-surface-variant/60 focus:ring-2 focus:ring-m3-primary/30 shadow-2xs';
-
-  const iconButtonClass =
-    'inline-flex h-9 w-9 items-center justify-center rounded-full bg-m3-surface-container-high text-m3-on-surface-variant transition-colors hover:bg-m3-surface-container-highest hover:text-m3-on-surface shadow-xs';
-
-  return (
-    <div className="min-h-full space-y-5 bg-m3-surface pb-10">
-      <div className="grid gap-5 xl:grid-cols-[292px_minmax(0,1fr)]">
-        {/* Sidebar */}
-        <aside className="h-fit rounded-3xl bg-m3-surface-container p-4 shadow-xs xl:sticky xl:top-24 mb-2">
-          <div className="mb-3 flex items-center justify-between px-1">
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-m3-on-surface-variant">Rulesets</p>
-              <p className="text-sm font-bold text-m3-on-surface">{ruleSets.length} bộ luật</p>
-            </div>
-            <button onClick={loadRuleSets} className={iconButtonClass} title="Làm mới">
-              <Icon name="refresh" className={cx('text-base', loading && 'animate-spin')} />
-            </button>
-          </div>
-
-          <div className="mb-3 space-y-2">
-            <input
-              value={subjectFilter}
-              onChange={(e) => setSubjectFilter(e.target.value)}
-              placeholder="Tìm theo môn..."
-              className="w-full rounded-2xl bg-m3-surface-container-high px-3 py-2 text-xs text-m3-on-surface outline-none transition focus:ring-2 focus:ring-m3-primary/30"
-            />
-            <select
-              value={activeFilter}
-              onChange={(e) => setActiveFilter(e.target.value as 'all' | 'true' | 'false')}
-              className="w-full rounded-2xl bg-m3-surface-container-high px-3 py-2 text-xs text-m3-on-surface outline-none transition focus:ring-2 focus:ring-m3-primary/30"
-            >
-              <option value="all">Tất cả trạng thái</option>
-              <option value="true">Đang bật</option>
-              <option value="false">Đang tắt</option>
-            </select>
-          </div>
-
-          <div className="max-h-[calc(100vh-280px)] space-y-1 overflow-y-auto pr-1">
-            {ruleSets.map((item) => {
-              const isSelected = selected.id === item.id;
-              const isLoadingDetail = loadingRuleSetId === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => void openRuleSet(item)}
-                  disabled={isLoadingDetail}
-                  className={cx(
-                    'w-full rounded-2xl border p-3 text-left transition',
-                    isSelected
-                      ? 'border-m3-primary/50 bg-m3-primary/10 shadow-xs'
-                      : 'border-transparent hover:border-m3-outline-variant/60 hover:bg-m3-surface-container-high'
-                  )}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <div className="truncate text-xs font-bold text-m3-on-surface">
-                        {item.subject} · {item.version}
-                      </div>
-                      <div className="mt-0.5 text-[11px] text-m3-on-surface-variant">
-                        {item.projectCount} project · {item.taskCount} task
-                      </div>
-                    </div>
-                    {isLoadingDetail ? (
-                      <Icon name="refresh" className="mt-0.5 shrink-0 animate-spin text-sm text-m3-primary" />
-                    ) : (
-                      <span
-                        className={cx(
-                          'mt-1 h-2 w-2 shrink-0 rounded-full',
-                          item.isActive ? 'bg-emerald-500' : 'bg-m3-outline-variant'
-                        )}
-                      />
-                    )}
-                  </div>
-                </button>
-              );
-            })}
-
-            {!loading && ruleSets.length === 0 && (
-              <div className="rounded-2xl border border-dashed border-m3-outline-variant/60 px-4 py-8 text-center">
-                <Icon name="code" className="mx-auto mb-2 text-m3-on-surface-variant text-2xl" />
-                <p className="text-xs font-bold text-m3-on-surface">Chưa có ruleset</p>
-                <p className="mt-1 text-[11px] text-m3-on-surface-variant">Tạo ruleset đầu tiên để bắt đầu.</p>
-              </div>
-            )}
-          </div>
-        </aside>
-
-        {/* Main */}
-        <main className="min-w-0 space-y-5">
-          {/* Ruleset overview */}
-          <section className="rounded-3xl bg-m3-surface-container p-5 shadow-xs">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <div className="mb-1 flex flex-wrap items-center gap-2">
-                  <h2 className="text-lg font-black text-m3-on-surface">
-                    {selected.subject || 'Chưa đặt tên'} · {selected.version || 'v1'}
-                  </h2>
-                  <span className={cx('rounded-full border px-2.5 py-0.5 text-[11px] font-bold', statusBadge)}>
-                    {selected.isActive ? 'Đang hoạt động' : 'Đang tắt'}
-                  </span>
-                </div>
-                <p className="text-xs text-m3-on-surface-variant">
-                  {selected.id ? `ID: ${selected.id}` : 'Ruleset mới chưa được lưu'}
-                </p>
-              </div>
-
-              <div className="flex items-center gap-2">
-                {selected.id && (
-                  <button
-                    onClick={() => deleteRuleSet(selected.id)}
-                    title="Xóa ruleset"
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-full text-m3-error transition-colors hover:bg-m3-error-container"
-                  >
-                    <Icon name="delete" className="text-base" />
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Stats */}
-            <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
-              {[
-                ['Projects', projectCount],
-                ['Tasks', taskCount],
-                ['Conditions', conditionCount],
-                ['Max score', selectedMaxScore],
-              ].map(([label, value]) => (
-                <div key={label} className="group rounded-2xl bg-m3-surface-container-low px-4 py-3 transition-[border-radius,background-color] duration-300 ease-[cubic-bezier(0.2,0,0,1)] hover:rounded-lg hover:bg-m3-surface-container-high">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-m3-on-surface-variant">{label}</p>
-                  <p className="mt-1 text-xl font-black text-m3-on-surface">{value}</p>
-                </div>
-              ))}
-            </div>
-
-            {/* Tabs */}
-            <div className="mt-5 flex gap-1 overflow-x-auto border-b border-m3-outline-variant/40">
-              {[
-                ['editor', 'Rules editor'],
-                ['validation', 'Validation'],
-                ['test', 'Test XML'],
-              ].map(([key, label]) => (
-                <button
-                  key={key}
-                  onClick={() => setActiveTab(key as typeof activeTab)}
-                  className={cx(
-                    'border-b-2 px-3.5 py-2.5 text-xs font-bold transition',
-                    activeTab === key
-                      ? 'border-m3-primary text-m3-primary'
-                      : 'border-transparent text-m3-on-surface-variant hover:text-m3-on-surface'
-                  )}
-                >
-                  {label}
-                  {key === 'validation' && validation && (
-                    <span className={cx('ml-2 rounded-full px-1.5 py-0.5 text-[10px] font-bold', validation.isValid ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' : 'bg-m3-error-container text-m3-on-error-container')}>
-                      {validation.isValid ? 'OK' : `${validation.errors?.length || 0}`}
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
-          </section>
-
-          {activeTab === 'editor' && (
-            <>
-              {/* Ruleset settings */}
-              <section className="rounded-3xl bg-m3-surface-container p-5 shadow-xs text-m3-on-surface">
-                <div className="mb-4">
-                  <h3 className="text-sm font-bold text-m3-on-surface">Thông tin ruleset</h3>
-                  <p className="mt-1 text-xs text-m3-on-surface-variant">Các thiết lập chung cho toàn bộ bộ luật.</p>
-                </div>
-
-                <div className="grid gap-4 md:grid-cols-[1fr_1fr_auto]">
-                  <label className="text-xs font-semibold text-m3-on-surface-variant">
-                    Môn / loại file
-                    <input
-                      value={selected.subject}
-                      onChange={(e) => replaceSelected({ ...selected, subject: e.target.value })}
-                      placeholder="excel"
-                      className={inputClass}
-                    />
-                  </label>
-                  <label className="text-xs font-semibold text-m3-on-surface-variant">
-                    Phiên bản bộ luật
-                    <input
-                      value={selected.version}
-                      onChange={(e) => replaceSelected({ ...selected, version: e.target.value })}
-                      placeholder="v1"
-                      className={inputClass}
-                    />
-                  </label>
-                  <label className="flex items-center gap-3 rounded-xl bg-m3-surface-container-high px-4 py-3 text-sm font-semibold text-m3-on-surface md:self-end shadow-xs">
-                    <input
-                      type="checkbox"
-                      checked={selected.isActive}
-                      onChange={(e) => replaceSelected({ ...selected, isActive: e.target.checked })}
-                      className="h-4 w-4 rounded-sm accent-m3-primary"
-                    />
-                    Kích hoạt
-                  </label>
-                </div>
-              </section>
-
-              {/* Projects */}
-              <section className="rounded-3xl bg-m3-surface-container p-5 shadow-xs text-m3-on-surface">
-                <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <h3 className="text-sm font-bold text-m3-on-surface">Projects</h3>
-                    <p className="mt-1 text-xs text-m3-on-surface-variant">
-                      Mỗi project chứa các Task và điều kiện chấm tương ứng.
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => {
-                      const next = { ...selected, projects: [...selected.projects, emptyProject()] };
-                      replaceSelected(next);
-                      setExpandedProjects((prev) => ({ ...prev, [next.projects.length - 1]: true }));
-                    }}
-                    className="inline-flex items-center gap-2 rounded-xl bg-m3-surface-container-high px-3 py-2 text-xs font-bold text-m3-primary transition hover:bg-m3-surface-container-highest shadow-xs"
-                  >
-                    <Icon name="add" className="text-base" /> Thêm project
-                  </button>
-                </div>
-
-                <div className="space-y-4">
-                  {selected.projects.map((project, pi) => {
-                    const projectExpanded = expandedProjects[pi] ?? false;
-                    return (
-                      <div key={pi} className="group overflow-hidden rounded-3xl bg-m3-surface-container-low shadow-xs transition hover:shadow-md p-4 text-m3-on-surface">
-                        {/* Project header */}
-                        <div className="flex items-center gap-3 bg-m3-surface-container px-4 py-3.5 rounded-2xl shadow-xs">
-                          <button
-                            onClick={() => toggleProject(pi)}
-                            className="flex min-w-0 flex-1 items-center gap-3 text-left p-2"
-                          >
-                            <span className="text-slate-400">{projectExpanded ? '▼' : '▶'}</span>
-                            <div className="min-w-0">
-                              <div className="truncate text-sm font-bold text-slate-900">
-                                {project.projectName || 'Project chưa đặt tên'}
-                              </div>
-                              <div className="mt-0.5 text-xs text-slate-500">
-                                {project.projectCode || 'project22'} · {project.tasks.length} task · {project.maxScore} điểm
-                              </div>
-                            </div>
-                          </button>
-                          <button
-                            onClick={() =>
-                              replaceSelected({
-                                ...selected,
-                                projects: selected.projects.filter((_, i) => i !== pi),
-                              })
-                            }
-                            title="Xóa project"
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-red-50 hover:text-red-600"
-                          >
-                            <Icon name="delete" className="text-base" />
-                          </button>
-                        </div>
-
-                        {projectExpanded && (
-                          <div className="space-y-4 bg-transparent p-4">
-                            {/* Project fields */}
-                            <div className="grid gap-3 md:grid-cols-[1fr_1.5fr_130px]">
-                              <label className="text-xs font-semibold text-m3-on-surface-variant">
-                                Mã project
-                                <input
-                                  value={project.projectCode}
-                                  onChange={(e) => mutateProject(pi, { projectCode: e.target.value })}
-                                  className={inputClass}
-                                />
-                              </label>
-                              <label className="text-xs font-semibold text-m3-on-surface-variant">
-                                Tên project
-                                <input
-                                  value={project.projectName}
-                                  onChange={(e) => mutateProject(pi, { projectName: e.target.value })}
-                                  className={inputClass}
-                                />
-                              </label>
-                              <label className="text-xs font-semibold text-m3-on-surface-variant">
-                                Điểm tối đa
-                                <input
-                                  type="number"
-                                  value={project.maxScore}
-                                  onChange={(e) => mutateProject(pi, { maxScore: Number(e.target.value) || 0 })}
-                                  className={inputClass}
-                                />
-                              </label>
-                            </div>
-
-                            {/* Tasks */}
-                            <div className="rounded-2xl bg-m3-surface-container p-5 shadow-xs">
-                              <div className="mb-3 flex items-center justify-between gap-2">
-                                <div>
-                                  <p className="text-sm font-bold text-slate-800">Tasks</p>
-                                  <p className="text-xs text-slate-500">{project.tasks.length} nhiệm vụ trong project</p>
-                                </div>
-                                <button
-                                  onClick={() => mutateProject(pi, { tasks: [...project.tasks, emptyTask()] })}
-                                  className="inline-flex items-center gap-1.5 rounded-xl bg-m3-surface-container-high px-3 py-1.5 text-xs font-semibold text-m3-on-surface transition hover:bg-m3-surface-container-highest shadow-xs"
-                                >
-                                  <Icon name="add" className="text-sm" /> Thêm Task
-                                </button>
-                              </div>
-
-                              <div className="space-y-2">
-                                {project.tasks.map((task, ti) => {
-                                  const taskKey = `${pi}-${ti}`;
-                                  const taskExpanded = expandedTasks[taskKey] ?? false;
-                                  const specialConditionExpanded = expandedSpecialConditions[taskKey] ?? true;
-                                  const availableSpecialConditionOptions = specialConditionOptionsForSubject(selected.subject);
-                                  const currentSpecialConditionSupported = !task.specialCondition?.type
-                                    || availableSpecialConditionOptions.some((option) => option.value === task.specialCondition?.type);
-
-                                  return (
-                                    <div key={taskKey} className="overflow-hidden rounded-2xl bg-m3-surface-container-high shadow-xs transition hover:shadow-md text-m3-on-surface">
-                                      <div className="flex items-center gap-2 px-3.5 py-3">
-                                        <button
-                                          onClick={() => toggleTask(taskKey)}
-                                          className="flex min-w-0 flex-1 items-center gap-3 text-left"
-                                        >
-                                          <span className="text-xs text-m3-on-surface-variant">{taskExpanded ? '▼' : '▶'}</span>
-                                          <span className="rounded-lg bg-m3-surface-container px-2 py-1 font-mono text-[11px] font-bold text-m3-on-surface shadow-2xs">
-                                            {task.taskId || `TASK-${ti + 1}`}
-                                          </span>
-                                          <span className="min-w-0 truncate text-sm font-semibold text-m3-on-surface">
-                                            {task.taskName || 'Task chưa đặt tên'}
-                                          </span>
-                                          <span className="ml-auto shrink-0 text-xs font-semibold text-m3-on-surface-variant">
-                                            {task.conditions.length} điều kiện · {task.maxScore} điểm
-                                          </span>
-                                        </button>
-                                        <button
-                                          onClick={() =>
-                                            mutateProject(pi, {
-                                              tasks: project.tasks.filter((_, i) => i !== ti),
-                                            })
-                                          }
-                                          title="Xóa Task"
-                                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-m3-error hover:bg-m3-error-container"
-                                        >
-                                          <Icon name="delete" className="text-sm" />
-                                        </button>
-                                      </div>
-
-                                      {taskExpanded && (
-                                        <div className="bg-m3-surface-container-high/40 p-4">
-                                          <div className="grid gap-4 md:grid-cols-[180px_minmax(0,1fr)_140px]">
-                                            <label className="text-xs font-semibold text-slate-600">
-                                              Mã Task
-                                              <input
-                                                value={task.taskId}
-                                                onChange={(e) =>
-                                                  mutateTask(pi, ti, { taskId: e.target.value })
-                                                }
-                                                className={inputClass}
-                                                placeholder="TASK-01"
-                                              />
-                                            </label>
-
-                                            <label className="text-xs font-semibold text-slate-600">
-                                              Tên nhiệm vụ
-                                              <input
-                                                value={task.taskName}
-                                                onChange={(e) =>
-                                                  mutateTask(pi, ti, { taskName: e.target.value })
-                                                }
-                                                className={inputClass}
-                                                placeholder="Nhập tên nhiệm vụ..."
-                                              />
-                                            </label>
-
-                                            <label className="text-xs font-semibold text-slate-600">
-                                              Điểm tối đa
-                                              <input
-                                                type="number"
-                                                value={task.maxScore}
-                                                onChange={(e) =>
-                                                  mutateTask(pi, ti, {
-                                                    maxScore: Number(e.target.value),
-                                                  })
-                                                }
-                                                className={inputClass}
-                                              />
-                                            </label>
-                                          </div>
-
-                                          {/* =========================================================
+	const { getAccessToken, user } = useAuth();
+	const [ruleSets, setRuleSets] = useState<GradingRuleSetSummary[]>([]);
+	const [selected, setSelected] = useState<GradingRuleSet>(emptyRuleSet());
+	const [subjectFilter, setSubjectFilter] = useState("");
+	const [activeFilter, setActiveFilter] = useState<"all" | "true" | "false">(
+		"all",
+	);
+	const [loading, setLoading] = useState(false);
+	const [loadingRuleSetId, setLoadingRuleSetId] = useState("");
+	const [saving, setSaving] = useState(false);
+	const [validation, setValidation] = useState<XmlRuleValidationResult | null>(
+		null,
+	);
+	const [gradeProjectCode, setGradeProjectCode] = useState("");
+	const [gradeFile, setGradeFile] = useState<File | null>(null);
+	const [gradeJson, setGradeJson] = useState("");
+	const [isTestGrading, setIsTestGrading] = useState(false);
+
+	// State quản lý xem JSON thô hoặc Giao diện trực quan
+	const [viewRawJson, setViewRawJson] = useState(false);
+	const [expandedProjects, setExpandedProjects] = useState<
+		Record<number, boolean>
+	>({});
+	const [expandedTasks, setExpandedTasks] = useState<Record<string, boolean>>(
+		{},
+	);
+	// Ẩn/hiện riêng khối "Điều kiện đặc biệt" của từng Task, độc lập với
+	// việc Task đang expand/collapse. Mặc định mở (true) để giữ hành vi cũ.
+	const [expandedSpecialConditions, setExpandedSpecialConditions] = useState<
+		Record<string, boolean>
+	>({});
+	const [expandedConditionBasics, setExpandedConditionBasics] = useState<
+		Record<string, boolean>
+	>({});
+	const [activeTab, setActiveTab] = useState<"editor" | "validation" | "test">(
+		"editor",
+	);
+	const [showAdvanced, setShowAdvanced] = useState<Record<string, boolean>>({});
+	const [saveError, setSaveError] = useState("");
+	const selectedRef = useRef(selected);
+	const saveScrollYRef = useRef(0);
+
+	// Luôn giữ snapshot mới nhất để thao tác Save không dùng state cũ
+	// trong trường hợp người dùng vừa nhập Condition rồi click Save ngay.
+	useEffect(() => {
+		selectedRef.current = selected;
+	}, [selected]);
+
+	const startNewRuleSet = () => {
+		const next = emptyRuleSet();
+		selectedRef.current = next;
+		setSelected(next);
+		setValidation(null);
+	};
+
+	usePageHeader(
+		{
+			title: "XML Grading Rules",
+			subtitle: `Quản lý ruleset · project · task · điều kiện chấm (${selected.isActive ? "ACTIVE" : "INACTIVE"})`,
+			actions: [
+				{
+					id: "create-ruleset",
+					label: "Tạo ruleset",
+					icon: "add",
+					colorStyle: "filled",
+					onClick: startNewRuleSet,
+				},
+			],
+		},
+		[selected.isActive],
+	);
+
+	const canUsePage = hasPermission(user, "xmlrules.view");
+
+	const loadRuleSets = useCallback(async () => {
+		setLoading(true);
+		try {
+			const data = await xmlGradingRulesService.listSummaries(getAccessToken, {
+				subject: subjectFilter.trim() || undefined,
+				isActive: activeFilter === "all" ? undefined : activeFilter === "true",
+			});
+
+			setRuleSets(data);
+
+			// Dùng ref thay vì selected.id từ closure cũ.
+			// Tránh việc request reload sau Save lấy lại state cũ và làm UI nhảy/ghi đè.
+		} catch (error) {
+			notify.error(
+				error instanceof Error
+					? error.message
+					: "Không tải được danh sách XML rules.",
+			);
+		} finally {
+			setLoading(false);
+		}
+	}, [activeFilter, getAccessToken, subjectFilter]);
+
+	useEffect(() => {
+		void loadRuleSets();
+	}, [loadRuleSets]);
+
+	const replaceSelected = (next: GradingRuleSet) => {
+		selectedRef.current = next;
+		setSelected(next);
+		setValidation(null);
+		setRuleSets((items) => {
+			if (!next.id) return items;
+			const summary = toRuleSetSummary(next);
+			const exists = items.some((item) => item.id === next.id);
+			return exists
+				? items.map((item) => (item.id === next.id ? summary : item))
+				: [summary, ...items];
+		});
+	};
+
+	// Update state theo kiểu functional + cập nhật ref ngay lập tức.
+	// Đây là phần quan trọng để tránh mất ký tự/field khi người dùng
+	// vừa nhập Condition rồi bấm Save ngay.
+	const openRuleSet = async (summary: GradingRuleSetSummary) => {
+		setLoadingRuleSetId(summary.id);
+		try {
+			const detail = await xmlGradingRulesService.get(
+				summary.id,
+				getAccessToken,
+			);
+			replaceSelected(detail);
+		} catch (error) {
+			notify.error(
+				error instanceof Error
+					? error.message
+					: "Khong tai duoc chi tiet XML ruleset.",
+			);
+		} finally {
+			setLoadingRuleSetId("");
+		}
+	};
+
+	const updateSelected = (
+		updater: (current: GradingRuleSet) => GradingRuleSet,
+	) => {
+		const next = updater(selectedRef.current);
+		selectedRef.current = next;
+		setSelected(next);
+		setValidation(null);
+		const summary = toRuleSetSummary(next);
+		setRuleSets((items) =>
+			next.id
+				? items.map((item) => (item.id === next.id ? summary : item))
+				: items,
+		);
+	};
+
+	const saveRuleSet = async () => {
+		// Giữ nguyên vị trí scroll: Save không được kéo người dùng về input
+		// hoặc nhảy đến Condition vừa sửa.
+		saveScrollYRef.current = window.scrollY;
+		setSaveError("");
+
+		const current = selectedRef.current;
+
+		// Không tự thêm validation HTML/required ở đây.
+		// Backend/service hiện tại vẫn là nguồn xác thực chính.
+		// Điều này tránh browser tự focus + scroll về một input Condition.
+
+		setSaving(true);
+
+		try {
+			// Chuẩn hóa từ snapshot mới nhất, không lấy selected từ closure cũ.
+			const payload = {
+				...current,
+				projects: current.projects.map((project) => ({
+					...project,
+					tasks: project.tasks.map((task) => ({
+						...task,
+						conditions: task.conditions.map(prepareCondition),
+					})),
+				})),
+			};
+
+			const saved = current.id
+				? await xmlGradingRulesService.update(
+						current.id,
+						payload,
+						getAccessToken,
+					)
+				: await xmlGradingRulesService.create(payload, getAccessToken);
+
+			replaceSelected(saved);
+			selectedRef.current = saved;
+
+			// Reload danh sách ở background; selectedRef đã trỏ tới saved
+			// nên request reload không thể quay lại state cũ.
+			await loadRuleSets();
+			notify.success("Đã lưu ruleset XML.");
+
+			// Sau khi save thành công vẫn giữ nguyên vị trí người dùng đang làm việc.
+			requestAnimationFrame(() => {
+				window.scrollTo({ top: saveScrollYRef.current, behavior: "auto" });
+			});
+		} catch (error) {
+			const message =
+				error instanceof Error ? error.message : "Lưu ruleset thất bại.";
+			setSaveError(message);
+			notify.error(message);
+
+			// API lỗi không được làm UI nhảy xuống Condition.
+			requestAnimationFrame(() => {
+				window.scrollTo({ top: saveScrollYRef.current, behavior: "auto" });
+			});
+		} finally {
+			setSaving(false);
+		}
+	};
+
+	const deleteRuleSet = async (id: string) => {
+		if (!window.confirm("Xóa ruleset này?")) return;
+		await xmlGradingRulesService.delete(id, getAccessToken);
+		startNewRuleSet();
+		await loadRuleSets();
+		notify.success("Đã xóa ruleset.");
+	};
+
+	const validateRuleSet = async () => {
+		try {
+			const result = await xmlGradingRulesService.validate(
+				selected,
+				getAccessToken,
+			);
+			setValidation(result);
+			notify.success("Ruleset hợp lệ.");
+		} catch (error) {
+			const message =
+				error instanceof Error ? error.message : "Validate thất bại.";
+			setValidation({ isValid: false, errors: [message], warnings: [] });
+			notify.error(message);
+		}
+	};
+
+	const gradeWithXmlRules = async () => {
+		if (!gradeFile)
+			return notify.warning("Vui lòng chọn file Office cần test chấm.");
+		const projectCode = gradeProjectCode || selected.projects[0]?.projectCode;
+		if (!projectCode) return notify.warning("Vui lòng nhập/chọn projectCode.");
+		if (!selected.isActive)
+			return notify.warning(
+				"Ruleset hiện tại chưa bật Active. Backend chỉ dùng ruleset Active để chấm thử XML.",
+			);
+		if (isTestGrading) return;
+		setIsTestGrading(true);
+		setGradeJson("");
+		try {
+			const result = await xmlGradingRulesService.grade(
+				selected.subject,
+				projectCode,
+				gradeFile,
+				getAccessToken,
+			);
+			setGradeJson(JSON.stringify(result, null, 2));
+			notify.success("Test chấm XML hoàn tất.");
+		} catch (error) {
+			notify.error(
+				error instanceof Error ? error.message : "Test chấm thất bại.",
+			);
+		} finally {
+			setIsTestGrading(false);
+		}
+	};
+
+	const mutateProject = (index: number, patch: Partial<ProjectXmlRule>) => {
+		updateSelected((current) => ({
+			...current,
+			projects: current.projects.map((project, i) =>
+				i === index ? { ...project, ...patch } : project,
+			),
+		}));
+	};
+
+	const mutateTask = (pi: number, ti: number, patch: Partial<TaskXmlRule>) => {
+		updateSelected((current) => ({
+			...current,
+			projects: current.projects.map((project, projectIndex) =>
+				projectIndex !== pi
+					? project
+					: {
+							...project,
+							tasks: project.tasks.map((task, taskIndex) =>
+								taskIndex === ti ? { ...task, ...patch } : task,
+							),
+						},
+			),
+		}));
+	};
+
+	const mutateCondition = (
+		pi: number,
+		ti: number,
+		ci: number,
+		patch: Partial<XmlGradingCondition>,
+	) => {
+		updateSelected((current) => ({
+			...current,
+			projects: current.projects.map((project, projectIndex) =>
+				projectIndex !== pi
+					? project
+					: {
+							...project,
+							tasks: project.tasks.map((task, taskIndex) =>
+								taskIndex !== ti
+									? task
+									: {
+											...task,
+											conditions: task.conditions.map(
+												(condition, conditionIndex) =>
+													conditionIndex === ci
+														? { ...condition, ...patch }
+														: condition,
+											),
+										},
+							),
+						},
+			),
+		}));
+	};
+
+	// Cập nhật Special Condition của riêng 1 Task (không dùng chung toàn trang).
+	const updateTaskSpecialCondition = (
+		pi: number,
+		ti: number,
+		specialCondition?: SpecialCondition,
+	) => {
+		mutateTask(pi, ti, {
+			specialCondition,
+		});
+	};
+
+	// Ẩn/hiện riêng khối "Điều kiện đặc biệt" — mặc định mở (true) nếu
+	// chưa từng bấm toggle, để không thay đổi hành vi hiển thị hiện tại.
+	const toggleSpecialCondition = (key: string) =>
+		setExpandedSpecialConditions((prev) => ({
+			...prev,
+			[key]: !(prev[key] ?? true),
+		}));
+
+	usePageHeader(
+		{
+			title: "XML Grading Rules",
+			subtitle: `Quản lý ruleset · project · task · điều kiện chấm (${selected.isActive ? "ACTIVE" : "INACTIVE"})`,
+			actions: [
+				{
+					id: "create-ruleset",
+					label: "Tạo ruleset",
+					icon: "add",
+					colorStyle: "filled",
+					onClick: startNewRuleSet,
+				},
+			],
+		},
+		[selected.isActive],
+	);
+
+	if (!canUsePage) {
+		return (
+			<div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-amber-800">
+				Chỉ tài khoản Admin được quản lý XML grading rules.
+			</div>
+		);
+	}
+
+	const copyJsonToClipboard = async () => {
+		try {
+			await navigator.clipboard.writeText(gradeJson);
+			notify.success("Đã sao chép JSON kết quả vào clipboard.");
+		} catch {
+			notify.error("Sao chép thất bại.");
+		}
+	};
+
+	const downloadJson = (filename = "grade-result.json") => {
+		const blob = new Blob([gradeJson], { type: "application/json" });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement("a");
+		a.href = url;
+		a.download = filename;
+		a.click();
+		URL.revokeObjectURL(url);
+	};
+
+	// --- GIAO DIỆN HIỂN THỊ KẾT QUẢ CHẤM ĐIỂM CHI TIẾT ---
+	const renderGradeResult = () => {
+		if (!gradeJson) return null;
+
+		let parsed: GradeResultView | null = null;
+		try {
+			parsed = JSON.parse(gradeJson) as GradeResultView;
+		} catch {
+			parsed = null;
+		}
+
+		if (!parsed) {
+			return (
+				<div className="mt-4 rounded-xl border border-slate-800 bg-slate-950 p-4 text-xs text-slate-100">
+					<pre className="max-h-96 overflow-auto font-mono text-slate-300">
+						{gradeJson}
+					</pre>
+				</div>
+			);
+		}
+
+		// Trích xuất dữ liệu tổng quan
+		const totalScore = parsed.totalScore ?? 0;
+		const maxScore = parsed.maxScore ?? 125;
+		const percentage =
+			parsed.percentage ??
+			(maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0);
+		const isPassed =
+			typeof parsed.isPassed === "boolean"
+				? parsed.isPassed
+				: parsed.status === "Excellent" ||
+					parsed.status === "PASSED" ||
+					percentage >= 70;
+
+		const tasksList = parsed.taskResults ?? [];
+
+		return (
+			<div className="mt-5 space-y-4 rounded-xl border border-slate-200 bg-slate-50/50 p-4 shadow-sm">
+				{/* Thanh công cụ / Header */}
+				<div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
+					<div className="flex items-center gap-2">
+						<h3 className="text-base font-bold text-slate-800">
+							Kết Quả Chấm Điểm
+						</h3>
+						<span
+							className={cx(
+								"rounded-full px-2.5 py-0.5 text-xs font-semibold",
+								isPassed
+									? "bg-emerald-100 text-emerald-800"
+									: "bg-rose-100 text-rose-800",
+							)}
+						>
+							{isPassed ? "ĐẠT (PASSED)" : "KHÔNG ĐẠT (FAILED)"}
+						</span>
+					</div>
+					<div className="flex items-center gap-2">
+						<button
+							onClick={() => setViewRawJson(!viewRawJson)}
+							className="rounded-lg border border-m3-outline-variant bg-m3-surface px-3 py-1 text-xs font-medium text-m3-on-surface hover:bg-m3-surface-container"
+						>
+							{viewRawJson ? "Giao diện Bảng" : "Xem JSON"}
+						</button>
+						<button
+							onClick={copyJsonToClipboard}
+							title="Sao chép JSON"
+							className="rounded-lg border border-m3-outline-variant bg-m3-surface p-1.5 text-m3-on-surface-variant hover:bg-m3-surface-container"
+						>
+							<Icon name="content_copy" className="text-sm" />
+						</button>
+						<button
+							onClick={() => downloadJson()}
+							title="Tải xuống JSON"
+							className="rounded-lg border border-m3-outline-variant bg-m3-surface p-1.5 text-m3-on-surface-variant hover:bg-m3-surface-container"
+						>
+							<Icon name="download" className="text-sm" />
+						</button>
+					</div>
+				</div>
+
+				{viewRawJson ? (
+					<div className="rounded-lg border border-slate-900 bg-slate-950 p-3 text-xs text-slate-100">
+						<pre className="max-h-96 overflow-auto font-mono">
+							{JSON.stringify(parsed, null, 2)}
+						</pre>
+					</div>
+				) : (
+					<>
+						{/* Các ô thẻ thông số tổng quan */}
+						<div className="grid gap-3 sm:grid-cols-3">
+							<div className="rounded-xl border border-emerald-100 bg-emerald-50/60 p-3">
+								<div className="text-xs font-medium text-emerald-800">
+									Tổng điểm
+								</div>
+								<div className="mt-1 text-2xl font-black text-emerald-700">
+									{totalScore}{" "}
+									<span className="text-sm font-normal text-emerald-600">
+										/ {maxScore}
+									</span>
+								</div>
+							</div>
+
+							<div className="rounded-xl border border-blue-100 bg-blue-50/60 p-3">
+								<div className="text-xs font-medium text-blue-800">
+									Tỷ lệ đạt
+								</div>
+								<div className="mt-1 text-2xl font-black text-blue-700">
+									{percentage}%
+								</div>
+								<div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-blue-200">
+									<div
+										className="h-full bg-blue-600 transition-all duration-500"
+										style={{ width: `${Math.min(percentage, 100)}%` }}
+									/>
+								</div>
+							</div>
+
+							<div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+								<div className="text-xs font-medium text-slate-500">
+									Mã bài kiểm tra
+								</div>
+								<div className="mt-1 font-mono text-sm font-bold text-slate-800">
+									{parsed.projectId || "N/A"}
+								</div>
+								<div className="text-xs text-slate-500">
+									{parsed.projectName}
+								</div>
+							</div>
+						</div>
+
+						{/* BẢNG KẾT QUẢ CHẤM ĐIỂM CHI TIẾT */}
+						<div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
+							<table className="w-full text-left text-xs text-slate-600">
+								<thead className="border-b border-slate-200 bg-slate-100/80 font-semibold uppercase tracking-wider text-slate-700">
+									<tr>
+										<th className="px-3 py-2.5 w-12 text-center">STT</th>
+										<th className="px-3 py-2.5 w-32">Mã Task</th>
+										<th className="px-4 py-2.5">Nhiệm vụ (Task Name)</th>
+										<th className="px-3 py-2.5 w-24 text-center">Trạng thái</th>
+										<th className="px-3 py-2.5 w-28 text-right">Điểm số</th>
+									</tr>
+								</thead>
+								<tbody className="divide-y divide-slate-100">
+									{Array.isArray(tasksList) && tasksList.length > 0 ? (
+										tasksList.map((task: GradeTaskResultView) => {
+											const taskPassed = task.isPassed ?? (task.score ?? 0) > 0;
+											return (
+												<tr
+													key={
+														task.taskId || task.taskName || `task-${task.score}`
+													}
+													className="hover:bg-slate-50/80 transition-colors"
+												>
+													<td className="px-3 py-3 text-center font-medium text-slate-400">
+														{task.taskId}
+													</td>
+													<td className="px-3 py-3 font-mono font-medium text-slate-800">
+														{task.taskId}
+													</td>
+													<td className="px-4 py-3">
+														<div className="font-medium text-slate-900 leading-snug">
+															{task.taskName}
+														</div>
+
+														{/* Chi tiết điều kiện XML / Details */}
+														{Array.isArray(task.details) &&
+															task.details.length > 0 && (
+																<div className="mt-1.5 space-y-1">
+																	{task.details.map((detail: string) => (
+																		<div
+																			key={detail}
+																			className="text-[11px] font-mono text-slate-500 bg-slate-50 border border-slate-100 p-1 rounded"
+																		>
+																			{detail}
+																		</div>
+																	))}
+																</div>
+															)}
+
+														{/* Lỗi (nếu có) */}
+														{Array.isArray(task.errors) &&
+															task.errors.length > 0 && (
+																<div className="mt-1.5 text-[11px] text-rose-600 bg-rose-50 border border-rose-100 p-1 rounded">
+																	{task.errors.join(", ")}
+																</div>
+															)}
+														{Array.isArray(task.errors) &&
+															task.errors.length > 0 && (
+																<div className="mt-1.5 text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-100 p-1 rounded">
+																	{(task.fixActions ?? []).join(", ")}
+																</div>
+															)}
+													</td>
+													<td className="px-3 py-3 text-center">
+														<span
+															className={cx(
+																"inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold",
+																taskPassed
+																	? "bg-emerald-100 text-emerald-800"
+																	: "bg-rose-100 text-rose-800",
+															)}
+														>
+															{taskPassed ? (
+																<Icon name="check_circle" className="text-xs" />
+															) : (
+																<Icon name="cancel" className="text-xs" />
+															)}
+															{taskPassed ? "Đạt" : "Sai"}
+														</span>
+													</td>
+													<td className="px-3 py-3 text-right font-bold text-slate-800">
+														<span
+															className={
+																taskPassed
+																	? "text-emerald-700"
+																	: "text-rose-600"
+															}
+														>
+															{task.score ?? 0}
+														</span>
+														<span className="text-slate-400 font-normal">
+															{" "}
+															/ {task.maxScore ?? 0}
+														</span>
+													</td>
+												</tr>
+											);
+										})
+									) : (
+										<tr>
+											<td
+												colSpan={5}
+												className="py-6 text-center text-slate-400"
+											>
+												Không có dữ liệu task trong kết quả.
+											</td>
+										</tr>
+									)}
+								</tbody>
+							</table>
+						</div>
+					</>
+				)}
+			</div>
+		);
+	};
+
+	const toggleProject = (index: number) =>
+		setExpandedProjects((prev) => ({
+			...prev,
+			[index]: !(prev[index] ?? false),
+		}));
+
+	const toggleTask = (key: string) =>
+		setExpandedTasks((prev) => ({ ...prev, [key]: !(prev[key] ?? false) }));
+
+	const toggleConditionBasics = (key: string) =>
+		setExpandedConditionBasics((prev) => ({
+			...prev,
+			[key]: !(prev[key] ?? false),
+		}));
+
+	const toggleAdvanced = (key: string) =>
+		setShowAdvanced((prev) => ({ ...prev, [key]: !prev[key] }));
+
+	const projectCount = selected.projects.length;
+	const taskCount = selected.projects.reduce(
+		(sum, project) => sum + project.tasks.length,
+		0,
+	);
+	const conditionCount = selected.projects.reduce(
+		(sum, project) =>
+			sum +
+			project.tasks.reduce(
+				(taskSum, task) => taskSum + task.conditions.length,
+				0,
+			),
+		0,
+	);
+	const selectedMaxScore = selected.projects.reduce(
+		(sum, project) => sum + Number(project.maxScore || 0),
+		0,
+	);
+
+	const statusBadge = selected.isActive
+		? "border-emerald-200 bg-emerald-50 text-emerald-700"
+		: "border-slate-200 bg-slate-100 text-slate-600";
+
+	const inputClass =
+		"mt-1 w-full rounded-xl bg-m3-surface-container-high px-3.5 py-2 text-sm text-m3-on-surface outline-none transition placeholder:text-m3-on-surface-variant/60 focus:ring-2 focus:ring-m3-primary/30 shadow-2xs";
+
+	const iconButtonClass =
+		"inline-flex h-9 w-9 items-center justify-center rounded-full bg-m3-surface-container-high text-m3-on-surface-variant transition-colors hover:bg-m3-surface-container-highest hover:text-m3-on-surface shadow-xs";
+
+	return (
+		<div className="min-h-full space-y-5 bg-m3-surface pb-10">
+			<div className="grid gap-5 xl:grid-cols-[292px_minmax(0,1fr)]">
+				{/* Sidebar */}
+				<aside className="h-fit rounded-3xl bg-m3-surface-container p-4 shadow-xs xl:sticky xl:top-24 mb-2">
+					<div className="mb-3 flex items-center justify-between px-1">
+						<div>
+							<p className="text-[10px] font-bold uppercase tracking-wider text-m3-on-surface-variant">
+								Rulesets
+							</p>
+							<p className="text-sm font-bold text-m3-on-surface">
+								{ruleSets.length} bộ luật
+							</p>
+						</div>
+						<button
+							onClick={loadRuleSets}
+							className={iconButtonClass}
+							title="Làm mới"
+						>
+							<Icon
+								name="refresh"
+								className={cx("text-base", loading && "animate-spin")}
+							/>
+						</button>
+					</div>
+
+					<div className="mb-3 space-y-2">
+						<input
+							value={subjectFilter}
+							onChange={(e) => setSubjectFilter(e.target.value)}
+							placeholder="Tìm theo môn..."
+							className="w-full rounded-2xl bg-m3-surface-container-high px-3 py-2 text-xs text-m3-on-surface outline-none transition focus:ring-2 focus:ring-m3-primary/30"
+						/>
+						<select
+							value={activeFilter}
+							onChange={(e) =>
+								setActiveFilter(e.target.value as "all" | "true" | "false")
+							}
+							className="w-full rounded-2xl bg-m3-surface-container-high px-3 py-2 text-xs text-m3-on-surface outline-none transition focus:ring-2 focus:ring-m3-primary/30"
+						>
+							<option value="all">Tất cả trạng thái</option>
+							<option value="true">Đang bật</option>
+							<option value="false">Đang tắt</option>
+						</select>
+					</div>
+
+					<div className="max-h-[calc(100vh-280px)] space-y-1 overflow-y-auto pr-1">
+						{ruleSets.map((item) => {
+							const isSelected = selected.id === item.id;
+							const isLoadingDetail = loadingRuleSetId === item.id;
+							return (
+								<button
+									key={item.id}
+									onClick={() => void openRuleSet(item)}
+									disabled={isLoadingDetail}
+									className={cx(
+										"w-full rounded-2xl border p-3 text-left transition",
+										isSelected
+											? "border-m3-primary/50 bg-m3-primary/10 shadow-xs"
+											: "border-transparent hover:border-m3-outline-variant/60 hover:bg-m3-surface-container-high",
+									)}
+								>
+									<div className="flex items-start justify-between gap-2">
+										<div className="min-w-0">
+											<div className="truncate text-xs font-bold text-m3-on-surface">
+												{item.subject} · {item.version}
+											</div>
+											<div className="mt-0.5 text-[11px] text-m3-on-surface-variant">
+												{item.projectCount} project · {item.taskCount} task
+											</div>
+										</div>
+										{isLoadingDetail ? (
+											<Icon
+												name="refresh"
+												className="mt-0.5 shrink-0 animate-spin text-sm text-m3-primary"
+											/>
+										) : (
+											<span
+												className={cx(
+													"mt-1 h-2 w-2 shrink-0 rounded-full",
+													item.isActive
+														? "bg-emerald-500"
+														: "bg-m3-outline-variant",
+												)}
+											/>
+										)}
+									</div>
+								</button>
+							);
+						})}
+
+						{!loading && ruleSets.length === 0 && (
+							<div className="rounded-2xl border border-dashed border-m3-outline-variant/60 px-4 py-8 text-center">
+								<Icon
+									name="code"
+									className="mx-auto mb-2 text-m3-on-surface-variant text-2xl"
+								/>
+								<p className="text-xs font-bold text-m3-on-surface">
+									Chưa có ruleset
+								</p>
+								<p className="mt-1 text-[11px] text-m3-on-surface-variant">
+									Tạo ruleset đầu tiên để bắt đầu.
+								</p>
+							</div>
+						)}
+					</div>
+				</aside>
+
+				{/* Main */}
+				<main className="min-w-0 space-y-5">
+					{/* Ruleset overview */}
+					<section className="rounded-3xl bg-m3-surface-container p-5 shadow-xs">
+						<div className="flex flex-wrap items-start justify-between gap-4">
+							<div>
+								<div className="mb-1 flex flex-wrap items-center gap-2">
+									<h2 className="text-lg font-black text-m3-on-surface">
+										{selected.subject || "Chưa đặt tên"} ·{" "}
+										{selected.version || "v1"}
+									</h2>
+									<span
+										className={cx(
+											"rounded-full border px-2.5 py-0.5 text-[11px] font-bold",
+											statusBadge,
+										)}
+									>
+										{selected.isActive ? "Đang hoạt động" : "Đang tắt"}
+									</span>
+								</div>
+								<p className="text-xs text-m3-on-surface-variant">
+									{selected.id
+										? `ID: ${selected.id}`
+										: "Ruleset mới chưa được lưu"}
+								</p>
+							</div>
+
+							<div className="flex items-center gap-2">
+								{selected.id && (
+									<button
+										onClick={() => deleteRuleSet(selected.id)}
+										title="Xóa ruleset"
+										className="inline-flex h-9 w-9 items-center justify-center rounded-full text-m3-error transition-colors hover:bg-m3-error-container"
+									>
+										<Icon name="delete" className="text-base" />
+									</button>
+								)}
+							</div>
+						</div>
+
+						{/* Stats */}
+						<div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
+							{[
+								["Projects", projectCount],
+								["Tasks", taskCount],
+								["Conditions", conditionCount],
+								["Max score", selectedMaxScore],
+							].map(([label, value]) => (
+								<div
+									key={label}
+									className="group rounded-2xl bg-m3-surface-container-low px-4 py-3 transition-[border-radius,background-color] duration-300 ease-[cubic-bezier(0.2,0,0,1)] hover:rounded-lg hover:bg-m3-surface-container-high"
+								>
+									<p className="text-[10px] font-bold uppercase tracking-wider text-m3-on-surface-variant">
+										{label}
+									</p>
+									<p className="mt-1 text-xl font-black text-m3-on-surface">
+										{value}
+									</p>
+								</div>
+							))}
+						</div>
+
+						{/* Tabs */}
+						<div className="mt-5 flex gap-1 overflow-x-auto border-b border-m3-outline-variant/40">
+							{[
+								["editor", "Rules editor"],
+								["validation", "Validation"],
+								["test", "Test XML"],
+							].map(([key, label]) => (
+								<button
+									key={key}
+									onClick={() => setActiveTab(key as typeof activeTab)}
+									className={cx(
+										"border-b-2 px-3.5 py-2.5 text-xs font-bold transition",
+										activeTab === key
+											? "border-m3-primary text-m3-primary"
+											: "border-transparent text-m3-on-surface-variant hover:text-m3-on-surface",
+									)}
+								>
+									{label}
+									{key === "validation" && validation && (
+										<span
+											className={cx(
+												"ml-2 rounded-full px-1.5 py-0.5 text-[10px] font-bold",
+												validation.isValid
+													? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+													: "bg-m3-error-container text-m3-on-error-container",
+											)}
+										>
+											{validation.isValid
+												? "OK"
+												: `${validation.errors?.length || 0}`}
+										</span>
+									)}
+								</button>
+							))}
+						</div>
+					</section>
+
+					{activeTab === "editor" && (
+						<>
+							{/* Ruleset settings */}
+							<section className="rounded-3xl bg-m3-surface-container p-5 shadow-xs text-m3-on-surface">
+								<div className="mb-4">
+									<h3 className="text-sm font-bold text-m3-on-surface">
+										Thông tin ruleset
+									</h3>
+									<p className="mt-1 text-xs text-m3-on-surface-variant">
+										Các thiết lập chung cho toàn bộ bộ luật.
+									</p>
+								</div>
+
+								<div className="grid gap-4 md:grid-cols-[1fr_1fr_auto]">
+									<label className="text-xs font-semibold text-m3-on-surface-variant">
+										Môn / loại file
+										<input
+											value={selected.subject}
+											onChange={(e) =>
+												replaceSelected({
+													...selected,
+													subject: e.target.value,
+												})
+											}
+											placeholder="excel"
+											className={inputClass}
+										/>
+									</label>
+									<label className="text-xs font-semibold text-m3-on-surface-variant">
+										Phiên bản bộ luật
+										<input
+											value={selected.version}
+											onChange={(e) =>
+												replaceSelected({
+													...selected,
+													version: e.target.value,
+												})
+											}
+											placeholder="v1"
+											className={inputClass}
+										/>
+									</label>
+									<label className="flex items-center gap-3 rounded-xl bg-m3-surface-container-high px-4 py-3 text-sm font-semibold text-m3-on-surface md:self-end shadow-xs">
+										<input
+											type="checkbox"
+											checked={selected.isActive}
+											onChange={(e) =>
+												replaceSelected({
+													...selected,
+													isActive: e.target.checked,
+												})
+											}
+											className="h-4 w-4 rounded-sm accent-m3-primary"
+										/>
+										Kích hoạt
+									</label>
+								</div>
+							</section>
+
+							{/* Projects */}
+							<section className="rounded-3xl bg-m3-surface-container p-5 shadow-xs text-m3-on-surface">
+								<div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+									<div>
+										<h3 className="text-sm font-bold text-m3-on-surface">
+											Projects
+										</h3>
+										<p className="mt-1 text-xs text-m3-on-surface-variant">
+											Mỗi project chứa các Task và điều kiện chấm tương ứng.
+										</p>
+									</div>
+									<button
+										onClick={() => {
+											const next = {
+												...selected,
+												projects: [...selected.projects, emptyProject()],
+											};
+											replaceSelected(next);
+											setExpandedProjects((prev) => ({
+												...prev,
+												[next.projects.length - 1]: true,
+											}));
+										}}
+										className="inline-flex items-center gap-2 rounded-xl bg-m3-surface-container-high px-3 py-2 text-xs font-bold text-m3-primary transition hover:bg-m3-surface-container-highest shadow-xs"
+									>
+										<Icon name="add" className="text-base" /> Thêm project
+									</button>
+								</div>
+
+								<div className="space-y-4">
+									{selected.projects.map((project, pi) => {
+										const projectExpanded = expandedProjects[pi] ?? false;
+										return (
+											<div
+												key={
+													project.projectCode ||
+													project.projectName ||
+													`project-${project.maxScore}`
+												}
+												className="group overflow-hidden rounded-3xl bg-m3-surface-container-low shadow-xs transition hover:shadow-md p-4 text-m3-on-surface"
+											>
+												{/* Project header */}
+												<div className="flex items-center gap-3 bg-m3-surface-container px-4 py-3.5 rounded-2xl shadow-xs">
+													<button
+														onClick={() => toggleProject(pi)}
+														className="flex min-w-0 flex-1 items-center gap-3 text-left p-2"
+													>
+														<span className="text-slate-400">
+															{projectExpanded ? "▼" : "▶"}
+														</span>
+														<div className="min-w-0">
+															<div className="truncate text-sm font-bold text-slate-900">
+																{project.projectName || "Project chưa đặt tên"}
+															</div>
+															<div className="mt-0.5 text-xs text-slate-500">
+																{project.projectCode || "project22"} ·{" "}
+																{project.tasks.length} task · {project.maxScore}{" "}
+																điểm
+															</div>
+														</div>
+													</button>
+													<button
+														onClick={() =>
+															replaceSelected({
+																...selected,
+																projects: selected.projects.filter(
+																	(_, i) => i !== pi,
+																),
+															})
+														}
+														title="Xóa project"
+														className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+													>
+														<Icon name="delete" className="text-base" />
+													</button>
+												</div>
+
+												{projectExpanded && (
+													<div className="space-y-4 bg-transparent p-4">
+														{/* Project fields */}
+														<div className="grid gap-3 md:grid-cols-[1fr_1.5fr_130px]">
+															<label className="text-xs font-semibold text-m3-on-surface-variant">
+																Mã project
+																<input
+																	value={project.projectCode}
+																	onChange={(e) =>
+																		mutateProject(pi, {
+																			projectCode: e.target.value,
+																		})
+																	}
+																	className={inputClass}
+																/>
+															</label>
+															<label className="text-xs font-semibold text-m3-on-surface-variant">
+																Tên project
+																<input
+																	value={project.projectName}
+																	onChange={(e) =>
+																		mutateProject(pi, {
+																			projectName: e.target.value,
+																		})
+																	}
+																	className={inputClass}
+																/>
+															</label>
+															<label className="text-xs font-semibold text-m3-on-surface-variant">
+																Điểm tối đa
+																<input
+																	type="number"
+																	value={project.maxScore}
+																	onChange={(e) =>
+																		mutateProject(pi, {
+																			maxScore: Number(e.target.value) || 0,
+																		})
+																	}
+																	className={inputClass}
+																/>
+															</label>
+														</div>
+
+														{/* Tasks */}
+														<div className="rounded-2xl bg-m3-surface-container p-5 shadow-xs">
+															<div className="mb-3 flex items-center justify-between gap-2">
+																<div>
+																	<p className="text-sm font-bold text-slate-800">
+																		Tasks
+																	</p>
+																	<p className="text-xs text-slate-500">
+																		{project.tasks.length} nhiệm vụ trong
+																		project
+																	</p>
+																</div>
+																<button
+																	onClick={() =>
+																		mutateProject(pi, {
+																			tasks: [...project.tasks, emptyTask()],
+																		})
+																	}
+																	className="inline-flex items-center gap-1.5 rounded-xl bg-m3-surface-container-high px-3 py-1.5 text-xs font-semibold text-m3-on-surface transition hover:bg-m3-surface-container-highest shadow-xs"
+																>
+																	<Icon name="add" className="text-sm" /> Thêm
+																	Task
+																</button>
+															</div>
+
+															<div className="space-y-2">
+																{project.tasks.map((task, ti) => {
+																	const taskKey = `${pi}-${ti}`;
+																	const taskExpanded =
+																		expandedTasks[taskKey] ?? false;
+																	const specialConditionExpanded =
+																		expandedSpecialConditions[taskKey] ?? true;
+																	const availableSpecialConditionOptions =
+																		specialConditionOptionsForSubject(
+																			selected.subject,
+																		);
+																	const currentSpecialConditionSupported =
+																		!task.specialCondition?.type ||
+																		availableSpecialConditionOptions.some(
+																			(option) =>
+																				option.value ===
+																				task.specialCondition?.type,
+																		);
+
+																	return (
+																		<div
+																			key={taskKey}
+																			className="overflow-hidden rounded-2xl bg-m3-surface-container-high shadow-xs transition hover:shadow-md text-m3-on-surface"
+																		>
+																			<div className="flex items-center gap-2 px-3.5 py-3">
+																				<button
+																					onClick={() => toggleTask(taskKey)}
+																					className="flex min-w-0 flex-1 items-center gap-3 text-left"
+																				>
+																					<span className="text-xs text-m3-on-surface-variant">
+																						{taskExpanded ? "▼" : "▶"}
+																					</span>
+																					<span className="rounded-lg bg-m3-surface-container px-2 py-1 font-mono text-[11px] font-bold text-m3-on-surface shadow-2xs">
+																						{task.taskId || `TASK-${ti + 1}`}
+																					</span>
+																					<span className="min-w-0 truncate text-sm font-semibold text-m3-on-surface">
+																						{task.taskName ||
+																							"Task chưa đặt tên"}
+																					</span>
+																					<span className="ml-auto shrink-0 text-xs font-semibold text-m3-on-surface-variant">
+																						{task.conditions.length} điều kiện ·{" "}
+																						{task.maxScore} điểm
+																					</span>
+																				</button>
+																				<button
+																					onClick={() =>
+																						mutateProject(pi, {
+																							tasks: project.tasks.filter(
+																								(_, i) => i !== ti,
+																							),
+																						})
+																					}
+																					title="Xóa Task"
+																					className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-m3-error hover:bg-m3-error-container"
+																				>
+																					<Icon
+																						name="delete"
+																						className="text-sm"
+																					/>
+																				</button>
+																			</div>
+
+																			{taskExpanded && (
+																				<div className="bg-m3-surface-container-high/40 p-4">
+																					<div className="grid gap-4 md:grid-cols-[180px_minmax(0,1fr)_140px]">
+																						<label className="text-xs font-semibold text-slate-600">
+																							Mã Task
+																							<input
+																								value={task.taskId}
+																								onChange={(e) =>
+																									mutateTask(pi, ti, {
+																										taskId: e.target.value,
+																									})
+																								}
+																								className={inputClass}
+																								placeholder="TASK-01"
+																							/>
+																						</label>
+
+																						<label className="text-xs font-semibold text-slate-600">
+																							Tên nhiệm vụ
+																							<input
+																								value={task.taskName}
+																								onChange={(e) =>
+																									mutateTask(pi, ti, {
+																										taskName: e.target.value,
+																									})
+																								}
+																								className={inputClass}
+																								placeholder="Nhập tên nhiệm vụ..."
+																							/>
+																						</label>
+
+																						<label className="text-xs font-semibold text-slate-600">
+																							Điểm tối đa
+																							<input
+																								type="number"
+																								value={task.maxScore}
+																								onChange={(e) =>
+																									mutateTask(pi, ti, {
+																										maxScore: Number(
+																											e.target.value,
+																										),
+																									})
+																								}
+																								className={inputClass}
+																							/>
+																						</label>
+																					</div>
+
+																					{/* =========================================================
                                               SPECIAL CONDITION (thuộc riêng Task này, không phải state global)
                                               Header có thể bấm để ẩn/hiện toàn bộ nội dung bên trong
                                               (select loại, điểm, mô tả, PictureBulletEditor), độc lập
                                               với việc Task đang mở hay đóng.
                                               ========================================================= */}
-                                          <div className="mt-5 rounded-2xl border border-violet-200/80 bg-white p-4 shadow-sm">
-                                            <div className="flex items-start gap-3">
-                                              {/* Icon */}
-                                              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
-                                                <span className="text-base">✦</span>
-                                              </div>
+																					<div className="mt-5 rounded-2xl border border-violet-200/80 bg-white p-4 shadow-sm">
+																						<div className="flex items-start gap-3">
+																							{/* Icon */}
+																							<div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
+																								<span className="text-base">
+																									✦
+																								</span>
+																							</div>
 
-                                              {/* Title — bấm để ẩn/hiện */}
-                                              <button
-                                                type="button"
-                                                onClick={() => toggleSpecialCondition(taskKey)}
-                                                className="flex min-w-0 flex-1 items-start gap-2 text-left"
-                                              >
-                                                <div className="min-w-0 flex-1">
-                                                  <div className="flex flex-wrap items-center gap-2">
-                                                    <p className="text-sm font-bold text-slate-800">
-                                                      Điều kiện đặc biệt
-                                                    </p>
+																							{/* Title — bấm để ẩn/hiện */}
+																							<button
+																								type="button"
+																								onClick={() =>
+																									toggleSpecialCondition(
+																										taskKey,
+																									)
+																								}
+																								className="flex min-w-0 flex-1 items-start gap-2 text-left"
+																							>
+																								<div className="min-w-0 flex-1">
+																									<div className="flex flex-wrap items-center gap-2">
+																										<p className="text-sm font-bold text-slate-800">
+																											Điều kiện đặc biệt
+																										</p>
 
-                                                    {task.specialCondition && (
-                                                      <span className="rounded-full border border-violet-200 bg-violet-50 px-2 py-0.5 text-[10px] font-bold text-violet-700">
-                                                        ĐANG SỬ DỤNG
-                                                      </span>
-                                                    )}
-                                                  </div>
+																										{task.specialCondition && (
+																											<span className="rounded-full border border-violet-200 bg-violet-50 px-2 py-0.5 text-[10px] font-bold text-violet-700">
+																												ĐANG SỬ DỤNG
+																											</span>
+																										)}
+																									</div>
 
-                                                  <p className="mt-1 text-xs leading-5 text-slate-500">
-                                                    Chỉ sử dụng khi Task cần kiểm tra thành phần đặc biệt
-                                                    trong file Word mà Condition XML thông thường không đủ
-                                                    để xác định. Task có thể chỉ dùng riêng điều kiện đặc
-                                                    biệt (không cần Condition XML nào khác), hoặc kết hợp
-                                                    cả hai — miễn tổng điểm bằng Điểm tối đa của Task.
-                                                  </p>
-                                                </div>
+																									<p className="mt-1 text-xs leading-5 text-slate-500">
+																										Chỉ sử dụng khi Task cần
+																										kiểm tra thành phần đặc biệt
+																										trong file Word mà Condition
+																										XML thông thường không đủ để
+																										xác định. Task có thể chỉ
+																										dùng riêng điều kiện đặc
+																										biệt (không cần Condition
+																										XML nào khác), hoặc kết hợp
+																										cả hai — miễn tổng điểm bằng
+																										Điểm tối đa của Task.
+																									</p>
+																								</div>
 
-                                                <span className="mt-1 shrink-0 text-xs text-slate-400">
-                                                  {specialConditionExpanded ? '▼' : '▶'}
-                                                </span>
-                                              </button>
-                                            </div>
+																								<span className="mt-1 shrink-0 text-xs text-slate-400">
+																									{specialConditionExpanded
+																										? "▼"
+																										: "▶"}
+																								</span>
+																							</button>
+																						</div>
 
-                                            {specialConditionExpanded && (
-                                              <>
-                                                {/* Select */}
-                                                <div className="mt-4">
-                                                  <label className="block text-xs font-semibold text-slate-600">
-                                                    Loại kiểm tra đặc biệt
+																						{specialConditionExpanded && (
+																							<>
+																								{/* Select */}
+																								<div className="mt-4">
+																									<label className="block text-xs font-semibold text-slate-600">
+																										Loại kiểm tra đặc biệt
+																										<div className="relative">
+																											<select
+																												value={
+																													task.specialCondition
+																														?.type ?? ""
+																												}
+																												onChange={(e) => {
+																													const value =
+																														e.target.value;
 
-                                                    <div className="relative">
-                                                      <select
-                                                        value={task.specialCondition?.type ?? ''}
-                                                        onChange={(e) => {
-                                                          const value = e.target.value;
+																													if (!value) {
+																														updateTaskSpecialCondition(
+																															pi,
+																															ti,
+																															undefined,
+																														);
+																														return;
+																													}
 
-                                                          if (!value) {
-                                                            updateTaskSpecialCondition(pi, ti, undefined);
-                                                            return;
-                                                          }
+																													if (
+																														value ===
+																														"pictureBullet"
+																													) {
+																														updateTaskSpecialCondition(
+																															pi,
+																															ti,
+																															{
+																																type: "pictureBullet",
+																																// Giữ lại score nếu người dùng đã nhập trước đó
+																																// (VD: đổi qua đổi lại giữa các loại), mặc định 0.
+																																score:
+																																	task
+																																		.specialCondition
+																																		?.score ??
+																																	0,
+																																feedback:
+																																	task
+																																		.specialCondition
+																																		?.feedback ??
+																																	emptyFeedback(),
+																																config: task
+																																	.specialCondition
+																																	?.config ?? {
+																																	level: 0,
+																																},
+																															},
+																														);
+																													}
+																													if (
+																														value ===
+																														"insertedImage"
+																													) {
+																														updateTaskSpecialCondition(
+																															pi,
+																															ti,
+																															{
+																																type: "insertedImage",
+																																score:
+																																	task
+																																		.specialCondition
+																																		?.score ??
+																																	0,
+																																feedback:
+																																	task
+																																		.specialCondition
+																																		?.feedback ??
+																																	emptyFeedback(),
+																																imageInsertConfig:
+																																	task
+																																		.specialCondition
+																																		?.imageInsertConfig ?? {
+																																		sourceFile:
+																																			"word/document.xml",
+																																		relsFile:
+																																			"word/_rels/document.xml.rels",
+																																		wrapType:
+																																			"tight",
+																																		positionConfig:
+																																			{
+																																				afterText:
+																																					"",
+																																				beforeText:
+																																					"",
+																																				requireBetween: false,
+																																				caseSensitive: false,
+																																			},
+																																	},
+																															},
+																														);
+																													}
+																													if (
+																														value ===
+																														"convertTableToText"
+																													) {
+																														updateTaskSpecialCondition(
+																															pi,
+																															ti,
+																															{
+																																type: "convertTableToText",
+																																score:
+																																	task
+																																		.specialCondition
+																																		?.score ??
+																																	0,
+																																feedback:
+																																	task
+																																		.specialCondition
+																																		?.feedback ??
+																																	emptyFeedback(),
+																																convertTableToTextConfig:
+																																	task
+																																		.specialCondition
+																																		?.convertTableToTextConfig ?? {
+																																		sourceFile:
+																																			"word/document.xml",
+																																		anchorText:
+																																			"",
+																																		expectedRows:
+																																			[],
+																																		minRows: 1,
+																																		minTabsPerRow: 1,
+																																		requireNoTables: true,
+																																	},
+																															},
+																														);
+																													}
+																													if (
+																														value ===
+																														"hyperlink"
+																													) {
+																														updateTaskSpecialCondition(
+																															pi,
+																															ti,
+																															{
+																																type: "hyperlink",
+																																score:
+																																	task
+																																		.specialCondition
+																																		?.score ??
+																																	0,
+																																feedback:
+																																	task
+																																		.specialCondition
+																																		?.feedback ??
+																																	emptyFeedback(),
+																																hyperlinkConfig:
+																																	task
+																																		.specialCondition
+																																		?.hyperlinkConfig ?? {
+																																		sourceFile:
+																																			"word/document.xml",
+																																		relsFile:
+																																			"word/_rels/document.xml.rels",
+																																		displayText:
+																																			"",
+																																		anchorTextBefore:
+																																			"",
+																																		url: "",
+																																		caseSensitiveText: false,
+																																	},
+																															},
+																														);
+																													}
+																													if (
+																														value ===
+																														"sectionBreakBeforeText"
+																													) {
+																														updateTaskSpecialCondition(
+																															pi,
+																															ti,
+																															{
+																																type: "sectionBreakBeforeText",
+																																score:
+																																	task
+																																		.specialCondition
+																																		?.score ??
+																																	0,
+																																feedback:
+																																	task
+																																		.specialCondition
+																																		?.feedback ??
+																																	emptyFeedback(),
+																																sectionBreakBeforeTextConfig:
+																																	task
+																																		.specialCondition
+																																		?.sectionBreakBeforeTextConfig ?? {
+																																		sourceFile:
+																																			"word/document.xml",
+																																		targetText:
+																																			"",
+																																		breakType:
+																																			"continuous",
+																																		targetOccurrence: 1,
+																																		requireImmediateBefore: true,
+																																		allowSameParagraphSectPr: true,
+																																	},
+																															},
+																														);
+																													}
+																													if (
+																														value ===
+																														"pictureStyle"
+																													) {
+																														updateTaskSpecialCondition(
+																															pi,
+																															ti,
+																															{
+																																type: "pictureStyle",
+																																score:
+																																	task
+																																		.specialCondition
+																																		?.score ??
+																																	0,
+																																feedback:
+																																	task
+																																		.specialCondition
+																																		?.feedback ??
+																																	emptyFeedback(),
+																																pictureStyleConfig:
+																																	task
+																																		.specialCondition
+																																		?.pictureStyleConfig ?? {
+																																		sourceFile:
+																																			"word/document.xml",
+																																		relsFile:
+																																			"word/_rels/document.xml.rels",
+																																		targetImageIndex: 1,
+																																		stylePreset:
+																																			"simpleFrameBlack",
+																																		requiredLineColor:
+																																			"000000",
+																																		presetGeometry:
+																																			"rect",
+																																	},
+																															},
+																														);
+																													}
+																													if (
+																														value ===
+																														"textBoxContainsText"
+																													) {
+																														updateTaskSpecialCondition(
+																															pi,
+																															ti,
+																															{
+																																type: "textBoxContainsText",
+																																score:
+																																	task
+																																		.specialCondition
+																																		?.score ??
+																																	0,
+																																feedback:
+																																	task
+																																		.specialCondition
+																																		?.feedback ??
+																																	emptyFeedback(),
+																																textBoxContainsTextConfig:
+																																	task
+																																		.specialCondition
+																																		?.textBoxContainsTextConfig ?? {
+																																		sourceFile:
+																																			"word/document.xml",
+																																		expectedText:
+																																			"",
+																																		matchMode:
+																																			"exact",
+																																		caseSensitive: false,
+																																		targetOccurrence: 1,
+																																		requireDefaultPaste: true,
+																																		requireRemovedFromBody: true,
+																																		forbiddenTextColors:
+																																			[
+																																				"FFFFFF",
+																																				"background1",
+																																				"bg1",
+																																				"lt1",
+																																			],
+																																		forbiddenRunProperties:
+																																			[],
+																																	},
+																															},
+																														);
+																													}
+																													if (
+																														value ===
+																														"pageMargins"
+																													) {
+																														updateTaskSpecialCondition(
+																															pi,
+																															ti,
+																															{
+																																type: "pageMargins",
+																																score:
+																																	task
+																																		.specialCondition
+																																		?.score ??
+																																	0,
+																																feedback:
+																																	task
+																																		.specialCondition
+																																		?.feedback ??
+																																	emptyFeedback(),
+																																pageMarginsConfig:
+																																	task
+																																		.specialCondition
+																																		?.pageMarginsConfig ?? {
+																																		sourceFile:
+																																			"word/document.xml",
+																																		top: 1440,
+																																		bottom: 1440,
+																																		left: 2160,
+																																		right: 2160,
+																																		gutter: 0,
+																																		requireAllSections: true,
+																																	},
+																															},
+																														);
+																													}
+																													if (
+																														value ===
+																														"documentStyleSet"
+																													) {
+																														updateTaskSpecialCondition(
+																															pi,
+																															ti,
+																															{
+																																type: "documentStyleSet",
+																																score:
+																																	task
+																																		.specialCondition
+																																		?.score ??
+																																	0,
+																																feedback:
+																																	task
+																																		.specialCondition
+																																		?.feedback ??
+																																	emptyFeedback(),
+																																documentStyleSetConfig:
+																																	task
+																																		.specialCondition
+																																		?.documentStyleSetConfig ?? {
+																																		sourceFile:
+																																			"word/styles.xml",
+																																		styleSetName:
+																																			"Lines (Simple)",
+																																		expectedFragments:
+																																			[],
+																																		ignoreAttributes:
+																																			[
+																																				"rsid*",
+																																				"id",
+																																			],
+																																		matchPolicy:
+																																			"all",
+																																	},
+																															},
+																														);
+																													}
+																													if (
+																														value ===
+																														"pageBorder"
+																													) {
+																														updateTaskSpecialCondition(
+																															pi,
+																															ti,
+																															{
+																																type: "pageBorder",
+																																score:
+																																	task
+																																		.specialCondition
+																																		?.score ??
+																																	0,
+																																feedback:
+																																	task
+																																		.specialCondition
+																																		?.feedback ??
+																																	emptyFeedback(),
+																																pageBorderConfig:
+																																	task
+																																		.specialCondition
+																																		?.pageBorderConfig ?? {
+																																		sourceFile:
+																																			"word/document.xml",
+																																		requiredStyle:
+																																			"single",
+																																		requiredWidth: 12,
+																																		requiredColor:
+																																			"00B0F0",
+																																		allowedColors:
+																																			[
+																																				"00B0F0",
+																																				"5B9BD5",
+																																				"4F81BD",
+																																				"accent1",
+																																			],
+																																		requireBox: true,
+																																		requireAllSections: true,
+																																	},
+																															},
+																														);
+																													}
+																													if (
+																														value ===
+																														"excelTableName"
+																													) {
+																														updateTaskSpecialCondition(
+																															pi,
+																															ti,
+																															{
+																																type: "excelTableName",
+																																score:
+																																	task
+																																		.specialCondition
+																																		?.score ??
+																																	0,
+																																feedback:
+																																	task
+																																		.specialCondition
+																																		?.feedback ??
+																																	emptyFeedback(),
+																																excelTableNameConfig:
+																																	task
+																																		.specialCondition
+																																		?.excelTableNameConfig ?? {
+																																		worksheetName:
+																																			"",
+																																		expectedName:
+																																			"",
+																																		originalName:
+																																			"",
+																																		requireOriginalNameAbsent: true,
+																																	},
+																															},
+																														);
+																													}
+																													if (
+																														value ===
+																														"excelWorksheetPageSetup"
+																													) {
+																														updateTaskSpecialCondition(
+																															pi,
+																															ti,
+																															{
+																																type: "excelWorksheetPageSetup",
+																																score:
+																																	task
+																																		.specialCondition
+																																		?.score ??
+																																	0,
+																																feedback:
+																																	task
+																																		.specialCondition
+																																		?.feedback ??
+																																	emptyFeedback(),
+																																excelWorksheetPageSetupConfig:
+																																	task
+																																		.specialCondition
+																																		?.excelWorksheetPageSetupConfig ?? {
+																																		worksheetName:
+																																			"",
+																																		orientation:
+																																			"landscape",
+																																	},
+																															},
+																														);
+																													}
+																													if (
+																														value ===
+																														"excelClearCellFormatting"
+																													) {
+																														updateTaskSpecialCondition(
+																															pi,
+																															ti,
+																															{
+																																type: "excelClearCellFormatting",
+																																score:
+																																	task
+																																		.specialCondition
+																																		?.score ??
+																																	0,
+																																feedback:
+																																	task
+																																		.specialCondition
+																																		?.feedback ??
+																																	emptyFeedback(),
+																																excelClearCellFormattingConfig:
+																																	task
+																																		.specialCondition
+																																		?.excelClearCellFormattingConfig ?? {
+																																		worksheetName:
+																																			"",
+																																		range:
+																																			"A4:D4",
+																																		defaultStyleId: 0,
+																																	},
+																															},
+																														);
+																													}
+																													if (
+																														value ===
+																														"excelDataModelImport"
+																													) {
+																														updateTaskSpecialCondition(
+																															pi,
+																															ti,
+																															{
+																																type: "excelDataModelImport",
+																																score:
+																																	task
+																																		.specialCondition
+																																		?.score ??
+																																	0,
+																																feedback:
+																																	task
+																																		.specialCondition
+																																		?.feedback ??
+																																	emptyFeedback(),
+																																excelDataModelImportConfig:
+																																	task
+																																		.specialCondition
+																																		?.excelDataModelImportConfig ?? {
+																																		sourceFileName:
+																																			"",
+																																		expectedWorksheetName:
+																																			"",
+																																		expectedConnectionName:
+																																			"",
+																																		requireConnection: true,
+																																		requireDataModel: true,
+																																		requireImportedWorksheet: true,
+																																		requireQueryTable: true,
+																																	},
+																															},
+																														);
+																													}
+																													if (
+																														value ===
+																														"excelCompatibilityReport"
+																													) {
+																														updateTaskSpecialCondition(
+																															pi,
+																															ti,
+																															{
+																																type: "excelCompatibilityReport",
+																																score:
+																																	task
+																																		.specialCondition
+																																		?.score ??
+																																	0,
+																																feedback:
+																																	task
+																																		.specialCondition
+																																		?.feedback ??
+																																	emptyFeedback(),
+																																excelCompatibilityReportConfig:
+																																	task
+																																		.specialCondition
+																																		?.excelCompatibilityReportConfig ?? {
+																																		worksheetName:
+																																			"",
+																																		expectedTexts:
+																																			[],
+																																		requireNewWorksheet: true,
+																																	},
+																															},
+																														);
+																													}
+																												}}
+																												className="mt-1 w-full appearance-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 pr-10 text-sm font-medium text-slate-800 shadow-sm outline-none transition hover:border-slate-300 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
+																											>
+																												<option value="">
+																													Không sử dụng
+																												</option>
 
-                                                          if (value === 'pictureBullet') {
-                                                            updateTaskSpecialCondition(pi, ti, {
-                                                              type: 'pictureBullet',
-                                                              // Giữ lại score nếu người dùng đã nhập trước đó
-                                                              // (VD: đổi qua đổi lại giữa các loại), mặc định 0.
-                                                              score: task.specialCondition?.score ?? 0,
-                                                              feedback: task.specialCondition?.feedback ?? emptyFeedback(),
-                                                              config: task.specialCondition?.config ?? {
-                                                                level: 0,
-                                                              },
-                                                            });
-                                                          }
-                                                          if (value === 'insertedImage') {
-                                                            updateTaskSpecialCondition(pi, ti, {
-                                                              type: 'insertedImage',
-                                                              score: task.specialCondition?.score ?? 0,
-                                                              feedback: task.specialCondition?.feedback ?? emptyFeedback(),
-                                                              imageInsertConfig: task.specialCondition?.imageInsertConfig ?? {
-                                                                sourceFile: 'word/document.xml',
-                                                                relsFile: 'word/_rels/document.xml.rels',
-                                                                wrapType: 'tight',
-                                                                positionConfig: {
-                                                                  afterText: '',
-                                                                  beforeText: '',
-                                                                  requireBetween: false,
-                                                                  caseSensitive: false,
-                                                                },
-                                                              },
-                                                            });
-                                                          }
-                                                          if (value === 'convertTableToText') {
-                                                            updateTaskSpecialCondition(pi, ti, {
-                                                              type: 'convertTableToText',
-                                                              score: task.specialCondition?.score ?? 0,
-                                                              feedback: task.specialCondition?.feedback ?? emptyFeedback(),
-                                                              convertTableToTextConfig: task.specialCondition?.convertTableToTextConfig ?? {
-                                                                sourceFile: 'word/document.xml',
-                                                                anchorText: '',
-                                                                expectedRows: [],
-                                                                minRows: 1,
-                                                                minTabsPerRow: 1,
-                                                                requireNoTables: true,
-                                                              },
-                                                            });
-                                                          }
-                                                          if (value === 'hyperlink') {
-                                                            updateTaskSpecialCondition(pi, ti, {
-                                                              type: 'hyperlink',
-                                                              score: task.specialCondition?.score ?? 0,
-                                                              feedback: task.specialCondition?.feedback ?? emptyFeedback(),
-                                                              hyperlinkConfig: task.specialCondition?.hyperlinkConfig ?? {
-                                                                sourceFile: 'word/document.xml',
-                                                                relsFile: 'word/_rels/document.xml.rels',
-                                                                displayText: '',
-                                                                anchorTextBefore: '',
-                                                                url: '',
-                                                                caseSensitiveText: false,
-                                                              },
-                                                            });
-                                                          }
-                                                          if (value === 'sectionBreakBeforeText') {
-                                                            updateTaskSpecialCondition(pi, ti, {
-                                                              type: 'sectionBreakBeforeText',
-                                                              score: task.specialCondition?.score ?? 0,
-                                                              feedback: task.specialCondition?.feedback ?? emptyFeedback(),
-                                                              sectionBreakBeforeTextConfig: task.specialCondition?.sectionBreakBeforeTextConfig ?? {
-                                                                sourceFile: 'word/document.xml',
-                                                                targetText: '',
-                                                                breakType: 'continuous',
-                                                                targetOccurrence: 1,
-                                                                requireImmediateBefore: true,
-                                                                allowSameParagraphSectPr: true,
-                                                              },
-                                                            });
-                                                          }
-                                                          if (value === 'pictureStyle') {
-                                                            updateTaskSpecialCondition(pi, ti, {
-                                                              type: 'pictureStyle',
-                                                              score: task.specialCondition?.score ?? 0,
-                                                              feedback: task.specialCondition?.feedback ?? emptyFeedback(),
-                                                              pictureStyleConfig: task.specialCondition?.pictureStyleConfig ?? {
-                                                                sourceFile: 'word/document.xml',
-                                                                relsFile: 'word/_rels/document.xml.rels',
-                                                                targetImageIndex: 1,
-                                                                stylePreset: 'simpleFrameBlack',
-                                                                requiredLineColor: '000000',
-                                                                presetGeometry: 'rect',
-                                                              },
-                                                            });
-                                                          }
-                                                          if (value === 'textBoxContainsText') {
-                                                            updateTaskSpecialCondition(pi, ti, {
-                                                              type: 'textBoxContainsText',
-                                                              score: task.specialCondition?.score ?? 0,
-                                                              feedback: task.specialCondition?.feedback ?? emptyFeedback(),
-                                                              textBoxContainsTextConfig: task.specialCondition?.textBoxContainsTextConfig ?? {
-                                                                sourceFile: 'word/document.xml',
-                                                                expectedText: '',
-                                                                matchMode: 'exact',
-                                                                caseSensitive: false,
-                                                                targetOccurrence: 1,
-                                                                requireDefaultPaste: true,
-                                                                requireRemovedFromBody: true,
-                                                                forbiddenTextColors: ['FFFFFF', 'background1', 'bg1', 'lt1'],
-                                                                forbiddenRunProperties: [],
-                                                              },
-                                                            });
-                                                          }
-                                                          if (value === 'pageMargins') {
-                                                            updateTaskSpecialCondition(pi, ti, {
-                                                              type: 'pageMargins',
-                                                              score: task.specialCondition?.score ?? 0,
-                                                              feedback: task.specialCondition?.feedback ?? emptyFeedback(),
-                                                              pageMarginsConfig: task.specialCondition?.pageMarginsConfig ?? {
-                                                                sourceFile: 'word/document.xml',
-                                                                top: 1440,
-                                                                bottom: 1440,
-                                                                left: 2160,
-                                                                right: 2160,
-                                                                gutter: 0,
-                                                                requireAllSections: true,
-                                                              },
-                                                            });
-                                                          }
-                                                          if (value === 'documentStyleSet') {
-                                                            updateTaskSpecialCondition(pi, ti, {
-                                                              type: 'documentStyleSet',
-                                                              score: task.specialCondition?.score ?? 0,
-                                                              feedback: task.specialCondition?.feedback ?? emptyFeedback(),
-                                                              documentStyleSetConfig: task.specialCondition?.documentStyleSetConfig ?? {
-                                                                sourceFile: 'word/styles.xml',
-                                                                styleSetName: 'Lines (Simple)',
-                                                                expectedFragments: [],
-                                                                ignoreAttributes: ['rsid*', 'id'],
-                                                                matchPolicy: 'all',
-                                                              },
-                                                            });
-                                                          }
-                                                          if (value === 'pageBorder') {
-                                                            updateTaskSpecialCondition(pi, ti, {
-                                                              type: 'pageBorder',
-                                                              score: task.specialCondition?.score ?? 0,
-                                                              feedback: task.specialCondition?.feedback ?? emptyFeedback(),
-                                                              pageBorderConfig: task.specialCondition?.pageBorderConfig ?? {
-                                                                sourceFile: 'word/document.xml',
-                                                                requiredStyle: 'single',
-                                                                requiredWidth: 12,
-                                                                requiredColor: '00B0F0',
-                                                                allowedColors: ['00B0F0', '5B9BD5', '4F81BD', 'accent1'],
-                                                                requireBox: true,
-                                                                requireAllSections: true,
-                                                              },
-                                                            });
-                                                          }
-                                                          if (value === 'excelTableName') {
-                                                            updateTaskSpecialCondition(pi, ti, {
-                                                              type: 'excelTableName',
-                                                              score: task.specialCondition?.score ?? 0,
-                                                              feedback: task.specialCondition?.feedback ?? emptyFeedback(),
-                                                              excelTableNameConfig: task.specialCondition?.excelTableNameConfig ?? {
-                                                                worksheetName: '',
-                                                                expectedName: '',
-                                                                originalName: '',
-                                                                requireOriginalNameAbsent: true,
-                                                              },
-                                                            });
-                                                          }
-                                                          if (value === 'excelWorksheetPageSetup') {
-                                                            updateTaskSpecialCondition(pi, ti, {
-                                                              type: 'excelWorksheetPageSetup',
-                                                              score: task.specialCondition?.score ?? 0,
-                                                              feedback: task.specialCondition?.feedback ?? emptyFeedback(),
-                                                              excelWorksheetPageSetupConfig: task.specialCondition?.excelWorksheetPageSetupConfig ?? {
-                                                                worksheetName: '',
-                                                                orientation: 'landscape',
-                                                              },
-                                                            });
-                                                          }
-                                                          if (value === 'excelClearCellFormatting') {
-                                                            updateTaskSpecialCondition(pi, ti, {
-                                                              type: 'excelClearCellFormatting',
-                                                              score: task.specialCondition?.score ?? 0,
-                                                              feedback: task.specialCondition?.feedback ?? emptyFeedback(),
-                                                              excelClearCellFormattingConfig: task.specialCondition?.excelClearCellFormattingConfig ?? {
-                                                                worksheetName: '',
-                                                                range: 'A4:D4',
-                                                                defaultStyleId: 0,
-                                                              },
-                                                            });
-                                                          }
-                                                          if (value === 'excelDataModelImport') {
-                                                            updateTaskSpecialCondition(pi, ti, {
-                                                              type: 'excelDataModelImport',
-                                                              score: task.specialCondition?.score ?? 0,
-                                                              feedback: task.specialCondition?.feedback ?? emptyFeedback(),
-                                                              excelDataModelImportConfig: task.specialCondition?.excelDataModelImportConfig ?? {
-                                                                sourceFileName: '',
-                                                                expectedWorksheetName: '',
-                                                                expectedConnectionName: '',
-                                                                requireConnection: true,
-                                                                requireDataModel: true,
-                                                                requireImportedWorksheet: true,
-                                                                requireQueryTable: true,
-                                                              },
-                                                            });
-                                                          }
-                                                          if (value === 'excelCompatibilityReport') {
-                                                            updateTaskSpecialCondition(pi, ti, {
-                                                              type: 'excelCompatibilityReport',
-                                                              score: task.specialCondition?.score ?? 0,
-                                                              feedback: task.specialCondition?.feedback ?? emptyFeedback(),
-                                                              excelCompatibilityReportConfig: task.specialCondition?.excelCompatibilityReportConfig ?? {
-                                                                worksheetName: '',
-                                                                expectedTexts: [],
-                                                                requireNewWorksheet: true,
-                                                              },
-                                                            });
-                                                          }
-                                                        }}
-                                                        className="mt-1 w-full appearance-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 pr-10 text-sm font-medium text-slate-800 shadow-sm outline-none transition hover:border-slate-300 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
-                                                      >
-                                                        <option value="">Không sử dụng</option>
+																												{availableSpecialConditionOptions.map(
+																													(option) => (
+																														<option
+																															key={option.value}
+																															value={
+																																option.value
+																															}
+																														>
+																															{option.label}
+																														</option>
+																													),
+																												)}
+																											</select>
 
-                                                        {availableSpecialConditionOptions.map((option) => (
-                                                          <option key={option.value} value={option.value}>
-                                                            {option.label}
-                                                          </option>
-                                                        ))}
-                                                      </select>
+																											<svg
+																												aria-hidden="true"
+																												className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+																												viewBox="0 0 20 20"
+																												fill="currentColor"
+																											>
+																												<path
+																													fillRule="evenodd"
+																													d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.51a.75.75 0 01-1.08 0l-4.25-4.51a.75.75 0 01.02-1.06z"
+																													clipRule="evenodd"
+																												/>
+																											</svg>
+																										</div>
+																									</label>
+																								</div>
 
-                                                      <svg
-                                                        className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
-                                                        viewBox="0 0 20 20"
-                                                        fill="currentColor"
-                                                      >
-                                                        <path
-                                                          fillRule="evenodd"
-                                                          d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.51a.75.75 0 01-1.08 0l-4.25-4.51a.75.75 0 01.02-1.06z"
-                                                          clipRule="evenodd"
-                                                        />
-                                                      </svg>
-                                                    </div>
-                                                  </label>
-                                                </div>
+																								{!currentSpecialConditionSupported && (
+																									<div className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">
+																										Special condition nay khong
+																										ho tro cho subject{" "}
+																										{selected.subject ||
+																											"unknown"}
+																										.
+																									</div>
+																								)}
 
-                                                {!currentSpecialConditionSupported && (
-                                                  <div className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">
-                                                    Special condition nay khong ho tro cho subject {selected.subject || 'unknown'}.
-                                                  </div>
-                                                )}
+																								{/* Score input cho Special Condition */}
+																								{task.specialCondition
+																									?.type && (
+																									<div className="mt-4 grid gap-3 md:grid-cols-[160px_1fr] md:items-end">
+																										<label className="text-xs font-semibold text-slate-600">
+																											Điểm điều kiện đặc biệt
+																											<input
+																												type="number"
+																												min={0}
+																												value={
+																													task.specialCondition
+																														.score ?? 0
+																												}
+																												onChange={(e) =>
+																													updateTaskSpecialCondition(
+																														pi,
+																														ti,
+																														{
+																															...task.specialCondition!,
+																															score: Number(
+																																e.target.value,
+																															),
+																														},
+																													)
+																												}
+																												className={inputClass}
+																											/>
+																										</label>
+																										<p className="text-[11px] leading-4 text-slate-400">
+																											Tổng điểm (các Conditions
+																											XML + Điều kiện đặc biệt)
+																											phải bằng Điểm tối đa của
+																											Task ({task.maxScore}). Có
+																											thể để 0 Condition XML nếu
+																											điều kiện đặc biệt chiếm
+																											trọn điểm Task.
+																										</p>
+																									</div>
+																								)}
 
-                                                {/* Score input cho Special Condition */}
-                                                {task.specialCondition?.type && (
-                                                  <div className="mt-4 grid gap-3 md:grid-cols-[160px_1fr] md:items-end">
-                                                    <label className="text-xs font-semibold text-slate-600">
-                                                      Điểm điều kiện đặc biệt
-                                                      <input
-                                                        type="number"
-                                                        min={0}
-                                                        value={task.specialCondition.score ?? 0}
-                                                        onChange={(e) =>
-                                                          updateTaskSpecialCondition(pi, ti, {
-                                                            ...task.specialCondition!,
-                                                            score: Number(e.target.value),
-                                                          })
-                                                        }
-                                                        className={inputClass}
-                                                      />
-                                                    </label>
-                                                    <p className="text-[11px] leading-4 text-slate-400">
-                                                      Tổng điểm (các Conditions XML + Điều kiện đặc biệt) phải
-                                                      bằng Điểm tối đa của Task ({task.maxScore}). Có thể để 0
-                                                      Condition XML nếu điều kiện đặc biệt chiếm trọn điểm Task.
-                                                    </p>
-                                                  </div>
-                                                )}
+																								{task.specialCondition
+																									?.type && (
+																									<div className="mt-3 grid gap-3 md:grid-cols-2">
+																										<label className="text-xs font-semibold text-slate-600">
+																											Thong bao khi dung
+																											<input
+																												value={
+																													task.specialCondition
+																														.feedback
+																														?.successDetail ??
+																													""
+																												}
+																												onChange={(e) =>
+																													updateTaskSpecialCondition(
+																														pi,
+																														ti,
+																														{
+																															...task.specialCondition!,
+																															feedback: {
+																																...(task
+																																	.specialCondition
+																																	?.feedback ??
+																																	emptyFeedback()),
+																																successDetail:
+																																	e.target
+																																		.value,
+																															},
+																														},
+																													)
+																												}
+																												placeholder="Da hoan thanh dung yeu cau."
+																												className={inputClass}
+																											/>
+																										</label>
+																										<label className="text-xs font-semibold text-slate-600">
+																											Thong bao khi sai
+																											<input
+																												value={
+																													task.specialCondition
+																														.feedback
+																														?.errorMessage ?? ""
+																												}
+																												onChange={(e) =>
+																													updateTaskSpecialCondition(
+																														pi,
+																														ti,
+																														{
+																															...task.specialCondition!,
+																															feedback: {
+																																...(task
+																																	.specialCondition
+																																	?.feedback ??
+																																	emptyFeedback()),
+																																errorMessage:
+																																	e.target
+																																		.value,
+																															},
+																														},
+																													)
+																												}
+																												placeholder="Ban chua thuc hien dung yeu cau."
+																												className={inputClass}
+																											/>
+																										</label>
+																										<label className="text-xs font-semibold text-slate-600 md:col-span-2">
+																											Goi y cach sua
+																											<input
+																												value={
+																													task.specialCondition
+																														.feedback
+																														?.fixAction ?? ""
+																												}
+																												onChange={(e) =>
+																													updateTaskSpecialCondition(
+																														pi,
+																														ti,
+																														{
+																															...task.specialCondition!,
+																															feedback: {
+																																...(task
+																																	.specialCondition
+																																	?.feedback ??
+																																	emptyFeedback()),
+																																fixAction:
+																																	e.target
+																																		.value,
+																															},
+																														},
+																													)
+																												}
+																												placeholder="Vi du: Chon text -> Insert -> Link -> nhap URL dung."
+																												className={inputClass}
+																											/>
+																										</label>
+																									</div>
+																								)}
 
-                                                {task.specialCondition?.type && (
-                                                  <div className="mt-3 grid gap-3 md:grid-cols-2">
-                                                    <label className="text-xs font-semibold text-slate-600">
-                                                      Thong bao khi dung
-                                                      <input
-                                                        value={task.specialCondition.feedback?.successDetail ?? ''}
-                                                        onChange={(e) =>
-                                                          updateTaskSpecialCondition(pi, ti, {
-                                                            ...task.specialCondition!,
-                                                            feedback: {
-                                                              ...(task.specialCondition?.feedback ?? emptyFeedback()),
-                                                              successDetail: e.target.value,
-                                                            },
-                                                          })
-                                                        }
-                                                        placeholder="Da hoan thanh dung yeu cau."
-                                                        className={inputClass}
-                                                      />
-                                                    </label>
-                                                    <label className="text-xs font-semibold text-slate-600">
-                                                      Thong bao khi sai
-                                                      <input
-                                                        value={task.specialCondition.feedback?.errorMessage ?? ''}
-                                                        onChange={(e) =>
-                                                          updateTaskSpecialCondition(pi, ti, {
-                                                            ...task.specialCondition!,
-                                                            feedback: {
-                                                              ...(task.specialCondition?.feedback ?? emptyFeedback()),
-                                                              errorMessage: e.target.value,
-                                                            },
-                                                          })
-                                                        }
-                                                        placeholder="Ban chua thuc hien dung yeu cau."
-                                                        className={inputClass}
-                                                      />
-                                                    </label>
-                                                    <label className="text-xs font-semibold text-slate-600 md:col-span-2">
-                                                      Goi y cach sua
-                                                      <input
-                                                        value={task.specialCondition.feedback?.fixAction ?? ''}
-                                                        onChange={(e) =>
-                                                          updateTaskSpecialCondition(pi, ti, {
-                                                            ...task.specialCondition!,
-                                                            feedback: {
-                                                              ...(task.specialCondition?.feedback ?? emptyFeedback()),
-                                                              fixAction: e.target.value,
-                                                            },
-                                                          })
-                                                        }
-                                                        placeholder="Vi du: Chon text -> Insert -> Link -> nhap URL dung."
-                                                        className={inputClass}
-                                                      />
-                                                    </label>
-                                                  </div>
-                                                )}
+																								{/* Description */}
+																								{task.specialCondition
+																									?.type && (
+																									<div className="mt-3 flex items-start gap-3 rounded-xl border border-violet-100 bg-violet-50/60 p-3">
+																										<div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-violet-100 text-violet-600">
+																											💡
+																										</div>
 
-                                                {/* Description */}
-                                                {task.specialCondition?.type && (
-                                                  <div className="mt-3 flex items-start gap-3 rounded-xl border border-violet-100 bg-violet-50/60 p-3">
-                                                    <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-violet-100 text-violet-600">
-                                                      💡
-                                                    </div>
+																										<div>
+																											<p className="text-xs font-bold text-violet-900">
+																												{
+																													availableSpecialConditionOptions.find(
+																														(option) =>
+																															option.value ===
+																															task
+																																.specialCondition
+																																?.type,
+																													)?.label
+																												}
+																											</p>
 
-                                                    <div>
-                                                      <p className="text-xs font-bold text-violet-900">
-                                                        {
-                                                          availableSpecialConditionOptions.find(
-                                                            (option) => option.value === task.specialCondition?.type
-                                                          )?.label
-                                                        }
-                                                      </p>
+																											<p className="mt-0.5 text-xs leading-5 text-violet-700/80">
+																												{
+																													availableSpecialConditionOptions.find(
+																														(option) =>
+																															option.value ===
+																															task
+																																.specialCondition
+																																?.type,
+																													)?.description
+																												}
+																											</p>
+																										</div>
+																									</div>
+																								)}
 
-                                                      <p className="mt-0.5 text-xs leading-5 text-violet-700/80">
-                                                        {
-                                                          availableSpecialConditionOptions.find(
-                                                            (option) => option.value === task.specialCondition?.type
-                                                          )?.description
-                                                        }
-                                                      </p>
-                                                    </div>
-                                                  </div>
-                                                )}
+																								{/* Picture Bullet configuration */}
+																								{task.specialCondition?.type ===
+																									"pictureBullet" && (
+																									<PictureBulletEditor
+																										config={
+																											task.specialCondition
+																												.config
+																										}
+																										getAccessToken={
+																											getAccessToken
+																										}
+																										onChange={(
+																											config: PictureBulletConfig,
+																										) => {
+																											updateTaskSpecialCondition(
+																												pi,
+																												ti,
+																												{
+																													...task.specialCondition!,
+																													type: "pictureBullet",
+																													config,
+																												},
+																											);
+																										}}
+																									/>
+																								)}
+																							</>
+																						)}
 
-                                                {/* Picture Bullet configuration */}
-                                                {task.specialCondition?.type === 'pictureBullet' && (
-                                                  <PictureBulletEditor
-                                                    config={task.specialCondition.config}
-                                                    getAccessToken={getAccessToken}
-                                                    onChange={(config: PictureBulletConfig) => {
-                                                      updateTaskSpecialCondition(pi, ti, {
-                                                        ...task.specialCondition!,
-                                                        type: 'pictureBullet',
-                                                        config,
-                                                      });
-                                                    }}
-                                                  />
-                                                )}
-                                              </>
-                                            )}
+																						{task.specialCondition?.type ===
+																							"insertedImage" && (
+																							<InsertedImageEditor
+																								config={
+																									task.specialCondition
+																										.imageInsertConfig
+																								}
+																								getAccessToken={getAccessToken}
+																								onChange={(
+																									imageInsertConfig: ImageInsertConfig,
+																								) => {
+																									updateTaskSpecialCondition(
+																										pi,
+																										ti,
+																										{
+																											...task.specialCondition!,
+																											type: "insertedImage",
+																											imageInsertConfig,
+																										},
+																									);
+																								}}
+																							/>
+																						)}
+																						{task.specialCondition?.type ===
+																							"convertTableToText" && (
+																							<div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
+																								<div className="grid gap-3 md:grid-cols-2">
+																									<label className="text-xs font-semibold text-slate-600">
+																										Tệp nguồn
+																										<input
+																											value={
+																												task.specialCondition
+																													.convertTableToTextConfig
+																													?.sourceFile ??
+																												"word/document.xml"
+																											}
+																											onChange={(e) => {
+																												const currentConfig =
+																													task.specialCondition
+																														?.convertTableToTextConfig ??
+																													{};
+																												updateTaskSpecialCondition(
+																													pi,
+																													ti,
+																													{
+																														...task.specialCondition!,
+																														type: "convertTableToText",
+																														convertTableToTextConfig:
+																															{
+																																...currentConfig,
+																																sourceFile:
+																																	e.target
+																																		.value,
+																															},
+																													},
+																												);
+																											}}
+																											placeholder="word/document.xml"
+																											className={inputClass}
+																										/>
+																									</label>
+																									<label className="text-xs font-semibold text-slate-600">
+																										Anchor text
+																										<input
+																											value={
+																												task.specialCondition
+																													.convertTableToTextConfig
+																													?.anchorText ?? ""
+																											}
+																											onChange={(e) => {
+																												const currentConfig =
+																													task.specialCondition
+																														?.convertTableToTextConfig ??
+																													{};
+																												updateTaskSpecialCondition(
+																													pi,
+																													ti,
+																													{
+																														...task.specialCondition!,
+																														type: "convertTableToText",
+																														convertTableToTextConfig:
+																															{
+																																...currentConfig,
+																																anchorText:
+																																	e.target
+																																		.value,
+																															},
+																													},
+																												);
+																											}}
+																											placeholder="Weekly Rental:"
+																											className={inputClass}
+																										/>
+																									</label>
+																								</div>
+																								<div className="mt-3 grid gap-3 md:grid-cols-2">
+																									<label className="text-xs font-semibold text-slate-600">
+																										Min rows
+																										<input
+																											type="number"
+																											min={1}
+																											step={1}
+																											value={
+																												task.specialCondition
+																													.convertTableToTextConfig
+																													?.minRows ?? ""
+																											}
+																											onChange={(e) => {
+																												const currentConfig =
+																													task.specialCondition
+																														?.convertTableToTextConfig ??
+																													{};
+																												updateTaskSpecialCondition(
+																													pi,
+																													ti,
+																													{
+																														...task.specialCondition!,
+																														type: "convertTableToText",
+																														convertTableToTextConfig:
+																															{
+																																...currentConfig,
+																																minRows: e
+																																	.target.value
+																																	? Number(
+																																			e.target
+																																				.value,
+																																		)
+																																	: undefined,
+																															},
+																													},
+																												);
+																											}}
+																											placeholder="6"
+																											className={inputClass}
+																										/>
+																									</label>
+																									<label className="text-xs font-semibold text-slate-600">
+																										Min tabs per row
+																										<input
+																											type="number"
+																											min={1}
+																											step={1}
+																											value={
+																												task.specialCondition
+																													.convertTableToTextConfig
+																													?.minTabsPerRow ?? ""
+																											}
+																											onChange={(e) => {
+																												const currentConfig =
+																													task.specialCondition
+																														?.convertTableToTextConfig ??
+																													{};
+																												updateTaskSpecialCondition(
+																													pi,
+																													ti,
+																													{
+																														...task.specialCondition!,
+																														type: "convertTableToText",
+																														convertTableToTextConfig:
+																															{
+																																...currentConfig,
+																																minTabsPerRow: e
+																																	.target.value
+																																	? Number(
+																																			e.target
+																																				.value,
+																																		)
+																																	: undefined,
+																															},
+																													},
+																												);
+																											}}
+																											placeholder="5"
+																											className={inputClass}
+																										/>
+																									</label>
+																								</div>
+																								<label className="mt-3 block text-xs font-semibold text-slate-600">
+																									Expected rows
+																									<textarea
+																										value={(
+																											task.specialCondition
+																												.convertTableToTextConfig
+																												?.expectedRows ?? []
+																										).join("\n")}
+																										onChange={(e) => {
+																											const currentConfig =
+																												task.specialCondition
+																													?.convertTableToTextConfig ??
+																												{};
+																											updateTaskSpecialCondition(
+																												pi,
+																												ti,
+																												{
+																													...task.specialCondition!,
+																													type: "convertTableToText",
+																													convertTableToTextConfig:
+																														{
+																															...currentConfig,
+																															expectedRows:
+																																e.target.value.split(
+																																	"\n",
+																																),
+																														},
+																												},
+																											);
+																										}}
+																										rows={5}
+																										placeholder={
+																											"Sleeps\tLog Cabin\tSpring\tSummer\tFall\tWinter\n2\tAspen\t3240\t4320\t3450\t2240"
+																										}
+																										className={cx(
+																											inputClass,
+																											"resize-y font-mono",
+																										)}
+																									/>
+																								</label>
+																								<label className="mt-3 flex items-center gap-2 text-xs font-medium text-slate-600">
+																									<input
+																										type="checkbox"
+																										checked={
+																											task.specialCondition
+																												.convertTableToTextConfig
+																												?.requireNoTables ??
+																											true
+																										}
+																										onChange={(e) => {
+																											const currentConfig =
+																												task.specialCondition
+																													?.convertTableToTextConfig ??
+																												{};
+																											updateTaskSpecialCondition(
+																												pi,
+																												ti,
+																												{
+																													...task.specialCondition!,
+																													type: "convertTableToText",
+																													convertTableToTextConfig:
+																														{
+																															...currentConfig,
+																															requireNoTables:
+																																e.target
+																																	.checked,
+																														},
+																												},
+																											);
+																										}}
+																										className="h-4 w-4 accent-blue-600"
+																									/>
+																									Không yêu cầu bảng Word
+																								</label>
+																							</div>
+																						)}
+																						{task.specialCondition?.type ===
+																							"hyperlink" && (
+																							<div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
+																								<div className="grid gap-3 md:grid-cols-2">
+																									<label className="text-xs font-semibold text-slate-600">
+																										Display text
+																										<input
+																											value={
+																												task.specialCondition
+																													.hyperlinkConfig
+																													?.displayText ?? ""
+																											}
+																											onChange={(e) => {
+																												const currentConfig =
+																													task.specialCondition
+																														?.hyperlinkConfig ??
+																													{};
+																												updateTaskSpecialCondition(
+																													pi,
+																													ti,
+																													{
+																														...task.specialCondition!,
+																														type: "hyperlink",
+																														hyperlinkConfig: {
+																															...currentConfig,
+																															displayText:
+																																e.target.value,
+																														},
+																													},
+																												);
+																											}}
+																											placeholder="log cabin"
+																											className={inputClass}
+																										/>
+																									</label>
+																									<label className="text-xs font-semibold text-slate-600">
+																										Anchor text before
+																										<input
+																											value={
+																												task.specialCondition
+																													.hyperlinkConfig
+																													?.anchorTextBefore ??
+																												""
+																											}
+																											onChange={(e) => {
+																												const currentConfig =
+																													task.specialCondition
+																														?.hyperlinkConfig ??
+																													{};
+																												updateTaskSpecialCondition(
+																													pi,
+																													ti,
+																													{
+																														...task.specialCondition!,
+																														type: "hyperlink",
+																														hyperlinkConfig: {
+																															...currentConfig,
+																															anchorTextBefore:
+																																e.target.value,
+																														},
+																													},
+																												);
+																											}}
+																											placeholder="Nhap cum text dung truoc vi tri can link"
+																											className={inputClass}
+																										/>
+																									</label>
+																									<label className="text-xs font-semibold text-slate-600">
+																										URL
+																										<input
+																											value={
+																												task.specialCondition
+																													.hyperlinkConfig
+																													?.url ?? ""
+																											}
+																											onChange={(e) => {
+																												const currentConfig =
+																													task.specialCondition
+																														?.hyperlinkConfig ??
+																													{};
+																												updateTaskSpecialCondition(
+																													pi,
+																													ti,
+																													{
+																														...task.specialCondition!,
+																														type: "hyperlink",
+																														hyperlinkConfig: {
+																															...currentConfig,
+																															url: e.target
+																																.value,
+																														},
+																													},
+																												);
+																											}}
+																											placeholder="https://en.wikipedia.org/wiki/Log_cabin"
+																											className={inputClass}
+																										/>
+																									</label>
+																								</div>
+																								<div className="mt-3 grid gap-3 md:grid-cols-2">
+																									<label className="text-xs font-semibold text-slate-600">
+																										Tệp nguồn
+																										<input
+																											value={
+																												task.specialCondition
+																													.hyperlinkConfig
+																													?.sourceFile ??
+																												"word/document.xml"
+																											}
+																											onChange={(e) => {
+																												const currentConfig =
+																													task.specialCondition
+																														?.hyperlinkConfig ??
+																													{};
+																												updateTaskSpecialCondition(
+																													pi,
+																													ti,
+																													{
+																														...task.specialCondition!,
+																														type: "hyperlink",
+																														hyperlinkConfig: {
+																															...currentConfig,
+																															sourceFile:
+																																e.target.value,
+																														},
+																													},
+																												);
+																											}}
+																											placeholder="word/document.xml"
+																											className={inputClass}
+																										/>
+																									</label>
+																									<label className="text-xs font-semibold text-slate-600">
+																										Rels file
+																										<input
+																											value={
+																												task.specialCondition
+																													.hyperlinkConfig
+																													?.relsFile ??
+																												"word/_rels/document.xml.rels"
+																											}
+																											onChange={(e) => {
+																												const currentConfig =
+																													task.specialCondition
+																														?.hyperlinkConfig ??
+																													{};
+																												updateTaskSpecialCondition(
+																													pi,
+																													ti,
+																													{
+																														...task.specialCondition!,
+																														type: "hyperlink",
+																														hyperlinkConfig: {
+																															...currentConfig,
+																															relsFile:
+																																e.target.value,
+																														},
+																													},
+																												);
+																											}}
+																											placeholder="word/_rels/document.xml.rels"
+																											className={inputClass}
+																										/>
+																									</label>
+																								</div>
+																								<label className="mt-3 flex items-center gap-2 text-xs font-medium text-slate-600">
+																									<input
+																										type="checkbox"
+																										checked={
+																											task.specialCondition
+																												.hyperlinkConfig
+																												?.caseSensitiveText ??
+																											false
+																										}
+																										onChange={(e) => {
+																											const currentConfig =
+																												task.specialCondition
+																													?.hyperlinkConfig ??
+																												{};
+																											updateTaskSpecialCondition(
+																												pi,
+																												ti,
+																												{
+																													...task.specialCondition!,
+																													type: "hyperlink",
+																													hyperlinkConfig: {
+																														...currentConfig,
+																														caseSensitiveText:
+																															e.target.checked,
+																													},
+																												},
+																											);
+																										}}
+																										className="h-4 w-4 accent-blue-600"
+																									/>
+																									Văn bản hiển thị phân biệt chữ
+																									hoa/thường
+																								</label>
+																							</div>
+																						)}
+																						{task.specialCondition?.type ===
+																							"sectionBreakBeforeText" && (
+																							<div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
+																								<div className="grid gap-3 md:grid-cols-2">
+																									<label className="text-xs font-semibold text-slate-600">
+																										Source file
+																										<input
+																											value={
+																												task.specialCondition
+																													.sectionBreakBeforeTextConfig
+																													?.sourceFile ??
+																												"word/document.xml"
+																											}
+																											onChange={(e) => {
+																												const currentConfig =
+																													task.specialCondition
+																														?.sectionBreakBeforeTextConfig ??
+																													{};
+																												updateTaskSpecialCondition(
+																													pi,
+																													ti,
+																													{
+																														...task.specialCondition!,
+																														type: "sectionBreakBeforeText",
+																														sectionBreakBeforeTextConfig:
+																															{
+																																...currentConfig,
+																																sourceFile:
+																																	e.target
+																																		.value,
+																															},
+																													},
+																												);
+																											}}
+																											placeholder="word/document.xml"
+																											className={inputClass}
+																										/>
+																									</label>
+																									<label className="text-xs font-semibold text-slate-600">
+																										Target text
+																										<input
+																											value={
+																												task.specialCondition
+																													.sectionBreakBeforeTextConfig
+																													?.targetText ?? ""
+																											}
+																											onChange={(e) => {
+																												const currentConfig =
+																													task.specialCondition
+																														?.sectionBreakBeforeTextConfig ??
+																													{};
+																												updateTaskSpecialCondition(
+																													pi,
+																													ti,
+																													{
+																														...task.specialCondition!,
+																														type: "sectionBreakBeforeText",
+																														sectionBreakBeforeTextConfig:
+																															{
+																																...currentConfig,
+																																targetText:
+																																	e.target
+																																		.value,
+																															},
+																													},
+																												);
+																											}}
+																											placeholder="Affordable Pricing"
+																											className={inputClass}
+																										/>
+																									</label>
+																									<label className="text-xs font-semibold text-slate-600">
+																										Break type
+																										<select
+																											value={
+																												task.specialCondition
+																													.sectionBreakBeforeTextConfig
+																													?.breakType ??
+																												"continuous"
+																											}
+																											onChange={(e) => {
+																												const currentConfig =
+																													task.specialCondition
+																														?.sectionBreakBeforeTextConfig ??
+																													{};
+																												updateTaskSpecialCondition(
+																													pi,
+																													ti,
+																													{
+																														...task.specialCondition!,
+																														type: "sectionBreakBeforeText",
+																														sectionBreakBeforeTextConfig:
+																															{
+																																...currentConfig,
+																																breakType:
+																																	e.target
+																																		.value,
+																															},
+																													},
+																												);
+																											}}
+																											className={inputClass}
+																										>
+																											<option value="continuous">
+																												continuous
+																											</option>
+																											<option value="nextPage">
+																												nextPage
+																											</option>
+																											<option value="evenPage">
+																												evenPage
+																											</option>
+																											<option value="oddPage">
+																												oddPage
+																											</option>
+																											<option value="nextColumn">
+																												nextColumn
+																											</option>
+																										</select>
+																									</label>
+																									<label className="text-xs font-semibold text-slate-600">
+																										Tần suất xuất hiện mục tiêu
+																										<input
+																											type="number"
+																											min={1}
+																											step={1}
+																											value={
+																												task.specialCondition
+																													.sectionBreakBeforeTextConfig
+																													?.targetOccurrence ??
+																												1
+																											}
+																											onChange={(e) => {
+																												const currentConfig =
+																													task.specialCondition
+																														?.sectionBreakBeforeTextConfig ??
+																													{};
+																												updateTaskSpecialCondition(
+																													pi,
+																													ti,
+																													{
+																														...task.specialCondition!,
+																														type: "sectionBreakBeforeText",
+																														sectionBreakBeforeTextConfig:
+																															{
+																																...currentConfig,
+																																targetOccurrence:
+																																	e.target.value
+																																		? Number(
+																																				e.target
+																																					.value,
+																																			)
+																																		: undefined,
+																															},
+																													},
+																												);
+																											}}
+																											placeholder="1"
+																											className={inputClass}
+																										/>
+																									</label>
+																								</div>
+																								<div className="mt-3 grid gap-3 md:grid-cols-2">
+																									<label className="flex items-center gap-2 text-xs font-medium text-slate-600">
+																										<input
+																											type="checkbox"
+																											checked={
+																												task.specialCondition
+																													.sectionBreakBeforeTextConfig
+																													?.requireImmediateBefore ??
+																												true
+																											}
+																											onChange={(e) => {
+																												const currentConfig =
+																													task.specialCondition
+																														?.sectionBreakBeforeTextConfig ??
+																													{};
+																												updateTaskSpecialCondition(
+																													pi,
+																													ti,
+																													{
+																														...task.specialCondition!,
+																														type: "sectionBreakBeforeText",
+																														sectionBreakBeforeTextConfig:
+																															{
+																																...currentConfig,
+																																requireImmediateBefore:
+																																	e.target
+																																		.checked,
+																															},
+																													},
+																												);
+																											}}
+																											className="h-4 w-4 accent-blue-600"
+																										/>
+																										Yêu cầu thực hiện ngay trước
+																										đó
+																									</label>
+																									<label className="flex items-center gap-2 text-xs font-medium text-slate-600">
+																										<input
+																											type="checkbox"
+																											checked={
+																												task.specialCondition
+																													.sectionBreakBeforeTextConfig
+																													?.allowSameParagraphSectPr ??
+																												true
+																											}
+																											onChange={(e) => {
+																												const currentConfig =
+																													task.specialCondition
+																														?.sectionBreakBeforeTextConfig ??
+																													{};
+																												updateTaskSpecialCondition(
+																													pi,
+																													ti,
+																													{
+																														...task.specialCondition!,
+																														type: "sectionBreakBeforeText",
+																														sectionBreakBeforeTextConfig:
+																															{
+																																...currentConfig,
+																																allowSameParagraphSectPr:
+																																	e.target
+																																		.checked,
+																															},
+																													},
+																												);
+																											}}
+																											className="h-4 w-4 accent-blue-600"
+																										/>
+																										Cho phép cùng một đoạn
+																										văn/phần
+																									</label>
+																								</div>
+																							</div>
+																						)}
+																						{task.specialCondition?.type ===
+																							"textBoxContainsText" && (
+																							<div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
+																								<div className="grid gap-3 md:grid-cols-2">
+																									<label className="text-xs font-semibold text-slate-600">
+																										Source file
+																										<input
+																											value={
+																												task.specialCondition
+																													.textBoxContainsTextConfig
+																													?.sourceFile ??
+																												"word/document.xml"
+																											}
+																											onChange={(e) => {
+																												const currentConfig =
+																													task.specialCondition
+																														?.textBoxContainsTextConfig ??
+																													{};
+																												updateTaskSpecialCondition(
+																													pi,
+																													ti,
+																													{
+																														...task.specialCondition!,
+																														type: "textBoxContainsText",
+																														textBoxContainsTextConfig:
+																															{
+																																...currentConfig,
+																																sourceFile:
+																																	e.target
+																																		.value,
+																															},
+																													},
+																												);
+																											}}
+																											placeholder="word/document.xml"
+																											className={inputClass}
+																										/>
+																									</label>
+																									<label className="text-xs font-semibold text-slate-600">
+																										Match mode
+																										<select
+																											value={
+																												task.specialCondition
+																													.textBoxContainsTextConfig
+																													?.matchMode ?? "exact"
+																											}
+																											onChange={(e) => {
+																												const currentConfig =
+																													task.specialCondition
+																														?.textBoxContainsTextConfig ??
+																													{};
+																												updateTaskSpecialCondition(
+																													pi,
+																													ti,
+																													{
+																														...task.specialCondition!,
+																														type: "textBoxContainsText",
+																														textBoxContainsTextConfig:
+																															{
+																																...currentConfig,
+																																matchMode: e
+																																	.target
+																																	.value as
+																																	| "exact"
+																																	| "contains",
+																															},
+																													},
+																												);
+																											}}
+																											className={inputClass}
+																										>
+																											<option value="exact">
+																												Dung nguyen doan
+																											</option>
+																											<option value="contains">
+																												Chi can chua doan nay
+																											</option>
+																										</select>
+																									</label>
+																									<label className="text-xs font-semibold text-slate-600 md:col-span-2">
+																										Expected text
+																										<textarea
+																											value={
+																												task.specialCondition
+																													.textBoxContainsTextConfig
+																													?.expectedText ?? ""
+																											}
+																											onChange={(e) => {
+																												const currentConfig =
+																													task.specialCondition
+																														?.textBoxContainsTextConfig ??
+																													{};
+																												updateTaskSpecialCondition(
+																													pi,
+																													ti,
+																													{
+																														...task.specialCondition!,
+																														type: "textBoxContainsText",
+																														textBoxContainsTextConfig:
+																															{
+																																...currentConfig,
+																																expectedText:
+																																	e.target
+																																		.value,
+																															},
+																													},
+																												);
+																											}}
+																											placeholder="Nhap nguyen doan van bat dau bang Note:"
+																											rows={5}
+																											className={inputClass}
+																										/>
+																									</label>
+																									<label className="text-xs font-semibold text-slate-600">
+																										Target occurrence
+																										<input
+																											type="number"
+																											min={1}
+																											step={1}
+																											value={
+																												task.specialCondition
+																													.textBoxContainsTextConfig
+																													?.targetOccurrence ??
+																												1
+																											}
+																											onChange={(e) => {
+																												const currentConfig =
+																													task.specialCondition
+																														?.textBoxContainsTextConfig ??
+																													{};
+																												updateTaskSpecialCondition(
+																													pi,
+																													ti,
+																													{
+																														...task.specialCondition!,
+																														type: "textBoxContainsText",
+																														textBoxContainsTextConfig:
+																															{
+																																...currentConfig,
+																																targetOccurrence:
+																																	e.target.value
+																																		? Number(
+																																				e.target
+																																					.value,
+																																			)
+																																		: undefined,
+																															},
+																													},
+																												);
+																											}}
+																											className={inputClass}
+																										/>
+																									</label>
+																								</div>
+																								<div className="mt-3 grid gap-3 md:grid-cols-3">
+																									<label className="flex items-center gap-2 text-xs font-medium text-slate-600">
+																										<input
+																											type="checkbox"
+																											checked={
+																												task.specialCondition
+																													.textBoxContainsTextConfig
+																													?.caseSensitive ??
+																												false
+																											}
+																											onChange={(e) => {
+																												const currentConfig =
+																													task.specialCondition
+																														?.textBoxContainsTextConfig ??
+																													{};
+																												updateTaskSpecialCondition(
+																													pi,
+																													ti,
+																													{
+																														...task.specialCondition!,
+																														type: "textBoxContainsText",
+																														textBoxContainsTextConfig:
+																															{
+																																...currentConfig,
+																																caseSensitive:
+																																	e.target
+																																		.checked,
+																															},
+																													},
+																												);
+																											}}
+																											className="h-4 w-4 accent-blue-600"
+																										/>
+																										Phan biet hoa/thuong
+																									</label>
+																									<label className="flex items-center gap-2 text-xs font-medium text-slate-600">
+																										<input
+																											type="checkbox"
+																											checked={
+																												task.specialCondition
+																													.textBoxContainsTextConfig
+																													?.requireDefaultPaste ??
+																												true
+																											}
+																											onChange={(e) => {
+																												const currentConfig =
+																													task.specialCondition
+																														?.textBoxContainsTextConfig ??
+																													{};
+																												updateTaskSpecialCondition(
+																													pi,
+																													ti,
+																													{
+																														...task.specialCondition!,
+																														type: "textBoxContainsText",
+																														textBoxContainsTextConfig:
+																															{
+																																...currentConfig,
+																																requireDefaultPaste:
+																																	e.target
+																																		.checked,
+																															},
+																													},
+																												);
+																											}}
+																											className="h-4 w-4 accent-blue-600"
+																										/>
+																										Bat paste mac dinh
+																									</label>
+																									<label className="flex items-center gap-2 text-xs font-medium text-slate-600">
+																										<input
+																											type="checkbox"
+																											checked={
+																												task.specialCondition
+																													.textBoxContainsTextConfig
+																													?.requireRemovedFromBody ??
+																												true
+																											}
+																											onChange={(e) => {
+																												const currentConfig =
+																													task.specialCondition
+																														?.textBoxContainsTextConfig ??
+																													{};
+																												updateTaskSpecialCondition(
+																													pi,
+																													ti,
+																													{
+																														...task.specialCondition!,
+																														type: "textBoxContainsText",
+																														textBoxContainsTextConfig:
+																															{
+																																...currentConfig,
+																																requireRemovedFromBody:
+																																	e.target
+																																		.checked,
+																															},
+																													},
+																												);
+																											}}
+																											className="h-4 w-4 accent-blue-600"
+																										/>
+																										Khong con ngoai textbox
+																									</label>
+																								</div>
+																								<label className="mt-3 block text-xs font-semibold text-slate-600">
+																									Run properties cam khi bat
+																									paste mac dinh
+																									<textarea
+																										value={(
+																											task.specialCondition
+																												.textBoxContainsTextConfig
+																												?.forbiddenRunProperties ??
+																											[]
+																										).join("\n")}
+																										onChange={(e) => {
+																											const currentConfig =
+																												task.specialCondition
+																													?.textBoxContainsTextConfig ??
+																												{};
+																											updateTaskSpecialCondition(
+																												pi,
+																												ti,
+																												{
+																													...task.specialCondition!,
+																													type: "textBoxContainsText",
+																													textBoxContainsTextConfig:
+																														{
+																															...currentConfig,
+																															forbiddenRunProperties:
+																																e.target.value
+																																	.split(
+																																		/\r?\n/,
+																																	)
+																																	.map((line) =>
+																																		line.trim(),
+																																	)
+																																	.filter(
+																																		Boolean,
+																																	),
+																														},
+																												},
+																											);
+																										}}
+																										rows={5}
+																										placeholder={
+																											"De trong neu khong co dau hieu XML sai on dinh"
+																										}
+																										className={inputClass}
+																									/>
+																								</label>
+																								<label className="mt-3 block text-xs font-semibold text-slate-600">
+																									Mau chu cam khi bat paste mac
+																									dinh
+																									<textarea
+																										value={(
+																											task.specialCondition
+																												.textBoxContainsTextConfig
+																												?.forbiddenTextColors ?? [
+																												"FFFFFF",
+																												"background1",
+																												"bg1",
+																												"lt1",
+																											]
+																										).join("\n")}
+																										onChange={(e) => {
+																											const currentConfig =
+																												task.specialCondition
+																													?.textBoxContainsTextConfig ??
+																												{};
+																											updateTaskSpecialCondition(
+																												pi,
+																												ti,
+																												{
+																													...task.specialCondition!,
+																													type: "textBoxContainsText",
+																													textBoxContainsTextConfig:
+																														{
+																															...currentConfig,
+																															forbiddenTextColors:
+																																e.target.value
+																																	.split(
+																																		/\r?\n/,
+																																	)
+																																	.map((line) =>
+																																		line.trim(),
+																																	)
+																																	.filter(
+																																		Boolean,
+																																	),
+																														},
+																												},
+																											);
+																										}}
+																										rows={4}
+																										placeholder={
+																											"FFFFFF\nbackground1\nbg1\nlt1"
+																										}
+																										className={inputClass}
+																									/>
+																								</label>
+																							</div>
+																						)}
+																						{task.specialCondition?.type ===
+																							"pageMargins" && (
+																							<div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
+																								<div className="grid gap-3 md:grid-cols-3">
+																									<label className="text-xs font-semibold text-slate-600 md:col-span-3">
+																										Source file
+																										<input
+																											value={
+																												task.specialCondition
+																													.pageMarginsConfig
+																													?.sourceFile ??
+																												"word/document.xml"
+																											}
+																											onChange={(e) => {
+																												const currentConfig =
+																													task.specialCondition
+																														?.pageMarginsConfig ??
+																													{};
+																												updateTaskSpecialCondition(
+																													pi,
+																													ti,
+																													{
+																														...task.specialCondition!,
+																														type: "pageMargins",
+																														pageMarginsConfig: {
+																															...currentConfig,
+																															sourceFile:
+																																e.target.value,
+																														},
+																													},
+																												);
+																											}}
+																											placeholder="word/document.xml"
+																											className={inputClass}
+																										/>
+																									</label>
+																									{[
+																										["top", "Le tren"],
+																										["bottom", "Le duoi"],
+																										["left", "Le trai"],
+																										["right", "Le phai"],
+																										["gutter", "Gutter"],
+																									].map(([field, label]) => (
+																										<MarginUnitInput
+																											key={field}
+																											label={label}
+																											value={
+																												(
+																													task.specialCondition
+																														?.pageMarginsConfig as
+																														| Record<
+																																string,
+																																| number
+																																| undefined
+																														  >
+																														| undefined
+																												)?.[field]
+																											}
+																											placeholder={
+																												field === "top" ||
+																												field === "bottom"
+																													? "1 in hoặc 2.54 cm"
+																													: field === "left" ||
+																															field === "right"
+																														? "1.5 in hoặc 3.81 cm"
+																														: "0"
+																											}
+																											inputClass={inputClass}
+																											onCommit={(twips) => {
+																												const currentConfig =
+																													task.specialCondition
+																														?.pageMarginsConfig ??
+																													{};
+																												updateTaskSpecialCondition(
+																													pi,
+																													ti,
+																													{
+																														...task.specialCondition!,
+																														type: "pageMargins",
+																														pageMarginsConfig: {
+																															...currentConfig,
+																															[field]: twips,
+																														},
+																													},
+																												);
+																											}}
+																										/>
+																									))}
+																								</div>
+																								<p className="mt-2 text-xs text-slate-500">
+																									Nhap so mac dinh la inch. Vi
+																									du: 1, 1 in, 1.5 in, 2.54 cm,
+																									3.81 cm.
+																								</p>
+																								<label className="mt-3 flex items-center gap-2 text-xs font-medium text-slate-600">
+																									<input
+																										type="checkbox"
+																										checked={
+																											task.specialCondition
+																												.pageMarginsConfig
+																												?.requireAllSections ??
+																											true
+																										}
+																										onChange={(e) => {
+																											const currentConfig =
+																												task.specialCondition
+																													?.pageMarginsConfig ??
+																												{};
+																											updateTaskSpecialCondition(
+																												pi,
+																												ti,
+																												{
+																													...task.specialCondition!,
+																													type: "pageMargins",
+																													pageMarginsConfig: {
+																														...currentConfig,
+																														requireAllSections:
+																															e.target.checked,
+																													},
+																												},
+																											);
+																										}}
+																										className="h-4 w-4 accent-blue-600"
+																									/>
+																									Ap dung cho tat ca section
+																								</label>
+																							</div>
+																						)}
+																						{task.specialCondition?.type ===
+																							"pageBorder" && (
+																							<div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
+																								<div className="grid gap-3 md:grid-cols-2">
+																									<label className="text-xs font-semibold text-slate-600 md:col-span-2">
+																										Source file
+																										<input
+																											value={
+																												task.specialCondition
+																													.pageBorderConfig
+																													?.sourceFile ??
+																												"word/document.xml"
+																											}
+																											onChange={(e) => {
+																												const currentConfig =
+																													task.specialCondition
+																														?.pageBorderConfig ??
+																													{};
+																												updateTaskSpecialCondition(
+																													pi,
+																													ti,
+																													{
+																														...task.specialCondition!,
+																														type: "pageBorder",
+																														pageBorderConfig: {
+																															...currentConfig,
+																															sourceFile:
+																																e.target.value,
+																														},
+																													},
+																												);
+																											}}
+																											placeholder="word/document.xml"
+																											className={inputClass}
+																										/>
+																									</label>
+																									<label className="text-xs font-semibold text-slate-600">
+																										Kieu duong vien
+																										<select
+																											value={
+																												task.specialCondition
+																													.pageBorderConfig
+																													?.requiredStyle ??
+																												"single"
+																											}
+																											onChange={(e) => {
+																												const currentConfig =
+																													task.specialCondition
+																														?.pageBorderConfig ??
+																													{};
+																												updateTaskSpecialCondition(
+																													pi,
+																													ti,
+																													{
+																														...task.specialCondition!,
+																														type: "pageBorder",
+																														pageBorderConfig: {
+																															...currentConfig,
+																															requiredStyle:
+																																e.target.value,
+																														},
+																													},
+																												);
+																											}}
+																											className={inputClass}
+																										>
+																											<option value="single">
+																												Duong lien
+																											</option>
+																											<option value="double">
+																												Duong doi
+																											</option>
+																											<option value="dotted">
+																												Cham tron
+																											</option>
+																											<option value="dashed">
+																												Net dut
+																											</option>
+																											<option value="dashSmallGap">
+																												Net dut ngan
+																											</option>
+																										</select>
+																									</label>
+																									<PageBorderWidthInput
+																										value={
+																											task.specialCondition
+																												.pageBorderConfig
+																												?.requiredWidth ?? 12
+																										}
+																										inputClass={inputClass}
+																										onCommit={(width) => {
+																											const currentConfig =
+																												task.specialCondition
+																													?.pageBorderConfig ??
+																												{};
+																											updateTaskSpecialCondition(
+																												pi,
+																												ti,
+																												{
+																													...task.specialCondition!,
+																													type: "pageBorder",
+																													pageBorderConfig: {
+																														...currentConfig,
+																														requiredWidth:
+																															width,
+																													},
+																												},
+																											);
+																										}}
+																									/>
+																									<label className="text-xs font-semibold text-slate-600">
+																										Mau vien
+																										<select
+																											value={selectedPageBorderColorPreset(
+																												task.specialCondition
+																													.pageBorderConfig,
+																											)}
+																											onChange={(e) => {
+																												const currentConfig =
+																													task.specialCondition
+																														?.pageBorderConfig ??
+																													{};
+																												const preset =
+																													pageBorderColorPresets.find(
+																														(item) =>
+																															item.requiredColor ===
+																															e.target.value,
+																													);
+																												updateTaskSpecialCondition(
+																													pi,
+																													ti,
+																													{
+																														...task.specialCondition!,
+																														type: "pageBorder",
+																														pageBorderConfig: {
+																															...currentConfig,
+																															requiredColor:
+																																preset?.requiredColor ??
+																																currentConfig.requiredColor,
+																															allowedColors:
+																																preset?.allowedColors ??
+																																currentConfig.allowedColors,
+																														},
+																													},
+																												);
+																											}}
+																											className={inputClass}
+																										>
+																											{pageBorderColorPresets.map(
+																												(preset) => (
+																													<option
+																														key={
+																															preset.requiredColor
+																														}
+																														value={
+																															preset.requiredColor
+																														}
+																													>
+																														{preset.label}
+																													</option>
+																												),
+																											)}
+																											<option value="custom">
+																												Tuy chinh
+																											</option>
+																										</select>
+																									</label>
+																									<label className="text-xs font-semibold text-slate-600">
+																										Ma mau tuy chinh
+																										<input
+																											value={
+																												task.specialCondition
+																													.pageBorderConfig
+																													?.requiredColor ?? ""
+																											}
+																											onChange={(e) => {
+																												const currentConfig =
+																													task.specialCondition
+																														?.pageBorderConfig ??
+																													{};
+																												updateTaskSpecialCondition(
+																													pi,
+																													ti,
+																													{
+																														...task.specialCondition!,
+																														type: "pageBorder",
+																														pageBorderConfig: {
+																															...currentConfig,
+																															requiredColor:
+																																e.target.value,
+																														},
+																													},
+																												);
+																											}}
+																											placeholder="00B0F0 hoac Light Blue"
+																											className={inputClass}
+																										/>
+																									</label>
+																									<label className="text-xs font-semibold text-slate-600 md:col-span-2">
+																										Mau chap nhan them
+																										<textarea
+																											value={(
+																												task.specialCondition
+																													.pageBorderConfig
+																													?.allowedColors ?? []
+																											).join("\n")}
+																											onChange={(e) => {
+																												const currentConfig =
+																													task.specialCondition
+																														?.pageBorderConfig ??
+																													{};
+																												updateTaskSpecialCondition(
+																													pi,
+																													ti,
+																													{
+																														...task.specialCondition!,
+																														type: "pageBorder",
+																														pageBorderConfig: {
+																															...currentConfig,
+																															allowedColors:
+																																e.target.value
+																																	.split(
+																																		/\r?\n/,
+																																	)
+																																	.map((line) =>
+																																		line.trim(),
+																																	)
+																																	.filter(
+																																		Boolean,
+																																	),
+																														},
+																													},
+																												);
+																											}}
+																											rows={4}
+																											placeholder={
+																												"00B0F0\n5B9BD5\n4F81BD\naccent1"
+																											}
+																											className={inputClass}
+																										/>
+																									</label>
+																								</div>
+																								<div className="mt-3 flex flex-wrap gap-4">
+																									<label className="flex items-center gap-2 text-xs font-medium text-slate-600">
+																										<input
+																											type="checkbox"
+																											checked={
+																												task.specialCondition
+																													.pageBorderConfig
+																													?.requireBox ?? true
+																											}
+																											onChange={(e) => {
+																												const currentConfig =
+																													task.specialCondition
+																														?.pageBorderConfig ??
+																													{};
+																												updateTaskSpecialCondition(
+																													pi,
+																													ti,
+																													{
+																														...task.specialCondition!,
+																														type: "pageBorder",
+																														pageBorderConfig: {
+																															...currentConfig,
+																															requireBox:
+																																e.target
+																																	.checked,
+																														},
+																													},
+																												);
+																											}}
+																											className="h-4 w-4 accent-blue-600"
+																										/>
+																										Bat buoc du 4 canh Box
+																									</label>
+																									<label className="flex items-center gap-2 text-xs font-medium text-slate-600">
+																										<input
+																											type="checkbox"
+																											checked={
+																												task.specialCondition
+																													.pageBorderConfig
+																													?.requireAllSections ??
+																												true
+																											}
+																											onChange={(e) => {
+																												const currentConfig =
+																													task.specialCondition
+																														?.pageBorderConfig ??
+																													{};
+																												updateTaskSpecialCondition(
+																													pi,
+																													ti,
+																													{
+																														...task.specialCondition!,
+																														type: "pageBorder",
+																														pageBorderConfig: {
+																															...currentConfig,
+																															requireAllSections:
+																																e.target
+																																	.checked,
+																														},
+																													},
+																												);
+																											}}
+																											className="h-4 w-4 accent-blue-600"
+																										/>
+																										Ap dung cho tat ca section
+																									</label>
+																								</div>
+																								<p className="mt-2 text-xs text-slate-500">
+																									Trong OpenXML, do day page
+																									border luu theo 1/8 pt: 1.5 pt
+																									= 12.
+																								</p>
+																							</div>
+																						)}
+																						{task.specialCondition?.type ===
+																							"documentStyleSet" && (
+																							<div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
+																								<div className="grid gap-3 md:grid-cols-2">
+																									<label className="text-xs font-semibold text-slate-600">
+																										Source file
+																										<input
+																											value={
+																												task.specialCondition
+																													.documentStyleSetConfig
+																													?.sourceFile ??
+																												"word/styles.xml"
+																											}
+																											onChange={(e) => {
+																												const currentConfig =
+																													task.specialCondition
+																														?.documentStyleSetConfig ??
+																													{};
+																												updateTaskSpecialCondition(
+																													pi,
+																													ti,
+																													{
+																														...task.specialCondition!,
+																														type: "documentStyleSet",
+																														documentStyleSetConfig:
+																															{
+																																...currentConfig,
+																																sourceFile:
+																																	e.target
+																																		.value,
+																															},
+																													},
+																												);
+																											}}
+																											placeholder="word/styles.xml"
+																											className={inputClass}
+																										/>
+																									</label>
+																									<label className="text-xs font-semibold text-slate-600">
+																										Style set name
+																										<input
+																											value={
+																												task.specialCondition
+																													.documentStyleSetConfig
+																													?.styleSetName ?? ""
+																											}
+																											onChange={(e) => {
+																												const currentConfig =
+																													task.specialCondition
+																														?.documentStyleSetConfig ??
+																													{};
+																												updateTaskSpecialCondition(
+																													pi,
+																													ti,
+																													{
+																														...task.specialCondition!,
+																														type: "documentStyleSet",
+																														documentStyleSetConfig:
+																															{
+																																...currentConfig,
+																																styleSetName:
+																																	e.target
+																																		.value,
+																															},
+																													},
+																												);
+																											}}
+																											placeholder="Lines (Simple)"
+																											className={inputClass}
+																										/>
+																									</label>
+																									<label className="text-xs font-semibold text-slate-600">
+																										Match policy
+																										<select
+																											value={
+																												task.specialCondition
+																													.documentStyleSetConfig
+																													?.matchPolicy ?? "all"
+																											}
+																											onChange={(e) => {
+																												const currentConfig =
+																													task.specialCondition
+																														?.documentStyleSetConfig ??
+																													{};
+																												updateTaskSpecialCondition(
+																													pi,
+																													ti,
+																													{
+																														...task.specialCondition!,
+																														type: "documentStyleSet",
+																														documentStyleSetConfig:
+																															{
+																																...currentConfig,
+																																matchPolicy: e
+																																	.target
+																																	.value as XmlMatchPolicy,
+																															},
+																													},
+																												);
+																											}}
+																											className={inputClass}
+																										>
+																											<option value="all">
+																												Tat ca fragment
+																											</option>
+																											<option value="any">
+																												Bat ky fragment nao
+																											</option>
+																										</select>
+																									</label>
+																									<label className="text-xs font-semibold text-slate-600">
+																										Ignore attributes
+																										<textarea
+																											value={(
+																												task.specialCondition
+																													.documentStyleSetConfig
+																													?.ignoreAttributes ??
+																												[]
+																											).join("\n")}
+																											onChange={(e) => {
+																												const currentConfig =
+																													task.specialCondition
+																														?.documentStyleSetConfig ??
+																													{};
+																												updateTaskSpecialCondition(
+																													pi,
+																													ti,
+																													{
+																														...task.specialCondition!,
+																														type: "documentStyleSet",
+																														documentStyleSetConfig:
+																															{
+																																...currentConfig,
+																																ignoreAttributes:
+																																	e.target.value
+																																		.split(
+																																			/\r?\n/,
+																																		)
+																																		.map(
+																																			(line) =>
+																																				line.trim(),
+																																		)
+																																		.filter(
+																																			Boolean,
+																																		),
+																															},
+																													},
+																												);
+																											}}
+																											rows={3}
+																											placeholder={"rsid*\nid"}
+																											className={inputClass}
+																										/>
+																									</label>
+																									<label className="text-xs font-semibold text-slate-600 md:col-span-2">
+																										Expected fragments
+																										<textarea
+																											value={(
+																												task.specialCondition
+																													.documentStyleSetConfig
+																													?.expectedFragments ??
+																												[]
+																											).join(
+																												"\n---FRAGMENT---\n",
+																											)}
+																											onChange={(e) => {
+																												const currentConfig =
+																													task.specialCondition
+																														?.documentStyleSetConfig ??
+																													{};
+																												updateTaskSpecialCondition(
+																													pi,
+																													ti,
+																													{
+																														...task.specialCondition!,
+																														type: "documentStyleSet",
+																														documentStyleSetConfig:
+																															{
+																																...currentConfig,
+																																expectedFragments:
+																																	e.target.value
+																																		.split(
+																																			/\n---FRAGMENT---\n/,
+																																		)
+																																		.map(
+																																			(
+																																				fragment,
+																																			) =>
+																																				fragment.trim(),
+																																		)
+																																		.filter(
+																																			Boolean,
+																																		),
+																															},
+																													},
+																												);
+																											}}
+																											rows={8}
+																											placeholder="Dan cac doan XML on dinh trong word/styles.xml cua file dap an Lines (Simple). Tach nhieu fragment bang dong ---FRAGMENT---"
+																											className={inputClass}
+																										/>
+																									</label>
+																								</div>
+																							</div>
+																						)}
+																						{task.specialCondition?.type ===
+																							"pictureStyle" && (
+																							<PictureStyleEditor
+																								config={
+																									task.specialCondition
+																										.pictureStyleConfig
+																								}
+																								getAccessToken={getAccessToken}
+																								onChange={(
+																									pictureStyleConfig: PictureStyleConfig,
+																								) => {
+																									updateTaskSpecialCondition(
+																										pi,
+																										ti,
+																										{
+																											...task.specialCondition!,
+																											type: "pictureStyle",
+																											pictureStyleConfig,
+																										},
+																									);
+																								}}
+																							/>
+																						)}
+																						{task.specialCondition?.type?.startsWith(
+																							"excel",
+																						) && (
+																							<div className="mt-4 rounded-2xl border border-emerald-100 bg-emerald-50/40 p-4">
+																								{task.specialCondition.type ===
+																									"excelTableName" && (
+																									<div className="grid gap-3 md:grid-cols-2">
+																										<label className="text-xs font-semibold text-slate-600">
+																											Worksheet name
+																											<input
+																												value={
+																													task.specialCondition
+																														.excelTableNameConfig
+																														?.worksheetName ??
+																													""
+																												}
+																												onChange={(e) => {
+																													const currentConfig =
+																														task
+																															.specialCondition
+																															?.excelTableNameConfig ??
+																														{};
+																													updateTaskSpecialCondition(
+																														pi,
+																														ti,
+																														{
+																															...task.specialCondition!,
+																															type: "excelTableName",
+																															excelTableNameConfig:
+																																{
+																																	...currentConfig,
+																																	worksheetName:
+																																		e.target
+																																			.value,
+																																},
+																														},
+																													);
+																												}}
+																												placeholder="Rental Rates"
+																												className={inputClass}
+																											/>
+																										</label>
+																										<label className="text-xs font-semibold text-slate-600">
+																											Source file
+																											<input
+																												value={
+																													task.specialCondition
+																														.excelTableNameConfig
+																														?.sourceFile ?? ""
+																												}
+																												onChange={(e) => {
+																													const currentConfig =
+																														task
+																															.specialCondition
+																															?.excelTableNameConfig ??
+																														{};
+																													updateTaskSpecialCondition(
+																														pi,
+																														ti,
+																														{
+																															...task.specialCondition!,
+																															type: "excelTableName",
+																															excelTableNameConfig:
+																																{
+																																	...currentConfig,
+																																	sourceFile:
+																																		e.target
+																																			.value,
+																																},
+																														},
+																													);
+																												}}
+																												placeholder="xl/tables/table1.xml"
+																												className={inputClass}
+																											/>
+																										</label>
+																										<label className="text-xs font-semibold text-slate-600">
+																											Expected name
+																											<input
+																												value={
+																													task.specialCondition
+																														.excelTableNameConfig
+																														?.expectedName ?? ""
+																												}
+																												onChange={(e) => {
+																													const currentConfig =
+																														task
+																															.specialCondition
+																															?.excelTableNameConfig ??
+																														{};
+																													updateTaskSpecialCondition(
+																														pi,
+																														ti,
+																														{
+																															...task.specialCondition!,
+																															type: "excelTableName",
+																															excelTableNameConfig:
+																																{
+																																	...currentConfig,
+																																	expectedName:
+																																		e.target
+																																			.value,
+																																},
+																														},
+																													);
+																												}}
+																												placeholder="Rates"
+																												className={inputClass}
+																											/>
+																										</label>
+																										<label className="text-xs font-semibold text-slate-600">
+																											Original name
+																											<input
+																												value={
+																													task.specialCondition
+																														.excelTableNameConfig
+																														?.originalName ?? ""
+																												}
+																												onChange={(e) => {
+																													const currentConfig =
+																														task
+																															.specialCondition
+																															?.excelTableNameConfig ??
+																														{};
+																													updateTaskSpecialCondition(
+																														pi,
+																														ti,
+																														{
+																															...task.specialCondition!,
+																															type: "excelTableName",
+																															excelTableNameConfig:
+																																{
+																																	...currentConfig,
+																																	originalName:
+																																		e.target
+																																			.value,
+																																},
+																														},
+																													);
+																												}}
+																												placeholder="Table1"
+																												className={inputClass}
+																											/>
+																										</label>
+																										<label className="flex items-center gap-2 text-xs font-medium text-slate-600">
+																											<input
+																												type="checkbox"
+																												checked={
+																													task.specialCondition
+																														.excelTableNameConfig
+																														?.requireOriginalNameAbsent ??
+																													true
+																												}
+																												onChange={(e) => {
+																													const currentConfig =
+																														task
+																															.specialCondition
+																															?.excelTableNameConfig ??
+																														{};
+																													updateTaskSpecialCondition(
+																														pi,
+																														ti,
+																														{
+																															...task.specialCondition!,
+																															type: "excelTableName",
+																															excelTableNameConfig:
+																																{
+																																	...currentConfig,
+																																	requireOriginalNameAbsent:
+																																		e.target
+																																			.checked,
+																																},
+																														},
+																													);
+																												}}
+																											/>
+																											Require original name
+																											absent
+																										</label>
+																									</div>
+																								)}
 
-                                            {task.specialCondition?.type === 'insertedImage' && (
-                                              <InsertedImageEditor
-                                                config={task.specialCondition.imageInsertConfig}
-                                                getAccessToken={getAccessToken}
-                                                onChange={(imageInsertConfig: ImageInsertConfig) => {
-                                                  updateTaskSpecialCondition(pi, ti, {
-                                                    ...task.specialCondition!,
-                                                    type: 'insertedImage',
-                                                    imageInsertConfig,
-                                                  });
-                                                }}
-                                              />
-                                            )}
-                                            {task.specialCondition?.type === 'convertTableToText' && (
-                                              <div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
-                                                <div className="grid gap-3 md:grid-cols-2">
-                                                  <label className="text-xs font-semibold text-slate-600">
-                                                    Tệp nguồn
-                                                    <input
-                                                      value={task.specialCondition.convertTableToTextConfig?.sourceFile ?? 'word/document.xml'}
-                                                      onChange={(e) => {
-                                                        const currentConfig = task.specialCondition?.convertTableToTextConfig ?? {};
-                                                        updateTaskSpecialCondition(pi, ti, {
-                                                          ...task.specialCondition!,
-                                                          type: 'convertTableToText',
-                                                          convertTableToTextConfig: {
-                                                            ...currentConfig,
-                                                            sourceFile: e.target.value,
-                                                          },
-                                                        });
-                                                      }}
-                                                      placeholder="word/document.xml"
-                                                      className={inputClass}
-                                                    />
-                                                  </label>
-                                                  <label className="text-xs font-semibold text-slate-600">
-                                                    Anchor text
-                                                    <input
-                                                      value={task.specialCondition.convertTableToTextConfig?.anchorText ?? ''}
-                                                      onChange={(e) => {
-                                                        const currentConfig = task.specialCondition?.convertTableToTextConfig ?? {};
-                                                        updateTaskSpecialCondition(pi, ti, {
-                                                          ...task.specialCondition!,
-                                                          type: 'convertTableToText',
-                                                          convertTableToTextConfig: {
-                                                            ...currentConfig,
-                                                            anchorText: e.target.value,
-                                                          },
-                                                        });
-                                                      }}
-                                                      placeholder="Weekly Rental:"
-                                                      className={inputClass}
-                                                    />
-                                                  </label>
-                                                </div>
-                                                <div className="mt-3 grid gap-3 md:grid-cols-2">
-                                                  <label className="text-xs font-semibold text-slate-600">
-                                                    Min rows
-                                                    <input
-                                                      type="number"
-                                                      min={1}
-                                                      step={1}
-                                                      value={task.specialCondition.convertTableToTextConfig?.minRows ?? ''}
-                                                      onChange={(e) => {
-                                                        const currentConfig = task.specialCondition?.convertTableToTextConfig ?? {};
-                                                        updateTaskSpecialCondition(pi, ti, {
-                                                          ...task.specialCondition!,
-                                                          type: 'convertTableToText',
-                                                          convertTableToTextConfig: {
-                                                            ...currentConfig,
-                                                            minRows: e.target.value ? Number(e.target.value) : undefined,
-                                                          },
-                                                        });
-                                                      }}
-                                                      placeholder="6"
-                                                      className={inputClass}
-                                                    />
-                                                  </label>
-                                                  <label className="text-xs font-semibold text-slate-600">
-                                                    Min tabs per row
-                                                    <input
-                                                      type="number"
-                                                      min={1}
-                                                      step={1}
-                                                      value={task.specialCondition.convertTableToTextConfig?.minTabsPerRow ?? ''}
-                                                      onChange={(e) => {
-                                                        const currentConfig = task.specialCondition?.convertTableToTextConfig ?? {};
-                                                        updateTaskSpecialCondition(pi, ti, {
-                                                          ...task.specialCondition!,
-                                                          type: 'convertTableToText',
-                                                          convertTableToTextConfig: {
-                                                            ...currentConfig,
-                                                            minTabsPerRow: e.target.value ? Number(e.target.value) : undefined,
-                                                          },
-                                                        });
-                                                      }}
-                                                      placeholder="5"
-                                                      className={inputClass}
-                                                    />
-                                                  </label>
-                                                </div>
-                                                <label className="mt-3 block text-xs font-semibold text-slate-600">
-                                                  Expected rows
-                                                  <textarea
-                                                    value={(task.specialCondition.convertTableToTextConfig?.expectedRows ?? []).join('\n')}
-                                                    onChange={(e) => {
-                                                      const currentConfig = task.specialCondition?.convertTableToTextConfig ?? {};
-                                                      updateTaskSpecialCondition(pi, ti, {
-                                                        ...task.specialCondition!,
-                                                        type: 'convertTableToText',
-                                                        convertTableToTextConfig: {
-                                                          ...currentConfig,
-                                                          expectedRows: e.target.value.split('\n'),
-                                                        },
-                                                      });
-                                                    }}
-                                                    rows={5}
-                                                    placeholder={'Sleeps\tLog Cabin\tSpring\tSummer\tFall\tWinter\n2\tAspen\t3240\t4320\t3450\t2240'}
-                                                    className={cx(inputClass, 'resize-y font-mono')}
-                                                  />
-                                                </label>
-                                                <label className="mt-3 flex items-center gap-2 text-xs font-medium text-slate-600">
-                                                  <input
-                                                    type="checkbox"
-                                                    checked={task.specialCondition.convertTableToTextConfig?.requireNoTables ?? true}
-                                                    onChange={(e) => {
-                                                      const currentConfig = task.specialCondition?.convertTableToTextConfig ?? {};
-                                                      updateTaskSpecialCondition(pi, ti, {
-                                                        ...task.specialCondition!,
-                                                        type: 'convertTableToText',
-                                                        convertTableToTextConfig: {
-                                                          ...currentConfig,
-                                                          requireNoTables: e.target.checked,
-                                                        },
-                                                      });
-                                                    }}
-                                                    className="h-4 w-4 accent-blue-600"
-                                                  />
-                                                  Không yêu cầu bảng Word
-                                                </label>
-                                              </div>
-                                            )}
-                                            {task.specialCondition?.type === 'hyperlink' && (
-                                              <div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
-                                                <div className="grid gap-3 md:grid-cols-2">
-                                                  <label className="text-xs font-semibold text-slate-600">
-                                                    Display text
-                                                    <input
-                                                      value={task.specialCondition.hyperlinkConfig?.displayText ?? ''}
-                                                      onChange={(e) => {
-                                                        const currentConfig = task.specialCondition?.hyperlinkConfig ?? {};
-                                                        updateTaskSpecialCondition(pi, ti, {
-                                                          ...task.specialCondition!,
-                                                          type: 'hyperlink',
-                                                          hyperlinkConfig: {
-                                                            ...currentConfig,
-                                                            displayText: e.target.value,
-                                                          },
-                                                        });
-                                                      }}
-                                                      placeholder="log cabin"
-                                                      className={inputClass}
-                                                    />
-                                                  </label>
-                                                  <label className="text-xs font-semibold text-slate-600">
-                                                    Anchor text before
-                                                    <input
-                                                      value={task.specialCondition.hyperlinkConfig?.anchorTextBefore ?? ''}
-                                                      onChange={(e) => {
-                                                        const currentConfig = task.specialCondition?.hyperlinkConfig ?? {};
-                                                        updateTaskSpecialCondition(pi, ti, {
-                                                          ...task.specialCondition!,
-                                                          type: 'hyperlink',
-                                                          hyperlinkConfig: {
-                                                            ...currentConfig,
-                                                            anchorTextBefore: e.target.value,
-                                                          },
-                                                        });
-                                                      }}
-                                                      placeholder="Nhap cum text dung truoc vi tri can link"
-                                                      className={inputClass}
-                                                    />
-                                                  </label>
-                                                  <label className="text-xs font-semibold text-slate-600">
-                                                    URL
-                                                    <input
-                                                      value={task.specialCondition.hyperlinkConfig?.url ?? ''}
-                                                      onChange={(e) => {
-                                                        const currentConfig = task.specialCondition?.hyperlinkConfig ?? {};
-                                                        updateTaskSpecialCondition(pi, ti, {
-                                                          ...task.specialCondition!,
-                                                          type: 'hyperlink',
-                                                          hyperlinkConfig: {
-                                                            ...currentConfig,
-                                                            url: e.target.value,
-                                                          },
-                                                        });
-                                                      }}
-                                                      placeholder="https://en.wikipedia.org/wiki/Log_cabin"
-                                                      className={inputClass}
-                                                    />
-                                                  </label>
-                                                </div>
-                                                <div className="mt-3 grid gap-3 md:grid-cols-2">
-                                                  <label className="text-xs font-semibold text-slate-600">
-                                                    Tệp nguồn
-                                                    <input
-                                                      value={task.specialCondition.hyperlinkConfig?.sourceFile ?? 'word/document.xml'}
-                                                      onChange={(e) => {
-                                                        const currentConfig = task.specialCondition?.hyperlinkConfig ?? {};
-                                                        updateTaskSpecialCondition(pi, ti, {
-                                                          ...task.specialCondition!,
-                                                          type: 'hyperlink',
-                                                          hyperlinkConfig: {
-                                                            ...currentConfig,
-                                                            sourceFile: e.target.value,
-                                                          },
-                                                        });
-                                                      }}
-                                                      placeholder="word/document.xml"
-                                                      className={inputClass}
-                                                    />
-                                                  </label>
-                                                  <label className="text-xs font-semibold text-slate-600">
-                                                    Rels file
-                                                    <input
-                                                      value={task.specialCondition.hyperlinkConfig?.relsFile ?? 'word/_rels/document.xml.rels'}
-                                                      onChange={(e) => {
-                                                        const currentConfig = task.specialCondition?.hyperlinkConfig ?? {};
-                                                        updateTaskSpecialCondition(pi, ti, {
-                                                          ...task.specialCondition!,
-                                                          type: 'hyperlink',
-                                                          hyperlinkConfig: {
-                                                            ...currentConfig,
-                                                            relsFile: e.target.value,
-                                                          },
-                                                        });
-                                                      }}
-                                                      placeholder="word/_rels/document.xml.rels"
-                                                      className={inputClass}
-                                                    />
-                                                  </label>
-                                                </div>
-                                                <label className="mt-3 flex items-center gap-2 text-xs font-medium text-slate-600">
-                                                  <input
-                                                    type="checkbox"
-                                                    checked={task.specialCondition.hyperlinkConfig?.caseSensitiveText ?? false}
-                                                    onChange={(e) => {
-                                                      const currentConfig = task.specialCondition?.hyperlinkConfig ?? {};
-                                                      updateTaskSpecialCondition(pi, ti, {
-                                                        ...task.specialCondition!,
-                                                        type: 'hyperlink',
-                                                        hyperlinkConfig: {
-                                                          ...currentConfig,
-                                                          caseSensitiveText: e.target.checked,
-                                                        },
-                                                      });
-                                                    }}
-                                                    className="h-4 w-4 accent-blue-600"
-                                                  />
-                                                  Văn bản hiển thị phân biệt chữ hoa/thường
-                                                </label>
-                                              </div>
-                                            )}
-                                            {task.specialCondition?.type === 'sectionBreakBeforeText' && (
-                                              <div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
-                                                <div className="grid gap-3 md:grid-cols-2">
-                                                  <label className="text-xs font-semibold text-slate-600">
-                                                    Source file
-                                                    <input
-                                                      value={task.specialCondition.sectionBreakBeforeTextConfig?.sourceFile ?? 'word/document.xml'}
-                                                      onChange={(e) => {
-                                                        const currentConfig = task.specialCondition?.sectionBreakBeforeTextConfig ?? {};
-                                                        updateTaskSpecialCondition(pi, ti, {
-                                                          ...task.specialCondition!,
-                                                          type: 'sectionBreakBeforeText',
-                                                          sectionBreakBeforeTextConfig: {
-                                                            ...currentConfig,
-                                                            sourceFile: e.target.value,
-                                                          },
-                                                        });
-                                                      }}
-                                                      placeholder="word/document.xml"
-                                                      className={inputClass}
-                                                    />
-                                                  </label>
-                                                  <label className="text-xs font-semibold text-slate-600">
-                                                    Target text
-                                                    <input
-                                                      value={task.specialCondition.sectionBreakBeforeTextConfig?.targetText ?? ''}
-                                                      onChange={(e) => {
-                                                        const currentConfig = task.specialCondition?.sectionBreakBeforeTextConfig ?? {};
-                                                        updateTaskSpecialCondition(pi, ti, {
-                                                          ...task.specialCondition!,
-                                                          type: 'sectionBreakBeforeText',
-                                                          sectionBreakBeforeTextConfig: {
-                                                            ...currentConfig,
-                                                            targetText: e.target.value,
-                                                          },
-                                                        });
-                                                      }}
-                                                      placeholder="Affordable Pricing"
-                                                      className={inputClass}
-                                                    />
-                                                  </label>
-                                                  <label className="text-xs font-semibold text-slate-600">
-                                                    Break type
-                                                    <select
-                                                      value={task.specialCondition.sectionBreakBeforeTextConfig?.breakType ?? 'continuous'}
-                                                      onChange={(e) => {
-                                                        const currentConfig = task.specialCondition?.sectionBreakBeforeTextConfig ?? {};
-                                                        updateTaskSpecialCondition(pi, ti, {
-                                                          ...task.specialCondition!,
-                                                          type: 'sectionBreakBeforeText',
-                                                          sectionBreakBeforeTextConfig: {
-                                                            ...currentConfig,
-                                                            breakType: e.target.value,
-                                                          },
-                                                        });
-                                                      }}
-                                                      className={inputClass}
-                                                    >
-                                                      <option value="continuous">continuous</option>
-                                                      <option value="nextPage">nextPage</option>
-                                                      <option value="evenPage">evenPage</option>
-                                                      <option value="oddPage">oddPage</option>
-                                                      <option value="nextColumn">nextColumn</option>
-                                                    </select>
-                                                  </label>
-                                                  <label className="text-xs font-semibold text-slate-600">
-                                                    Tần suất xuất hiện mục tiêu
-                                                    <input
-                                                      type="number"
-                                                      min={1}
-                                                      step={1}
-                                                      value={task.specialCondition.sectionBreakBeforeTextConfig?.targetOccurrence ?? 1}
-                                                      onChange={(e) => {
-                                                        const currentConfig = task.specialCondition?.sectionBreakBeforeTextConfig ?? {};
-                                                        updateTaskSpecialCondition(pi, ti, {
-                                                          ...task.specialCondition!,
-                                                          type: 'sectionBreakBeforeText',
-                                                          sectionBreakBeforeTextConfig: {
-                                                            ...currentConfig,
-                                                            targetOccurrence: e.target.value ? Number(e.target.value) : undefined,
-                                                          },
-                                                        });
-                                                      }}
-                                                      placeholder="1"
-                                                      className={inputClass}
-                                                    />
-                                                  </label>
-                                                </div>
-                                                <div className="mt-3 grid gap-3 md:grid-cols-2">
-                                                  <label className="flex items-center gap-2 text-xs font-medium text-slate-600">
-                                                    <input
-                                                      type="checkbox"
-                                                      checked={task.specialCondition.sectionBreakBeforeTextConfig?.requireImmediateBefore ?? true}
-                                                      onChange={(e) => {
-                                                        const currentConfig = task.specialCondition?.sectionBreakBeforeTextConfig ?? {};
-                                                        updateTaskSpecialCondition(pi, ti, {
-                                                          ...task.specialCondition!,
-                                                          type: 'sectionBreakBeforeText',
-                                                          sectionBreakBeforeTextConfig: {
-                                                            ...currentConfig,
-                                                            requireImmediateBefore: e.target.checked,
-                                                          },
-                                                        });
-                                                      }}
-                                                      className="h-4 w-4 accent-blue-600"
-                                                    />
-                                                    Yêu cầu thực hiện ngay trước đó
-                                                  </label>
-                                                  <label className="flex items-center gap-2 text-xs font-medium text-slate-600">
-                                                    <input
-                                                      type="checkbox"
-                                                      checked={task.specialCondition.sectionBreakBeforeTextConfig?.allowSameParagraphSectPr ?? true}
-                                                      onChange={(e) => {
-                                                        const currentConfig = task.specialCondition?.sectionBreakBeforeTextConfig ?? {};
-                                                        updateTaskSpecialCondition(pi, ti, {
-                                                          ...task.specialCondition!,
-                                                          type: 'sectionBreakBeforeText',
-                                                          sectionBreakBeforeTextConfig: {
-                                                            ...currentConfig,
-                                                            allowSameParagraphSectPr: e.target.checked,
-                                                          },
-                                                        });
-                                                      }}
-                                                      className="h-4 w-4 accent-blue-600"
-                                                    />
-                                                    Cho phép cùng một đoạn văn/phần
-                                                  </label>
-                                                </div>
-                                              </div>
-                                            )}
-                                            {task.specialCondition?.type === 'textBoxContainsText' && (
-                                              <div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
-                                                <div className="grid gap-3 md:grid-cols-2">
-                                                  <label className="text-xs font-semibold text-slate-600">
-                                                    Source file
-                                                    <input
-                                                      value={task.specialCondition.textBoxContainsTextConfig?.sourceFile ?? 'word/document.xml'}
-                                                      onChange={(e) => {
-                                                        const currentConfig = task.specialCondition?.textBoxContainsTextConfig ?? {};
-                                                        updateTaskSpecialCondition(pi, ti, {
-                                                          ...task.specialCondition!,
-                                                          type: 'textBoxContainsText',
-                                                          textBoxContainsTextConfig: {
-                                                            ...currentConfig,
-                                                            sourceFile: e.target.value,
-                                                          },
-                                                        });
-                                                      }}
-                                                      placeholder="word/document.xml"
-                                                      className={inputClass}
-                                                    />
-                                                  </label>
-                                                  <label className="text-xs font-semibold text-slate-600">
-                                                    Match mode
-                                                    <select
-                                                      value={task.specialCondition.textBoxContainsTextConfig?.matchMode ?? 'exact'}
-                                                      onChange={(e) => {
-                                                        const currentConfig = task.specialCondition?.textBoxContainsTextConfig ?? {};
-                                                        updateTaskSpecialCondition(pi, ti, {
-                                                          ...task.specialCondition!,
-                                                          type: 'textBoxContainsText',
-                                                          textBoxContainsTextConfig: {
-                                                            ...currentConfig,
-                                                            matchMode: e.target.value as 'exact' | 'contains',
-                                                          },
-                                                        });
-                                                      }}
-                                                      className={inputClass}
-                                                    >
-                                                      <option value="exact">Dung nguyen doan</option>
-                                                      <option value="contains">Chi can chua doan nay</option>
-                                                    </select>
-                                                  </label>
-                                                  <label className="text-xs font-semibold text-slate-600 md:col-span-2">
-                                                    Expected text
-                                                    <textarea
-                                                      value={task.specialCondition.textBoxContainsTextConfig?.expectedText ?? ''}
-                                                      onChange={(e) => {
-                                                        const currentConfig = task.specialCondition?.textBoxContainsTextConfig ?? {};
-                                                        updateTaskSpecialCondition(pi, ti, {
-                                                          ...task.specialCondition!,
-                                                          type: 'textBoxContainsText',
-                                                          textBoxContainsTextConfig: {
-                                                            ...currentConfig,
-                                                            expectedText: e.target.value,
-                                                          },
-                                                        });
-                                                      }}
-                                                      placeholder="Nhap nguyen doan van bat dau bang Note:"
-                                                      rows={5}
-                                                      className={inputClass}
-                                                    />
-                                                  </label>
-                                                  <label className="text-xs font-semibold text-slate-600">
-                                                    Target occurrence
-                                                    <input
-                                                      type="number"
-                                                      min={1}
-                                                      step={1}
-                                                      value={task.specialCondition.textBoxContainsTextConfig?.targetOccurrence ?? 1}
-                                                      onChange={(e) => {
-                                                        const currentConfig = task.specialCondition?.textBoxContainsTextConfig ?? {};
-                                                        updateTaskSpecialCondition(pi, ti, {
-                                                          ...task.specialCondition!,
-                                                          type: 'textBoxContainsText',
-                                                          textBoxContainsTextConfig: {
-                                                            ...currentConfig,
-                                                            targetOccurrence: e.target.value ? Number(e.target.value) : undefined,
-                                                          },
-                                                        });
-                                                      }}
-                                                      className={inputClass}
-                                                    />
-                                                  </label>
-                                                </div>
-                                                <div className="mt-3 grid gap-3 md:grid-cols-3">
-                                                  <label className="flex items-center gap-2 text-xs font-medium text-slate-600">
-                                                    <input
-                                                      type="checkbox"
-                                                      checked={task.specialCondition.textBoxContainsTextConfig?.caseSensitive ?? false}
-                                                      onChange={(e) => {
-                                                        const currentConfig = task.specialCondition?.textBoxContainsTextConfig ?? {};
-                                                        updateTaskSpecialCondition(pi, ti, {
-                                                          ...task.specialCondition!,
-                                                          type: 'textBoxContainsText',
-                                                          textBoxContainsTextConfig: {
-                                                            ...currentConfig,
-                                                            caseSensitive: e.target.checked,
-                                                          },
-                                                        });
-                                                      }}
-                                                      className="h-4 w-4 accent-blue-600"
-                                                    />
-                                                    Phan biet hoa/thuong
-                                                  </label>
-                                                  <label className="flex items-center gap-2 text-xs font-medium text-slate-600">
-                                                    <input
-                                                      type="checkbox"
-                                                      checked={task.specialCondition.textBoxContainsTextConfig?.requireDefaultPaste ?? true}
-                                                      onChange={(e) => {
-                                                        const currentConfig = task.specialCondition?.textBoxContainsTextConfig ?? {};
-                                                        updateTaskSpecialCondition(pi, ti, {
-                                                          ...task.specialCondition!,
-                                                          type: 'textBoxContainsText',
-                                                          textBoxContainsTextConfig: {
-                                                            ...currentConfig,
-                                                            requireDefaultPaste: e.target.checked,
-                                                          },
-                                                        });
-                                                      }}
-                                                      className="h-4 w-4 accent-blue-600"
-                                                    />
-                                                    Bat paste mac dinh
-                                                  </label>
-                                                  <label className="flex items-center gap-2 text-xs font-medium text-slate-600">
-                                                    <input
-                                                      type="checkbox"
-                                                      checked={task.specialCondition.textBoxContainsTextConfig?.requireRemovedFromBody ?? true}
-                                                      onChange={(e) => {
-                                                        const currentConfig = task.specialCondition?.textBoxContainsTextConfig ?? {};
-                                                        updateTaskSpecialCondition(pi, ti, {
-                                                          ...task.specialCondition!,
-                                                          type: 'textBoxContainsText',
-                                                          textBoxContainsTextConfig: {
-                                                            ...currentConfig,
-                                                            requireRemovedFromBody: e.target.checked,
-                                                          },
-                                                        });
-                                                      }}
-                                                      className="h-4 w-4 accent-blue-600"
-                                                    />
-                                                    Khong con ngoai textbox
-                                                  </label>
-                                                </div>
-                                                <label className="mt-3 block text-xs font-semibold text-slate-600">
-                                                  Run properties cam khi bat paste mac dinh
-                                                  <textarea
-                                                    value={(task.specialCondition.textBoxContainsTextConfig?.forbiddenRunProperties ?? []).join('\n')}
-                                                    onChange={(e) => {
-                                                      const currentConfig = task.specialCondition?.textBoxContainsTextConfig ?? {};
-                                                      updateTaskSpecialCondition(pi, ti, {
-                                                        ...task.specialCondition!,
-                                                        type: 'textBoxContainsText',
-                                                        textBoxContainsTextConfig: {
-                                                          ...currentConfig,
-                                                          forbiddenRunProperties: e.target.value.split(/\r?\n/).map((line) => line.trim()).filter(Boolean),
-                                                        },
-                                                      });
-                                                    }}
-                                                    rows={5}
-                                                    placeholder={'De trong neu khong co dau hieu XML sai on dinh'}
-                                                    className={inputClass}
-                                                  />
-                                                </label>
-                                                <label className="mt-3 block text-xs font-semibold text-slate-600">
-                                                  Mau chu cam khi bat paste mac dinh
-                                                  <textarea
-                                                    value={(task.specialCondition.textBoxContainsTextConfig?.forbiddenTextColors ?? ['FFFFFF', 'background1', 'bg1', 'lt1']).join('\n')}
-                                                    onChange={(e) => {
-                                                      const currentConfig = task.specialCondition?.textBoxContainsTextConfig ?? {};
-                                                      updateTaskSpecialCondition(pi, ti, {
-                                                        ...task.specialCondition!,
-                                                        type: 'textBoxContainsText',
-                                                        textBoxContainsTextConfig: {
-                                                          ...currentConfig,
-                                                          forbiddenTextColors: e.target.value.split(/\r?\n/).map((line) => line.trim()).filter(Boolean),
-                                                        },
-                                                      });
-                                                    }}
-                                                    rows={4}
-                                                    placeholder={'FFFFFF\nbackground1\nbg1\nlt1'}
-                                                    className={inputClass}
-                                                  />
-                                                </label>
-                                              </div>
-                                            )}
-                                            {task.specialCondition?.type === 'pageMargins' && (
-                                              <div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
-                                                <div className="grid gap-3 md:grid-cols-3">
-                                                  <label className="text-xs font-semibold text-slate-600 md:col-span-3">
-                                                    Source file
-                                                    <input
-                                                      value={task.specialCondition.pageMarginsConfig?.sourceFile ?? 'word/document.xml'}
-                                                      onChange={(e) => {
-                                                        const currentConfig = task.specialCondition?.pageMarginsConfig ?? {};
-                                                        updateTaskSpecialCondition(pi, ti, {
-                                                          ...task.specialCondition!,
-                                                          type: 'pageMargins',
-                                                          pageMarginsConfig: {
-                                                            ...currentConfig,
-                                                            sourceFile: e.target.value,
-                                                          },
-                                                        });
-                                                      }}
-                                                      placeholder="word/document.xml"
-                                                      className={inputClass}
-                                                    />
-                                                  </label>
-                                                  {[
-                                                    ['top', 'Le tren'],
-                                                    ['bottom', 'Le duoi'],
-                                                    ['left', 'Le trai'],
-                                                    ['right', 'Le phai'],
-                                                    ['gutter', 'Gutter'],
-                                                  ].map(([field, label]) => (
-                                                    <MarginUnitInput
-                                                      key={field}
-                                                      label={label}
-                                                      value={(task.specialCondition?.pageMarginsConfig as Record<string, number | undefined> | undefined)?.[field]}
-                                                      placeholder={field === 'top' || field === 'bottom' ? '1 in hoặc 2.54 cm' : field === 'left' || field === 'right' ? '1.5 in hoặc 3.81 cm' : '0'}
-                                                      inputClass={inputClass}
-                                                      onCommit={(twips) => {
-                                                        const currentConfig = task.specialCondition?.pageMarginsConfig ?? {};
-                                                        updateTaskSpecialCondition(pi, ti, {
-                                                          ...task.specialCondition!,
-                                                          type: 'pageMargins',
-                                                          pageMarginsConfig: {
-                                                            ...currentConfig,
-                                                            [field]: twips,
-                                                          },
-                                                        });
-                                                      }}
-                                                    />
-                                                  ))}
-                                                </div>
-                                                <p className="mt-2 text-xs text-slate-500">
-                                                  Nhap so mac dinh la inch. Vi du: 1, 1 in, 1.5 in, 2.54 cm, 3.81 cm.
-                                                </p>
-                                                <label className="mt-3 flex items-center gap-2 text-xs font-medium text-slate-600">
-                                                  <input
-                                                    type="checkbox"
-                                                    checked={task.specialCondition.pageMarginsConfig?.requireAllSections ?? true}
-                                                    onChange={(e) => {
-                                                      const currentConfig = task.specialCondition?.pageMarginsConfig ?? {};
-                                                      updateTaskSpecialCondition(pi, ti, {
-                                                        ...task.specialCondition!,
-                                                        type: 'pageMargins',
-                                                        pageMarginsConfig: {
-                                                          ...currentConfig,
-                                                          requireAllSections: e.target.checked,
-                                                        },
-                                                      });
-                                                    }}
-                                                    className="h-4 w-4 accent-blue-600"
-                                                  />
-                                                  Ap dung cho tat ca section
-                                                </label>
-                                              </div>
-                                            )}
-                                            {task.specialCondition?.type === 'pageBorder' && (
-                                              <div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
-                                                <div className="grid gap-3 md:grid-cols-2">
-                                                  <label className="text-xs font-semibold text-slate-600 md:col-span-2">
-                                                    Source file
-                                                    <input
-                                                      value={task.specialCondition.pageBorderConfig?.sourceFile ?? 'word/document.xml'}
-                                                      onChange={(e) => {
-                                                        const currentConfig = task.specialCondition?.pageBorderConfig ?? {};
-                                                        updateTaskSpecialCondition(pi, ti, {
-                                                          ...task.specialCondition!,
-                                                          type: 'pageBorder',
-                                                          pageBorderConfig: {
-                                                            ...currentConfig,
-                                                            sourceFile: e.target.value,
-                                                          },
-                                                        });
-                                                      }}
-                                                      placeholder="word/document.xml"
-                                                      className={inputClass}
-                                                    />
-                                                  </label>
-                                                  <label className="text-xs font-semibold text-slate-600">
-                                                    Kieu duong vien
-                                                    <select
-                                                      value={task.specialCondition.pageBorderConfig?.requiredStyle ?? 'single'}
-                                                      onChange={(e) => {
-                                                        const currentConfig = task.specialCondition?.pageBorderConfig ?? {};
-                                                        updateTaskSpecialCondition(pi, ti, {
-                                                          ...task.specialCondition!,
-                                                          type: 'pageBorder',
-                                                          pageBorderConfig: {
-                                                            ...currentConfig,
-                                                            requiredStyle: e.target.value,
-                                                          },
-                                                        });
-                                                      }}
-                                                      className={inputClass}
-                                                    >
-                                                      <option value="single">Duong lien</option>
-                                                      <option value="double">Duong doi</option>
-                                                      <option value="dotted">Cham tron</option>
-                                                      <option value="dashed">Net dut</option>
-                                                      <option value="dashSmallGap">Net dut ngan</option>
-                                                    </select>
-                                                  </label>
-                                                  <PageBorderWidthInput
-                                                    value={task.specialCondition.pageBorderConfig?.requiredWidth ?? 12}
-                                                    inputClass={inputClass}
-                                                    onCommit={(width) => {
-                                                      const currentConfig = task.specialCondition?.pageBorderConfig ?? {};
-                                                      updateTaskSpecialCondition(pi, ti, {
-                                                        ...task.specialCondition!,
-                                                        type: 'pageBorder',
-                                                        pageBorderConfig: {
-                                                          ...currentConfig,
-                                                          requiredWidth: width,
-                                                        },
-                                                      });
-                                                    }}
-                                                  />
-                                                  <label className="text-xs font-semibold text-slate-600">
-                                                    Mau vien
-                                                    <select
-                                                      value={selectedPageBorderColorPreset(task.specialCondition.pageBorderConfig)}
-                                                      onChange={(e) => {
-                                                        const currentConfig = task.specialCondition?.pageBorderConfig ?? {};
-                                                        const preset = pageBorderColorPresets.find((item) => item.requiredColor === e.target.value);
-                                                        updateTaskSpecialCondition(pi, ti, {
-                                                          ...task.specialCondition!,
-                                                          type: 'pageBorder',
-                                                          pageBorderConfig: {
-                                                            ...currentConfig,
-                                                            requiredColor: preset?.requiredColor ?? currentConfig.requiredColor,
-                                                            allowedColors: preset?.allowedColors ?? currentConfig.allowedColors,
-                                                          },
-                                                        });
-                                                      }}
-                                                      className={inputClass}
-                                                    >
-                                                      {pageBorderColorPresets.map((preset) => (
-                                                        <option key={preset.requiredColor} value={preset.requiredColor}>
-                                                          {preset.label}
-                                                        </option>
-                                                      ))}
-                                                      <option value="custom">Tuy chinh</option>
-                                                    </select>
-                                                  </label>
-                                                  <label className="text-xs font-semibold text-slate-600">
-                                                    Ma mau tuy chinh
-                                                    <input
-                                                      value={task.specialCondition.pageBorderConfig?.requiredColor ?? ''}
-                                                      onChange={(e) => {
-                                                        const currentConfig = task.specialCondition?.pageBorderConfig ?? {};
-                                                        updateTaskSpecialCondition(pi, ti, {
-                                                          ...task.specialCondition!,
-                                                          type: 'pageBorder',
-                                                          pageBorderConfig: {
-                                                            ...currentConfig,
-                                                            requiredColor: e.target.value,
-                                                          },
-                                                        });
-                                                      }}
-                                                      placeholder="00B0F0 hoac Light Blue"
-                                                      className={inputClass}
-                                                    />
-                                                  </label>
-                                                  <label className="text-xs font-semibold text-slate-600 md:col-span-2">
-                                                    Mau chap nhan them
-                                                    <textarea
-                                                      value={(task.specialCondition.pageBorderConfig?.allowedColors ?? []).join('\n')}
-                                                      onChange={(e) => {
-                                                        const currentConfig = task.specialCondition?.pageBorderConfig ?? {};
-                                                        updateTaskSpecialCondition(pi, ti, {
-                                                          ...task.specialCondition!,
-                                                          type: 'pageBorder',
-                                                          pageBorderConfig: {
-                                                            ...currentConfig,
-                                                            allowedColors: e.target.value.split(/\r?\n/).map((line) => line.trim()).filter(Boolean),
-                                                          },
-                                                        });
-                                                      }}
-                                                      rows={4}
-                                                      placeholder={'00B0F0\n5B9BD5\n4F81BD\naccent1'}
-                                                      className={inputClass}
-                                                    />
-                                                  </label>
-                                                </div>
-                                                <div className="mt-3 flex flex-wrap gap-4">
-                                                  <label className="flex items-center gap-2 text-xs font-medium text-slate-600">
-                                                    <input
-                                                      type="checkbox"
-                                                      checked={task.specialCondition.pageBorderConfig?.requireBox ?? true}
-                                                      onChange={(e) => {
-                                                        const currentConfig = task.specialCondition?.pageBorderConfig ?? {};
-                                                        updateTaskSpecialCondition(pi, ti, {
-                                                          ...task.specialCondition!,
-                                                          type: 'pageBorder',
-                                                          pageBorderConfig: {
-                                                            ...currentConfig,
-                                                            requireBox: e.target.checked,
-                                                          },
-                                                        });
-                                                      }}
-                                                      className="h-4 w-4 accent-blue-600"
-                                                    />
-                                                    Bat buoc du 4 canh Box
-                                                  </label>
-                                                  <label className="flex items-center gap-2 text-xs font-medium text-slate-600">
-                                                    <input
-                                                      type="checkbox"
-                                                      checked={task.specialCondition.pageBorderConfig?.requireAllSections ?? true}
-                                                      onChange={(e) => {
-                                                        const currentConfig = task.specialCondition?.pageBorderConfig ?? {};
-                                                        updateTaskSpecialCondition(pi, ti, {
-                                                          ...task.specialCondition!,
-                                                          type: 'pageBorder',
-                                                          pageBorderConfig: {
-                                                            ...currentConfig,
-                                                            requireAllSections: e.target.checked,
-                                                          },
-                                                        });
-                                                      }}
-                                                      className="h-4 w-4 accent-blue-600"
-                                                    />
-                                                    Ap dung cho tat ca section
-                                                  </label>
-                                                </div>
-                                                <p className="mt-2 text-xs text-slate-500">
-                                                  Trong OpenXML, do day page border luu theo 1/8 pt: 1.5 pt = 12.
-                                                </p>
-                                              </div>
-                                            )}
-                                            {task.specialCondition?.type === 'documentStyleSet' && (
-                                              <div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
-                                                <div className="grid gap-3 md:grid-cols-2">
-                                                  <label className="text-xs font-semibold text-slate-600">
-                                                    Source file
-                                                    <input
-                                                      value={task.specialCondition.documentStyleSetConfig?.sourceFile ?? 'word/styles.xml'}
-                                                      onChange={(e) => {
-                                                        const currentConfig = task.specialCondition?.documentStyleSetConfig ?? {};
-                                                        updateTaskSpecialCondition(pi, ti, {
-                                                          ...task.specialCondition!,
-                                                          type: 'documentStyleSet',
-                                                          documentStyleSetConfig: {
-                                                            ...currentConfig,
-                                                            sourceFile: e.target.value,
-                                                          },
-                                                        });
-                                                      }}
-                                                      placeholder="word/styles.xml"
-                                                      className={inputClass}
-                                                    />
-                                                  </label>
-                                                  <label className="text-xs font-semibold text-slate-600">
-                                                    Style set name
-                                                    <input
-                                                      value={task.specialCondition.documentStyleSetConfig?.styleSetName ?? ''}
-                                                      onChange={(e) => {
-                                                        const currentConfig = task.specialCondition?.documentStyleSetConfig ?? {};
-                                                        updateTaskSpecialCondition(pi, ti, {
-                                                          ...task.specialCondition!,
-                                                          type: 'documentStyleSet',
-                                                          documentStyleSetConfig: {
-                                                            ...currentConfig,
-                                                            styleSetName: e.target.value,
-                                                          },
-                                                        });
-                                                      }}
-                                                      placeholder="Lines (Simple)"
-                                                      className={inputClass}
-                                                    />
-                                                  </label>
-                                                  <label className="text-xs font-semibold text-slate-600">
-                                                    Match policy
-                                                    <select
-                                                      value={task.specialCondition.documentStyleSetConfig?.matchPolicy ?? 'all'}
-                                                      onChange={(e) => {
-                                                        const currentConfig = task.specialCondition?.documentStyleSetConfig ?? {};
-                                                        updateTaskSpecialCondition(pi, ti, {
-                                                          ...task.specialCondition!,
-                                                          type: 'documentStyleSet',
-                                                          documentStyleSetConfig: {
-                                                            ...currentConfig,
-                                                            matchPolicy: e.target.value as XmlMatchPolicy,
-                                                          },
-                                                        });
-                                                      }}
-                                                      className={inputClass}
-                                                    >
-                                                      <option value="all">Tat ca fragment</option>
-                                                      <option value="any">Bat ky fragment nao</option>
-                                                    </select>
-                                                  </label>
-                                                  <label className="text-xs font-semibold text-slate-600">
-                                                    Ignore attributes
-                                                    <textarea
-                                                      value={(task.specialCondition.documentStyleSetConfig?.ignoreAttributes ?? []).join('\n')}
-                                                      onChange={(e) => {
-                                                        const currentConfig = task.specialCondition?.documentStyleSetConfig ?? {};
-                                                        updateTaskSpecialCondition(pi, ti, {
-                                                          ...task.specialCondition!,
-                                                          type: 'documentStyleSet',
-                                                          documentStyleSetConfig: {
-                                                            ...currentConfig,
-                                                            ignoreAttributes: e.target.value.split(/\r?\n/).map((line) => line.trim()).filter(Boolean),
-                                                          },
-                                                        });
-                                                      }}
-                                                      rows={3}
-                                                      placeholder={'rsid*\nid'}
-                                                      className={inputClass}
-                                                    />
-                                                  </label>
-                                                  <label className="text-xs font-semibold text-slate-600 md:col-span-2">
-                                                    Expected fragments
-                                                    <textarea
-                                                      value={(task.specialCondition.documentStyleSetConfig?.expectedFragments ?? []).join('\n---FRAGMENT---\n')}
-                                                      onChange={(e) => {
-                                                        const currentConfig = task.specialCondition?.documentStyleSetConfig ?? {};
-                                                        updateTaskSpecialCondition(pi, ti, {
-                                                          ...task.specialCondition!,
-                                                          type: 'documentStyleSet',
-                                                          documentStyleSetConfig: {
-                                                            ...currentConfig,
-                                                            expectedFragments: e.target.value.split(/\n---FRAGMENT---\n/).map((fragment) => fragment.trim()).filter(Boolean),
-                                                          },
-                                                        });
-                                                      }}
-                                                      rows={8}
-                                                      placeholder="Dan cac doan XML on dinh trong word/styles.xml cua file dap an Lines (Simple). Tach nhieu fragment bang dong ---FRAGMENT---"
-                                                      className={inputClass}
-                                                    />
-                                                  </label>
-                                                </div>
-                                              </div>
-                                            )}
-                                            {task.specialCondition?.type === 'pictureStyle' && (
-                                              <PictureStyleEditor
-                                                config={task.specialCondition.pictureStyleConfig}
-                                                getAccessToken={getAccessToken}
-                                                onChange={(pictureStyleConfig: PictureStyleConfig) => {
-                                                  updateTaskSpecialCondition(pi, ti, {
-                                                    ...task.specialCondition!,
-                                                    type: 'pictureStyle',
-                                                    pictureStyleConfig,
-                                                  });
-                                                }}
-                                              />
-                                            )}
-                                            {task.specialCondition?.type?.startsWith('excel') && (
-                                              <div className="mt-4 rounded-2xl border border-emerald-100 bg-emerald-50/40 p-4">
-                                                {task.specialCondition.type === 'excelTableName' && (
-                                                  <div className="grid gap-3 md:grid-cols-2">
-                                                    <label className="text-xs font-semibold text-slate-600">
-                                                      Worksheet name
-                                                      <input
-                                                        value={task.specialCondition.excelTableNameConfig?.worksheetName ?? ''}
-                                                        onChange={(e) => {
-                                                          const currentConfig = task.specialCondition?.excelTableNameConfig ?? {};
-                                                          updateTaskSpecialCondition(pi, ti, {
-                                                            ...task.specialCondition!,
-                                                            type: 'excelTableName',
-                                                            excelTableNameConfig: { ...currentConfig, worksheetName: e.target.value },
-                                                          });
-                                                        }}
-                                                        placeholder="Rental Rates"
-                                                        className={inputClass}
-                                                      />
-                                                    </label>
-                                                    <label className="text-xs font-semibold text-slate-600">
-                                                      Source file
-                                                      <input
-                                                        value={task.specialCondition.excelTableNameConfig?.sourceFile ?? ''}
-                                                        onChange={(e) => {
-                                                          const currentConfig = task.specialCondition?.excelTableNameConfig ?? {};
-                                                          updateTaskSpecialCondition(pi, ti, {
-                                                            ...task.specialCondition!,
-                                                            type: 'excelTableName',
-                                                            excelTableNameConfig: { ...currentConfig, sourceFile: e.target.value },
-                                                          });
-                                                        }}
-                                                        placeholder="xl/tables/table1.xml"
-                                                        className={inputClass}
-                                                      />
-                                                    </label>
-                                                    <label className="text-xs font-semibold text-slate-600">
-                                                      Expected name
-                                                      <input
-                                                        value={task.specialCondition.excelTableNameConfig?.expectedName ?? ''}
-                                                        onChange={(e) => {
-                                                          const currentConfig = task.specialCondition?.excelTableNameConfig ?? {};
-                                                          updateTaskSpecialCondition(pi, ti, {
-                                                            ...task.specialCondition!,
-                                                            type: 'excelTableName',
-                                                            excelTableNameConfig: { ...currentConfig, expectedName: e.target.value },
-                                                          });
-                                                        }}
-                                                        placeholder="Rates"
-                                                        className={inputClass}
-                                                      />
-                                                    </label>
-                                                    <label className="text-xs font-semibold text-slate-600">
-                                                      Original name
-                                                      <input
-                                                        value={task.specialCondition.excelTableNameConfig?.originalName ?? ''}
-                                                        onChange={(e) => {
-                                                          const currentConfig = task.specialCondition?.excelTableNameConfig ?? {};
-                                                          updateTaskSpecialCondition(pi, ti, {
-                                                            ...task.specialCondition!,
-                                                            type: 'excelTableName',
-                                                            excelTableNameConfig: { ...currentConfig, originalName: e.target.value },
-                                                          });
-                                                        }}
-                                                        placeholder="Table1"
-                                                        className={inputClass}
-                                                      />
-                                                    </label>
-                                                    <label className="flex items-center gap-2 text-xs font-medium text-slate-600">
-                                                      <input
-                                                        type="checkbox"
-                                                        checked={task.specialCondition.excelTableNameConfig?.requireOriginalNameAbsent ?? true}
-                                                        onChange={(e) => {
-                                                          const currentConfig = task.specialCondition?.excelTableNameConfig ?? {};
-                                                          updateTaskSpecialCondition(pi, ti, {
-                                                            ...task.specialCondition!,
-                                                            type: 'excelTableName',
-                                                            excelTableNameConfig: { ...currentConfig, requireOriginalNameAbsent: e.target.checked },
-                                                          });
-                                                        }}
-                                                      />
-                                                      Require original name absent
-                                                    </label>
-                                                  </div>
-                                                )}
+																								{task.specialCondition.type ===
+																									"excelWorksheetPageSetup" && (
+																									<div className="grid gap-3 md:grid-cols-3">
+																										<label className="text-xs font-semibold text-slate-600">
+																											Worksheet name
+																											<input
+																												value={
+																													task.specialCondition
+																														.excelWorksheetPageSetupConfig
+																														?.worksheetName ??
+																													""
+																												}
+																												onChange={(e) => {
+																													const currentConfig =
+																														task
+																															.specialCondition
+																															?.excelWorksheetPageSetupConfig ??
+																														{};
+																													updateTaskSpecialCondition(
+																														pi,
+																														ti,
+																														{
+																															...task.specialCondition!,
+																															type: "excelWorksheetPageSetup",
+																															excelWorksheetPageSetupConfig:
+																																{
+																																	...currentConfig,
+																																	worksheetName:
+																																		e.target
+																																			.value,
+																																},
+																														},
+																													);
+																												}}
+																												placeholder="Rental Rates"
+																												className={inputClass}
+																											/>
+																										</label>
+																										<label className="text-xs font-semibold text-slate-600">
+																											Source file
+																											<input
+																												value={
+																													task.specialCondition
+																														.excelWorksheetPageSetupConfig
+																														?.sourceFile ?? ""
+																												}
+																												onChange={(e) => {
+																													const currentConfig =
+																														task
+																															.specialCondition
+																															?.excelWorksheetPageSetupConfig ??
+																														{};
+																													updateTaskSpecialCondition(
+																														pi,
+																														ti,
+																														{
+																															...task.specialCondition!,
+																															type: "excelWorksheetPageSetup",
+																															excelWorksheetPageSetupConfig:
+																																{
+																																	...currentConfig,
+																																	sourceFile:
+																																		e.target
+																																			.value,
+																																},
+																														},
+																													);
+																												}}
+																												placeholder="xl/worksheets/sheet1.xml"
+																												className={inputClass}
+																											/>
+																										</label>
+																										<label className="text-xs font-semibold text-slate-600">
+																											Orientation
+																											<select
+																												value={
+																													task.specialCondition
+																														.excelWorksheetPageSetupConfig
+																														?.orientation ??
+																													"landscape"
+																												}
+																												onChange={(e) => {
+																													const currentConfig =
+																														task
+																															.specialCondition
+																															?.excelWorksheetPageSetupConfig ??
+																														{};
+																													updateTaskSpecialCondition(
+																														pi,
+																														ti,
+																														{
+																															...task.specialCondition!,
+																															type: "excelWorksheetPageSetup",
+																															excelWorksheetPageSetupConfig:
+																																{
+																																	...currentConfig,
+																																	orientation: e
+																																		.target
+																																		.value as
+																																		| "portrait"
+																																		| "landscape",
+																																},
+																														},
+																													);
+																												}}
+																												className={inputClass}
+																											>
+																												<option value="landscape">
+																													Landscape
+																												</option>
+																												<option value="portrait">
+																													Portrait
+																												</option>
+																											</select>
+																										</label>
+																									</div>
+																								)}
 
-                                                {task.specialCondition.type === 'excelWorksheetPageSetup' && (
-                                                  <div className="grid gap-3 md:grid-cols-3">
-                                                    <label className="text-xs font-semibold text-slate-600">
-                                                      Worksheet name
-                                                      <input
-                                                        value={task.specialCondition.excelWorksheetPageSetupConfig?.worksheetName ?? ''}
-                                                        onChange={(e) => {
-                                                          const currentConfig = task.specialCondition?.excelWorksheetPageSetupConfig ?? {};
-                                                          updateTaskSpecialCondition(pi, ti, {
-                                                            ...task.specialCondition!,
-                                                            type: 'excelWorksheetPageSetup',
-                                                            excelWorksheetPageSetupConfig: { ...currentConfig, worksheetName: e.target.value },
-                                                          });
-                                                        }}
-                                                        placeholder="Rental Rates"
-                                                        className={inputClass}
-                                                      />
-                                                    </label>
-                                                    <label className="text-xs font-semibold text-slate-600">
-                                                      Source file
-                                                      <input
-                                                        value={task.specialCondition.excelWorksheetPageSetupConfig?.sourceFile ?? ''}
-                                                        onChange={(e) => {
-                                                          const currentConfig = task.specialCondition?.excelWorksheetPageSetupConfig ?? {};
-                                                          updateTaskSpecialCondition(pi, ti, {
-                                                            ...task.specialCondition!,
-                                                            type: 'excelWorksheetPageSetup',
-                                                            excelWorksheetPageSetupConfig: { ...currentConfig, sourceFile: e.target.value },
-                                                          });
-                                                        }}
-                                                        placeholder="xl/worksheets/sheet1.xml"
-                                                        className={inputClass}
-                                                      />
-                                                    </label>
-                                                    <label className="text-xs font-semibold text-slate-600">
-                                                      Orientation
-                                                      <select
-                                                        value={task.specialCondition.excelWorksheetPageSetupConfig?.orientation ?? 'landscape'}
-                                                        onChange={(e) => {
-                                                          const currentConfig = task.specialCondition?.excelWorksheetPageSetupConfig ?? {};
-                                                          updateTaskSpecialCondition(pi, ti, {
-                                                            ...task.specialCondition!,
-                                                            type: 'excelWorksheetPageSetup',
-                                                            excelWorksheetPageSetupConfig: {
-                                                              ...currentConfig,
-                                                              orientation: e.target.value as 'portrait' | 'landscape',
-                                                            },
-                                                          });
-                                                        }}
-                                                        className={inputClass}
-                                                      >
-                                                        <option value="landscape">Landscape</option>
-                                                        <option value="portrait">Portrait</option>
-                                                      </select>
-                                                    </label>
-                                                  </div>
-                                                )}
+																								{task.specialCondition.type ===
+																									"excelClearCellFormatting" && (
+																									<div className="grid gap-3 md:grid-cols-4">
+																										<label className="text-xs font-semibold text-slate-600">
+																											Worksheet name
+																											<input
+																												value={
+																													task.specialCondition
+																														.excelClearCellFormattingConfig
+																														?.worksheetName ??
+																													""
+																												}
+																												onChange={(e) => {
+																													const currentConfig =
+																														task
+																															.specialCondition
+																															?.excelClearCellFormattingConfig ??
+																														{};
+																													updateTaskSpecialCondition(
+																														pi,
+																														ti,
+																														{
+																															...task.specialCondition!,
+																															type: "excelClearCellFormatting",
+																															excelClearCellFormattingConfig:
+																																{
+																																	...currentConfig,
+																																	worksheetName:
+																																		e.target
+																																			.value,
+																																},
+																														},
+																													);
+																												}}
+																												placeholder="Rental Rates"
+																												className={inputClass}
+																											/>
+																										</label>
+																										<label className="text-xs font-semibold text-slate-600">
+																											Source file
+																											<input
+																												value={
+																													task.specialCondition
+																														.excelClearCellFormattingConfig
+																														?.sourceFile ?? ""
+																												}
+																												onChange={(e) => {
+																													const currentConfig =
+																														task
+																															.specialCondition
+																															?.excelClearCellFormattingConfig ??
+																														{};
+																													updateTaskSpecialCondition(
+																														pi,
+																														ti,
+																														{
+																															...task.specialCondition!,
+																															type: "excelClearCellFormatting",
+																															excelClearCellFormattingConfig:
+																																{
+																																	...currentConfig,
+																																	sourceFile:
+																																		e.target
+																																			.value,
+																																},
+																														},
+																													);
+																												}}
+																												placeholder="xl/worksheets/sheet1.xml"
+																												className={inputClass}
+																											/>
+																										</label>
+																										<label className="text-xs font-semibold text-slate-600">
+																											Range
+																											<input
+																												value={
+																													task.specialCondition
+																														.excelClearCellFormattingConfig
+																														?.range ?? ""
+																												}
+																												onChange={(e) => {
+																													const currentConfig =
+																														task
+																															.specialCondition
+																															?.excelClearCellFormattingConfig ??
+																														{};
+																													updateTaskSpecialCondition(
+																														pi,
+																														ti,
+																														{
+																															...task.specialCondition!,
+																															type: "excelClearCellFormatting",
+																															excelClearCellFormattingConfig:
+																																{
+																																	...currentConfig,
+																																	range:
+																																		e.target
+																																			.value,
+																																},
+																														},
+																													);
+																												}}
+																												placeholder="A4:D4"
+																												className={inputClass}
+																											/>
+																										</label>
+																										<label className="text-xs font-semibold text-slate-600">
+																											Default style id
+																											<input
+																												type="number"
+																												min={0}
+																												value={
+																													task.specialCondition
+																														.excelClearCellFormattingConfig
+																														?.defaultStyleId ??
+																													0
+																												}
+																												onChange={(e) => {
+																													const currentConfig =
+																														task
+																															.specialCondition
+																															?.excelClearCellFormattingConfig ??
+																														{};
+																													updateTaskSpecialCondition(
+																														pi,
+																														ti,
+																														{
+																															...task.specialCondition!,
+																															type: "excelClearCellFormatting",
+																															excelClearCellFormattingConfig:
+																																{
+																																	...currentConfig,
+																																	defaultStyleId:
+																																		Number(
+																																			e.target
+																																				.value,
+																																		),
+																																},
+																														},
+																													);
+																												}}
+																												className={inputClass}
+																											/>
+																										</label>
+																									</div>
+																								)}
 
-                                                {task.specialCondition.type === 'excelClearCellFormatting' && (
-                                                  <div className="grid gap-3 md:grid-cols-4">
-                                                    <label className="text-xs font-semibold text-slate-600">
-                                                      Worksheet name
-                                                      <input
-                                                        value={task.specialCondition.excelClearCellFormattingConfig?.worksheetName ?? ''}
-                                                        onChange={(e) => {
-                                                          const currentConfig = task.specialCondition?.excelClearCellFormattingConfig ?? {};
-                                                          updateTaskSpecialCondition(pi, ti, {
-                                                            ...task.specialCondition!,
-                                                            type: 'excelClearCellFormatting',
-                                                            excelClearCellFormattingConfig: { ...currentConfig, worksheetName: e.target.value },
-                                                          });
-                                                        }}
-                                                        placeholder="Rental Rates"
-                                                        className={inputClass}
-                                                      />
-                                                    </label>
-                                                    <label className="text-xs font-semibold text-slate-600">
-                                                      Source file
-                                                      <input
-                                                        value={task.specialCondition.excelClearCellFormattingConfig?.sourceFile ?? ''}
-                                                        onChange={(e) => {
-                                                          const currentConfig = task.specialCondition?.excelClearCellFormattingConfig ?? {};
-                                                          updateTaskSpecialCondition(pi, ti, {
-                                                            ...task.specialCondition!,
-                                                            type: 'excelClearCellFormatting',
-                                                            excelClearCellFormattingConfig: { ...currentConfig, sourceFile: e.target.value },
-                                                          });
-                                                        }}
-                                                        placeholder="xl/worksheets/sheet1.xml"
-                                                        className={inputClass}
-                                                      />
-                                                    </label>
-                                                    <label className="text-xs font-semibold text-slate-600">
-                                                      Range
-                                                      <input
-                                                        value={task.specialCondition.excelClearCellFormattingConfig?.range ?? ''}
-                                                        onChange={(e) => {
-                                                          const currentConfig = task.specialCondition?.excelClearCellFormattingConfig ?? {};
-                                                          updateTaskSpecialCondition(pi, ti, {
-                                                            ...task.specialCondition!,
-                                                            type: 'excelClearCellFormatting',
-                                                            excelClearCellFormattingConfig: { ...currentConfig, range: e.target.value },
-                                                          });
-                                                        }}
-                                                        placeholder="A4:D4"
-                                                        className={inputClass}
-                                                      />
-                                                    </label>
-                                                    <label className="text-xs font-semibold text-slate-600">
-                                                      Default style id
-                                                      <input
-                                                        type="number"
-                                                        min={0}
-                                                        value={task.specialCondition.excelClearCellFormattingConfig?.defaultStyleId ?? 0}
-                                                        onChange={(e) => {
-                                                          const currentConfig = task.specialCondition?.excelClearCellFormattingConfig ?? {};
-                                                          updateTaskSpecialCondition(pi, ti, {
-                                                            ...task.specialCondition!,
-                                                            type: 'excelClearCellFormatting',
-                                                            excelClearCellFormattingConfig: { ...currentConfig, defaultStyleId: Number(e.target.value) },
-                                                          });
-                                                        }}
-                                                        className={inputClass}
-                                                      />
-                                                    </label>
-                                                  </div>
-                                                )}
+																								{task.specialCondition.type ===
+																									"excelDataModelImport" && (
+																									<div className="grid gap-3 md:grid-cols-2">
+																										<label className="text-xs font-semibold text-slate-600">
+																											Source file name
+																											<input
+																												value={
+																													task.specialCondition
+																														.excelDataModelImportConfig
+																														?.sourceFileName ??
+																													""
+																												}
+																												onChange={(e) => {
+																													const currentConfig =
+																														task
+																															.specialCondition
+																															?.excelDataModelImportConfig ??
+																														{};
+																													updateTaskSpecialCondition(
+																														pi,
+																														ti,
+																														{
+																															...task.specialCondition!,
+																															type: "excelDataModelImport",
+																															excelDataModelImportConfig:
+																																{
+																																	...currentConfig,
+																																	sourceFileName:
+																																		e.target
+																																			.value,
+																																},
+																														},
+																													);
+																												}}
+																												placeholder="Accessories.csv"
+																												className={inputClass}
+																											/>
+																										</label>
+																										<label className="text-xs font-semibold text-slate-600">
+																											Expected worksheet name
+																											<input
+																												value={
+																													task.specialCondition
+																														.excelDataModelImportConfig
+																														?.expectedWorksheetName ??
+																													""
+																												}
+																												onChange={(e) => {
+																													const currentConfig =
+																														task
+																															.specialCondition
+																															?.excelDataModelImportConfig ??
+																														{};
+																													updateTaskSpecialCondition(
+																														pi,
+																														ti,
+																														{
+																															...task.specialCondition!,
+																															type: "excelDataModelImport",
+																															excelDataModelImportConfig:
+																																{
+																																	...currentConfig,
+																																	expectedWorksheetName:
+																																		e.target
+																																			.value,
+																																},
+																														},
+																													);
+																												}}
+																												placeholder="Accessories"
+																												className={inputClass}
+																											/>
+																										</label>
+																										<label className="text-xs font-semibold text-slate-600">
+																											Expected connection name
+																											<input
+																												value={
+																													task.specialCondition
+																														.excelDataModelImportConfig
+																														?.expectedConnectionName ??
+																													""
+																												}
+																												onChange={(e) => {
+																													const currentConfig =
+																														task
+																															.specialCondition
+																															?.excelDataModelImportConfig ??
+																														{};
+																													updateTaskSpecialCondition(
+																														pi,
+																														ti,
+																														{
+																															...task.specialCondition!,
+																															type: "excelDataModelImport",
+																															excelDataModelImportConfig:
+																																{
+																																	...currentConfig,
+																																	expectedConnectionName:
+																																		e.target
+																																			.value,
+																																},
+																														},
+																													);
+																												}}
+																												placeholder="Accessories"
+																												className={inputClass}
+																											/>
+																										</label>
+																										<label className="flex items-center gap-2 text-xs font-medium text-slate-600">
+																											<input
+																												type="checkbox"
+																												checked={
+																													task.specialCondition
+																														.excelDataModelImportConfig
+																														?.requireConnection ??
+																													true
+																												}
+																												onChange={(e) => {
+																													const currentConfig =
+																														task
+																															.specialCondition
+																															?.excelDataModelImportConfig ??
+																														{};
+																													updateTaskSpecialCondition(
+																														pi,
+																														ti,
+																														{
+																															...task.specialCondition!,
+																															type: "excelDataModelImport",
+																															excelDataModelImportConfig:
+																																{
+																																	...currentConfig,
+																																	requireConnection:
+																																		e.target
+																																			.checked,
+																																},
+																														},
+																													);
+																												}}
+																											/>
+																											Require connection
+																										</label>
+																										<label className="flex items-center gap-2 text-xs font-medium text-slate-600">
+																											<input
+																												type="checkbox"
+																												checked={
+																													task.specialCondition
+																														.excelDataModelImportConfig
+																														?.requireImportedWorksheet ??
+																													true
+																												}
+																												onChange={(e) => {
+																													const currentConfig =
+																														task
+																															.specialCondition
+																															?.excelDataModelImportConfig ??
+																														{};
+																													updateTaskSpecialCondition(
+																														pi,
+																														ti,
+																														{
+																															...task.specialCondition!,
+																															type: "excelDataModelImport",
+																															excelDataModelImportConfig:
+																																{
+																																	...currentConfig,
+																																	requireImportedWorksheet:
+																																		e.target
+																																			.checked,
+																																},
+																														},
+																													);
+																												}}
+																											/>
+																											Require imported worksheet
+																										</label>
+																										<label className="flex items-center gap-2 text-xs font-medium text-slate-600">
+																											<input
+																												type="checkbox"
+																												checked={
+																													task.specialCondition
+																														.excelDataModelImportConfig
+																														?.requireQueryTable ??
+																													true
+																												}
+																												onChange={(e) => {
+																													const currentConfig =
+																														task
+																															.specialCondition
+																															?.excelDataModelImportConfig ??
+																														{};
+																													updateTaskSpecialCondition(
+																														pi,
+																														ti,
+																														{
+																															...task.specialCondition!,
+																															type: "excelDataModelImport",
+																															excelDataModelImportConfig:
+																																{
+																																	...currentConfig,
+																																	requireQueryTable:
+																																		e.target
+																																			.checked,
+																																},
+																														},
+																													);
+																												}}
+																											/>
+																											Require query table
+																										</label>
+																										<label className="flex items-center gap-2 text-xs font-medium text-slate-600">
+																											<input
+																												type="checkbox"
+																												checked={
+																													task.specialCondition
+																														.excelDataModelImportConfig
+																														?.requireDataModel ??
+																													true
+																												}
+																												onChange={(e) => {
+																													const currentConfig =
+																														task
+																															.specialCondition
+																															?.excelDataModelImportConfig ??
+																														{};
+																													updateTaskSpecialCondition(
+																														pi,
+																														ti,
+																														{
+																															...task.specialCondition!,
+																															type: "excelDataModelImport",
+																															excelDataModelImportConfig:
+																																{
+																																	...currentConfig,
+																																	requireDataModel:
+																																		e.target
+																																			.checked,
+																																},
+																														},
+																													);
+																												}}
+																											/>
+																											Require Data Model
+																										</label>
+																									</div>
+																								)}
 
-                                                {task.specialCondition.type === 'excelDataModelImport' && (
-                                                  <div className="grid gap-3 md:grid-cols-2">
-                                                    <label className="text-xs font-semibold text-slate-600">
-                                                      Source file name
-                                                      <input
-                                                        value={task.specialCondition.excelDataModelImportConfig?.sourceFileName ?? ''}
-                                                        onChange={(e) => {
-                                                          const currentConfig = task.specialCondition?.excelDataModelImportConfig ?? {};
-                                                          updateTaskSpecialCondition(pi, ti, {
-                                                            ...task.specialCondition!,
-                                                            type: 'excelDataModelImport',
-                                                            excelDataModelImportConfig: { ...currentConfig, sourceFileName: e.target.value },
-                                                          });
-                                                        }}
-                                                        placeholder="Accessories.csv"
-                                                        className={inputClass}
-                                                      />
-                                                    </label>
-                                                    <label className="text-xs font-semibold text-slate-600">
-                                                      Expected worksheet name
-                                                      <input
-                                                        value={task.specialCondition.excelDataModelImportConfig?.expectedWorksheetName ?? ''}
-                                                        onChange={(e) => {
-                                                          const currentConfig = task.specialCondition?.excelDataModelImportConfig ?? {};
-                                                          updateTaskSpecialCondition(pi, ti, {
-                                                            ...task.specialCondition!,
-                                                            type: 'excelDataModelImport',
-                                                            excelDataModelImportConfig: { ...currentConfig, expectedWorksheetName: e.target.value },
-                                                          });
-                                                        }}
-                                                        placeholder="Accessories"
-                                                        className={inputClass}
-                                                      />
-                                                    </label>
-                                                    <label className="text-xs font-semibold text-slate-600">
-                                                      Expected connection name
-                                                      <input
-                                                        value={task.specialCondition.excelDataModelImportConfig?.expectedConnectionName ?? ''}
-                                                        onChange={(e) => {
-                                                          const currentConfig = task.specialCondition?.excelDataModelImportConfig ?? {};
-                                                          updateTaskSpecialCondition(pi, ti, {
-                                                            ...task.specialCondition!,
-                                                            type: 'excelDataModelImport',
-                                                            excelDataModelImportConfig: { ...currentConfig, expectedConnectionName: e.target.value },
-                                                          });
-                                                        }}
-                                                        placeholder="Accessories"
-                                                        className={inputClass}
-                                                      />
-                                                    </label>
-                                                    <label className="flex items-center gap-2 text-xs font-medium text-slate-600">
-                                                      <input
-                                                        type="checkbox"
-                                                        checked={task.specialCondition.excelDataModelImportConfig?.requireConnection ?? true}
-                                                        onChange={(e) => {
-                                                          const currentConfig = task.specialCondition?.excelDataModelImportConfig ?? {};
-                                                          updateTaskSpecialCondition(pi, ti, {
-                                                            ...task.specialCondition!,
-                                                            type: 'excelDataModelImport',
-                                                            excelDataModelImportConfig: { ...currentConfig, requireConnection: e.target.checked },
-                                                          });
-                                                        }}
-                                                      />
-                                                      Require connection
-                                                    </label>
-                                                    <label className="flex items-center gap-2 text-xs font-medium text-slate-600">
-                                                      <input
-                                                        type="checkbox"
-                                                        checked={task.specialCondition.excelDataModelImportConfig?.requireImportedWorksheet ?? true}
-                                                        onChange={(e) => {
-                                                          const currentConfig = task.specialCondition?.excelDataModelImportConfig ?? {};
-                                                          updateTaskSpecialCondition(pi, ti, {
-                                                            ...task.specialCondition!,
-                                                            type: 'excelDataModelImport',
-                                                            excelDataModelImportConfig: { ...currentConfig, requireImportedWorksheet: e.target.checked },
-                                                          });
-                                                        }}
-                                                      />
-                                                      Require imported worksheet
-                                                    </label>
-                                                    <label className="flex items-center gap-2 text-xs font-medium text-slate-600">
-                                                      <input
-                                                        type="checkbox"
-                                                        checked={task.specialCondition.excelDataModelImportConfig?.requireQueryTable ?? true}
-                                                        onChange={(e) => {
-                                                          const currentConfig = task.specialCondition?.excelDataModelImportConfig ?? {};
-                                                          updateTaskSpecialCondition(pi, ti, {
-                                                            ...task.specialCondition!,
-                                                            type: 'excelDataModelImport',
-                                                            excelDataModelImportConfig: { ...currentConfig, requireQueryTable: e.target.checked },
-                                                          });
-                                                        }}
-                                                      />
-                                                      Require query table
-                                                    </label>
-                                                    <label className="flex items-center gap-2 text-xs font-medium text-slate-600">
-                                                      <input
-                                                        type="checkbox"
-                                                        checked={task.specialCondition.excelDataModelImportConfig?.requireDataModel ?? true}
-                                                        onChange={(e) => {
-                                                          const currentConfig = task.specialCondition?.excelDataModelImportConfig ?? {};
-                                                          updateTaskSpecialCondition(pi, ti, {
-                                                            ...task.specialCondition!,
-                                                            type: 'excelDataModelImport',
-                                                            excelDataModelImportConfig: { ...currentConfig, requireDataModel: e.target.checked },
-                                                          });
-                                                        }}
-                                                      />
-                                                      Require Data Model
-                                                    </label>
-                                                  </div>
-                                                )}
+																								{task.specialCondition.type ===
+																									"excelCompatibilityReport" && (
+																									<div className="grid gap-3 md:grid-cols-2">
+																										<label className="text-xs font-semibold text-slate-600">
+																											Worksheet name
+																											<input
+																												value={
+																													task.specialCondition
+																														.excelCompatibilityReportConfig
+																														?.worksheetName ??
+																													""
+																												}
+																												onChange={(e) => {
+																													const currentConfig =
+																														task
+																															.specialCondition
+																															?.excelCompatibilityReportConfig ??
+																														{};
+																													updateTaskSpecialCondition(
+																														pi,
+																														ti,
+																														{
+																															...task.specialCondition!,
+																															type: "excelCompatibilityReport",
+																															excelCompatibilityReportConfig:
+																																{
+																																	...currentConfig,
+																																	worksheetName:
+																																		e.target
+																																			.value,
+																																},
+																														},
+																													);
+																												}}
+																												placeholder="Compatibility Report"
+																												className={inputClass}
+																											/>
+																										</label>
+																										<label className="flex items-center gap-2 text-xs font-medium text-slate-600">
+																											<input
+																												type="checkbox"
+																												checked={
+																													task.specialCondition
+																														.excelCompatibilityReportConfig
+																														?.requireNewWorksheet ??
+																													true
+																												}
+																												onChange={(e) => {
+																													const currentConfig =
+																														task
+																															.specialCondition
+																															?.excelCompatibilityReportConfig ??
+																														{};
+																													updateTaskSpecialCondition(
+																														pi,
+																														ti,
+																														{
+																															...task.specialCondition!,
+																															type: "excelCompatibilityReport",
+																															excelCompatibilityReportConfig:
+																																{
+																																	...currentConfig,
+																																	requireNewWorksheet:
+																																		e.target
+																																			.checked,
+																																},
+																														},
+																													);
+																												}}
+																											/>
+																											Require new worksheet
+																										</label>
+																										<label className="text-xs font-semibold text-slate-600 md:col-span-2">
+																											Expected texts
+																											<textarea
+																												value={(
+																													task.specialCondition
+																														.excelCompatibilityReportConfig
+																														?.expectedTexts ??
+																													[]
+																												).join("\n")}
+																												onChange={(e) => {
+																													const currentConfig =
+																														task
+																															.specialCondition
+																															?.excelCompatibilityReportConfig ??
+																														{};
+																													updateTaskSpecialCondition(
+																														pi,
+																														ti,
+																														{
+																															...task.specialCondition!,
+																															type: "excelCompatibilityReport",
+																															excelCompatibilityReportConfig:
+																																{
+																																	...currentConfig,
+																																	expectedTexts:
+																																		e.target.value
+																																			.split(
+																																				/\r?\n/,
+																																			)
+																																			.map(
+																																				(
+																																					line,
+																																				) =>
+																																					line.trim(),
+																																			)
+																																			.filter(
+																																				Boolean,
+																																			),
+																																},
+																														},
+																													);
+																												}}
+																												rows={4}
+																												placeholder={
+																													"Compatibility Checker\nSignificant loss of functionality"
+																												}
+																												className={cx(
+																													inputClass,
+																													"resize-y",
+																												)}
+																											/>
+																										</label>
+																									</div>
+																								)}
+																							</div>
+																						)}
+																					</div>
+																					<div className="mt-5">
+																						<div className="mb-3 flex items-center justify-between gap-2">
+																							<div>
+																								<p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+																									Điều kiện
+																								</p>
+																								<p className="mt-1 text-xs text-slate-400">
+																									{task.conditions.length} điều
+																									kiện chấm điểm
+																								</p>
+																							</div>
+																							<button
+																								onClick={() =>
+																									mutateTask(pi, ti, {
+																										conditions: [
+																											...task.conditions,
+																											emptyCondition(),
+																										],
+																									})
+																								}
+																								className="inline-flex items-center gap-1.5 rounded-xl bg-m3-primary px-3 py-1.5 text-xs font-semibold text-m3-on-primary hover:bg-m3-primary/90"
+																							>
+																								<Icon
+																									name="add"
+																									className="text-sm"
+																								/>{" "}
+																								Thêm điều kiện
+																							</button>
+																						</div>
 
-                                                {task.specialCondition.type === 'excelCompatibilityReport' && (
-                                                  <div className="grid gap-3 md:grid-cols-2">
-                                                    <label className="text-xs font-semibold text-slate-600">
-                                                      Worksheet name
-                                                      <input
-                                                        value={task.specialCondition.excelCompatibilityReportConfig?.worksheetName ?? ''}
-                                                        onChange={(e) => {
-                                                          const currentConfig = task.specialCondition?.excelCompatibilityReportConfig ?? {};
-                                                          updateTaskSpecialCondition(pi, ti, {
-                                                            ...task.specialCondition!,
-                                                            type: 'excelCompatibilityReport',
-                                                            excelCompatibilityReportConfig: { ...currentConfig, worksheetName: e.target.value },
-                                                          });
-                                                        }}
-                                                        placeholder="Compatibility Report"
-                                                        className={inputClass}
-                                                      />
-                                                    </label>
-                                                    <label className="flex items-center gap-2 text-xs font-medium text-slate-600">
-                                                      <input
-                                                        type="checkbox"
-                                                        checked={task.specialCondition.excelCompatibilityReportConfig?.requireNewWorksheet ?? true}
-                                                        onChange={(e) => {
-                                                          const currentConfig = task.specialCondition?.excelCompatibilityReportConfig ?? {};
-                                                          updateTaskSpecialCondition(pi, ti, {
-                                                            ...task.specialCondition!,
-                                                            type: 'excelCompatibilityReport',
-                                                            excelCompatibilityReportConfig: { ...currentConfig, requireNewWorksheet: e.target.checked },
-                                                          });
-                                                        }}
-                                                      />
-                                                      Require new worksheet
-                                                    </label>
-                                                    <label className="text-xs font-semibold text-slate-600 md:col-span-2">
-                                                      Expected texts
-                                                      <textarea
-                                                        value={(task.specialCondition.excelCompatibilityReportConfig?.expectedTexts ?? []).join('\n')}
-                                                        onChange={(e) => {
-                                                          const currentConfig = task.specialCondition?.excelCompatibilityReportConfig ?? {};
-                                                          updateTaskSpecialCondition(pi, ti, {
-                                                            ...task.specialCondition!,
-                                                            type: 'excelCompatibilityReport',
-                                                            excelCompatibilityReportConfig: {
-                                                              ...currentConfig,
-                                                              expectedTexts: e.target.value.split(/\r?\n/).map((line) => line.trim()).filter(Boolean),
-                                                            },
-                                                          });
-                                                        }}
-                                                        rows={4}
-                                                        placeholder={'Compatibility Checker\nSignificant loss of functionality'}
-                                                        className={cx(inputClass, 'resize-y')}
-                                                      />
-                                                    </label>
-                                                  </div>
-                                                )}
-                                              </div>
-                                            )}
-                                          </div>
-                                          <div className="mt-5">
-                                            <div className="mb-3 flex items-center justify-between gap-2">
-                                              <div>
-                                                <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Điều kiện</p>
-                                                <p className="mt-1 text-xs text-slate-400">
-                                                  {task.conditions.length} điều kiện chấm điểm
-                                                </p>
-                                              </div>
-                                              <button
-                                                onClick={() =>
-                                                  mutateTask(pi, ti, {
-                                                    conditions: [...task.conditions, emptyCondition()],
-                                                  })
-                                                }
-                                                className="inline-flex items-center gap-1.5 rounded-xl bg-m3-primary px-3 py-1.5 text-xs font-semibold text-m3-on-primary hover:bg-m3-primary/90"
-                                              >
-                                                <Icon name="add" className="text-sm" /> Thêm điều kiện
-                                              </button>
-                                            </div>
+																						<div className="space-y-3">
+																							{task.conditions.map(
+																								(condition, ci) => {
+																									const conditionKey = `${pi}-${ti}-${ci}`;
+																									const advanced =
+																										showAdvanced[
+																											conditionKey
+																										] ?? false;
+																									const basicsExpanded =
+																										expandedConditionBasics[
+																											conditionKey
+																										] ?? false;
 
-                                            <div className="space-y-3">
-                                              {task.conditions.map((condition, ci) => {
-                                                const conditionKey = `${pi}-${ti}-${ci}`;
-                                                const advanced = showAdvanced[conditionKey] ?? false;
-                                                const basicsExpanded = expandedConditionBasics[conditionKey] ?? false;
+																									return (
+																										<div
+																											key={conditionKey}
+																											className="rounded-xl border border-m3-outline-variant/60 bg-m3-surface p-4"
+																										>
+																											<div className="flex items-start justify-between gap-3">
+																												<div className="flex min-w-0 items-center gap-2">
+																													<span className="rounded-md bg-m3-primary/10 px-2 py-1 font-mono text-[11px] font-bold text-m3-primary">
+																														{condition.conditionId ||
+																															`C${String(ci + 1).padStart(2, "0")}`}
+																													</span>
+																													<span className="text-xs text-m3-on-surface-variant">
+																														{condition.score}{" "}
+																														điểm
+																													</span>
+																												</div>
+																												<button
+																													onClick={() =>
+																														mutateTask(pi, ti, {
+																															conditions:
+																																task.conditions.filter(
+																																	(_, i) =>
+																																		i !== ci,
+																																),
+																														})
+																													}
+																													title="Xóa điều kiện"
+																													className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-m3-on-surface-variant/60 hover:bg-m3-error/10 hover:text-m3-error"
+																												>
+																													<Icon
+																														name="delete"
+																														className="text-sm"
+																													/>
+																												</button>
+																											</div>
 
-                                                return (
-                                                  <div key={conditionKey} className="rounded-xl border border-m3-outline-variant/60 bg-m3-surface p-4">
-                                                    <div className="flex items-start justify-between gap-3">
-                                                      <div className="flex min-w-0 items-center gap-2">
-                                                        <span className="rounded-md bg-m3-primary/10 px-2 py-1 font-mono text-[11px] font-bold text-m3-primary">
-                                                          {condition.conditionId || `C${String(ci + 1).padStart(2, '0')}`}
-                                                        </span>
-                                                        <span className="text-xs text-m3-on-surface-variant">
-                                                          {condition.score} điểm
-                                                        </span>
-                                                      </div>
-                                                      <button
-                                                        onClick={() =>
-                                                          mutateTask(pi, ti, {
-                                                            conditions: task.conditions.filter((_, i) => i !== ci),
-                                                          })
-                                                        }
-                                                        title="Xóa điều kiện"
-                                                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-m3-on-surface-variant/60 hover:bg-m3-error/10 hover:text-m3-error"
-                                                      >
-                                                        <Icon name="delete" className="text-sm" />
-                                                      </button>
-                                                    </div>
+																											<div className="mt-3 rounded-lg border border-m3-outline-variant/60 bg-m3-surface-container-lowest">
+																												<button
+																													onClick={() =>
+																														toggleConditionBasics(
+																															conditionKey,
+																														)
+																													}
+																													className="flex w-full items-center gap-2 px-3 py-2.5 text-left"
+																												>
+																													<Icon
+																														name="expand_more"
+																														className={cx(
+																															"text-lg text-m3-on-surface-variant transition-transform duration-200",
+																															basicsExpanded &&
+																																"rotate-180",
+																														)}
+																													/>
+																													<span className="shrink-0 text-xs font-semibold text-m3-on-surface">
+																														Thông tin điều kiện
+																													</span>
+																													<span className="min-w-0 truncate font-mono text-[11px] text-m3-on-surface-variant">
+																														{condition.conditionId ||
+																															`C${String(ci + 1).padStart(2, "0")}`}{" "}
+																														· {condition.score}{" "}
+																														điểm ·{" "}
+																														{condition.sourceFile ||
+																															"Chưa chọn file XML"}
+																													</span>
+																												</button>
 
-                                                    <div className="mt-3 rounded-lg border border-m3-outline-variant/60 bg-m3-surface-container-lowest">
-                                                      <button
-                                                        onClick={() => toggleConditionBasics(conditionKey)}
-                                                        className="flex w-full items-center gap-2 px-3 py-2.5 text-left"
-                                                      >
-                                                        <Icon
-                                                          name="expand_more"
-                                                          className={cx(
-                                                            'text-lg text-m3-on-surface-variant transition-transform duration-200',
-                                                            basicsExpanded && 'rotate-180'
-                                                          )}
-                                                        />
-                                                        <span className="shrink-0 text-xs font-semibold text-m3-on-surface">
-                                                          Thông tin điều kiện
-                                                        </span>
-                                                        <span className="min-w-0 truncate font-mono text-[11px] text-m3-on-surface-variant">
-                                                          {condition.conditionId || `C${String(ci + 1).padStart(2, '0')}`} · {condition.score} điểm · {condition.sourceFile || 'Chưa chọn file XML'}
-                                                        </span>
-                                                      </button>
+																												{basicsExpanded && (
+																													<div className="border-t border-m3-outline-variant/50 px-3 pb-3 pt-1">
+																														<div className="grid gap-3 md:grid-cols-[1fr_120px]">
+																															<label className="text-xs font-semibold text-slate-600">
+																																Mã điều kiện
+																																<input
+																																	value={
+																																		condition.conditionId
+																																	}
+																																	onChange={(
+																																		e,
+																																	) =>
+																																		mutateCondition(
+																																			pi,
+																																			ti,
+																																			ci,
+																																			{
+																																				conditionId:
+																																					e
+																																						.target
+																																						.value,
+																																			},
+																																		)
+																																	}
+																																	className={
+																																		inputClass
+																																	}
+																																/>
+																															</label>
+																															<label className="text-xs font-semibold text-slate-600">
+																																Điểm
+																																<input
+																																	type="number"
+																																	value={
+																																		condition.score
+																																	}
+																																	onChange={(
+																																		e,
+																																	) =>
+																																		mutateCondition(
+																																			pi,
+																																			ti,
+																																			ci,
+																																			{
+																																				score:
+																																					Number(
+																																						e
+																																							.target
+																																							.value,
+																																					),
+																																			},
+																																		)
+																																	}
+																																	className={
+																																		inputClass
+																																	}
+																																/>
+																															</label>
+																														</div>
 
-                                                      {basicsExpanded && (
-                                                        <div className="border-t border-m3-outline-variant/50 px-3 pb-3 pt-1">
-                                                          <div className="grid gap-3 md:grid-cols-[1fr_120px]">
-                                                            <label className="text-xs font-semibold text-slate-600">
-                                                              Mã điều kiện
-                                                              <input
-                                                                value={condition.conditionId}
-                                                                onChange={(e) => mutateCondition(pi, ti, ci, { conditionId: e.target.value })}
-                                                                className={inputClass}
-                                                              />
-                                                            </label>
-                                                            <label className="text-xs font-semibold text-slate-600">
-                                                              Điểm
-                                                              <input
-                                                                type="number"
-                                                                value={condition.score}
-                                                                onChange={(e) => mutateCondition(pi, ti, ci, { score: Number(e.target.value) })}
-                                                                className={inputClass}
-                                                              />
-                                                            </label>
-                                                          </div>
+																														<label className="mt-3 block text-xs font-semibold text-slate-600">
+																															File XML cần kiểm
+																															tra
+																															<input
+																																value={
+																																	condition.sourceFile
+																																}
+																																onChange={(e) =>
+																																	mutateCondition(
+																																		pi,
+																																		ti,
+																																		ci,
+																																		{
+																																			sourceFile:
+																																				e.target
+																																					.value,
+																																		},
+																																	)
+																																}
+																																placeholder="xl/worksheets/sheet1.xml"
+																																className={cx(
+																																	inputClass,
+																																	"font-mono",
+																																)}
+																															/>
+																														</label>
+																													</div>
+																												)}
+																											</div>
 
-                                                          <label className="mt-3 block text-xs font-semibold text-slate-600">
-                                                            File XML cần kiểm tra
-                                                            <input
-                                                              value={condition.sourceFile}
-                                                              onChange={(e) => mutateCondition(pi, ti, ci, { sourceFile: e.target.value })}
-                                                              placeholder="xl/worksheets/sheet1.xml"
-                                                              className={cx(inputClass, 'font-mono')}
-                                                            />
-                                                          </label>
-                                                        </div>
-                                                      )}
-                                                    </div>
+																											<label className="mt-3 block text-xs font-semibold text-slate-600">
+																												Giá trị cần tìm trong
+																												XML
+																												<textarea
+																													value={formatExpectedValuesInput(
+																														expectedVariantsForEdit(
+																															condition,
+																														)[0].expectedValues,
+																													)}
+																													onChange={(e) => {
+																														const variants =
+																															expectedVariantsForEdit(
+																																condition,
+																															);
+																														mutateCondition(
+																															pi,
+																															ti,
+																															ci,
+																															{
+																																expectedVariants:
+																																	[
+																																		{
+																																			expectedValues:
+																																				parseExpectedValuesInput(
+																																					e
+																																						.target
+																																						.value,
+																																				),
+																																		},
+																																		...variants.slice(
+																																			1,
+																																		),
+																																	],
+																															},
+																														);
+																													}}
+																													rows={3}
+																													placeholder="Mot cum XML lien nhau la 1 gia tri. Cach nhau bang 1 dong trong de them gia tri khac..."
+																													className={cx(
+																														inputClass,
+																														"resize-y font-mono",
+																													)}
+																												/>
+																											</label>
 
-                                                    <label className="mt-3 block text-xs font-semibold text-slate-600">
-                                                      Giá trị cần tìm trong XML
-                                                      <textarea
-                                                        value={formatExpectedValuesInput(expectedVariantsForEdit(condition)[0].expectedValues)}
-                                                        onChange={(e) => {
-                                                          const variants = expectedVariantsForEdit(condition);
-                                                          mutateCondition(pi, ti, ci, {
-                                                            expectedVariants: [
-                                                              { expectedValues: parseExpectedValuesInput(e.target.value) },
-                                                              ...variants.slice(1),
-                                                            ],
-                                                          });
-                                                        }}
-                                                        rows={3}
-                                                        placeholder="Mot cum XML lien nhau la 1 gia tri. Cach nhau bang 1 dong trong de them gia tri khac..."
-                                                        className={cx(inputClass, 'resize-y font-mono')}
-                                                      />
-                                                    </label>
+																											<div className="mt-3 rounded-lg border border-blue-100 bg-white/70 p-3">
+																												<div className="mb-2 flex items-center justify-between gap-3">
+																													<span className="text-xs font-semibold text-slate-600">
+																														Các biến thể dự kiến
+																													</span>
+																													<button
+																														onClick={() => {
+																															const variants =
+																																expectedVariantsForEdit(
+																																	condition,
+																																);
+																															mutateCondition(
+																																pi,
+																																ti,
+																																ci,
+																																{
+																																	expectedVariants:
+																																		[
+																																			...variants,
+																																			{
+																																				expectedValues:
+																																					[""],
+																																			},
+																																		],
+																																},
+																															);
+																														}}
+																														className="inline-flex items-center gap-1 rounded-lg border border-blue-200 px-2.5 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-50"
+																													>
+																														<Icon
+																															name="add"
+																															className="text-sm"
+																														/>{" "}
+																														Thêm biến thể
+																													</button>
+																												</div>
 
-                                                    <div className="mt-3 rounded-lg border border-blue-100 bg-white/70 p-3">
-                                                      <div className="mb-2 flex items-center justify-between gap-3">
-                                                        <span className="text-xs font-semibold text-slate-600">
-                                                          Các biến thể dự kiến
-                                                        </span>
-                                                        <button
-                                                          onClick={() => {
-                                                            const variants = expectedVariantsForEdit(condition);
-                                                            mutateCondition(pi, ti, ci, {
-                                                              expectedVariants: [...variants, { expectedValues: [''] }],
-                                                            });
-                                                          }}
-                                                          className="inline-flex items-center gap-1 rounded-lg border border-blue-200 px-2.5 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-50"
-                                                        >
-                                                          <Icon name="add" className="text-sm" /> Thêm biến thể
-                                                        </button>
-                                                      </div>
+																												<div className="space-y-3">
+																													{expectedVariantsForEdit(
+																														condition,
+																													)
+																														.slice(1)
+																														.map(
+																															(
+																																variant,
+																																sliceIndex,
+																															) => {
+																																const variantIndex =
+																																	sliceIndex +
+																																	1;
+																																return (
+																																	<div
+																																		key={
+																																			variantIndex
+																																		}
+																																		className="rounded-lg border border-slate-200 bg-slate-50 p-3"
+																																	>
+																																		<div className="mb-2 flex items-center justify-between gap-3">
+																																			<span className="rounded-md bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-700">
+																																				Variant{" "}
+																																				{variantIndex +
+																																					1}
+																																			</span>
+																																			<button
+																																				onClick={() => {
+																																					const variants =
+																																						expectedVariantsForEdit(
+																																							condition,
+																																						);
+																																					mutateCondition(
+																																						pi,
+																																						ti,
+																																						ci,
+																																						{
+																																							expectedVariants:
+																																								variants.filter(
+																																									(
+																																										_,
+																																										index,
+																																									) =>
+																																										index !==
+																																										variantIndex,
+																																								),
+																																						},
+																																					);
+																																				}}
+																																				title="Xoa variant"
+																																				className="rounded-lg p-1.5 text-red-600 hover:bg-red-50"
+																																			>
+																																				<Icon
+																																					name="delete"
+																																					className="text-sm"
+																																				/>
+																																			</button>
+																																		</div>
+																																		<textarea
+																																			value={formatExpectedValuesInput(
+																																				variant.expectedValues,
+																																			)}
+																																			onChange={(
+																																				e,
+																																			) => {
+																																				const variants =
+																																					expectedVariantsForEdit(
+																																						condition,
+																																					).map(
+																																						(
+																																							item,
+																																							index,
+																																						) =>
+																																							index ===
+																																							variantIndex
+																																								? {
+																																										expectedValues:
+																																											parseExpectedValuesInput(
+																																												e
+																																													.target
+																																													.value,
+																																											),
+																																									}
+																																								: item,
+																																					);
+																																				mutateCondition(
+																																					pi,
+																																					ti,
+																																					ci,
+																																					{
+																																						expectedVariants:
+																																							variants,
+																																					},
+																																				);
+																																			}}
+																																			rows={3}
+																																			placeholder="Mot cum XML lien nhau la 1 gia tri. Cach nhau bang 1 dong trong de them gia tri khac..."
+																																			className={cx(
+																																				inputClass,
+																																				"resize-y font-mono",
+																																			)}
+																																		/>
+																																	</div>
+																																);
+																															},
+																														)}
+																												</div>
+																											</div>
 
-                                                      <div className="space-y-3">
-                                                        {expectedVariantsForEdit(condition).slice(1).map((variant, sliceIndex) => {
-                                                          const variantIndex = sliceIndex + 1;
-                                                          return (
-                                                            <div key={variantIndex} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-                                                              <div className="mb-2 flex items-center justify-between gap-3">
-                                                                <span className="rounded-md bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-700">
-                                                                  Variant {variantIndex + 1}
-                                                                </span>
-                                                                <button
-                                                                  onClick={() => {
-                                                                    const variants = expectedVariantsForEdit(condition);
-                                                                    mutateCondition(pi, ti, ci, {
-                                                                      expectedVariants: variants.filter((_, index) => index !== variantIndex),
-                                                                    });
-                                                                  }}
-                                                                  title="Xoa variant"
-                                                                  className="rounded-lg p-1.5 text-red-600 hover:bg-red-50"
-                                                                >
-                                                                  <Icon name="delete" className="text-sm" />
-                                                                </button>
-                                                              </div>
-                                                              <textarea
-                                                                value={formatExpectedValuesInput(variant.expectedValues)}
-                                                                onChange={(e) => {
-                                                                  const variants = expectedVariantsForEdit(condition).map((item, index) =>
-                                                                    index === variantIndex
-                                                                      ? { expectedValues: parseExpectedValuesInput(e.target.value) }
-                                                                      : item
-                                                                  );
-                                                                  mutateCondition(pi, ti, ci, { expectedVariants: variants });
-                                                                }}
-                                                                rows={3}
-                                                                placeholder="Mot cum XML lien nhau la 1 gia tri. Cach nhau bang 1 dong trong de them gia tri khac..."
-                                                                className={cx(inputClass, 'resize-y font-mono')}
-                                                              />
-                                                            </div>
-                                                          );
-                                                        })}
-                                                      </div>
-                                                    </div>
+																											<div className="mt-3 grid gap-3 md:grid-cols-2">
+																												<label className="text-xs font-semibold text-slate-600">
+																													Cách so khớp
+																													<select
+																														value={
+																															condition.compareMode
+																														}
+																														onChange={(e) =>
+																															mutateCondition(
+																																pi,
+																																ti,
+																																ci,
+																																{
+																																	compareMode: e
+																																		.target
+																																		.value as XmlCompareMode,
+																																},
+																															)
+																														}
+																														className={
+																															inputClass
+																														}
+																													>
+																														{compareModes.map(
+																															(m) => (
+																																<option
+																																	key={m}
+																																	value={m}
+																																>
+																																	{
+																																		compareModesLabels[
+																																			m
+																																		]
+																																	}
+																																</option>
+																															),
+																														)}
+																													</select>
+																												</label>
+																												<label className="text-xs font-semibold text-slate-600">
+																													Quy tắc nhiều giá trị
+																													<select
+																														value={
+																															condition.matchPolicy
+																														}
+																														onChange={(e) =>
+																															mutateCondition(
+																																pi,
+																																ti,
+																																ci,
+																																{
+																																	matchPolicy: e
+																																		.target
+																																		.value as XmlMatchPolicy,
+																																},
+																															)
+																														}
+																														className={
+																															inputClass
+																														}
+																													>
+																														{matchPolicies.map(
+																															(m) => (
+																																<option
+																																	key={m}
+																																	value={m}
+																																>
+																																	{
+																																		matchPoliciesLabels[
+																																			m
+																																		]
+																																	}
+																																</option>
+																															),
+																														)}
+																													</select>
+																												</label>
+																											</div>
 
-                                                    <div className="mt-3 grid gap-3 md:grid-cols-2">
-                                                      <label className="text-xs font-semibold text-slate-600">
-                                                        Cách so khớp
-                                                        <select
-                                                          value={condition.compareMode}
-                                                          onChange={(e) =>
-                                                            mutateCondition(pi, ti, ci, {
-                                                              compareMode: e.target.value as XmlCompareMode,
-                                                            })
-                                                          }
-                                                          className={inputClass}
-                                                        >
-                                                          {compareModes.map((m) => (
-                                                            <option key={m} value={m}>
-                                                              {compareModesLabels[m]}
-                                                            </option>
-                                                          ))}
-                                                        </select>
-                                                      </label>
-                                                      <label className="text-xs font-semibold text-slate-600">
-                                                        Quy tắc nhiều giá trị
-                                                        <select
-                                                          value={condition.matchPolicy}
-                                                          onChange={(e) =>
-                                                            mutateCondition(pi, ti, ci, {
-                                                              matchPolicy: e.target.value as XmlMatchPolicy,
-                                                            })
-                                                          }
-                                                          className={inputClass}
-                                                        >
-                                                          {matchPolicies.map((m) => (
-                                                            <option key={m} value={m}>
-                                                              {matchPoliciesLabels[m]}
-                                                            </option>
-                                                          ))}
-                                                        </select>
-                                                      </label>
-                                                    </div>
+																											<button
+																												onClick={() =>
+																													toggleAdvanced(
+																														conditionKey,
+																													)
+																												}
+																												className="mt-4 text-xs font-semibold text-blue-600 hover:text-blue-700"
+																											>
+																												{advanced
+																													? "▲ Ẩn cài đặt nâng cao"
+																													: "▼ Cài đặt nâng cao"}
+																											</button>
 
-                                                    <button
-                                                      onClick={() => toggleAdvanced(conditionKey)}
-                                                      className="mt-4 text-xs font-semibold text-blue-600 hover:text-blue-700"
-                                                    >
-                                                      {advanced ? '▲ Ẩn cài đặt nâng cao' : '▼ Cài đặt nâng cao'}
-                                                    </button>
+																											{advanced && (
+																												<div className="mt-3 rounded-xl bg-m3-surface-container p-3.5 shadow-xs text-m3-on-surface">
+																													<div className="grid gap-3 md:grid-cols-2">
+																														<label className="text-xs font-semibold text-slate-600">
+																															Thông báo khi đúng
+																															<input
+																																value={
+																																	condition
+																																		.feedback
+																																		?.successDetail ||
+																																	""
+																																}
+																																onChange={(e) =>
+																																	mutateCondition(
+																																		pi,
+																																		ti,
+																																		ci,
+																																		{
+																																			feedback:
+																																				{
+																																					...(condition.feedback ||
+																																						{}),
+																																					successDetail:
+																																						e
+																																							.target
+																																							.value,
+																																				},
+																																		},
+																																	)
+																																}
+																																placeholder="Thành công..."
+																																className={
+																																	inputClass
+																																}
+																															/>
+																														</label>
+																														<label className="text-xs font-semibold text-slate-600">
+																															Thông báo khi sai
+																															<input
+																																value={
+																																	condition
+																																		.feedback
+																																		?.errorMessage ||
+																																	""
+																																}
+																																onChange={(e) =>
+																																	mutateCondition(
+																																		pi,
+																																		ti,
+																																		ci,
+																																		{
+																																			feedback:
+																																				{
+																																					...(condition.feedback ||
+																																						{}),
+																																					errorMessage:
+																																						e
+																																							.target
+																																							.value,
+																																				},
+																																		},
+																																	)
+																																}
+																																placeholder="Lỗi..."
+																																className={
+																																	inputClass
+																																}
+																															/>
+																														</label>
+																													</div>
+																													<label className="mt-3 block text-xs font-semibold text-slate-600">
+																														Gợi ý cách sửa
+																														<input
+																															value={
+																																condition
+																																	.feedback
+																																	?.fixAction ||
+																																""
+																															}
+																															onChange={(e) =>
+																																mutateCondition(
+																																	pi,
+																																	ti,
+																																	ci,
+																																	{
+																																		feedback: {
+																																			...(condition.feedback ||
+																																				{}),
+																																			fixAction:
+																																				e.target
+																																					.value,
+																																		},
+																																	},
+																																)
+																															}
+																															placeholder="Ví dụ: Kiểm tra lại định dạng ô..."
+																															className={
+																																inputClass
+																															}
+																														/>
+																													</label>
+																													<label className="mt-3 block text-xs font-semibold text-slate-600">
+																														Bỏ qua các thuộc
+																														tính
+																														<textarea
+																															value={(
+																																condition.ignoreAttributes ??
+																																[]
+																															).join("\n")}
+																															onChange={(e) =>
+																																mutateCondition(
+																																	pi,
+																																	ti,
+																																	ci,
+																																	{
+																																		ignoreAttributes:
+																																			e.target.value.split(
+																																				"\n",
+																																			),
+																																	},
+																																)
+																															}
+																															rows={3}
+																															placeholder={
+																																"id\nr:id\nrsid*\nwp:docPr@id"
+																															}
+																															className={cx(
+																																inputClass,
+																																"resize-y font-mono",
+																															)}
+																														/>
+																													</label>
+																													{condition.compareMode ===
+																														"xmlMinOccurrences" && (
+																														<div className="mt-3 grid gap-3 md:grid-cols-2">
+																															<label className="block text-xs font-semibold text-slate-600">
+																																Số lần xuất hiện
+																																tối thiểu
+																																<input
+																																	type="number"
+																																	min={1}
+																																	step={1}
+																																	value={
+																																		condition.minOccurrences ??
+																																		""
+																																	}
+																																	onChange={(
+																																		e,
+																																	) =>
+																																		mutateCondition(
+																																			pi,
+																																			ti,
+																																			ci,
+																																			{
+																																				minOccurrences:
+																																					e
+																																						.target
+																																						.value
+																																						? Number(
+																																								e
+																																									.target
+																																									.value,
+																																							)
+																																						: undefined,
+																																			},
+																																		)
+																																	}
+																																	placeholder="1"
+																																	className={
+																																		inputClass
+																																	}
+																																/>
+																															</label>
+																															<label className="block text-xs font-semibold text-slate-600">
+																																Số lần xuất hiện
+																																tối đa
+																																<input
+																																	type="number"
+																																	min={1}
+																																	step={1}
+																																	value={
+																																		condition.maxOccurrences ??
+																																		""
+																																	}
+																																	onChange={(
+																																		e,
+																																	) =>
+																																		mutateCondition(
+																																			pi,
+																																			ti,
+																																			ci,
+																																			{
+																																				maxOccurrences:
+																																					e
+																																						.target
+																																						.value
+																																						? Number(
+																																								e
+																																									.target
+																																									.value,
+																																							)
+																																						: undefined,
+																																			},
+																																		)
+																																	}
+																																	placeholder="Để trống nếu không giới hạn"
+																																	className={
+																																		inputClass
+																																	}
+																																/>
+																															</label>
+																														</div>
+																													)}
+																													<label className="mt-3 flex items-center gap-2 text-xs font-medium text-slate-600">
+																														<input
+																															type="checkbox"
+																															checked={
+																																condition.stopTaskIfFailed
+																															}
+																															onChange={(e) =>
+																																mutateCondition(
+																																	pi,
+																																	ti,
+																																	ci,
+																																	{
+																																		stopTaskIfFailed:
+																																			e.target
+																																				.checked,
+																																	},
+																																)
+																															}
+																															className="h-4 w-4 accent-blue-600"
+																														/>
+																														Dừng Task nếu điều
+																														kiện thất bại
+																													</label>
+																												</div>
+																											)}
+																										</div>
+																									);
+																								},
+																							)}
 
-                                                    {advanced && (
-                                                      <div className="mt-3 rounded-xl bg-m3-surface-container p-3.5 shadow-xs text-m3-on-surface">
-                                                        <div className="grid gap-3 md:grid-cols-2">
-                                                          <label className="text-xs font-semibold text-slate-600">
-                                                            Thông báo khi đúng
-                                                            <input
-                                                              value={condition.feedback?.successDetail || ''}
-                                                              onChange={(e) =>
-                                                                mutateCondition(pi, ti, ci, {
-                                                                  feedback: {
-                                                                    ...(condition.feedback || {}),
-                                                                    successDetail: e.target.value,
-                                                                  },
-                                                                })
-                                                              }
-                                                              placeholder="Thành công..."
-                                                              className={inputClass}
-                                                            />
-                                                          </label>
-                                                          <label className="text-xs font-semibold text-slate-600">
-                                                            Thông báo khi sai
-                                                            <input
-                                                              value={condition.feedback?.errorMessage || ''}
-                                                              onChange={(e) =>
-                                                                mutateCondition(pi, ti, ci, {
-                                                                  feedback: {
-                                                                    ...(condition.feedback || {}),
-                                                                    errorMessage: e.target.value,
-                                                                  },
-                                                                })
-                                                              }
-                                                              placeholder="Lỗi..."
-                                                              className={inputClass}
-                                                            />
-                                                          </label>
-                                                        </div>
-                                                        <label className="mt-3 block text-xs font-semibold text-slate-600">
-                                                          Gợi ý cách sửa
-                                                          <input
-                                                            value={condition.feedback?.fixAction || ''}
-                                                            onChange={(e) =>
-                                                              mutateCondition(pi, ti, ci, {
-                                                                feedback: {
-                                                                  ...(condition.feedback || {}),
-                                                                  fixAction: e.target.value,
-                                                                },
-                                                              })
-                                                            }
-                                                            placeholder="Ví dụ: Kiểm tra lại định dạng ô..."
-                                                            className={inputClass}
-                                                          />
-                                                        </label>
-                                                        <label className="mt-3 block text-xs font-semibold text-slate-600">
-                                                          Bỏ qua các thuộc tính
-                                                          <textarea
-                                                            value={(condition.ignoreAttributes ?? []).join('\n')}
-                                                            onChange={(e) =>
-                                                              mutateCondition(pi, ti, ci, {
-                                                                ignoreAttributes: e.target.value.split('\n'),
-                                                              })
-                                                            }
-                                                            rows={3}
-                                                            placeholder={'id\nr:id\nrsid*\nwp:docPr@id'}
-                                                            className={cx(inputClass, 'resize-y font-mono')}
-                                                          />
-                                                        </label>
-                                                        {condition.compareMode === 'xmlMinOccurrences' && (
-                                                          <div className="mt-3 grid gap-3 md:grid-cols-2">
-                                                            <label className="block text-xs font-semibold text-slate-600">
-                                                              Số lần xuất hiện tối thiểu
-                                                              <input
-                                                                type="number"
-                                                                min={1}
-                                                                step={1}
-                                                                value={condition.minOccurrences ?? ''}
-                                                                onChange={(e) =>
-                                                                  mutateCondition(pi, ti, ci, {
-                                                                    minOccurrences: e.target.value ? Number(e.target.value) : undefined,
-                                                                  })
-                                                                }
-                                                                placeholder="1"
-                                                                className={inputClass}
-                                                              />
-                                                            </label>
-                                                            <label className="block text-xs font-semibold text-slate-600">
-                                                              Số lần xuất hiện tối đa
-                                                              <input
-                                                                type="number"
-                                                                min={1}
-                                                                step={1}
-                                                                value={condition.maxOccurrences ?? ''}
-                                                                onChange={(e) =>
-                                                                  mutateCondition(pi, ti, ci, {
-                                                                    maxOccurrences: e.target.value ? Number(e.target.value) : undefined,
-                                                                  })
-                                                                }
-                                                                placeholder="Để trống nếu không giới hạn"
-                                                                className={inputClass}
-                                                              />
-                                                            </label>
-                                                          </div>
-                                                        )}
-                                                        <label className="mt-3 flex items-center gap-2 text-xs font-medium text-slate-600">
-                                                          <input
-                                                            type="checkbox"
-                                                            checked={condition.stopTaskIfFailed}
-                                                            onChange={(e) =>
-                                                              mutateCondition(pi, ti, ci, {
-                                                                stopTaskIfFailed: e.target.checked,
-                                                              })
-                                                            }
-                                                            className="h-4 w-4 accent-blue-600"
-                                                          />
-                                                          Dừng Task nếu điều kiện thất bại
-                                                        </label>
-                                                      </div>
-                                                    )}
-                                                  </div>
-                                                );
-                                              })}
+																							{task.conditions.length === 0 && (
+																								<div className="rounded-xl border border-dashed border-slate-200 px-4 py-7 text-center">
+																									<p className="text-sm font-medium text-slate-500">
+																										{task.specialCondition
+																											? "Không có điều kiện XML — Task chỉ dùng điều kiện đặc biệt."
+																											: "Chưa có điều kiện"}
+																									</p>
+																									<p className="mt-1 text-xs text-slate-400">
+																										{task.specialCondition
+																											? "Hợp lệ nếu điểm Điều kiện đặc biệt bằng Điểm tối đa của Task."
+																											: "Thêm condition hoặc bật Điều kiện đặc biệt để ruleset có thể chấm Task này."}
+																									</p>
+																								</div>
+																							)}
+																						</div>
+																					</div>
+																				</div>
+																			)}
+																		</div>
+																	);
+																})}
 
-                                              {task.conditions.length === 0 && (
-                                                <div className="rounded-xl border border-dashed border-slate-200 px-4 py-7 text-center">
-                                                  <p className="text-sm font-medium text-slate-500">
-                                                    {task.specialCondition
-                                                      ? 'Không có điều kiện XML — Task chỉ dùng điều kiện đặc biệt.'
-                                                      : 'Chưa có điều kiện'}
-                                                  </p>
-                                                  <p className="mt-1 text-xs text-slate-400">
-                                                    {task.specialCondition
-                                                      ? 'Hợp lệ nếu điểm Điều kiện đặc biệt bằng Điểm tối đa của Task.'
-                                                      : 'Thêm condition hoặc bật Điều kiện đặc biệt để ruleset có thể chấm Task này.'}
-                                                  </p>
-                                                </div>
-                                              )}
-                                            </div>
-                                          </div>
-                                        </div>
-                                      )}
-                                    </div>
-                                  );
-                                })}
+																{project.tasks.length === 0 && (
+																	<div className="rounded-xl border border-dashed border-slate-200 px-4 py-8 text-center">
+																		<p className="text-sm font-medium text-slate-500">
+																			Project chưa có Task
+																		</p>
+																		<button
+																			onClick={() =>
+																				mutateProject(pi, {
+																					tasks: [emptyTask()],
+																				})
+																			}
+																			className="mt-2 text-xs font-semibold text-blue-600 hover:underline"
+																		>
+																			+ Thêm Task đầu tiên
+																		</button>
+																	</div>
+																)}
+															</div>
+														</div>
+													</div>
+												)}
+											</div>
+										);
+									})}
 
-                                {project.tasks.length === 0 && (
-                                  <div className="rounded-xl border border-dashed border-slate-200 px-4 py-8 text-center">
-                                    <p className="text-sm font-medium text-slate-500">Project chưa có Task</p>
-                                    <button
-                                      onClick={() => mutateProject(pi, { tasks: [emptyTask()] })}
-                                      className="mt-2 text-xs font-semibold text-blue-600 hover:underline"
-                                    >
-                                      + Thêm Task đầu tiên
-                                    </button>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+									{selected.projects.length === 0 && (
+										<div className="rounded-2xl border border-dashed border-m3-outline-variant/60 px-6 py-12 text-center bg-m3-surface">
+											<Icon
+												name="code"
+												className="mx-auto mb-3 text-4xl text-m3-on-surface-variant/40"
+											/>
+											<p className="font-semibold text-m3-on-surface">
+												Chưa có Project
+											</p>
+											<p className="mt-1 text-sm text-m3-on-surface-variant">
+												Tạo project đầu tiên để xây ruleset.
+											</p>
+											<button
+												onClick={() =>
+													replaceSelected({
+														...selected,
+														projects: [emptyProject()],
+													})
+												}
+												className="mt-4 inline-flex items-center gap-2 rounded-xl bg-m3-primary px-3.5 py-2 text-sm font-semibold text-m3-on-primary hover:bg-m3-primary/90"
+											>
+												<Icon name="add" className="text-base" /> Thêm project
+											</button>
+										</div>
+									)}
+								</div>
+							</section>
+						</>
+					)}
 
-                  {selected.projects.length === 0 && (
-                    <div className="rounded-2xl border border-dashed border-m3-outline-variant/60 px-6 py-12 text-center bg-m3-surface">
-                      <Icon name="code" className="mx-auto mb-3 text-4xl text-m3-on-surface-variant/40" />
-                      <p className="font-semibold text-m3-on-surface">Chưa có Project</p>
-                      <p className="mt-1 text-sm text-m3-on-surface-variant">Tạo project đầu tiên để xây ruleset.</p>
-                      <button
-                        onClick={() => replaceSelected({ ...selected, projects: [emptyProject()] })}
-                        className="mt-4 inline-flex items-center gap-2 rounded-xl bg-m3-primary px-3.5 py-2 text-sm font-semibold text-m3-on-primary hover:bg-m3-primary/90"
-                      >
-                        <Icon name="add" className="text-base" /> Thêm project
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </section>
-            </>
-          )}
+					{/* Validation tab */}
+					{activeTab === "validation" && (
+						<section className="rounded-3xl border border-m3-outline-variant/60 bg-m3-surface-container p-5 shadow-xs">
+							<div className="flex flex-wrap items-start justify-between gap-3">
+								<div>
+									<h3 className="text-sm font-bold text-m3-on-surface">
+										Validation
+									</h3>
+									<p className="mt-1 text-xs text-m3-on-surface-variant">
+										Kiểm tra cấu trúc ruleset trước khi bật Active.
+									</p>
+								</div>
+								<button
+									onClick={validateRuleSet}
+									className="inline-flex items-center gap-2 rounded-xl bg-m3-primary px-3.5 py-2 text-sm font-semibold text-m3-on-primary hover:bg-m3-primary/90"
+								>
+									<Icon name="check_circle" className="text-base" /> Chạy
+									Validate
+								</button>
+							</div>
 
-          {/* Validation tab */}
-          {activeTab === 'validation' && (
-            <section className="rounded-3xl border border-m3-outline-variant/60 bg-m3-surface-container p-5 shadow-xs">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <h3 className="text-sm font-bold text-m3-on-surface">Validation</h3>
-                  <p className="mt-1 text-xs text-m3-on-surface-variant">
-                    Kiểm tra cấu trúc ruleset trước khi bật Active.
-                  </p>
-                </div>
-                <button
-                  onClick={validateRuleSet}
-                  className="inline-flex items-center gap-2 rounded-xl bg-m3-primary px-3.5 py-2 text-sm font-semibold text-m3-on-primary hover:bg-m3-primary/90"
-                >
-                  <Icon name="check_circle" className="text-base" /> Chạy Validate
-                </button>
-              </div>
+							{!validation && (
+								<div className="mt-5 rounded-2xl border border-dashed border-m3-outline-variant/60 bg-m3-surface px-6 py-10 text-center">
+									<Icon
+										name="check_circle"
+										className="mx-auto mb-2 text-3xl text-m3-on-surface-variant/40"
+									/>
+									<p className="text-sm font-medium text-m3-on-surface">
+										Chưa chạy validation
+									</p>
+									<p className="mt-1 text-xs text-m3-on-surface-variant">
+										Nên Validate trước khi bật Active.
+									</p>
+								</div>
+							)}
 
-              {!validation && (
-                <div className="mt-5 rounded-2xl border border-dashed border-m3-outline-variant/60 bg-m3-surface px-6 py-10 text-center">
-                  <Icon name="check_circle" className="mx-auto mb-2 text-3xl text-m3-on-surface-variant/40" />
-                  <p className="text-sm font-medium text-m3-on-surface">Chưa chạy validation</p>
-                  <p className="mt-1 text-xs text-m3-on-surface-variant">Nên Validate trước khi bật Active.</p>
-                </div>
-              )}
+							{validation && (
+								<div className="mt-5 space-y-3">
+									<div
+										className={cx(
+											"flex items-center gap-3 rounded-xl border p-4",
+											validation.isValid
+												? "border-emerald-200 bg-emerald-50"
+												: "border-red-200 bg-red-50",
+										)}
+									>
+										{validation.isValid ? (
+											<Icon
+												name="check_circle"
+												className="text-emerald-600 text-2xl"
+											/>
+										) : (
+											<Icon name="cancel" className="text-m3-error text-2xl" />
+										)}
+										<div>
+											<p
+												className={cx(
+													"text-sm font-bold",
+													validation.isValid
+														? "text-emerald-800"
+														: "text-m3-error",
+												)}
+											>
+												{validation.isValid
+													? "Ruleset hợp lệ"
+													: "Ruleset có lỗi"}
+											</p>
+											<p className="text-xs text-m3-on-surface-variant">
+												{validation.errors?.length || 0} lỗi ·{" "}
+												{validation.warnings?.length || 0} cảnh báo
+											</p>
+										</div>
+									</div>
 
-              {validation && (
-                <div className="mt-5 space-y-3">
-                  <div
-                    className={cx(
-                      'flex items-center gap-3 rounded-xl border p-4',
-                      validation.isValid
-                        ? 'border-emerald-200 bg-emerald-50'
-                        : 'border-red-200 bg-red-50'
-                    )}
-                  >
-                    {validation.isValid ? (
-                      <Icon name="check_circle" className="text-emerald-600 text-2xl" />
-                    ) : (
-                      <Icon name="cancel" className="text-m3-error text-2xl" />
-                    )}
-                    <div>
-                      <p className={cx('text-sm font-bold', validation.isValid ? 'text-emerald-800' : 'text-m3-error')}>
-                        {validation.isValid ? 'Ruleset hợp lệ' : 'Ruleset có lỗi'}
-                      </p>
-                      <p className="text-xs text-m3-on-surface-variant">
-                        {validation.errors?.length || 0} lỗi · {validation.warnings?.length || 0} cảnh báo
-                      </p>
-                    </div>
-                  </div>
+									{(validation.errors || []).length > 0 && (
+										<div className="rounded-2xl border border-m3-error/20 bg-m3-surface overflow-hidden">
+											<div className="border-b border-m3-error/10 bg-m3-error-container/40 px-4 py-3 text-xs font-bold text-m3-on-error-container">
+												Lỗi cần sửa
+											</div>
+											<div className="divide-y divide-m3-outline-variant/40">
+												{(validation.errors || []).map((err) => (
+													<div
+														key={err}
+														className="flex gap-3 px-4 py-3 text-xs text-m3-error"
+													>
+														<Icon
+															name="cancel"
+															className="text-sm mt-0.5 shrink-0"
+														/>
+														<span>{err}</span>
+													</div>
+												))}
+											</div>
+										</div>
+									)}
 
-                  {(validation.errors || []).length > 0 && (
-                    <div className="rounded-2xl border border-m3-error/20 bg-m3-surface overflow-hidden">
-                      <div className="border-b border-m3-error/10 bg-m3-error-container/40 px-4 py-3 text-xs font-bold text-m3-on-error-container">
-                        Lỗi cần sửa
-                      </div>
-                      <div className="divide-y divide-m3-outline-variant/40">
-                        {(validation.errors || []).map((err, i) => (
-                          <div key={i} className="flex gap-3 px-4 py-3 text-xs text-m3-error">
-                            <Icon name="cancel" className="text-sm mt-0.5 shrink-0" />
-                            <span>{err}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+									{(validation.warnings || []).length > 0 && (
+										<div className="rounded-2xl border border-amber-200/60 bg-m3-surface overflow-hidden">
+											<div className="border-b border-amber-100 bg-amber-50 px-4 py-3 text-xs font-bold text-amber-800">
+												Cảnh báo
+											</div>
+											<div className="divide-y divide-m3-outline-variant/40">
+												{(validation.warnings || []).map((warning) => (
+													<div
+														key={warning}
+														className="flex gap-3 px-4 py-3 text-xs text-amber-700"
+													>
+														<Icon
+															name="warning"
+															className="text-sm mt-0.5 shrink-0"
+														/>
+														<span>{warning}</span>
+													</div>
+												))}
+											</div>
+										</div>
+									)}
+								</div>
+							)}
+						</section>
+					)}
 
-                  {(validation.warnings || []).length > 0 && (
-                    <div className="rounded-2xl border border-amber-200/60 bg-m3-surface overflow-hidden">
-                      <div className="border-b border-amber-100 bg-amber-50 px-4 py-3 text-xs font-bold text-amber-800">
-                        Cảnh báo
-                      </div>
-                      <div className="divide-y divide-m3-outline-variant/40">
-                        {(validation.warnings || []).map((warning, i) => (
-                          <div key={i} className="flex gap-3 px-4 py-3 text-xs text-amber-700">
-                            <Icon name="warning" className="text-sm mt-0.5 shrink-0" />
-                            <span>{warning}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </section>
-          )}
+					{/* Test tab */}
+					{activeTab === "test" && (
+						<section className="rounded-3xl border border-m3-outline-variant/60 bg-m3-surface-container p-5 shadow-xs">
+							<div className="mb-5 flex items-start justify-between gap-3">
+								<div>
+									<div className="flex items-center gap-2">
+										<div className="rounded-xl bg-m3-surface p-2 text-m3-on-surface">
+											<Icon name="code" className="text-lg" />
+										</div>
+										<h3 className="text-sm font-bold text-m3-on-surface">
+											Test chấm XML
+										</h3>
+									</div>
+									<p className="mt-1 text-xs text-m3-on-surface-variant">
+										Chọn project và file Office để kiểm tra kết quả chấm trước
+										khi đưa ruleset vào sử dụng.
+									</p>
+								</div>
+							</div>
 
-          {/* Test tab */}
-          {activeTab === 'test' && (
-            <section className="rounded-3xl border border-m3-outline-variant/60 bg-m3-surface-container p-5 shadow-xs">
-              <div className="mb-5 flex items-start justify-between gap-3">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <div className="rounded-xl bg-m3-surface p-2 text-m3-on-surface">
-                      <Icon name="code" className="text-lg" />
-                    </div>
-                    <h3 className="text-sm font-bold text-m3-on-surface">Test chấm XML</h3>
-                  </div>
-                  <p className="mt-1 text-xs text-m3-on-surface-variant">
-                    Chọn project và file Office để kiểm tra kết quả chấm trước khi đưa ruleset vào sử dụng.
-                  </p>
-                </div>
-              </div>
+							<div className="grid gap-4 md:grid-cols-[1fr_1fr_auto] md:items-end">
+								<label className="text-xs font-semibold text-slate-600">
+									Project
+									<select
+										value={gradeProjectCode}
+										onChange={(e) => setGradeProjectCode(e.target.value)}
+										disabled={isTestGrading}
+										className={inputClass}
+									>
+										<option value="">Chọn project</option>
+										{selected.projects.map((p) => (
+											<option key={p.projectCode} value={p.projectCode}>
+												{p.projectName || p.projectCode}
+											</option>
+										))}
+									</select>
+								</label>
 
-              <div className="grid gap-4 md:grid-cols-[1fr_1fr_auto] md:items-end">
-                <label className="text-xs font-semibold text-slate-600">
-                  Project
-                  <select
-                    value={gradeProjectCode}
-                    onChange={(e) => setGradeProjectCode(e.target.value)}
-                    disabled={isTestGrading}
-                    className={inputClass}
-                  >
-                    <option value="">Chọn project</option>
-                    {selected.projects.map((p) => (
-                      <option key={p.projectCode} value={p.projectCode}>
-                        {p.projectName || p.projectCode}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+								<label className="text-xs font-semibold text-slate-600">
+									File bài làm
+									<input
+										type="file"
+										accept=".xlsx,.xlsm,.docx"
+										onChange={(e) => setGradeFile(e.target.files?.[0] || null)}
+										disabled={isTestGrading}
+										className="mt-1 block w-full rounded-lg border border-dashed border-slate-300 bg-slate-50 px-3 py-2 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-white file:px-2 file:py-1 file:text-xs file:font-semibold"
+									/>
+								</label>
 
-                <label className="text-xs font-semibold text-slate-600">
-                  File bài làm
-                  <input
-                    type="file"
-                    accept=".xlsx,.xlsm,.docx"
-                    onChange={(e) => setGradeFile(e.target.files?.[0] || null)}
-                    disabled={isTestGrading}
-                    className="mt-1 block w-full rounded-lg border border-dashed border-slate-300 bg-slate-50 px-3 py-2 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-white file:px-2 file:py-1 file:text-xs file:font-semibold"
-                  />
-                </label>
+								<button
+									onClick={gradeWithXmlRules}
+									disabled={isTestGrading}
+									className={cx(
+										"inline-flex items-center justify-center gap-2 rounded-xl bg-m3-primary px-4 py-2 text-sm font-semibold text-m3-on-primary hover:bg-m3-primary/90",
+										isTestGrading && "cursor-wait opacity-70",
+									)}
+								>
+									{isTestGrading ? (
+										<>
+											<Icon name="refresh" className="animate-spin text-base" />{" "}
+											Dang cham...
+										</>
+									) : (
+										<>
+											<Icon name="upload" className="text-base" /> Chấm thử
+										</>
+									)}
+								</button>
+							</div>
 
-                <button
-                  onClick={gradeWithXmlRules}
-                  disabled={isTestGrading}
-                  className={cx(
-                    'inline-flex items-center justify-center gap-2 rounded-xl bg-m3-primary px-4 py-2 text-sm font-semibold text-m3-on-primary hover:bg-m3-primary/90',
-                    isTestGrading && 'cursor-wait opacity-70'
-                  )}
-                >
-                  {isTestGrading ? (
-                    <>
-                      <Icon name="refresh" className="animate-spin text-base" /> Dang cham...
-                    </>
-                  ) : (
-                    <>
-                      <Icon name="upload" className="text-base" /> Chấm thử
-                    </>
-                  )}
-                </button>
-              </div>
+							{isTestGrading && (
+								<div className="mt-4 flex items-center gap-2 rounded-2xl border border-m3-primary/20 bg-m3-primary/10 px-4 py-3 text-xs font-semibold text-m3-primary">
+									<Icon name="refresh" className="animate-spin text-base" />
+									<span>Dang cham file, vui long cho...</span>
+								</div>
+							)}
 
-              {isTestGrading && (
-                <div className="mt-4 flex items-center gap-2 rounded-2xl border border-m3-primary/20 bg-m3-primary/10 px-4 py-3 text-xs font-semibold text-m3-primary">
-                  <Icon name="refresh" className="animate-spin text-base" />
-                  <span>Dang cham file, vui long cho...</span>
-                </div>
-              )}
+							{renderGradeResult()}
+						</section>
+					)}
 
-              {renderGradeResult()}
-            </section>
-          )}
+					{saveError && (
+						<div className="rounded-2xl border border-m3-error/20 bg-m3-error-container/20 px-4 py-3 text-xs text-m3-on-error-container shadow-xs">
+							<div className="flex items-start gap-2">
+								<Icon
+									name="cancel"
+									className="mt-0.5 shrink-0 text-base text-m3-error"
+								/>
+								<div className="min-w-0">
+									<p className="font-bold">Không thể lưu ruleset</p>
+									<p className="mt-0.5">{saveError}</p>
+								</div>
+								<button
+									onClick={() => setSaveError("")}
+									className="ml-auto shrink-0 text-m3-on-error-container/60 hover:text-m3-error"
+									title="Đóng"
+								>
+									<Icon name="close" className="text-base" />
+								</button>
+							</div>
+						</div>
+					)}
 
-          {saveError && (
-            <div className="rounded-2xl border border-m3-error/20 bg-m3-error-container/20 px-4 py-3 text-xs text-m3-on-error-container shadow-xs">
-              <div className="flex items-start gap-2">
-                <Icon name="cancel" className="mt-0.5 shrink-0 text-base text-m3-error" />
-                <div className="min-w-0">
-                  <p className="font-bold">Không thể lưu ruleset</p>
-                  <p className="mt-0.5">{saveError}</p>
-                </div>
-                <button
-                  onClick={() => setSaveError('')}
-                  className="ml-auto shrink-0 text-m3-on-error-container/60 hover:text-m3-error"
-                  title="Đóng"
-                >
-                  <Icon name="close" className="text-base" />
-                </button>
-              </div>
-            </div>
-          )}
+					<div className="flex items-center gap-2 rounded-2xl border border-amber-200/60 bg-amber-500/10 px-4 py-3 text-xs text-amber-900 dark:text-amber-200">
+						<Icon
+							name="warning"
+							className="shrink-0 text-base text-amber-600"
+						/>
+						<span>
+							Hãy chạy <strong>Validate</strong> đầy đủ trước khi bật{" "}
+							<strong>Active</strong>.
+						</span>
+					</div>
 
-          <div className="flex items-center gap-2 rounded-2xl border border-amber-200/60 bg-amber-500/10 px-4 py-3 text-xs text-amber-900 dark:text-amber-200">
-            <Icon name="warning" className="shrink-0 text-base text-amber-600" />
-            <span>
-              Hãy chạy <strong>Validate</strong> đầy đủ trước khi bật <strong>Active</strong>.
-            </span>
-          </div>
+					{/* Sticky action bar: Save ngay tại vị trí đang nhập, không cần cuộn về đầu trang. */}
+					<div className="sticky bottom-4 z-30 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-m3-outline-variant/60 bg-m3-surface/90 px-4 py-3.5 shadow-xl backdrop-blur-xl p-4">
+						<div className="flex min-w-0 items-center gap-2 text-xs text-m3-on-surface-variant ">
+							<span
+								className={cx(
+									"h-2 w-2 shrink-0 rounded-full",
+									saving
+										? "animate-pulse bg-m3-primary"
+										: saveError
+											? "bg-m3-error"
+											: "bg-emerald-500",
+								)}
+							/>
+							<span className="truncate">
+								{saving
+									? "Đang lưu thay đổi..."
+									: saveError
+										? "Có lỗi cần kiểm tra"
+										: selected.id
+											? "Đã tải ruleset · sẵn sàng lưu"
+											: "Ruleset mới · chưa lưu"}
+							</span>
+						</div>
 
-          {/* Sticky action bar: Save ngay tại vị trí đang nhập, không cần cuộn về đầu trang. */}
-          <div className="sticky bottom-4 z-30 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-m3-outline-variant/60 bg-m3-surface/90 px-4 py-3.5 shadow-xl backdrop-blur-xl p-4">
-            <div className="flex min-w-0 items-center gap-2 text-xs text-m3-on-surface-variant ">
-              <span className={cx(
-                'h-2 w-2 shrink-0 rounded-full',
-                saving ? 'animate-pulse bg-m3-primary' : saveError ? 'bg-m3-error' : 'bg-emerald-500'
-              )} />
-              <span className="truncate">
-                {saving
-                  ? 'Đang lưu thay đổi...'
-                  : saveError
-                    ? 'Có lỗi cần kiểm tra'
-                    : selected.id
-                      ? 'Đã tải ruleset · sẵn sàng lưu'
-                      : 'Ruleset mới · chưa lưu'}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                onClick={validateRuleSet}
-                disabled={saving}
-                className="inline-flex items-center gap-2 rounded-xl border border-m3-outline-variant bg-m3-surface-container px-3.5 py-2.5 text-sm font-bold text-m3-primary transition hover:bg-m3-surface-container-high disabled:opacity-50"
-              >
-                <Icon name="check_circle" className="text-base " /> Validate
-              </button>
-              <button
-                type="button"
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={saveRuleSet}
-                disabled={saving}
-                className="inline-flex items-center gap-2 rounded-xl bg-m3-primary px-4 py-2.5 text-sm font-bold text-m3-on-primary shadow-sm transition hover:bg-m3-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <Icon name="save" className={cx('text-base', saving && 'animate-pulse')} />
-                {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
-              </button>
-            </div>
-          </div>
-        </main>
-      </div>
-    </div>
-  );
+						<div className="flex items-center gap-2">
+							<button
+								onClick={validateRuleSet}
+								disabled={saving}
+								className="inline-flex items-center gap-2 rounded-xl border border-m3-outline-variant bg-m3-surface-container px-3.5 py-2.5 text-sm font-bold text-m3-primary transition hover:bg-m3-surface-container-high disabled:opacity-50"
+							>
+								<Icon name="check_circle" className="text-base " /> Validate
+							</button>
+							<button
+								type="button"
+								onMouseDown={(e) => e.preventDefault()}
+								onClick={saveRuleSet}
+								disabled={saving}
+								className="inline-flex items-center gap-2 rounded-xl bg-m3-primary px-4 py-2.5 text-sm font-bold text-m3-on-primary shadow-sm transition hover:bg-m3-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+							>
+								<Icon
+									name="save"
+									className={cx("text-base", saving && "animate-pulse")}
+								/>
+								{saving ? "Đang lưu..." : "Lưu thay đổi"}
+							</button>
+						</div>
+					</div>
+				</main>
+			</div>
+		</div>
+	);
 };
 
 export default XmlGradingRulesPage;

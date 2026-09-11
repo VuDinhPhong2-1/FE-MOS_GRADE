@@ -1,91 +1,91 @@
 // src/types/score.types.ts
 export interface TaskDisplayIssue {
-  heading: string;
-  message: string;
-  fixAction: string;
+	heading: string;
+	message: string;
+	fixAction: string;
 }
 
 export interface Score {
-  id: string;
-  studentId: string;
-  assignmentId: string;
-  classId: string;
-  scoreValue?: number;
-  feedback?: string;
-  autoGradingErrors?: string[];
-  autoGradingTaskResults?: AutoGradingTaskResultRequest[];
-  gradedAt?: string;
-  gradedBy?: string;
+	id: string;
+	studentId: string;
+	assignmentId: string;
+	classId: string;
+	scoreValue?: number;
+	feedback?: string;
+	autoGradingErrors?: string[];
+	autoGradingTaskResults?: AutoGradingTaskResultRequest[];
+	gradedAt?: string;
+	gradedBy?: string;
 }
 
 export interface ScoreResponse {
-  id: string;
-  studentId: string;
-  studentFirstName: string;
-  studentMiddleName: string;
-  studentFullName: string;
-  assignmentId: string;
-  assignmentName: string;
-  scoreValue?: number;
-  feedback?: string;
-  autoGradingErrors?: string[];
-  autoGradingTaskResults?: AutoGradingTaskResultRequest[];
-  gradedAt?: string;
-  gradedBy?: string;
-  gradedByName?: string;
+	id: string;
+	studentId: string;
+	studentFirstName: string;
+	studentMiddleName: string;
+	studentFullName: string;
+	assignmentId: string;
+	assignmentName: string;
+	scoreValue?: number;
+	feedback?: string;
+	autoGradingErrors?: string[];
+	autoGradingTaskResults?: AutoGradingTaskResultRequest[];
+	gradedAt?: string;
+	gradedBy?: string;
+	gradedByName?: string;
 }
 
 export interface AutoGradingTaskResultRequest {
-  taskId: string;
-  taskName: string;
-  score: number;
-  maxScore: number;
-  isPassed: boolean;
-  details?: string[];
-  errors?: string[];
-  fixActions?: string[];
-  displayIssues: TaskDisplayIssue[];
+	taskId: string;
+	taskName: string;
+	score: number;
+	maxScore: number;
+	isPassed: boolean;
+	details?: string[];
+	errors?: string[];
+	fixActions?: string[];
+	displayIssues: TaskDisplayIssue[];
 }
 
 export interface CreateScoreRequest {
-  studentId: string;
-  assignmentId: string;
-  classId: string;
-  scoreValue?: number;
-  feedback?: string;
-  autoGradingErrors?: string[];
-  autoGradingTaskResults?: AutoGradingTaskResultRequest[];
+	studentId: string;
+	assignmentId: string;
+	classId: string;
+	scoreValue?: number;
+	feedback?: string;
+	autoGradingErrors?: string[];
+	autoGradingTaskResults?: AutoGradingTaskResultRequest[];
 }
 
 export interface BulkScoreRequest {
-  assignmentId: string;
-  classId: string;
-  scores: StudentScoreItem[];
+	assignmentId: string;
+	classId: string;
+	scores: StudentScoreItem[];
 }
 
 export interface StudentScoreItem {
-  studentId: string;
-  scoreValue?: number;
-  feedback?: string;
-  autoGradingErrors?: string[];
-  autoGradingTaskResults?: AutoGradingTaskResultRequest[];
+	studentId: string;
+	scoreValue?: number;
+	feedback?: string;
+	autoGradingErrors?: string[];
+	autoGradingTaskResults?: AutoGradingTaskResultRequest[];
 }
 
 export interface StudentScoreReportResponse {
-  studentId: string;
-  studentFullName: string;
-  scores: ScoreDetailResponse[];
-  averageScore: number;
-  totalAssignments: number;
-  completedAssignments: number;
+	studentId: string;
+	studentFullName: string;
+	scores: ScoreDetailResponse[];
+	averageScore: number;
+	totalAssignments: number;
+	completedAssignments: number;
 }
 
 export interface ScoreDetailResponse {
-  assignmentName: string;
-  scoreValue?: number;
-  maxScore: number;
-  feedback?: string;
-  autoGradingErrors?: string[];
-  autoGradingTaskResults?: AutoGradingTaskResultRequest[];
-  gradedAt?: string;
+	assignmentName: string;
+	scoreValue?: number;
+	maxScore: number;
+	feedback?: string;
+	autoGradingErrors?: string[];
+	autoGradingTaskResults?: AutoGradingTaskResultRequest[];
+	gradedAt?: string;
 }

@@ -1,299 +1,315 @@
 import {
-  Card,
-  CardContent,
-  Icon,
-  IconButton,
-  Menu,
-  MenuContent,
-  MenuDivider,
-  MenuGroup,
-  MenuItem,
-  MenuTrigger,
-  ProgressIndicator,
-  Search,
-} from '@bug-on/m3-expressive';
-import StudentList from './StudentList';
-import { usePageHeader } from '../context/PageActionsContext';
-import type { School } from '../types';
+	Card,
+	CardContent,
+	Icon,
+	IconButton,
+	Menu,
+	MenuContent,
+	MenuDivider,
+	MenuGroup,
+	MenuItem,
+	MenuTrigger,
+	ProgressIndicator,
+	Search,
+} from "@bug-on/m3-expressive";
+import { usePageHeader } from "../context/PageActionsContext";
 import {
-  ClassFormModal,
-  ClassGrid,
-  ClassStatsGrid,
-  DeleteClassDialog,
-  HandoverModal,
-  useClassList,
-} from '../features/class-list';
+	ClassFormModal,
+	ClassGrid,
+	ClassStatsGrid,
+	DeleteClassDialog,
+	HandoverModal,
+	useClassList,
+} from "../features/class-list";
+import type { School } from "../types";
+import StudentList from "./StudentList";
 
 interface ClassListProps {
-  selectedSchool: School;
+	selectedSchool: School;
 }
 
 const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
-  const {
-    classes,
-    visibleClasses,
-    selectedClass,
-    isLoading,
-    error,
-    canCreateClass,
-    canManageClass,
-    canHandoverClass,
-    classStatusFilter,
-    setClassStatusFilter,
-    classSearch,
-    setClassSearch,
-    selectedGradeFilter,
-    setSelectedGradeFilter,
-    handleClearSearch,
-    handleSelectClass,
-    handleBackToClassList,
-    showModal,
-    editingClass,
-    formData,
-    setFormData,
-    isActive,
-    setIsActive,
-    formError,
-    setFormError,
-    isSubmitting,
-    isSubmitDisabled,
-    handleOpenAddModal,
-    handleOpenEditModal,
-    handleCloseFormModal,
-    handleSubmitForm,
-    classToDelete,
-    isDeletingClass,
-    openDeleteDialog,
-    closeDeleteDialog,
-    handleConfirmDelete,
-    showHandoverModal,
-    handoverClass,
-    teachers,
-    isLoadingTeachers,
-    handoverError,
-    handoverBusyTeacherId,
-    handoverSearch,
-    setHandoverSearch,
-    handleOpenHandoverModal,
-    handleCloseHandoverModal,
-    handleToggleHandover,
-  } = useClassList(selectedSchool);
+	const {
+		classes,
+		visibleClasses,
+		selectedClass,
+		isLoading,
+		error,
+		canCreateClass,
+		canManageClass,
+		canHandoverClass,
+		classStatusFilter,
+		setClassStatusFilter,
+		classSearch,
+		setClassSearch,
+		selectedGradeFilter,
+		setSelectedGradeFilter,
+		handleClearSearch,
+		handleSelectClass,
+		handleBackToClassList,
+		showModal,
+		editingClass,
+		formData,
+		setFormData,
+		isActive,
+		setIsActive,
+		formError,
+		setFormError,
+		isSubmitting,
+		isSubmitDisabled,
+		handleOpenAddModal,
+		handleOpenEditModal,
+		handleCloseFormModal,
+		handleSubmitForm,
+		classToDelete,
+		isDeletingClass,
+		openDeleteDialog,
+		closeDeleteDialog,
+		handleConfirmDelete,
+		showHandoverModal,
+		handoverClass,
+		teachers,
+		isLoadingTeachers,
+		handoverError,
+		handoverBusyTeacherId,
+		handoverSearch,
+		setHandoverSearch,
+		handleOpenHandoverModal,
+		handleCloseHandoverModal,
+		handleToggleHandover,
+	} = useClassList(selectedSchool);
 
-  usePageHeader(
-    {
-      title: selectedClass ? `Lớp ${selectedClass.name}` : selectedSchool.name,
-      subtitle: selectedClass ? 'Danh sách học sinh' : 'Danh sách lớp học trực thuộc',
-      searchSlot: !selectedClass ? (
-        <Search
-          id="classlist-search"
-          query={classSearch}
-          onQueryChange={setClassSearch}
-          onSearch={setClassSearch}
-          active={false}
-          onActiveChange={() => { }}
-          placeholder="Tìm theo tên lớp..."
-          aria-label="Tìm kiếm lớp học"
-          className="w-64 xl:w-72"
-          styleType="contained"
-        />
-      ) : undefined,
-      actions: !selectedClass
-        ? [
-          {
-            id: 'filter-classes',
-            label: 'Lọc',
-            icon: 'tune',
-            customNode: (
-              <Menu variant='expressive' colorVariant='vibrant'>
-                <MenuTrigger asChild>
-                  <IconButton
-                    colorStyle="tonal"
-                    size="md"
-                    aria-label="Bộ lọc lớp học"
-                    title="Bộ lọc lớp học"
-                  >
-                    <Icon name="tune" size={20} />
-                  </IconButton>
-                </MenuTrigger>
-                <MenuContent align="end" className="w-64" separatorStyle='gap'>
-                  <MenuGroup label="Trạng thái lớp">
-                    <MenuItem
-                      selected={classStatusFilter === 'all'}
-                      keepOpen
-                      onClick={() => setClassStatusFilter('all')}
-                    >
-                      Tất cả trạng thái
-                    </MenuItem>
-                    <MenuItem
-                      selected={classStatusFilter === 'active'}
-                      keepOpen
-                      onClick={() => setClassStatusFilter('active')}
-                    >
-                      Đang hoạt động
-                    </MenuItem>
-                    <MenuItem
-                      selected={classStatusFilter === 'inactive'}
-                      keepOpen
-                      onClick={() => setClassStatusFilter('inactive')}
-                    >
-                      Ngừng hoạt động
-                    </MenuItem>
-                  </MenuGroup>
-                  <MenuDivider isGapVariant className='bg-transparent' />
-                  <MenuGroup label="Lọc theo khối">
-                    <MenuItem
-                      selected={selectedGradeFilter === ''}
-                      keepOpen
-                      onClick={() => setSelectedGradeFilter('')}
-                    >
-                      Tất cả các khối
-                    </MenuItem>
-                    <MenuItem
-                      selected={selectedGradeFilter === '10'}
-                      keepOpen
-                      onClick={() => setSelectedGradeFilter('10')}
-                    >
-                      Khối 10
-                    </MenuItem>
-                    <MenuItem
-                      selected={selectedGradeFilter === '11'}
-                      keepOpen
-                      onClick={() => setSelectedGradeFilter('11')}
-                    >
-                      Khối 11
-                    </MenuItem>
-                    <MenuItem
-                      selected={selectedGradeFilter === '12'}
-                      keepOpen
-                      onClick={() => setSelectedGradeFilter('12')}
-                    >
-                      Khối 12
-                    </MenuItem>
-                  </MenuGroup>
-                </MenuContent>
-              </Menu >
-            ),
-          },
-          ...(canCreateClass
-            ? [
-              {
-                id: 'add-class',
-                label: 'Thêm lớp mới',
-                icon: 'add',
-                colorStyle: 'filled' as const,
-                onClick: handleOpenAddModal,
-              },
-            ]
-            : []),
-        ]
-        : [],
-    },
-    [
-      selectedClass,
-      selectedSchool.name,
-      classSearch,
-      classStatusFilter,
-      selectedGradeFilter,
-      canCreateClass,
-      handleOpenAddModal,
-      setClassSearch,
-      setClassStatusFilter,
-      setSelectedGradeFilter,
-    ]
-  );
+	usePageHeader(
+		{
+			title: selectedClass ? `Lớp ${selectedClass.name}` : selectedSchool.name,
+			subtitle: selectedClass
+				? "Danh sách học sinh"
+				: "Danh sách lớp học trực thuộc",
+			searchSlot: !selectedClass ? (
+				<Search
+					id="classlist-search"
+					query={classSearch}
+					onQueryChange={setClassSearch}
+					onSearch={setClassSearch}
+					active={false}
+					onActiveChange={() => {}}
+					placeholder="Tìm theo tên lớp..."
+					aria-label="Tìm kiếm lớp học"
+					className="w-64 xl:w-72"
+					styleType="contained"
+				/>
+			) : undefined,
+			actions: !selectedClass
+				? [
+						{
+							id: "filter-classes",
+							label: "Lọc",
+							icon: "tune",
+							customNode: (
+								<Menu variant="expressive" colorVariant="vibrant">
+									<MenuTrigger asChild>
+										<IconButton
+											colorStyle="tonal"
+											size="md"
+											aria-label="Bộ lọc lớp học"
+											title="Bộ lọc lớp học"
+										>
+											<Icon name="tune" size={20} />
+										</IconButton>
+									</MenuTrigger>
+									<MenuContent
+										align="end"
+										className="w-64"
+										separatorStyle="gap"
+									>
+										<MenuGroup label="Trạng thái lớp">
+											<MenuItem
+												selected={classStatusFilter === "all"}
+												keepOpen
+												onClick={() => setClassStatusFilter("all")}
+											>
+												Tất cả trạng thái
+											</MenuItem>
+											<MenuItem
+												selected={classStatusFilter === "active"}
+												keepOpen
+												onClick={() => setClassStatusFilter("active")}
+											>
+												Đang hoạt động
+											</MenuItem>
+											<MenuItem
+												selected={classStatusFilter === "inactive"}
+												keepOpen
+												onClick={() => setClassStatusFilter("inactive")}
+											>
+												Ngừng hoạt động
+											</MenuItem>
+										</MenuGroup>
+										<MenuDivider isGapVariant className="bg-transparent" />
+										<MenuGroup label="Lọc theo khối">
+											<MenuItem
+												selected={selectedGradeFilter === ""}
+												keepOpen
+												onClick={() => setSelectedGradeFilter("")}
+											>
+												Tất cả các khối
+											</MenuItem>
+											<MenuItem
+												selected={selectedGradeFilter === "10"}
+												keepOpen
+												onClick={() => setSelectedGradeFilter("10")}
+											>
+												Khối 10
+											</MenuItem>
+											<MenuItem
+												selected={selectedGradeFilter === "11"}
+												keepOpen
+												onClick={() => setSelectedGradeFilter("11")}
+											>
+												Khối 11
+											</MenuItem>
+											<MenuItem
+												selected={selectedGradeFilter === "12"}
+												keepOpen
+												onClick={() => setSelectedGradeFilter("12")}
+											>
+												Khối 12
+											</MenuItem>
+										</MenuGroup>
+									</MenuContent>
+								</Menu>
+							),
+						},
+						...(canCreateClass
+							? [
+									{
+										id: "add-class",
+										label: "Thêm lớp mới",
+										icon: "add",
+										colorStyle: "filled" as const,
+										onClick: handleOpenAddModal,
+									},
+								]
+							: []),
+					]
+				: [],
+		},
+		[
+			selectedClass,
+			selectedSchool.name,
+			classSearch,
+			classStatusFilter,
+			selectedGradeFilter,
+			canCreateClass,
+			handleOpenAddModal,
+			setClassSearch,
+			setClassStatusFilter,
+			setSelectedGradeFilter,
+		],
+	);
 
-  if (selectedClass) {
-    const selectedClassReadOnly = !canManageClass(selectedClass);
-    return (
-      <StudentList
-        selectedClass={selectedClass}
-        readOnly={selectedClassReadOnly}
-        onBack={handleBackToClassList}
-      />
-    );
-  }
+	if (selectedClass) {
+		const selectedClassReadOnly = !canManageClass(selectedClass);
+		return (
+			<StudentList
+				selectedClass={selectedClass}
+				readOnly={selectedClassReadOnly}
+				onBack={handleBackToClassList}
+			/>
+		);
+	}
 
-  if (isLoading) {
-    return (
-      <div className="flex h-64 flex-col items-center justify-center gap-3">
-        <ProgressIndicator variant="circular" shape="wavy" size={64} aria-label="Đang tải danh sách lớp..." />
-        <span className="text-sm font-medium text-m3-on-surface-variant">Đang tải danh sách lớp...</span>
-      </div>
-    );
-  }
+	if (isLoading) {
+		return (
+			<div className="flex h-64 flex-col items-center justify-center gap-3">
+				<ProgressIndicator
+					variant="circular"
+					shape="wavy"
+					size={64}
+					aria-label="Đang tải danh sách lớp..."
+				/>
+				<span className="text-sm font-medium text-m3-on-surface-variant">
+					Đang tải danh sách lớp...
+				</span>
+			</div>
+		);
+	}
 
-  return (
-    <div className="space-y-6">
-      {/* Thông báo lỗi nếu có */}
-      {error && (
-        <Card variant="outlined" className="border-m3-error bg-m3-error-container text-m3-on-error-container">
-          <CardContent className="flex items-center gap-3 p-4 text-xs font-medium">
-            <Icon name="warning" className="shrink-0 text-xl" />
-            <span>{error}</span>
-          </CardContent>
-        </Card>
-      )}
+	return (
+		<div className="space-y-6">
+			{/* Thông báo lỗi nếu có */}
+			{error && (
+				<Card
+					variant="outlined"
+					className="border-m3-error bg-m3-error-container text-m3-on-error-container"
+				>
+					<CardContent className="flex items-center gap-3 p-4 text-xs font-medium">
+						<Icon name="warning" className="shrink-0 text-xl" />
+						<span>{error}</span>
+					</CardContent>
+				</Card>
+			)}
 
-      {/* Thống kê 4 ô theo chuẩn M3 Card */}
-      <ClassStatsGrid classes={classes} />
+			{/* Thống kê 4 ô theo chuẩn M3 Card */}
+			<ClassStatsGrid classes={classes} />
 
-      {/* Danh sách lớp học theo MD3 Card */}
-      <ClassGrid
-        classes={visibleClasses}
-        canManageClass={canManageClass}
-        canHandoverClass={canHandoverClass}
-        canCreateClass={canCreateClass}
-        totalClassCount={classes.length}
-        searchQuery={classSearch}
-        onSelectClass={handleSelectClass}
-        onEditClass={handleOpenEditModal}
-        onDeleteClass={openDeleteDialog}
-        onHandoverClass={handleOpenHandoverModal}
-        onOpenAddModal={handleOpenAddModal}
-        onClearSearch={handleClearSearch}
-      />
+			{/* Danh sách lớp học theo MD3 Card */}
+			<ClassGrid
+				classes={visibleClasses}
+				canManageClass={canManageClass}
+				canHandoverClass={canHandoverClass}
+				canCreateClass={canCreateClass}
+				totalClassCount={classes.length}
+				searchQuery={classSearch}
+				onSelectClass={handleSelectClass}
+				onEditClass={handleOpenEditModal}
+				onDeleteClass={openDeleteDialog}
+				onHandoverClass={handleOpenHandoverModal}
+				onOpenAddModal={handleOpenAddModal}
+				onClearSearch={handleClearSearch}
+			/>
 
-      {/* Modal Bàn giao quyền lớp học */}
-      <HandoverModal
-        open={showHandoverModal}
-        onClose={handleCloseHandoverModal}
-        handoverClass={handoverClass}
-        teachers={teachers}
-        isLoadingTeachers={isLoadingTeachers}
-        handoverError={handoverError}
-        handoverBusyTeacherId={handoverBusyTeacherId}
-        handoverSearch={handoverSearch}
-        onSearchChange={setHandoverSearch}
-        onToggleHandover={handleToggleHandover}
-      />
+			{/* Modal Bàn giao quyền lớp học */}
+			<HandoverModal
+				open={showHandoverModal}
+				onClose={handleCloseHandoverModal}
+				handoverClass={handoverClass}
+				teachers={teachers}
+				isLoadingTeachers={isLoadingTeachers}
+				handoverError={handoverError}
+				handoverBusyTeacherId={handoverBusyTeacherId}
+				handoverSearch={handoverSearch}
+				onSearchChange={setHandoverSearch}
+				onToggleHandover={handleToggleHandover}
+			/>
 
-      {/* Modal Thêm / Chỉnh sửa lớp học */}
-      <ClassFormModal
-        open={showModal}
-        onClose={handleCloseFormModal}
-        editingClass={editingClass}
-        formData={formData}
-        setFormData={setFormData}
-        isActive={isActive}
-        setIsActive={setIsActive}
-        formError={formError}
-        setFormError={setFormError}
-        isSubmitting={isSubmitting}
-        onSubmit={handleSubmitForm}
-        attendanceSpreadsheetId={selectedSchool.attendanceSpreadsheetId}
-        isSubmitDisabled={isSubmitDisabled}
-      />
+			{/* Modal Thêm / Chỉnh sửa lớp học */}
+			<ClassFormModal
+				open={showModal}
+				onClose={handleCloseFormModal}
+				editingClass={editingClass}
+				formData={formData}
+				setFormData={setFormData}
+				isActive={isActive}
+				setIsActive={setIsActive}
+				formError={formError}
+				setFormError={setFormError}
+				isSubmitting={isSubmitting}
+				onSubmit={handleSubmitForm}
+				attendanceSpreadsheetId={selectedSchool.attendanceSpreadsheetId}
+				isSubmitDisabled={isSubmitDisabled}
+			/>
 
-      {/* Modal Xác nhận xóa lớp học */}
-      <DeleteClassDialog
-        open={Boolean(classToDelete)}
-        isDeleting={isDeletingClass}
-        classToDelete={classToDelete}
-        onClose={closeDeleteDialog}
-        onConfirmDelete={handleConfirmDelete}
-      />
-    </div>
-  );
+			{/* Modal Xác nhận xóa lớp học */}
+			<DeleteClassDialog
+				open={Boolean(classToDelete)}
+				isDeleting={isDeletingClass}
+				classToDelete={classToDelete}
+				onClose={closeDeleteDialog}
+				onConfirmDelete={handleConfirmDelete}
+			/>
+		</div>
+	);
 };
 
 export default ClassList;
