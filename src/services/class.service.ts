@@ -1,189 +1,241 @@
-﻿import { API_BASE_URL } from '../config/api';
-import type { Class, CreateClassRequest } from '../types/class.types';
-import { authFetch } from './auth-fetch';
+﻿import { API_BASE_URL } from "../config/api";
+import type { Class, CreateClassRequest } from "../types/class.types";
+import { authFetch } from "./auth-fetch";
 
 export class ApiServiceError extends Error {
-    status: number;
+	status: number;
 
-    constructor(status: number, message: string) {
-        super(message);
-        this.status = status;
-        this.name = 'ApiServiceError';
-    }
+	constructor(status: number, message: string) {
+		super(message);
+		this.status = status;
+		this.name = "ApiServiceError";
+	}
 }
 
-const parseErrorMessage = async (response: Response, fallback: string): Promise<string> => {
-    try {
-        const data = await response.json();
-        if (data && typeof data.message === 'string' && data.message.trim()) {
-            return data.message;
-        }
-    } catch {
-        // ignore
-    }
+const parseErrorMessage = async (
+	response: Response,
+	fallback: string,
+): Promise<string> => {
+	try {
+		const data = await response.json();
+		if (data && typeof data.message === "string" && data.message.trim()) {
+			return data.message;
+		}
+	} catch {
+		// ignore
+	}
 
-    return fallback;
+	return fallback;
 };
 
 export const classService = {
-    async getAllClasses(
-        getAccessToken: (forceRefresh?: boolean) => Promise<string | null>,
-        includeInactive = false
-    ): Promise<Class[]> {
-        const query = includeInactive ? '?includeInactive=true' : '';
-        const response = await authFetch(`${API_BASE_URL}/class${query}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        }, getAccessToken);
+	async getAllClasses(
+		getAccessToken: (forceRefresh?: boolean) => Promise<string | null>,
+		includeInactive = false,
+	): Promise<Class[]> {
+		const query = includeInactive ? "?includeInactive=true" : "";
+		const response = await authFetch(
+			`${API_BASE_URL}/class${query}`,
+			{
+				method: "GET",
+				headers: {
+					"Content-Type": "application/json",
+				},
+			},
+			getAccessToken,
+		);
 
-        if (!response.ok) {
-            const message = await parseErrorMessage(response, 'Không thể lấy danh sách lớp');
-            throw new ApiServiceError(response.status, message);
-        }
+		if (!response.ok) {
+			const message = await parseErrorMessage(
+				response,
+				"Không thể lấy danh sách lớp",
+			);
+			throw new ApiServiceError(response.status, message);
+		}
 
-        return response.json();
-    },
+		return response.json();
+	},
 
-    async getClassesBySchool(
-        schoolId: string,
-        getAccessToken: (forceRefresh?: boolean) => Promise<string | null>,
-        showInactive: boolean
-    ): Promise<Class[]> {
-        const query = showInactive ? '?includeInactive=true' : '';
+	async getClassesBySchool(
+		schoolId: string,
+		getAccessToken: (forceRefresh?: boolean) => Promise<string | null>,
+		showInactive: boolean,
+	): Promise<Class[]> {
+		const query = showInactive ? "?includeInactive=true" : "";
 
-        const response = await authFetch(`${API_BASE_URL}/class/school/${schoolId}${query}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        }, getAccessToken);
+		const response = await authFetch(
+			`${API_BASE_URL}/class/school/${schoolId}${query}`,
+			{
+				method: "GET",
+				headers: {
+					"Content-Type": "application/json",
+				},
+			},
+			getAccessToken,
+		);
 
-        if (!response.ok) {
-            const message = await parseErrorMessage(response, 'Không thể lấy danh sách lớp');
-            throw new ApiServiceError(response.status, message);
-        }
+		if (!response.ok) {
+			const message = await parseErrorMessage(
+				response,
+				"Không thể lấy danh sách lớp",
+			);
+			throw new ApiServiceError(response.status, message);
+		}
 
-        return response.json();
-    },
+		return response.json();
+	},
 
-    async getClassById(
-        id: string,
-        getAccessToken: (forceRefresh?: boolean) => Promise<string | null>
-    ): Promise<Class> {
-        const response = await authFetch(`${API_BASE_URL}/class/${id}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        }, getAccessToken);
+	async getClassById(
+		id: string,
+		getAccessToken: (forceRefresh?: boolean) => Promise<string | null>,
+	): Promise<Class> {
+		const response = await authFetch(
+			`${API_BASE_URL}/class/${id}`,
+			{
+				method: "GET",
+				headers: {
+					"Content-Type": "application/json",
+				},
+			},
+			getAccessToken,
+		);
 
-        if (!response.ok) {
-            const message = await parseErrorMessage(response, 'Không thể lấy thông tin lớp');
-            throw new ApiServiceError(response.status, message);
-        }
+		if (!response.ok) {
+			const message = await parseErrorMessage(
+				response,
+				"Không thể lấy thông tin lớp",
+			);
+			throw new ApiServiceError(response.status, message);
+		}
 
-        return response.json();
-    },
+		return response.json();
+	},
 
-    async createClass(
-        data: CreateClassRequest,
-        getAccessToken: (forceRefresh?: boolean) => Promise<string | null>
-    ): Promise<Class> {
-        const response = await authFetch(`${API_BASE_URL}/class`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data),
-        }, getAccessToken);
+	async createClass(
+		data: CreateClassRequest,
+		getAccessToken: (forceRefresh?: boolean) => Promise<string | null>,
+	): Promise<Class> {
+		const response = await authFetch(
+			`${API_BASE_URL}/class`,
+			{
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify(data),
+			},
+			getAccessToken,
+		);
 
-        if (!response.ok) {
-            const message = await parseErrorMessage(response, 'Không thể tạo lớp');
-            throw new ApiServiceError(response.status, message);
-        }
+		if (!response.ok) {
+			const message = await parseErrorMessage(response, "Không thể tạo lớp");
+			throw new ApiServiceError(response.status, message);
+		}
 
-        return response.json();
-    },
+		return response.json();
+	},
 
-    async updateClass(
-        id: string,
-        data: Partial<CreateClassRequest>,
-        getAccessToken: (forceRefresh?: boolean) => Promise<string | null>
-    ): Promise<Class> {
-        const response = await authFetch(`${API_BASE_URL}/class/${id}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data),
-        }, getAccessToken);
+	async updateClass(
+		id: string,
+		data: Partial<CreateClassRequest>,
+		getAccessToken: (forceRefresh?: boolean) => Promise<string | null>,
+	): Promise<Class> {
+		const response = await authFetch(
+			`${API_BASE_URL}/class/${id}`,
+			{
+				method: "PUT",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify(data),
+			},
+			getAccessToken,
+		);
 
-        if (!response.ok) {
-            const message = await parseErrorMessage(response, 'Không thể cập nhật lớp');
-            throw new ApiServiceError(response.status, message);
-        }
+		if (!response.ok) {
+			const message = await parseErrorMessage(
+				response,
+				"Không thể cập nhật lớp",
+			);
+			throw new ApiServiceError(response.status, message);
+		}
 
-        return response.json();
-    },
+		return response.json();
+	},
 
-    async deleteClass(
-        id: string,
-        getAccessToken: (forceRefresh?: boolean) => Promise<string | null>
-    ): Promise<void> {
-        const response = await authFetch(`${API_BASE_URL}/class/${id}`, {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        }, getAccessToken);
+	async deleteClass(
+		id: string,
+		getAccessToken: (forceRefresh?: boolean) => Promise<string | null>,
+	): Promise<void> {
+		const response = await authFetch(
+			`${API_BASE_URL}/class/${id}`,
+			{
+				method: "DELETE",
+				headers: {
+					"Content-Type": "application/json",
+				},
+			},
+			getAccessToken,
+		);
 
-        if (!response.ok) {
-            const message = await parseErrorMessage(response, 'Không thể xóa lớp');
-            throw new ApiServiceError(response.status, message);
-        }
-    },
+		if (!response.ok) {
+			const message = await parseErrorMessage(response, "Không thể xóa lớp");
+			throw new ApiServiceError(response.status, message);
+		}
+	},
 
-    async grantClassManagement(
-        classId: string,
-        teacherId: string,
-        getAccessToken: (forceRefresh?: boolean) => Promise<string | null>
-    ): Promise<Class> {
-        const response = await authFetch(`${API_BASE_URL}/class/${classId}/handover`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ teacherId }),
-        }, getAccessToken);
+	async grantClassManagement(
+		classId: string,
+		teacherId: string,
+		getAccessToken: (forceRefresh?: boolean) => Promise<string | null>,
+	): Promise<Class> {
+		const response = await authFetch(
+			`${API_BASE_URL}/class/${classId}/handover`,
+			{
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({ teacherId }),
+			},
+			getAccessToken,
+		);
 
-        if (!response.ok) {
-            const message = await parseErrorMessage(response, 'Không thể bàn giao quyền quản lý lớp');
-            throw new ApiServiceError(response.status, message);
-        }
+		if (!response.ok) {
+			const message = await parseErrorMessage(
+				response,
+				"Không thể bàn giao quyền quản lý lớp",
+			);
+			throw new ApiServiceError(response.status, message);
+		}
 
-        return response.json();
-    },
+		return response.json();
+	},
 
-    async revokeClassManagement(
-        classId: string,
-        teacherId: string,
-        getAccessToken: (forceRefresh?: boolean) => Promise<string | null>
-    ): Promise<Class> {
-        const response = await authFetch(`${API_BASE_URL}/class/${classId}/handover/${teacherId}`, {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        }, getAccessToken);
+	async revokeClassManagement(
+		classId: string,
+		teacherId: string,
+		getAccessToken: (forceRefresh?: boolean) => Promise<string | null>,
+	): Promise<Class> {
+		const response = await authFetch(
+			`${API_BASE_URL}/class/${classId}/handover/${teacherId}`,
+			{
+				method: "DELETE",
+				headers: {
+					"Content-Type": "application/json",
+				},
+			},
+			getAccessToken,
+		);
 
-        if (!response.ok) {
-            const message = await parseErrorMessage(response, 'Không thể thu hồi quyền quản lý lớp');
-            throw new ApiServiceError(response.status, message);
-        }
+		if (!response.ok) {
+			const message = await parseErrorMessage(
+				response,
+				"Không thể thu hồi quyền quản lý lớp",
+			);
+			throw new ApiServiceError(response.status, message);
+		}
 
-        return response.json();
-    },
+		return response.json();
+	},
 };
-

@@ -11,8 +11,9 @@ node_modules
 dist
 dist-ssr
 *.local
+# Package managers & lockfiles
 package-lock.json
-!package-lock.json
+!bun.lock
 
 # Environment variables
 .env
@@ -35,4 +36,3 @@ tmp-*
 *.njsproj
 *.sln
 *.sw?
-package-lock.json

@@ -1,24 +1,23 @@
-import { useEffect, useRef, useState } from 'react';
-import { Icon, ProgressIndicator } from '@bug-on/m3-expressive';
-
+import { Icon, ProgressIndicator } from "@bug-on/m3-expressive";
+import { useEffect, useRef, useState } from "react";
+import { insertedImageAssetsService } from "../../services/insertedImageAssets.service";
 import type {
-  ImageInsertConfig,
-  ImageWrapType
-} from '../../types/xml-grading-rules.types';
-import { insertedImageAssetsService } from '../../services/insertedImageAssets.service';
+	ImageInsertConfig,
+	ImageWrapType,
+} from "../../types/xml-grading-rules.types";
 
 interface InsertedImageEditorProps {
-  config?: ImageInsertConfig;
-  onChange: (config: ImageInsertConfig) => void;
-  getAccessToken: () => Promise<string | null> | string | null;
+	config?: ImageInsertConfig;
+	onChange: (config: ImageInsertConfig) => void;
+	getAccessToken: () => Promise<string | null> | string | null;
 }
 
 const ACCEPTED_IMAGE_TYPES = [
-  'image/png',
-  'image/jpeg',
-  'image/gif',
-  'image/bmp',
-  'image/webp',
+	"image/png",
+	"image/jpeg",
+	"image/gif",
+	"image/bmp",
+	"image/webp",
 ];
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -26,608 +25,655 @@ const emuPerInch = 914400;
 const centimetersPerInch = 2.54;
 
 const wrapOptions: Array<{ value: ImageWrapType; label: string }> = [
-  { value: 'inline', label: 'In Line with Text' },
-  { value: 'square', label: 'Square' },
-  { value: 'tight', label: 'Tight' },
-  { value: 'through', label: 'Through' },
-  { value: 'topAndBottom', label: 'Top and Bottom' },
-  { value: 'behind', label: 'Behind Text' },
-  { value: 'inFront', label: 'In Front of Text' },
+	{ value: "inline", label: "In Line with Text" },
+	{ value: "square", label: "Square" },
+	{ value: "tight", label: "Tight" },
+	{ value: "through", label: "Through" },
+	{ value: "topAndBottom", label: "Top and Bottom" },
+	{ value: "behind", label: "Behind Text" },
+	{ value: "inFront", label: "In Front of Text" },
 ];
 
 const parseLengthToEmu = (value: string) => {
-  const raw = value.trim().replace(',', '.');
-  if (!raw) return undefined;
+	const raw = value.trim().replace(",", ".");
+	if (!raw) return undefined;
 
-  const match = raw.match(/^(\d+(?:\.\d*)?|\.\d+)\s*(cm|centimeter|centimeters|in|inch|inches|")?$/i);
-  if (!match) return undefined;
+	const match = raw.match(
+		/^(\d+(?:\.\d*)?|\.\d+)\s*(cm|centimeter|centimeters|in|inch|inches|")?$/i,
+	);
+	if (!match) return undefined;
 
-  const amount = Number(match[1]);
-  if (!Number.isFinite(amount) || amount <= 0) return undefined;
+	const amount = Number(match[1]);
+	if (!Number.isFinite(amount) || amount <= 0) return undefined;
 
-  const unit = (match[2] ?? 'in').toLowerCase();
-  const inches = unit === 'cm' || unit === 'centimeter' || unit === 'centimeters'
-    ? amount / centimetersPerInch
-    : amount;
+	const unit = (match[2] ?? "in").toLowerCase();
+	const inches =
+		unit === "cm" || unit === "centimeter" || unit === "centimeters"
+			? amount / centimetersPerInch
+			: amount;
 
-  return Math.round(inches * emuPerInch);
+	return Math.round(inches * emuPerInch);
 };
 
 const formatEmuAsInches = (value?: number) => {
-  if (!value) return '';
-  const inches = value / emuPerInch;
-  return `${Number(inches.toFixed(3))} in`;
+	if (!value) return "";
+	const inches = value / emuPerInch;
+	return `${Number(inches.toFixed(3))} in`;
 };
 
 const InsertedImageEditor = ({
-  config,
-  onChange,
-  getAccessToken,
+	config,
+	onChange,
+	getAccessToken,
 }: InsertedImageEditorProps) => {
-  const inputRef = useRef<HTMLInputElement | null>(null);
+	const inputRef = useRef<HTMLInputElement | null>(null);
 
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [fileName, setFileName] = useState<string>('');
-  const [error, setError] = useState<string>('');
-  const [uploading, setUploading] = useState(false);
-  const [widthDraft, setWidthDraft] = useState(formatEmuAsInches(config?.sizeConfig?.expectedWidthEmu));
-  const [heightDraft, setHeightDraft] = useState(formatEmuAsInches(config?.sizeConfig?.expectedHeightEmu));
-  const [toleranceDraft, setToleranceDraft] = useState(formatEmuAsInches(config?.sizeConfig?.toleranceEmu));
+	const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+	const [fileName, setFileName] = useState<string>("");
+	const [error, setError] = useState<string>("");
+	const [uploading, setUploading] = useState(false);
+	const [widthDraft, setWidthDraft] = useState(
+		formatEmuAsInches(config?.sizeConfig?.expectedWidthEmu),
+	);
+	const [heightDraft, setHeightDraft] = useState(
+		formatEmuAsInches(config?.sizeConfig?.expectedHeightEmu),
+	);
+	const [toleranceDraft, setToleranceDraft] = useState(
+		formatEmuAsInches(config?.sizeConfig?.toleranceEmu),
+	);
 
-  // Ref theo dõi assetId đã tải preview, tránh việc effect chạy lại vô ích
-  // hoặc ghi đè preview đang có do người dùng vừa chọn file mới.
-  const loadedAssetIdRef = useRef<string | null>(null);
+	// Ref theo dõi assetId đã tải preview, tránh việc effect chạy lại vô ích
+	// hoặc ghi đè preview đang có do người dùng vừa chọn file mới.
+	const loadedAssetIdRef = useRef<string | null>(null);
 
-  useEffect(() => {
-    return () => {
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
-      }
-    };
-  }, [previewUrl]);
+	useEffect(() => {
+		return () => {
+			if (previewUrl) {
+				URL.revokeObjectURL(previewUrl);
+			}
+		};
+	}, [previewUrl]);
 
-  useEffect(() => {
-    setWidthDraft(formatEmuAsInches(config?.sizeConfig?.expectedWidthEmu));
-    setHeightDraft(formatEmuAsInches(config?.sizeConfig?.expectedHeightEmu));
-    setToleranceDraft(formatEmuAsInches(config?.sizeConfig?.toleranceEmu));
-  }, [
-    config?.sizeConfig?.expectedWidthEmu,
-    config?.sizeConfig?.expectedHeightEmu,
-    config?.sizeConfig?.toleranceEmu,
-  ]);
+	useEffect(() => {
+		setWidthDraft(formatEmuAsInches(config?.sizeConfig?.expectedWidthEmu));
+		setHeightDraft(formatEmuAsInches(config?.sizeConfig?.expectedHeightEmu));
+		setToleranceDraft(formatEmuAsInches(config?.sizeConfig?.toleranceEmu));
+	}, [
+		config?.sizeConfig?.expectedWidthEmu,
+		config?.sizeConfig?.expectedHeightEmu,
+		config?.sizeConfig?.toleranceEmu,
+	]);
 
-  // Khi mở 1 Task đã có sẵn assetId (ruleset cũ đã upload ảnh trước đó),
-  // tự động tải lại ảnh để hiển thị preview thay vì để trống.
-  useEffect(() => {
-    const assetId = config?.assetId;
+	// Khi mở 1 Task đã có sẵn assetId (ruleset cũ đã upload ảnh trước đó),
+	// tự động tải lại ảnh để hiển thị preview thay vì để trống.
+	// biome-ignore lint/correctness/useExhaustiveDependencies: Only re-fetch preview when assetId changes
+	useEffect(() => {
+		const assetId = config?.assetId;
 
-    if (!assetId || loadedAssetIdRef.current === assetId) {
-      return;
-    }
+		if (!assetId || loadedAssetIdRef.current === assetId) {
+			return;
+		}
 
-    let cancelled = false;
-    loadedAssetIdRef.current = assetId;
+		let cancelled = false;
+		loadedAssetIdRef.current = assetId;
 
-    insertedImageAssetsService
-      .fetchPreviewUrl(assetId, getAccessToken)
-      .then((url) => {
-        if (cancelled) {
-          URL.revokeObjectURL(url);
-          return;
-        }
-        setPreviewUrl((previous) => {
-          if (previous) {
-            URL.revokeObjectURL(previous);
-          }
-          return url;
-        });
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setError('Không tải được ảnh đã lưu trước đó.');
-        }
-      });
+		insertedImageAssetsService
+			.fetchPreviewUrl(assetId, getAccessToken)
+			.then((url) => {
+				if (cancelled) {
+					URL.revokeObjectURL(url);
+					return;
+				}
+				setPreviewUrl((previous) => {
+					if (previous) {
+						URL.revokeObjectURL(previous);
+					}
+					return url;
+				});
+			})
+			.catch(() => {
+				if (!cancelled) {
+					setError("Không tải được ảnh đã lưu trước đó.");
+				}
+			});
 
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [config?.assetId]);
+		return () => {
+			cancelled = true;
+		};
+	}, [config?.assetId]);
 
-  const handleFileChange = async (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = event.target.files?.[0];
+	const handleFileChange = async (
+		event: React.ChangeEvent<HTMLInputElement>,
+	) => {
+		const file = event.target.files?.[0];
 
-    if (!file) {
-      return;
-    }
+		if (!file) {
+			return;
+		}
 
-    setError('');
+		setError("");
 
-    if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
-      setError(
-        'File không hợp lệ. Vui lòng chọn PNG, JPG, GIF, BMP hoặc WebP.'
-      );
+		if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+			setError(
+				"File không hợp lệ. Vui lòng chọn PNG, JPG, GIF, BMP hoặc WebP.",
+			);
 
-      event.target.value = '';
-      return;
-    }
+			event.target.value = "";
+			return;
+		}
 
-    if (file.size > MAX_FILE_SIZE) {
-      setError('Kích thước hình ảnh không được vượt quá 10MB.');
+		if (file.size > MAX_FILE_SIZE) {
+			setError("Kích thước hình ảnh không được vượt quá 10MB.");
 
-      event.target.value = '';
-      return;
-    }
+			event.target.value = "";
+			return;
+		}
 
-    // Preview tức thì bằng blob URL cục bộ trong lúc chờ upload xong,
-    // để người dùng thấy phản hồi ngay thay vì màn hình trống + spinner.
-    const localPreviewUrl = URL.createObjectURL(file);
-    setPreviewUrl((previous) => {
-      if (previous) {
-        URL.revokeObjectURL(previous);
-      }
-      return localPreviewUrl;
-    });
-    setFileName(file.name);
-    setUploading(true);
+		// Preview tức thì bằng blob URL cục bộ trong lúc chờ upload xong,
+		// để người dùng thấy phản hồi ngay thay vì màn hình trống + spinner.
+		const localPreviewUrl = URL.createObjectURL(file);
+		setPreviewUrl((previous) => {
+			if (previous) {
+				URL.revokeObjectURL(previous);
+			}
+			return localPreviewUrl;
+		});
+		setFileName(file.name);
+		setUploading(true);
 
-    try {
-      const result = await insertedImageAssetsService.upload(file, getAccessToken);
+		try {
+			const result = await insertedImageAssetsService.upload(
+				file,
+				getAccessToken,
+			);
 
-      loadedAssetIdRef.current = result.assetId;
+			loadedAssetIdRef.current = result.assetId;
 
-      onChange({
-        ...config,
-        sourceFile: config?.sourceFile ?? 'word/document.xml',
-        relsFile: config?.relsFile ?? 'word/_rels/document.xml.rels',
-        wrapType: config?.wrapType ?? 'tight',
-        assetId: result.assetId,
-        imageHash: result.imageHash,
-        perceptualHash: result.perceptualHash,
-      });
-    } catch (uploadError) {
-      setError(
-        uploadError instanceof Error
-          ? uploadError.message
-          : 'Tải ảnh lên thất bại. Vui lòng thử lại.'
-      );
+			onChange({
+				...config,
+				sourceFile: config?.sourceFile ?? "word/document.xml",
+				relsFile: config?.relsFile ?? "word/_rels/document.xml.rels",
+				wrapType: config?.wrapType ?? "tight",
+				assetId: result.assetId,
+				imageHash: result.imageHash,
+				perceptualHash: result.perceptualHash,
+			});
+		} catch (uploadError) {
+			setError(
+				uploadError instanceof Error
+					? uploadError.message
+					: "Tải ảnh lên thất bại. Vui lòng thử lại.",
+			);
 
-      // Upload thất bại -> không giữ assetId/imageHash cũ (nếu có) để tránh
-      // hiểu nhầm là đã lưu thành công; nhưng vẫn giữ preview cục bộ để
-      // người dùng biết ảnh nào vừa chọn và có thể thử lại.
-      onChange({
-        ...config,
-        sourceFile: config?.sourceFile ?? 'word/document.xml',
-        relsFile: config?.relsFile ?? 'word/_rels/document.xml.rels',
-        wrapType: config?.wrapType ?? 'tight',
-        assetId: undefined,
-        imageHash: undefined,
-        perceptualHash: undefined,
-      });
-    } finally {
-      setUploading(false);
-    }
-  };
+			// Upload thất bại -> không giữ assetId/imageHash cũ (nếu có) để tránh
+			// hiểu nhầm là đã lưu thành công; nhưng vẫn giữ preview cục bộ để
+			// người dùng biết ảnh nào vừa chọn và có thể thử lại.
+			onChange({
+				...config,
+				sourceFile: config?.sourceFile ?? "word/document.xml",
+				relsFile: config?.relsFile ?? "word/_rels/document.xml.rels",
+				wrapType: config?.wrapType ?? "tight",
+				assetId: undefined,
+				imageHash: undefined,
+				perceptualHash: undefined,
+			});
+		} finally {
+			setUploading(false);
+		}
+	};
 
-  const handleRemoveImage = () => {
-    setPreviewUrl((previous) => {
-      if (previous) {
-        URL.revokeObjectURL(previous);
-      }
+	const handleRemoveImage = () => {
+		setPreviewUrl((previous) => {
+			if (previous) {
+				URL.revokeObjectURL(previous);
+			}
 
-      return null;
-    });
+			return null;
+		});
 
-    setFileName('');
-    setError('');
-    loadedAssetIdRef.current = null;
+		setFileName("");
+		setError("");
+		loadedAssetIdRef.current = null;
 
-    if (inputRef.current) {
-      inputRef.current.value = '';
-    }
+		if (inputRef.current) {
+			inputRef.current.value = "";
+		}
 
-    onChange({
-      ...config,
-      sourceFile: config?.sourceFile ?? 'word/document.xml',
-      relsFile: config?.relsFile ?? 'word/_rels/document.xml.rels',
-      wrapType: config?.wrapType ?? 'tight',
-      assetId: undefined,
-      imageHash: undefined,
-      perceptualHash: undefined,
-    });
-  };
+		onChange({
+			...config,
+			sourceFile: config?.sourceFile ?? "word/document.xml",
+			relsFile: config?.relsFile ?? "word/_rels/document.xml.rels",
+			wrapType: config?.wrapType ?? "tight",
+			assetId: undefined,
+			imageHash: undefined,
+			perceptualHash: undefined,
+		});
+	};
 
-  const handleWrapTypeChange = (
-    event: React.ChangeEvent<HTMLSelectElement>
-  ) => {
-    onChange({
-      ...config,
-      sourceFile: config?.sourceFile ?? 'word/document.xml',
-      relsFile: config?.relsFile ?? 'word/_rels/document.xml.rels',
-      wrapType: (event.target.value || undefined) as ImageWrapType | undefined,
-    });
-  };
+	const handleWrapTypeChange = (
+		event: React.ChangeEvent<HTMLSelectElement>,
+	) => {
+		onChange({
+			...config,
+			sourceFile: config?.sourceFile ?? "word/document.xml",
+			relsFile: config?.relsFile ?? "word/_rels/document.xml.rels",
+			wrapType: (event.target.value || undefined) as ImageWrapType | undefined,
+		});
+	};
 
-  const handleBasicFieldChange = (patch: Partial<ImageInsertConfig>) => {
-    onChange({
-      ...config,
-      sourceFile: config?.sourceFile ?? 'word/document.xml',
-      relsFile: config?.relsFile ?? 'word/_rels/document.xml.rels',
-      ...patch,
-    });
-  };
+	const handleBasicFieldChange = (patch: Partial<ImageInsertConfig>) => {
+		onChange({
+			...config,
+			sourceFile: config?.sourceFile ?? "word/document.xml",
+			relsFile: config?.relsFile ?? "word/_rels/document.xml.rels",
+			...patch,
+		});
+	};
 
-  const commitSizeField = (
-    field: 'expectedWidthEmu' | 'expectedHeightEmu' | 'toleranceEmu',
-    draft: string,
-    setDraft: (value: string) => void
-  ) => {
-    if (!draft.trim()) {
-      onChange({
-        ...config,
-        sizeConfig: {
-          ...(config?.sizeConfig ?? {}),
-          [field]: undefined,
-        },
-      });
-      return;
-    }
+	const commitSizeField = (
+		field: "expectedWidthEmu" | "expectedHeightEmu" | "toleranceEmu",
+		draft: string,
+		setDraft: (value: string) => void,
+	) => {
+		if (!draft.trim()) {
+			onChange({
+				...config,
+				sizeConfig: {
+					...(config?.sizeConfig ?? {}),
+					[field]: undefined,
+				},
+			});
+			return;
+		}
 
-    const emu = parseLengthToEmu(draft);
-    if (emu === undefined) {
-      setError('Kich thuoc khong hop le. Hay nhap vi du: 2 in, 5.08 cm.');
-      return;
-    }
+		const emu = parseLengthToEmu(draft);
+		if (emu === undefined) {
+			setError("Kich thuoc khong hop le. Hay nhap vi du: 2 in, 5.08 cm.");
+			return;
+		}
 
-    setError('');
-    onChange({
-      ...config,
-      sizeConfig: {
-        ...(config?.sizeConfig ?? {}),
-        [field]: emu,
-      },
-    });
-    setDraft(formatEmuAsInches(emu));
-  };
+		setError("");
+		onChange({
+			...config,
+			sizeConfig: {
+				...(config?.sizeConfig ?? {}),
+				[field]: emu,
+			},
+		});
+		setDraft(formatEmuAsInches(emu));
+	};
 
-  const hasSavedImage = Boolean(config?.assetId && config?.imageHash);
+	const hasSavedImage = Boolean(config?.assetId && config?.imageHash);
 
-  return (
-    <div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
-      {/* Header */}
-      <div className="flex items-start gap-3">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-100 text-violet-600">
-          <Icon name="image" variant="rounded" size={17} />
-        </div>
+	return (
+		<div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
+			{/* Header */}
+			<div className="flex items-start gap-3">
+				<div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-100 text-violet-600">
+					<Icon name="image" variant="rounded" size={17} />
+				</div>
 
-        <div className="min-w-0">
-          <p className="text-sm font-bold text-slate-800">
-            Cấu hình Chèn hình ảnh
-          </p>
+				<div className="min-w-0">
+					<p className="text-sm font-bold text-slate-800">
+						Cấu hình Chèn hình ảnh
+					</p>
 
-          <p className="mt-1 text-xs leading-5 text-slate-500">
-            Chọn hình ảnh chuẩn (VD: Apps.jpg) và chế độ ngắt dòng cần kiểm tra
-            trong bài Word của học viên.
-          </p>
-        </div>
-      </div>
+					<p className="mt-1 text-xs leading-5 text-slate-500">
+						Chọn hình ảnh chuẩn (VD: Apps.jpg) và chế độ ngắt dòng cần kiểm tra
+						trong bài Word của học viên.
+					</p>
+				</div>
+			</div>
 
-      {/* Configuration */}
-      <div className="mt-4 grid gap-3 md:grid-cols-2">
-        <label className="text-xs font-semibold text-slate-600">
-          Source file
-          <input
-            value={config?.sourceFile ?? 'word/document.xml'}
-            onChange={(event) => handleBasicFieldChange({ sourceFile: event.target.value })}
-            placeholder="word/document.xml"
-            className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition hover:border-slate-300 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
-          />
-        </label>
+			{/* Configuration */}
+			<div className="mt-4 grid gap-3 md:grid-cols-2">
+				<label className="text-xs font-semibold text-slate-600">
+					Source file
+					<input
+						value={config?.sourceFile ?? "word/document.xml"}
+						onChange={(event) =>
+							handleBasicFieldChange({ sourceFile: event.target.value })
+						}
+						placeholder="word/document.xml"
+						className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition hover:border-slate-300 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
+					/>
+				</label>
 
-        <label className="text-xs font-semibold text-slate-600">
-          Rels file
-          <input
-            value={config?.relsFile ?? 'word/_rels/document.xml.rels'}
-            onChange={(event) => handleBasicFieldChange({ relsFile: event.target.value })}
-            placeholder="word/_rels/document.xml.rels"
-            className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition hover:border-slate-300 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
-          />
-        </label>
-      </div>
+				<label className="text-xs font-semibold text-slate-600">
+					Rels file
+					<input
+						value={config?.relsFile ?? "word/_rels/document.xml.rels"}
+						onChange={(event) =>
+							handleBasicFieldChange({ relsFile: event.target.value })
+						}
+						placeholder="word/_rels/document.xml.rels"
+						className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition hover:border-slate-300 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
+					/>
+				</label>
+			</div>
 
-      <div className="mt-4 grid gap-4 md:grid-cols-[minmax(0,1fr)_200px]">
-        {/* Image upload */}
-        <div>
-          <p className="text-xs font-semibold text-slate-600">
-            Hình ảnh chuẩn
-          </p>
+			<div className="mt-4 grid gap-4 md:grid-cols-[minmax(0,1fr)_200px]">
+				{/* Image upload */}
+				<div>
+					<p className="text-xs font-semibold text-slate-600">Hình ảnh chuẩn</p>
 
-          <div className="mt-2">
-            <input
-              ref={inputRef}
-              type="file"
-              accept={ACCEPTED_IMAGE_TYPES.join(',')}
-              onChange={handleFileChange}
-              disabled={uploading}
-              className="hidden"
-            />
+					<div className="mt-2">
+						<input
+							ref={inputRef}
+							type="file"
+							accept={ACCEPTED_IMAGE_TYPES.join(",")}
+							onChange={handleFileChange}
+							disabled={uploading}
+							className="hidden"
+						/>
 
-            <button
-              type="button"
-              onClick={() => inputRef.current?.click()}
-              disabled={uploading}
-              className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 bg-white px-4 py-3 text-xs font-semibold text-slate-600 transition hover:border-violet-300 hover:bg-violet-50 hover:text-violet-700 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {uploading ? (
-                <ProgressIndicator variant="circular" shape="wavy" showTrack size={15} aria-label="Đang tải lên..." />
-              ) : (
-                <Icon name="upload" variant="rounded" size={15} />
-              )}
+						<button
+							type="button"
+							onClick={() => inputRef.current?.click()}
+							disabled={uploading}
+							className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 bg-white px-4 py-3 text-xs font-semibold text-slate-600 transition hover:border-violet-300 hover:bg-violet-50 hover:text-violet-700 disabled:cursor-not-allowed disabled:opacity-60"
+						>
+							{uploading ? (
+								<ProgressIndicator
+									variant="circular"
+									shape="wavy"
+									showTrack
+									size={15}
+									aria-label="Đang tải lên..."
+								/>
+							) : (
+								<Icon name="upload" variant="rounded" size={15} />
+							)}
 
-              {uploading
-                ? 'Đang tải lên...'
-                : fileName || hasSavedImage
-                  ? 'Thay đổi hình ảnh'
-                  : 'Chọn hình ảnh'}
-            </button>
-          </div>
+							{uploading
+								? "Đang tải lên..."
+								: fileName || hasSavedImage
+									? "Thay đổi hình ảnh"
+									: "Chọn hình ảnh"}
+						</button>
+					</div>
 
-          {fileName && (
-            <div className="mt-2 flex items-center gap-2">
-              <p className="min-w-0 flex-1 truncate text-[11px] text-slate-500">
-                {fileName}
-              </p>
+					{fileName && (
+						<div className="mt-2 flex items-center gap-2">
+							<p className="min-w-0 flex-1 truncate text-[11px] text-slate-500">
+								{fileName}
+							</p>
 
-              <button
-                type="button"
-                onClick={handleRemoveImage}
-                disabled={uploading}
-                className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-slate-400 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-60"
-                title="Xóa hình"
-              >
-                <Icon name="close" variant="rounded" size={13} />
-              </button>
-            </div>
-          )}
+							<button
+								type="button"
+								onClick={handleRemoveImage}
+								disabled={uploading}
+								className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-slate-400 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-60"
+								title="Xóa hình"
+							>
+								<Icon name="close" variant="rounded" size={13} />
+							</button>
+						</div>
+					)}
 
-          <p className="mt-1.5 text-[11px] text-slate-400">
-            PNG, JPG, GIF, BMP hoặc WebP · tối đa 10MB
-          </p>
+					<p className="mt-1.5 text-[11px] text-slate-400">
+						PNG, JPG, GIF, BMP hoặc WebP · tối đa 10MB
+					</p>
 
-          {error && (
-            <p className="mt-2 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-[11px] text-red-600">
-              {error}
-            </p>
-          )}
+					{error && (
+						<p className="mt-2 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-[11px] text-red-600">
+							{error}
+						</p>
+					)}
 
-          {!error && !uploading && hasSavedImage && (
-            <p className="mt-2 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-[11px] text-emerald-700">
-              Đã lưu ảnh và hash trên server — sẵn sàng dùng để chấm điểm.
-            </p>
-          )}
-        </div>
+					{!error && !uploading && hasSavedImage && (
+						<p className="mt-2 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-[11px] text-emerald-700">
+							Đã lưu ảnh và hash trên server — sẵn sàng dùng để chấm điểm.
+						</p>
+					)}
+				</div>
 
-        {/* Wrap type */}
-        <div>
-          <label className="text-xs font-semibold text-slate-600">
-            Chế độ ngắt dòng (Wrap)
+				{/* Wrap type */}
+				<div>
+					<label className="text-xs font-semibold text-slate-600">
+						Chế độ ngắt dòng (Wrap)
+						<select
+							value={config?.wrapType ?? ""}
+							onChange={handleWrapTypeChange}
+							className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition hover:border-slate-300 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
+						>
+							<option value="">Không kiểm tra (chỉ cần đúng ảnh)</option>
+							{wrapOptions.map((opt) => (
+								<option key={opt.value} value={opt.value}>
+									{opt.label}
+								</option>
+							))}
+						</select>
+					</label>
 
-            <select
-              value={config?.wrapType ?? ''}
-              onChange={handleWrapTypeChange}
-              className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition hover:border-slate-300 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
-            >
-              <option value="">Không kiểm tra (chỉ cần đúng ảnh)</option>
-              {wrapOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </label>
+					<p className="mt-1.5 text-[11px] leading-4 text-slate-400">
+						VD Task 5: Apps.jpg + Tight → chọn "Tight" ở trên.
+					</p>
+				</div>
+			</div>
 
-          <p className="mt-1.5 text-[11px] leading-4 text-slate-400">
-            VD Task 5: Apps.jpg + Tight → chọn "Tight" ở trên.
-          </p>
-        </div>
-      </div>
+			<div className="mt-4 rounded-xl border border-slate-200 bg-white p-3">
+				<div className="flex flex-wrap items-center justify-between gap-3">
+					<div>
+						<p className="text-xs font-bold text-slate-700">
+							Kiem tra vi tri chen anh
+						</p>
+						<p className="mt-1 text-[11px] leading-4 text-slate-400">
+							Dung cho yeu cau chen anh giua tieu de va doan van dau tien.
+						</p>
+					</div>
+					<label className="flex items-center gap-2 text-xs font-semibold text-slate-600">
+						<input
+							type="checkbox"
+							checked={config?.positionConfig?.requireBetween ?? false}
+							onChange={(event) => {
+								handleBasicFieldChange({
+									positionConfig: {
+										...(config?.positionConfig ?? {}),
+										requireBetween: event.target.checked,
+									},
+								});
+							}}
+							className="h-4 w-4 accent-violet-600"
+						/>
+						Bat kiem tra vi tri
+					</label>
+				</div>
 
-      <div className="mt-4 rounded-xl border border-slate-200 bg-white p-3">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="text-xs font-bold text-slate-700">Kiem tra vi tri chen anh</p>
-            <p className="mt-1 text-[11px] leading-4 text-slate-400">
-              Dung cho yeu cau chen anh giua tieu de va doan van dau tien.
-            </p>
-          </div>
-          <label className="flex items-center gap-2 text-xs font-semibold text-slate-600">
-            <input
-              type="checkbox"
-              checked={config?.positionConfig?.requireBetween ?? false}
-              onChange={(event) => {
-                handleBasicFieldChange({
-                  positionConfig: {
-                    ...(config?.positionConfig ?? {}),
-                    requireBetween: event.target.checked,
-                  },
-                });
-              }}
-              className="h-4 w-4 accent-violet-600"
-            />
-            Bat kiem tra vi tri
-          </label>
-        </div>
+				<div className="mt-3 grid gap-3 md:grid-cols-2">
+					<label className="text-xs font-semibold text-slate-600">
+						Sau doan co text
+						<input
+							value={config?.positionConfig?.afterText ?? ""}
+							onChange={(event) => {
+								handleBasicFieldChange({
+									positionConfig: {
+										...(config?.positionConfig ?? {}),
+										afterText: event.target.value,
+									},
+								});
+							}}
+							placeholder="Apps For Android and iPhones"
+							className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition hover:border-slate-300 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
+						/>
+					</label>
 
-        <div className="mt-3 grid gap-3 md:grid-cols-2">
-          <label className="text-xs font-semibold text-slate-600">
-            Sau doan co text
-            <input
-              value={config?.positionConfig?.afterText ?? ''}
-              onChange={(event) => {
-                handleBasicFieldChange({
-                  positionConfig: {
-                    ...(config?.positionConfig ?? {}),
-                    afterText: event.target.value,
-                  },
-                });
-              }}
-              placeholder="Apps For Android and iPhones"
-              className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition hover:border-slate-300 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
-            />
-          </label>
+					<label className="text-xs font-semibold text-slate-600">
+						Truoc doan co text
+						<input
+							value={config?.positionConfig?.beforeText ?? ""}
+							onChange={(event) => {
+								handleBasicFieldChange({
+									positionConfig: {
+										...(config?.positionConfig ?? {}),
+										beforeText: event.target.value,
+									},
+								});
+							}}
+							placeholder="Apple iOS currently offers"
+							className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition hover:border-slate-300 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
+						/>
+					</label>
+				</div>
 
-          <label className="text-xs font-semibold text-slate-600">
-            Truoc doan co text
-            <input
-              value={config?.positionConfig?.beforeText ?? ''}
-              onChange={(event) => {
-                handleBasicFieldChange({
-                  positionConfig: {
-                    ...(config?.positionConfig ?? {}),
-                    beforeText: event.target.value,
-                  },
-                });
-              }}
-              placeholder="Apple iOS currently offers"
-              className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition hover:border-slate-300 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
-            />
-          </label>
-        </div>
+				<label className="mt-3 flex items-center gap-2 text-xs font-medium text-slate-600">
+					<input
+						type="checkbox"
+						checked={config?.positionConfig?.caseSensitive ?? false}
+						onChange={(event) => {
+							handleBasicFieldChange({
+								positionConfig: {
+									...(config?.positionConfig ?? {}),
+									caseSensitive: event.target.checked,
+								},
+							});
+						}}
+						className="h-4 w-4 accent-violet-600"
+					/>
+					Phan biet hoa/thuong khi tim text moc
+				</label>
+			</div>
 
-        <label className="mt-3 flex items-center gap-2 text-xs font-medium text-slate-600">
-          <input
-            type="checkbox"
-            checked={config?.positionConfig?.caseSensitive ?? false}
-            onChange={(event) => {
-              handleBasicFieldChange({
-                positionConfig: {
-                  ...(config?.positionConfig ?? {}),
-                  caseSensitive: event.target.checked,
-                },
-              });
-            }}
-            className="h-4 w-4 accent-violet-600"
-          />
-          Phan biet hoa/thuong khi tim text moc
-        </label>
-      </div>
+			<div className="mt-4 rounded-xl border border-slate-200 bg-white p-3">
+				<div className="flex flex-wrap items-center justify-between gap-3">
+					<div>
+						<p className="text-xs font-bold text-slate-700">
+							Kich thuoc anh tuy chon
+						</p>
+						<p className="mt-1 text-[11px] leading-4 text-slate-400">
+							De trong neu de khong yeu cau resize. Co the nhap inch hoac cm.
+						</p>
+					</div>
+					<button
+						type="button"
+						onClick={() => {
+							setWidthDraft("");
+							setHeightDraft("");
+							setToleranceDraft("");
+							onChange({
+								...config,
+								sizeConfig: undefined,
+							});
+						}}
+						className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[11px] font-semibold text-slate-500 transition hover:bg-slate-50"
+					>
+						Bo kich thuoc
+					</button>
+				</div>
 
-      <div className="mt-4 rounded-xl border border-slate-200 bg-white p-3">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="text-xs font-bold text-slate-700">Kich thuoc anh tuy chon</p>
-            <p className="mt-1 text-[11px] leading-4 text-slate-400">
-              De trong neu de khong yeu cau resize. Co the nhap inch hoac cm.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => {
-              setWidthDraft('');
-              setHeightDraft('');
-              setToleranceDraft('');
-              onChange({
-                ...config,
-                sizeConfig: undefined,
-              });
-            }}
-            className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[11px] font-semibold text-slate-500 transition hover:bg-slate-50"
-          >
-            Bo kich thuoc
-          </button>
-        </div>
+				<div className="mt-3 grid gap-3 md:grid-cols-3">
+					<label className="text-xs font-semibold text-slate-600">
+						Chieu rong
+						<input
+							value={widthDraft}
+							onChange={(event) => setWidthDraft(event.target.value)}
+							onBlur={() =>
+								commitSizeField("expectedWidthEmu", widthDraft, setWidthDraft)
+							}
+							onKeyDown={(event) => {
+								if (event.key === "Enter") event.currentTarget.blur();
+							}}
+							placeholder="2 in hoac 5.08 cm"
+							className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition hover:border-slate-300 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
+						/>
+					</label>
 
-        <div className="mt-3 grid gap-3 md:grid-cols-3">
-          <label className="text-xs font-semibold text-slate-600">
-            Chieu rong
-            <input
-              value={widthDraft}
-              onChange={(event) => setWidthDraft(event.target.value)}
-              onBlur={() => commitSizeField('expectedWidthEmu', widthDraft, setWidthDraft)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') event.currentTarget.blur();
-              }}
-              placeholder="2 in hoac 5.08 cm"
-              className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition hover:border-slate-300 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
-            />
-          </label>
+					<label className="text-xs font-semibold text-slate-600">
+						Chieu cao
+						<input
+							value={heightDraft}
+							onChange={(event) => setHeightDraft(event.target.value)}
+							onBlur={() =>
+								commitSizeField(
+									"expectedHeightEmu",
+									heightDraft,
+									setHeightDraft,
+								)
+							}
+							onKeyDown={(event) => {
+								if (event.key === "Enter") event.currentTarget.blur();
+							}}
+							placeholder="1.2 in hoac 3.05 cm"
+							className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition hover:border-slate-300 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
+						/>
+					</label>
 
-          <label className="text-xs font-semibold text-slate-600">
-            Chieu cao
-            <input
-              value={heightDraft}
-              onChange={(event) => setHeightDraft(event.target.value)}
-              onBlur={() => commitSizeField('expectedHeightEmu', heightDraft, setHeightDraft)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') event.currentTarget.blur();
-              }}
-              placeholder="1.2 in hoac 3.05 cm"
-              className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition hover:border-slate-300 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
-            />
-          </label>
+					<label className="text-xs font-semibold text-slate-600">
+						Sai so
+						<input
+							value={toleranceDraft}
+							onChange={(event) => setToleranceDraft(event.target.value)}
+							onBlur={() =>
+								commitSizeField(
+									"toleranceEmu",
+									toleranceDraft,
+									setToleranceDraft,
+								)
+							}
+							onKeyDown={(event) => {
+								if (event.key === "Enter") event.currentTarget.blur();
+							}}
+							placeholder="0.05 in"
+							className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition hover:border-slate-300 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
+						/>
+					</label>
+				</div>
+			</div>
 
-          <label className="text-xs font-semibold text-slate-600">
-            Sai so
-            <input
-              value={toleranceDraft}
-              onChange={(event) => setToleranceDraft(event.target.value)}
-              onBlur={() => commitSizeField('toleranceEmu', toleranceDraft, setToleranceDraft)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') event.currentTarget.blur();
-              }}
-              placeholder="0.05 in"
-              className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition hover:border-slate-300 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
-            />
-          </label>
-        </div>
-      </div>
+			{/* Preview */}
+			<div className="mt-4">
+				<p className="mb-2 text-xs font-semibold text-slate-600">Xem trước</p>
 
-      {/* Preview */}
-      <div className="mt-4">
-        <p className="mb-2 text-xs font-semibold text-slate-600">
-          Xem trước
-        </p>
+				{previewUrl ? (
+					<div className="relative flex h-64 w-full items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white p-2.5">
+						<img
+							src={previewUrl}
+							alt="Bản xem trước mục đã chèn"
+							className="h-full w-full object-contain"
+						/>
 
-        {previewUrl ? (
-          <div className="relative flex h-64 w-full items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white p-2.5">
-            <img
-              src={previewUrl}
-              alt="Inserted image preview"
-              className="h-full w-full object-contain"
-            />
+						{uploading && (
+							<div className="absolute inset-0 flex items-center justify-center rounded-xl bg-white/70">
+								<ProgressIndicator
+									variant="circular"
+									shape="wavy"
+									showTrack
+									size={16}
+									aria-label="Đang tải lên..."
+									className="text-violet-600"
+								/>
+							</div>
+						)}
 
-            {uploading && (
-              <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-white/70">
-                <ProgressIndicator variant="circular" shape="wavy" showTrack size={16} aria-label="Đang tải lên..." className="text-violet-600" />
-              </div>
-            )}
+						<button
+							type="button"
+							onClick={handleRemoveImage}
+							disabled={uploading}
+							className="absolute right-1.5 top-1.5 inline-flex h-6 w-6 items-center justify-center rounded-lg bg-white text-slate-400 shadow-sm ring-1 ring-slate-200 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-60"
+							title="Xóa hình"
+						>
+							<Icon name="close" variant="rounded" size={12} />
+						</button>
+					</div>
+				) : (
+					<div className="flex min-h-16 items-center justify-center rounded-xl border border-dashed border-slate-200 bg-white">
+						<div className="text-center">
+							<Icon
+								name="image"
+								variant="rounded"
+								size={18}
+								className="mx-auto text-slate-300"
+							/>
 
-            <button
-              type="button"
-              onClick={handleRemoveImage}
-              disabled={uploading}
-              className="absolute right-1.5 top-1.5 inline-flex h-6 w-6 items-center justify-center rounded-lg bg-white text-slate-400 shadow-sm ring-1 ring-slate-200 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-60"
-              title="Xóa hình"
-            >
-              <Icon name="close" variant="rounded" size={12} />
-            </button>
-          </div>
-        ) : (
-          <div className="flex min-h-16 items-center justify-center rounded-xl border border-dashed border-slate-200 bg-white">
-            <div className="text-center">
-              <Icon name="image" variant="rounded" size={18} className="mx-auto text-slate-300" />
-
-              <p className="mt-1.5 text-[11px] text-slate-400">
-                Chưa chọn hình ảnh
-              </p>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
+							<p className="mt-1.5 text-[11px] text-slate-400">
+								Chưa chọn hình ảnh
+							</p>
+						</div>
+					</div>
+				)}
+			</div>
+		</div>
+	);
 };
 
 export default InsertedImageEditor;

@@ -1,55 +1,55 @@
 // src/types/student.types.ts
 
 export interface Student {
-    id: string;
-    middleName: string;
-    firstName: string;
-    fullName?: string;
-    status?: string;
-    competencyLevel?: 'A' | 'B' | 'C' | 'D' | '';
-    notes?: string;
-    takesExam?: boolean;
-    thi?: boolean;
-    teacherId?: string;
-    classId?: string;
-    createdAt?: string;
-    updatedAt?: string;
-    isActive?: boolean;
-    gradingApiEndpoint: string;
+	id: string;
+	middleName: string;
+	firstName: string;
+	fullName?: string;
+	status?: string;
+	competencyLevel?: "A" | "B" | "C" | "D" | "";
+	notes?: string;
+	takesExam?: boolean;
+	thi?: boolean;
+	teacherId?: string;
+	classId?: string;
+	createdAt?: string;
+	updatedAt?: string;
+	isActive?: boolean;
+	gradingApiEndpoint: string;
 }
 
 export interface StudentImportItem {
-    MiddleName: string;
-    FirstName: string;
+	MiddleName: string;
+	FirstName: string;
 }
 
 export interface BulkImportStudentRequest {
-    Students: StudentImportItem[];
-    ClassId?: string;
+	Students: StudentImportItem[];
+	ClassId?: string;
 }
 
 export interface BulkImportResult {
-    TotalCount: number;
-    SuccessCount: number;
-    FailedCount: number;
-    Errors: string[];
-    ImportedStudents: Student[];
+	TotalCount: number;
+	SuccessCount: number;
+	FailedCount: number;
+	Errors: string[];
+	ImportedStudents: Student[];
 }
 
 export interface StudentResponse {
-    id: string;
-    middleName: string;
-    firstName: string;
-    fullName?: string;
-    status: string;
-    competencyLevel?: 'A' | 'B' | 'C' | 'D' | '';
-    notes?: string;
-    takesExam?: boolean;
-    thi: boolean;
-    teacherId?: string;
-    classId?: string;
-    createdAt: string;
-    updatedAt?: string;
-    isActive: boolean;
-    gradingApiEndpoint: string;
+	id: string;
+	middleName: string;
+	firstName: string;
+	fullName?: string;
+	status: string;
+	competencyLevel?: "A" | "B" | "C" | "D" | "";
+	notes?: string;
+	takesExam?: boolean;
+	thi: boolean;
+	teacherId?: string;
+	classId?: string;
+	createdAt: string;
+	updatedAt?: string;
+	isActive: boolean;
+	gradingApiEndpoint: string;
 }

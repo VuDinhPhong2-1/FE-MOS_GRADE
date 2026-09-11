@@ -9,6 +9,7 @@ React/TypeScript/Vite frontend for MOS Project.
 - Vite 7
 - Tailwind CSS 4
 - React Router 7
+- Bun 1.3+ (Package Manager & Runner)
 
 ## Directory
 
@@ -20,8 +21,8 @@ cd FRONTEND
 
 ## Install
 
-```powershell
-npm install
+```bash
+bun install
 ```
 
 ## Environment
@@ -43,8 +44,8 @@ Local Agent config is also resolved from `src/config/api.ts` so FE code can call
 
 ## Run locally
 
-```powershell
-npm run dev
+```bash
+bun dev
 ```
 
 Frontend URL:
@@ -53,8 +54,8 @@ Frontend URL:
 
 Run with LAN host:
 
-```powershell
-npm run dev:lan
+```bash
+bun dev:lan
 ```
 
 Frontend LAN URL example:
@@ -73,26 +74,27 @@ Production domains in the current deployment plan:
 
 ## Backend target modes
 
-```powershell
-npm run dev:be-local
-npm run dev:be-deploy
-npm run dev:be-local:lan
-npm run dev:be-deploy:lan
+```bash
+bun dev:be-local
+bun dev:be-deploy
+bun dev:be-local:lan
+bun dev:be-deploy:lan
 ```
 
 Build variants:
 
-```powershell
-npm run build
-npm run build:be-local
-npm run build:be-deploy
+```bash
+bun run build
+bun run build:be-local
+bun run build:be-deploy
 ```
 
-## Checks
+## Checks & Quality Control
 
-```powershell
-npm run lint
-npm run build
+```bash
+bun run format    # Format code with Biome
+bun run check     # Biome check & lint
+bun run build     # Type-check (tsc) & Vite production build
 ```
 
 ## API usage rules
