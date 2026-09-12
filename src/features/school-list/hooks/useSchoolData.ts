@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { schoolService } from "../../../services/school.service";
 import type { CreateSchoolRequest, School, User } from "../../../types";
 import { notify } from "../../../utils/notify";
@@ -13,9 +13,17 @@ export const useSchoolData = ({
 	getAccessToken,
 	user,
 }: UseSchoolDataOptions) => {
+	// Dùng ref để ổn định reference của getAccessToken (tránh trigger refetch không mong muốn khi context re-render)
+	const getAccessTokenRef = useRef(getAccessToken);
+	useEffect(() => {
+		getAccessTokenRef.current = getAccessToken;
+	});
+
 	const isAdmin = user?.role === ADMIN_ROLE;
-	const canDeleteSchool =
-		isAdmin || Boolean(user?.permissions?.includes("schools.delete"));
+	const canDeleteSchool = useMemo(
+		() => isAdmin || Boolean(user?.permissions?.includes("schools.delete")),
+		[isAdmin, user?.permissions],
+	);
 
 	const [schools, setSchools] = useState<School[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
@@ -32,7 +40,7 @@ export const useSchoolData = ({
 		setIsLoading(true);
 		setError("");
 		try {
-			const data = await schoolService.getSchools(getAccessToken);
+			const data = await schoolService.getSchools(getAccessTokenRef.current);
 			setSchools(data);
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : "Có lỗi xảy ra";
@@ -41,7 +49,7 @@ export const useSchoolData = ({
 		} finally {
 			setIsLoading(false);
 		}
-	}, [getAccessToken]);
+	}, []);
 
 	useEffect(() => {
 		void fetchSchools();
@@ -73,11 +81,11 @@ export const useSchoolData = ({
 					await schoolService.updateSchool(
 						editingSchool.id,
 						payload,
-						getAccessToken,
+						getAccessTokenRef.current,
 					);
 					notify.success("Cập nhật thông tin trường thành công");
 				} else {
-					await schoolService.createSchool(payload, getAccessToken);
+					await schoolService.createSchool(payload, getAccessTokenRef.current);
 					notify.success("Thêm trường học mới thành công");
 				}
 
@@ -91,7 +99,7 @@ export const useSchoolData = ({
 				setIsSubmitting(false);
 			}
 		},
-		[editingSchool, getAccessToken, fetchSchools],
+		[editingSchool, fetchSchools],
 	);
 
 	const openDeleteDialog = useCallback(
@@ -115,7 +123,10 @@ export const useSchoolData = ({
 
 		try {
 			setIsDeleting(true);
-			await schoolService.deleteSchool(schoolToDelete.id, getAccessToken);
+			await schoolService.deleteSchool(
+				schoolToDelete.id,
+				getAccessTokenRef.current,
+			);
 			notify.success(`Đã xóa trường "${schoolToDelete.name}" thành công`);
 			setSchoolToDelete(null);
 			await fetchSchools();
@@ -124,7 +135,7 @@ export const useSchoolData = ({
 		} finally {
 			setIsDeleting(false);
 		}
-	}, [schoolToDelete, getAccessToken, fetchSchools]);
+	}, [schoolToDelete, fetchSchools]);
 
 	return {
 		isAdmin,

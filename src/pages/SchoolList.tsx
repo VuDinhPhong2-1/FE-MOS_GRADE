@@ -10,9 +10,11 @@ import { useAuth } from "../context/AuthContext";
 import { usePageHeader } from "../context/PageActionsContext";
 import {
 	DeleteSchoolDialog,
+	SchoolActionToolbar,
 	SchoolFormModal,
 	SchoolTable,
 	useSchoolData,
+	useSchoolFilter,
 } from "../features/school-list";
 import type { School } from "../types";
 import ClassList from "./Classlist";
@@ -42,6 +44,21 @@ const SchoolList = () => {
 		handleConfirmDelete,
 	} = useSchoolData({ getAccessToken, user });
 
+	const {
+		searchQuery,
+		setSearchQuery,
+		statusFilter,
+		setStatusFilter,
+		isSearchActive,
+		openSearch,
+		closeSearch,
+		resetFilters,
+		filteredSchools,
+		hasActiveFilters,
+		totalCount,
+		displayedCount,
+	} = useSchoolFilter(schools);
+
 	const schoolId = searchParams.get("schoolId");
 	const selectedSchool = useMemo(
 		() =>
@@ -65,34 +82,34 @@ const SchoolList = () => {
 
 	const isViewingSchool = Boolean(selectedSchool || (schoolId && isLoading));
 
-	usePageHeader(
-		isViewingSchool
-			? null
-			: {
-					title: "Quản lý trường học",
-					subtitle:
-						"Danh sách các trường và cơ sở đào tạo trong hệ thống MOS Grader",
-					actions: [
-						{
-							id: "refresh-schools",
-							label: "Làm mới",
-							icon: "refresh",
-							colorStyle: "outlined",
-							disabled: isLoading,
-							onClick: fetchSchools,
-						},
-						{
-							id: "add-school",
-							label: "Thêm trường",
-							icon: "add",
-							colorStyle: "filled",
-							disabled: isLoading,
-							onClick: openAddModal,
-						},
-					],
+	const pageHeaderConfig = useMemo(() => {
+		if (isViewingSchool) return null;
+		return {
+			title: "Quản lý trường học",
+			subtitle:
+				"Danh sách các trường và cơ sở đào tạo trong hệ thống MOS Grader",
+			actions: [
+				{
+					id: "refresh-schools",
+					label: "Làm mới",
+					icon: "refresh",
+					colorStyle: "outlined" as const,
+					disabled: isLoading,
+					onClick: fetchSchools,
 				},
-		[isViewingSchool, isLoading, fetchSchools, openAddModal],
-	);
+				{
+					id: "add-school",
+					label: "Thêm trường",
+					icon: "add",
+					colorStyle: "filled" as const,
+					disabled: isLoading,
+					onClick: openAddModal,
+				},
+			],
+		};
+	}, [isViewingSchool, isLoading, fetchSchools, openAddModal]);
+
+	usePageHeader(pageHeaderConfig, [pageHeaderConfig]);
 
 	if (isLoading && schools.length === 0) {
 		return (
@@ -111,7 +128,7 @@ const SchoolList = () => {
 	}
 
 	return (
-		<div>
+		<div className={!selectedSchool ? "pb-28" : undefined}>
 			{!selectedSchool ? (
 				<>
 					{error && (
@@ -128,7 +145,7 @@ const SchoolList = () => {
 
 					{/* School Table */}
 					<SchoolTable
-						schools={schools}
+						schools={filteredSchools}
 						isLoading={isLoading}
 						canDeleteSchool={canDeleteSchool}
 						isDeleting={isDeleting}
@@ -137,6 +154,24 @@ const SchoolList = () => {
 						onEditSchool={openEditModal}
 						onDeleteSchool={openDeleteDialog}
 						onOpenAddModal={openAddModal}
+						hasActiveFilters={hasActiveFilters}
+						onResetFilters={resetFilters}
+					/>
+
+					{/* Floating Action Toolbar */}
+					<SchoolActionToolbar
+						isLoading={isLoading}
+						onReload={fetchSchools}
+						onOpenAddModal={openAddModal}
+						statusFilter={statusFilter}
+						onStatusFilterChange={setStatusFilter}
+						searchQuery={searchQuery}
+						onSearchQueryChange={setSearchQuery}
+						isSearchActive={isSearchActive}
+						onOpenSearch={openSearch}
+						onCloseSearch={closeSearch}
+						totalCount={totalCount}
+						displayedCount={displayedCount}
 					/>
 
 					{/* Add / Edit Modal Dialog */}

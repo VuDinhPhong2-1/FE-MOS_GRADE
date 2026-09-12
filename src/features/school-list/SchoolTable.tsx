@@ -13,6 +13,8 @@ export const SchoolTable = memo(function SchoolTable({
 	onEditSchool,
 	onDeleteSchool,
 	onOpenAddModal,
+	hasActiveFilters,
+	onResetFilters,
 }: SchoolTableProps) {
 	return (
 		<Card
@@ -24,7 +26,8 @@ export const SchoolTable = memo(function SchoolTable({
 					<ProgressIndicator
 						variant="linear"
 						trackShape="flat"
-						shape="wavy"
+						shape="flat"
+						showStopIndicator
 						aria-label="Đang tải dữ liệu trường học"
 						className="w-full"
 					/>
@@ -46,25 +49,46 @@ export const SchoolTable = memo(function SchoolTable({
 								<td colSpan={4} className="px-6 py-12 text-center">
 									<div className="mx-auto flex max-w-xs flex-col items-center justify-center gap-3 text-center">
 										<div className="flex h-14 w-14 items-center justify-center rounded-3xl bg-m3-surface-container-high text-m3-on-surface-variant">
-											<Icon name="domain_disabled" className="text-3xl" />
+											<Icon
+												name={
+													hasActiveFilters ? "search_off" : "domain_disabled"
+												}
+												className="text-3xl"
+											/>
 										</div>
 										<div>
 											<p className="font-bold text-m3-on-surface">
-												Chưa có trường nào
+												{hasActiveFilters
+													? "Không tìm thấy trường nào"
+													: "Chưa có trường nào"}
 											</p>
 											<p className="mt-1 text-xs text-m3-on-surface-variant">
-												Hãy bấm nút "Thêm trường" để bắt đầu thiết lập cơ sở đầu
-												tiên.
+												{hasActiveFilters
+													? "Hãy thử thay đổi từ khóa tìm kiếm hoặc bỏ bộ lọc trạng thái."
+													: 'Hãy bấm nút "Thêm trường" để bắt đầu thiết lập cơ sở đầu tiên.'}
 											</p>
 										</div>
-										<Button
-											colorStyle="filled"
-											size="sm"
-											icon={<Icon name="add" className="text-base" />}
-											onClick={onOpenAddModal}
-										>
-											Thêm trường mới
-										</Button>
+										{hasActiveFilters ? (
+											<Button
+												colorStyle="tonal"
+												size="sm"
+												icon={
+													<Icon name="filter_alt_off" className="text-base" />
+												}
+												onClick={onResetFilters}
+											>
+												Đặt lại bộ lọc
+											</Button>
+										) : (
+											<Button
+												colorStyle="filled"
+												size="sm"
+												icon={<Icon name="add" className="text-base" />}
+												onClick={onOpenAddModal}
+											>
+												Thêm trường mới
+											</Button>
+										)}
 									</div>
 								</td>
 							</tr>

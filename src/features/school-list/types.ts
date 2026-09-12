@@ -34,6 +34,8 @@ export interface SchoolTableProps {
 	onEditSchool: (school: School) => void;
 	onDeleteSchool: (school: School) => void;
 	onOpenAddModal: () => void;
+	hasActiveFilters?: boolean;
+	onResetFilters?: () => void;
 }
 
 export interface SchoolFormModalProps {
@@ -51,4 +53,21 @@ export interface DeleteSchoolDialogProps {
 	schoolToDelete: School | null;
 	onClose: () => void;
 	onConfirmDelete: () => Promise<void> | void;
+}
+
+export type SchoolStatusFilter = "all" | "active" | "inactive";
+
+export interface SchoolActionToolbarProps {
+	isLoading: boolean;
+	onReload: () => void;
+	onOpenAddModal: () => void;
+	statusFilter: SchoolStatusFilter;
+	onStatusFilterChange: (status: SchoolStatusFilter) => void;
+	searchQuery: string;
+	onSearchQueryChange: (query: string) => void;
+	isSearchActive: boolean;
+	onOpenSearch: () => void;
+	onCloseSearch: () => void;
+	totalCount: number;
+	displayedCount: number;
 }

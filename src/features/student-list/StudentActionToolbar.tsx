@@ -65,7 +65,7 @@ const StudentActionToolbarComponent = ({
 			)}
 
 			{/* Floating Action Toolbar */}
-			<div className="fixed bottom-14 lg:bottom-5 left-1/2 -translate-x-1/2 z-40 flex items-center justify-center max-w-[calc(100vw-2rem)]">
+			<div className="fixed bottom-14 lg:bottom-0 left-1/2 -translate-x-1/2 z-40 flex items-center justify-center max-w-[calc(100vw-2rem)]">
 				<HorizontalFloatingToolbarWithFab
 					expanded={true}
 					shape="full"
