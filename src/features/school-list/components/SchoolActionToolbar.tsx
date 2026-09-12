@@ -13,7 +13,7 @@ import {
 	TooltipBox,
 } from "@bug-on/m3-expressive";
 import { AnimatePresence, motion } from "motion/react";
-import { memo, useEffect, useRef } from "react";
+import { type MouseEvent, memo, useCallback, useEffect, useRef } from "react";
 import { cn } from "../../../utils/utils";
 import type { SchoolActionToolbarProps } from "../types";
 
@@ -30,6 +30,29 @@ const SchoolActionToolbarComponent = ({
 	onCloseSearch,
 }: SchoolActionToolbarProps) => {
 	const searchContainerRef = useRef<HTMLDivElement>(null);
+
+	// Giải phóng tap gesture của Motion trước khi modal hoặc action tiếp theo diễn ra
+	const handleOpenAddModal = useCallback(
+		(e: MouseEvent<HTMLButtonElement>) => {
+			e.currentTarget.dispatchEvent(
+				new PointerEvent("pointercancel", { bubbles: true }),
+			);
+			e.currentTarget.blur();
+			onOpenAddModal();
+		},
+		[onOpenAddModal],
+	);
+
+	const handleCloseSearch = useCallback(
+		(e: MouseEvent<HTMLButtonElement>) => {
+			e.currentTarget.dispatchEvent(
+				new PointerEvent("pointercancel", { bubbles: true }),
+			);
+			e.currentTarget.blur();
+			onCloseSearch();
+		},
+		[onCloseSearch],
+	);
 
 	// Tự động focus vào ô tìm kiếm qua scoped ref khi mở search mode
 	useEffect(() => {
@@ -66,7 +89,7 @@ const SchoolActionToolbarComponent = ({
 				colorStyle="tertiary"
 				aria-label="Đóng tìm kiếm"
 				size="md"
-				onClick={onCloseSearch}
+				onClick={handleCloseSearch}
 				icon={<Icon name="close" size={24} />}
 			/>
 		</TooltipBox>
@@ -79,7 +102,7 @@ const SchoolActionToolbarComponent = ({
 				colorStyle="tertiary"
 				aria-label="Thêm trường mới"
 				size="md"
-				onClick={onOpenAddModal}
+				onClick={handleOpenAddModal}
 				icon={<Icon name="add" size={24} />}
 			/>
 		</TooltipBox>
@@ -118,7 +141,7 @@ const SchoolActionToolbarComponent = ({
 									onQueryChange={onSearchQueryChange}
 									onSearch={onSearchQueryChange}
 									active={false}
-									onActiveChange={() => {}}
+									onActiveChange={() => { }}
 									placeholder="Tìm theo tên, mã, địa chỉ..."
 									aria-label="Tìm kiếm trường học"
 									className="w-56 sm:w-72 md:w-80"
@@ -155,7 +178,22 @@ const SchoolActionToolbarComponent = ({
 									</ToolbarIconButton>
 								</TooltipBox>
 
-								{/* 2. Lọc (Menu Expressive) */}
+								{/* 2. Tìm kiếm */}
+								<TooltipBox
+									tooltip={<PlainTooltip>Tìm kiếm trường học</PlainTooltip>}
+									placement="top"
+								>
+									<ToolbarIconButton
+										aria-label="Tìm kiếm trường học"
+										onClick={onOpenSearch}
+										emphasis="filled"
+										width="wide"
+									>
+										<Icon name="search" variant="rounded" size={24} />
+									</ToolbarIconButton>
+								</TooltipBox>
+
+								{/* 3. Lọc (Menu Expressive) */}
 								<Menu variant="expressive" colorVariant="vibrant">
 									<MenuTrigger asChild>
 										<div>
@@ -164,11 +202,10 @@ const SchoolActionToolbarComponent = ({
 													<PlainTooltip>
 														{statusFilter === "all"
 															? "Lọc trạng thái"
-															: `Đang lọc: ${
-																	statusFilter === "active"
-																		? "Đang hoạt động"
-																		: "Ngừng hoạt động"
-																}`}
+															: `Đang lọc: ${statusFilter === "active"
+																? "Đang hoạt động"
+																: "Ngừng hoạt động"
+															}`}
 													</PlainTooltip>
 												}
 												placement="top"
@@ -184,7 +221,7 @@ const SchoolActionToolbarComponent = ({
 															: undefined
 													}
 												>
-													<Icon name="tune" variant="rounded" size={24} />
+													<Icon name="tune" size={24} />
 													{statusFilter !== "all" && (
 														<span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-m3-primary" />
 													)}
@@ -220,19 +257,7 @@ const SchoolActionToolbarComponent = ({
 									</MenuContent>
 								</Menu>
 
-								{/* 3. Tìm kiếm */}
-								<TooltipBox
-									tooltip={<PlainTooltip>Tìm kiếm trường học</PlainTooltip>}
-									placement="top"
-								>
-									<ToolbarIconButton
-										aria-label="Tìm kiếm trường học"
-										onClick={onOpenSearch}
-										emphasis="standard"
-									>
-										<Icon name="search" variant="rounded" size={24} />
-									</ToolbarIconButton>
-								</TooltipBox>
+
 							</motion.div>
 						)}
 					</AnimatePresence>
