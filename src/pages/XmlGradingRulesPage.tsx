@@ -78,84 +78,202 @@ const specialConditionOptions: Array<{
 	},
 	{
 		value: "convertTableToText",
-		label: "Convert Table to Text",
+		label: "Chuyển bảng thành văn bản",
 		description:
-			"Kiem tra bang Word da duoc chuyen thanh cac dong van ban va tach cot bang tab.",
+			"Kiểm tra bảng Word đã được chuyển thành các dòng văn bản và tách cột bằng tab.",
 	},
 	{
 		value: "hyperlink",
-		label: "Hyperlink",
-		description: "Kiem tra text hien thi va URL cua hyperlink trong Word.",
+		label: "Siêu liên kết Word",
+		description: "Kiểm tra văn bản hiển thị và URL của siêu liên kết trong Word.",
 	},
 	{
 		value: "sectionBreakBeforeText",
-		label: "Section Break Before Text",
+		label: "Ngắt phần trước văn bản",
 		description:
-			"Kiem tra section break dung loai nam ngay truoc doan text muc tieu trong Word.",
+			"Kiểm tra ngắt phần đúng loại nằm ngay trước đoạn văn bản mục tiêu trong Word.",
 	},
 	{
 		value: "pictureStyle",
-		label: "Picture Style",
+		label: "Kiểu ảnh Word",
 		description:
-			"Kiem tra anh muc tieu co vien/style dung theo XML DrawingML trong Word.",
+			"Kiểm tra ảnh mục tiêu có viền/kiểu ảnh đúng theo XML DrawingML trong Word.",
 	},
 	{
 		value: "textBoxContainsText",
-		label: "Textbox chua dung van ban",
+		label: "Hộp văn bản chứa đúng nội dung",
 		description:
-			"Kiem tra doan van da duoc dua vao textbox, noi dung dung het va co the bat loi copy thay vi cut hoac paste khong mac dinh.",
+			"Kiểm tra đoạn văn đã được đưa vào hộp văn bản, nội dung đúng đầy đủ và có thể bắt lỗi copy thay vì cut hoặc paste không mặc định.",
 	},
 	{
 		value: "pageMargins",
-		label: "Le trang Word",
+		label: "Lề trang Word",
 		description:
-			"Kiem tra le tren/duoi/trai/phai cua tai lieu Word. Co the nhap inch hoac cm.",
+			"Kiểm tra lề trên/dưới/trái/phải của tài liệu Word. Có thể nhập inch hoặc cm.",
 	},
 	{
 		value: "documentStyleSet",
-		label: "Document Style Set",
+		label: "Bộ kiểu tài liệu Word",
 		description:
-			"Kiem tra style set cua Word bang cac dau hieu XML on dinh trong word/styles.xml.",
+			"Kiểm tra style set của Word bằng các dấu hiệu XML ổn định trong word/styles.xml.",
 	},
 	{
 		value: "pageBorder",
-		label: "Duong vien trang Word",
+		label: "Đường viền trang Word",
 		description:
-			"Kiem tra Page Border cua Word: 4 canh Box, kieu net, mau va do day vien.",
+			"Kiểm tra Page Border của Word: 4 cạnh Box, kiểu nét, màu và độ dày viền.",
 	},
 	{
 		value: "excelTableName",
-		label: "Excel Table Name",
+		label: "Tên bảng Excel",
 		description:
-			"Kiem tra table trong Excel da duoc doi dung ten, co the gioi han theo worksheet.",
+			"Kiểm tra table trong Excel đã được đổi đúng tên, có thể giới hạn theo worksheet.",
 		subjects: ["excel"],
 	},
 	{
 		value: "excelWorksheetPageSetup",
-		label: "Excel Page Setup",
+		label: "Thiết lập trang Excel",
 		description:
-			"Kiem tra thiet lap trang tinh Excel, hien ho tro orientation portrait/landscape.",
+			"Kiểm tra thiết lập trang tính Excel, hiện hỗ trợ orientation portrait/landscape.",
 		subjects: ["excel"],
 	},
 	{
 		value: "excelClearCellFormatting",
-		label: "Excel Clear Formatting",
+		label: "Xóa định dạng ô Excel",
 		description:
-			"Kiem tra mot range tren worksheet da duoc xoa dinh dang ve style mac dinh.",
+			"Kiểm tra một vùng ô trên worksheet đã được xóa định dạng về style mặc định.",
 		subjects: ["excel"],
 	},
 	{
 		value: "excelDataModelImport",
-		label: "Excel Data Model Import",
+		label: "Nhập Data Model Excel",
 		description:
-			"Kiem tra workbook co connection import tu file nguon va dau hieu Data Model.",
+			"Kiểm tra workbook có connection import từ file nguồn và dấu hiệu Data Model.",
 		subjects: ["excel"],
 	},
 	{
 		value: "excelCompatibilityReport",
-		label: "Excel Compatibility Report",
+		label: "Báo cáo tương thích Excel",
 		description:
-			"Kiem tra workbook co worksheet/van ban ket qua Compatibility Checker.",
+			"Kiểm tra workbook có worksheet/văn bản kết quả Compatibility Checker.",
+		subjects: ["excel"],
+	},
+	{
+		value: "excelMergedRange",
+		label: "Gộp ô Excel",
+		description:
+			"Kiểm tra một vùng ô trên worksheet đã được gộp đúng, ví dụ A1:E1.",
+		subjects: ["excel"],
+	},
+	{
+		value: "excelCellHyperlink",
+		label: "Siêu liên kết ô Excel",
+		description:
+			"Kiểm tra siêu liên kết nội bộ hoặc liên kết ngoài tại một ô Excel cụ thể.",
+		subjects: ["excel"],
+	},
+	{
+		value: "excelIconSetConditionalFormatting",
+		label: "Định dạng có điều kiện Icon Set",
+		description:
+			"Kiểm tra vùng ô có Conditional Formatting dạng Icon Set đúng loại, ví dụ 3Flags.",
+		subjects: ["excel"],
+	},
+	{
+		value: "excelChartDataRange",
+		label: "Vùng dữ liệu biểu đồ Excel",
+		description:
+			"Kiểm tra biểu đồ đã mở rộng đúng vùng category/value và số điểm dữ liệu.",
+		subjects: ["excel"],
+	},
+	{
+		value: "excelChartStyle",
+		label: "Kiểu biểu đồ Excel",
+		description:
+			"Kiểm tra mã chart style trong xl/charts/style*.xml, ví dụ Style 4 thường là id 204.",
+		subjects: ["excel"],
+	},
+	{
+		value: "excelTextReplacement",
+		label: "Thay thế văn bản Excel",
+		description:
+			"Kiểm tra đã thay toàn bộ một từ/cụm từ cũ bằng từ/cụm từ mới trong workbook.",
+		subjects: ["excel"],
+	},
+	{
+		value: "excelPrintTitles",
+		label: "Tiêu đề in Excel",
+		description:
+			"Kiểm tra worksheet đã lặp lại đúng các hàng tiêu đề/logo khi in.",
+		subjects: ["excel"],
+	},
+	{
+		value: "excelNumberFormat",
+		label: "Định dạng số Excel",
+		description:
+			"Kiểm tra các ô dữ liệu số trong vùng/cột đã dùng định dạng Number.",
+		subjects: ["excel"],
+	},
+	{
+		value: "excelChartLegend",
+		label: "Vị trí chú giải biểu đồ",
+		description: "Kiểm tra vị trí chú giải của biểu đồ, ví dụ Top.",
+		subjects: ["excel"],
+	},
+	{
+		value: "excelDefinedName",
+		label: "Named range Excel",
+		description:
+			"Kiểm tra named range có đúng tên và trỏ đúng các vùng ô yêu cầu, kể cả vùng không liền kề.",
+		subjects: ["excel"],
+	},
+	{
+		value: "excelFormulaReferences",
+		label: "Công thức dùng named range",
+		description:
+			"Kiểm tra ô có công thức dùng đủ các named range bắt buộc và không tham chiếu trực tiếp ô/vùng khi cần bắt chặt.",
+		subjects: ["excel"],
+	},
+	{
+		value: "excelNoConditionalFormatting",
+		label: "Xóa Conditional Formatting",
+		description:
+			"Kiểm tra worksheet đã xóa toàn bộ conditional formatting, không chỉ xóa định dạng ô thường.",
+		subjects: ["excel"],
+	},
+	{
+		value: "excelTextRotation",
+		label: "Xoay chữ Excel",
+		description:
+			"Kiểm tra các tiêu đề đã dùng đúng textRotation, ví dụ Angle Counterclockwise.",
+		subjects: ["excel"],
+	},
+	{
+		value: "excelMultiColumnSort",
+		label: "Sắp xếp nhiều cột Excel",
+		description:
+			"Kiểm tra thứ tự dữ liệu thực tế sau khi sort theo nhiều khóa, ví dụ Wired Equipment rồi Port Size.",
+		subjects: ["excel"],
+	},
+	{
+		value: "excelFreezePanes",
+		label: "Cố định ngăn Excel",
+		description:
+			"Kiểm tra worksheet đã cố định đúng hàng/cột khi cuộn, ví dụ giữ hàng 1 đến 3 khi cuộn dọc.",
+		subjects: ["excel"],
+	},
+	{
+		value: "excelDocumentProperty",
+		label: "Thuộc tính tài liệu Excel",
+		description:
+			"Kiểm tra custom document property của workbook, ví dụ Status = Draft.",
+		subjects: ["excel"],
+	},
+	{
+		value: "excelPrintArea",
+		label: "Vùng in Excel",
+		description:
+			"Kiểm tra worksheet đã đặt đúng vùng in, ví dụ Q1 Sales!A1:F17.",
 		subjects: ["excel"],
 	},
 ];
@@ -205,6 +323,145 @@ const emptyFeedback = () => ({
 	errorMessage: "",
 	fixAction: "",
 });
+
+const defaultSpecialConditionFeedback = (
+	type?: SpecialConditionType,
+): ReturnType<typeof emptyFeedback> => {
+	const generic = {
+		successDetail: "Đã hoàn thành đúng yêu cầu.",
+		errorMessage: "Bạn chưa thực hiện đúng yêu cầu.",
+		fixAction: "Mở file và thực hiện lại đúng yêu cầu của task.",
+	};
+
+	switch (type) {
+		case "excelMergedRange":
+			return {
+				successDetail: "Đã gộp đúng vùng ô yêu cầu.",
+				errorMessage: "Chưa gộp đúng vùng ô yêu cầu.",
+				fixAction:
+					"Chọn đúng vùng ô -> Home -> menu Merge & Center -> Merge Across; không dùng Merge & Center nếu task chỉ yêu cầu gộp ngang.",
+			};
+		case "excelCellHyperlink":
+			return {
+				successDetail: "Đã tạo đúng siêu liên kết cho ô yêu cầu.",
+				errorMessage: "Siêu liên kết của ô yêu cầu chưa đúng.",
+				fixAction: "Chọn ô cần liên kết -> Insert -> Link -> chọn đúng sheet và ô đích.",
+			};
+		case "excelIconSetConditionalFormatting":
+			return {
+				successDetail: "Đã áp dụng đúng Icon Set Conditional Formatting.",
+				errorMessage: "Conditional Formatting Icon Set chưa đúng vùng ô hoặc loại biểu tượng.",
+				fixAction:
+					"Chọn đúng vùng ô -> Home -> Conditional Formatting -> Icon Sets -> chọn đúng icon set.",
+			};
+		case "excelChartDataRange":
+			return {
+				successDetail: "Đã mở rộng đúng vùng dữ liệu của biểu đồ.",
+				errorMessage: "Biểu đồ chưa bao gồm đúng vùng dữ liệu yêu cầu.",
+				fixAction: "Chọn biểu đồ -> Select Data -> mở rộng category/value range đến đúng hàng yêu cầu.",
+			};
+		case "excelChartStyle":
+			return {
+				successDetail: "Đã áp dụng đúng Chart Style.",
+				errorMessage: "Chart Style của biểu đồ chưa đúng.",
+				fixAction: "Chọn biểu đồ -> Chart Design -> Chart Styles -> chọn đúng style yêu cầu.",
+			};
+		case "excelTextReplacement":
+			return {
+				successDetail: "Đã thay thế đúng toàn bộ văn bản yêu cầu.",
+				errorMessage: "Workbook vẫn còn văn bản cũ hoặc chưa có đủ văn bản mới.",
+				fixAction:
+					"Dùng Find and Replace để thay tất cả các lần xuất hiện của văn bản cũ bằng văn bản mới.",
+			};
+		case "excelPrintTitles":
+			return {
+				successDetail: "Đã thiết lập đúng Print Titles cho worksheet.",
+				errorMessage:
+					"Worksheet chưa lặp lại đúng hàng logo/tiêu đề trên các trang in.",
+				fixAction:
+					"Vào Page Layout -> Print Titles -> Rows to repeat at top và chọn đúng các hàng yêu cầu.",
+			};
+		case "excelNumberFormat":
+			return {
+				successDetail: "Các ô dữ liệu số đã dùng đúng định dạng Number.",
+				errorMessage:
+					"Một hoặc nhiều ô dữ liệu số trong vùng yêu cầu chưa dùng định dạng Number.",
+				fixAction:
+					"Chọn đúng cột/vùng dữ liệu -> Home -> Number Format -> Number.",
+			};
+		case "excelChartLegend":
+			return {
+				successDetail: "Legend của biểu đồ đã ở đúng vị trí yêu cầu.",
+				errorMessage: "Legend của biểu đồ chưa ở đúng vị trí yêu cầu.",
+				fixAction:
+					"Chọn biểu đồ -> Chart Design -> Add Chart Element -> Legend -> chọn vị trí đúng.",
+			};
+		case "excelDefinedName":
+			return {
+				successDetail: "Đã tạo đúng named range với tên và các vùng ô yêu cầu.",
+				errorMessage: "Named range chưa đúng tên, thiếu vùng ô hoặc có thêm vùng ngoài yêu cầu.",
+				fixAction:
+					"Chọn đúng các vùng ô không liền kề -> Formulas -> Define Name -> nhập đúng tên vùng.",
+			};
+		case "excelFormulaReferences":
+			return {
+				successDetail: "Công thức đã dùng đúng các named range yêu cầu.",
+				errorMessage: "Công thức chưa dùng đủ named range hoặc đang tham chiếu trực tiếp ô/vùng.",
+				fixAction:
+					"Nhập lại công thức bằng đúng các named range được yêu cầu, không thay bằng địa chỉ ô nếu task yêu cầu dùng named range.",
+			};
+		case "excelNoConditionalFormatting":
+			return {
+				successDetail: "Đã xóa toàn bộ conditional formatting trên worksheet yêu cầu.",
+				errorMessage: "Worksheet vẫn còn conditional formatting.",
+				fixAction:
+					"Chọn worksheet -> Home -> Conditional Formatting -> Clear Rules -> Clear Rules from Entire Sheet.",
+			};
+		case "excelTextRotation":
+			return {
+				successDetail: "Các tiêu đề đã được xoay chữ đúng Angle Counterclockwise.",
+				errorMessage: "Một hoặc nhiều tiêu đề chưa được xoay chữ đúng Angle Counterclockwise.",
+				fixAction:
+					"Chọn các ô tiêu đề yêu cầu -> Home -> Orientation -> Angle Counterclockwise.",
+			};
+		case "excelMultiColumnSort":
+			return {
+				successDetail: "Dữ liệu đã được sắp xếp đúng theo các cột yêu cầu.",
+				errorMessage: "Thứ tự dữ liệu chưa đúng theo các khóa sắp xếp yêu cầu.",
+				fixAction:
+					"Dùng Data -> Sort và thêm đúng thứ tự khóa sắp xếp, khóa trên trước rồi đến khóa phụ.",
+			};
+		case "excelFreezePanes":
+			return {
+				successDetail: "Đã cố định đúng các hàng cần giữ khi cuộn dọc.",
+				errorMessage: "Worksheet chưa cố định đúng các hàng cần giữ khi cuộn dọc.",
+				fixAction:
+					"Chọn ô ngay bên dưới các hàng cần giữ -> View -> Freeze Panes -> Freeze Panes.",
+			};
+		case "excelDocumentProperty":
+			return {
+				successDetail: "Đã cập nhật đúng thuộc tính tài liệu yêu cầu.",
+				errorMessage: "Thuộc tính tài liệu chưa có đúng giá trị yêu cầu.",
+				fixAction:
+					"Mở File -> Info -> Properties -> Advanced Properties hoặc Show All Properties, rồi nhập đúng giá trị thuộc tính.",
+			};
+		case "excelPrintArea":
+			return {
+				successDetail: "Đã thiết lập đúng vùng in cho worksheet yêu cầu.",
+				errorMessage: "Worksheet chưa được thiết lập đúng vùng in yêu cầu.",
+				fixAction:
+					"Chọn đúng vùng ô -> Page Layout -> Print Area -> Set Print Area.",
+			};
+		default:
+			return generic;
+	}
+};
+
+const hasCustomFeedback = (feedback?: ReturnType<typeof emptyFeedback>) =>
+	!!feedback &&
+	[feedback.successDetail, feedback.errorMessage, feedback.fixAction].some(
+		(value) => value.trim().length > 0,
+	);
 
 const cx = (...items: Array<string | false | null | undefined>) =>
 	items.filter(Boolean).join(" ");
@@ -348,7 +605,7 @@ const MarginUnitInput = ({
 		const twips = parseMarginInputToTwips(draft);
 		if (twips === undefined) {
 			notify.error(
-				"Gia tri le khong hop le. Hay nhap vi du: 1 in, 1.5 in, 2.54 cm.",
+				"Giá trị lề không hợp lệ. Hãy nhập ví dụ: 1 in, 1.5 in, 2.54 cm.",
 			);
 			return;
 		}
@@ -479,7 +736,7 @@ const PageBorderWidthInput = ({
 		const width = parsePageBorderWidthInput(draft);
 		if (width === undefined) {
 			notify.error(
-				"Do day vien khong hop le. Hay nhap vi du: 1.5 pt, 1 1/2 pt, 1 1/2pt wide, 12 xml.",
+				"Độ dày viền không hợp lệ. Hãy nhập ví dụ: 1.5 pt, 1 1/2 pt, 1 1/2pt wide, 12 xml.",
 			);
 			return;
 		}
@@ -490,7 +747,7 @@ const PageBorderWidthInput = ({
 
 	return (
 		<label className="text-xs font-semibold text-slate-600">
-			Do day vien
+			Độ dày viền
 			<input
 				type="text"
 				value={draft}
@@ -501,7 +758,7 @@ const PageBorderWidthInput = ({
 						event.currentTarget.blur();
 					}
 				}}
-				placeholder="1.5 pt hoac 1 1/2 pt"
+				placeholder="1.5 pt hoặc 1 1/2 pt"
 				className={inputClass}
 			/>
 		</label>
@@ -522,6 +779,1231 @@ const selectedPageBorderColorPreset = (config?: PageBorderConfig) => {
 					allowedColors,
 		)?.requiredColor ?? "custom"
 	);
+};
+
+interface ExcelProject02SpecialConditionEditorProps {
+	specialCondition: SpecialCondition;
+	inputClass: string;
+	onChange: (specialCondition: SpecialCondition) => void;
+}
+
+const ExcelProject02SpecialConditionEditor = ({
+	specialCondition,
+	inputClass,
+	onChange,
+}: ExcelProject02SpecialConditionEditorProps) => {
+	const updateConfig = (configKey: keyof SpecialCondition, patch: object) => {
+		const currentConfig =
+			(specialCondition[configKey] as Record<string, unknown> | undefined) ?? {};
+		onChange({
+			...specialCondition,
+			[configKey]: {
+				...currentConfig,
+				...patch,
+			},
+		});
+	};
+	const textareaClass = cx(inputClass, "min-h-[96px] resize-y");
+
+	if (specialCondition.type === "excelMergedRange") {
+		return (
+			<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-2">
+				<label className="text-xs font-semibold text-slate-600">
+					Tên worksheet
+					<input
+						value={specialCondition.excelMergedRangeConfig?.worksheetName ?? ""}
+						onChange={(e) =>
+							updateConfig("excelMergedRangeConfig", {
+								worksheetName: e.target.value,
+							})
+						}
+						placeholder="Fishing"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-slate-600">
+					Vùng ô
+					<input
+						value={specialCondition.excelMergedRangeConfig?.range ?? ""}
+						onChange={(e) =>
+							updateConfig("excelMergedRangeConfig", { range: e.target.value })
+						}
+						placeholder="A1:E1"
+						className={inputClass}
+					/>
+				</label>
+				<label className="flex items-center gap-2 text-xs font-medium text-slate-600 md:col-span-2">
+					<input
+						type="checkbox"
+						checked={
+							specialCondition.excelMergedRangeConfig
+								?.requireNoHorizontalCenter ?? true
+						}
+						onChange={(e) =>
+							updateConfig("excelMergedRangeConfig", {
+								requireNoHorizontalCenter: e.target.checked,
+							})
+						}
+						className="h-4 w-4 accent-blue-600"
+					/>
+					Không cho phép căn giữa ngang sau khi gộp ô
+				</label>
+			</div>
+		);
+	}
+
+	if (specialCondition.type === "excelCellHyperlink") {
+		return (
+			<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-2">
+				<label className="text-xs font-semibold text-slate-600">
+					Tên worksheet
+					<input
+						value={specialCondition.excelCellHyperlinkConfig?.worksheetName ?? ""}
+						onChange={(e) =>
+							updateConfig("excelCellHyperlinkConfig", {
+								worksheetName: e.target.value,
+							})
+						}
+						placeholder="Tents"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-slate-600">
+					Ô
+					<input
+						value={specialCondition.excelCellHyperlinkConfig?.cell ?? ""}
+						onChange={(e) =>
+							updateConfig("excelCellHyperlinkConfig", { cell: e.target.value })
+						}
+						placeholder="B13"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-slate-600">
+					Vị trí liên kết nội bộ
+					<input
+						value={specialCondition.excelCellHyperlinkConfig?.location ?? ""}
+						onChange={(e) =>
+							updateConfig("excelCellHyperlinkConfig", {
+								location: e.target.value,
+							})
+						}
+						placeholder="Fishing!A4"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-slate-600">
+					Văn bản hiển thị
+					<input
+						value={specialCondition.excelCellHyperlinkConfig?.display ?? ""}
+						onChange={(e) =>
+							updateConfig("excelCellHyperlinkConfig", {
+								display: e.target.value,
+							})
+						}
+						placeholder="Không bắt buộc"
+						className={inputClass}
+					/>
+				</label>
+			</div>
+		);
+	}
+
+	if (specialCondition.type === "excelIconSetConditionalFormatting") {
+		return (
+			<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-3">
+				<label className="text-xs font-semibold text-slate-600">
+					Tên worksheet
+					<input
+						value={
+							specialCondition.excelIconSetConditionalFormattingConfig
+								?.worksheetName ?? ""
+						}
+						onChange={(e) =>
+							updateConfig("excelIconSetConditionalFormattingConfig", {
+								worksheetName: e.target.value,
+							})
+						}
+						placeholder="Tents"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-slate-600">
+					Vùng ô
+					<input
+						value={
+							specialCondition.excelIconSetConditionalFormattingConfig?.range ??
+							""
+						}
+						onChange={(e) =>
+							updateConfig("excelIconSetConditionalFormattingConfig", {
+								range: e.target.value,
+							})
+						}
+						placeholder="C4:C11"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-slate-600">
+					Bộ biểu tượng
+					<input
+						value={
+							specialCondition.excelIconSetConditionalFormattingConfig
+								?.iconSet ?? ""
+						}
+						onChange={(e) =>
+							updateConfig("excelIconSetConditionalFormattingConfig", {
+								iconSet: e.target.value,
+							})
+						}
+						placeholder="3Flags"
+						className={inputClass}
+					/>
+				</label>
+			</div>
+		);
+	}
+
+	if (specialCondition.type === "excelTextReplacement") {
+		return (
+			<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-2">
+				<label className="text-xs font-semibold text-slate-600">
+					Tên worksheet
+					<input
+						value={
+							specialCondition.excelTextReplacementConfig?.worksheetName ?? ""
+						}
+						onChange={(e) =>
+							updateConfig("excelTextReplacementConfig", {
+								worksheetName: e.target.value,
+							})
+						}
+						placeholder="Để trống = toàn workbook"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-slate-600">
+					File nguồn
+					<input
+						value={specialCondition.excelTextReplacementConfig?.sourceFile ?? ""}
+						onChange={(e) =>
+							updateConfig("excelTextReplacementConfig", {
+								sourceFile: e.target.value,
+							})
+						}
+						placeholder="xl/worksheets/sheet1.xml"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-slate-600">
+					Văn bản cũ
+					<input
+						value={specialCondition.excelTextReplacementConfig?.oldText ?? ""}
+						onChange={(e) =>
+							updateConfig("excelTextReplacementConfig", {
+								oldText: e.target.value,
+							})
+						}
+						placeholder="Choco"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-slate-600">
+					Văn bản mới
+					<input
+						value={specialCondition.excelTextReplacementConfig?.newText ?? ""}
+						onChange={(e) =>
+							updateConfig("excelTextReplacementConfig", {
+								newText: e.target.value,
+							})
+						}
+						placeholder="Chocolate"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-slate-600">
+					Số lần tối thiểu văn bản mới
+					<input
+						type="number"
+						min={1}
+						value={
+							specialCondition.excelTextReplacementConfig
+								?.minNewTextOccurrences ?? 1
+						}
+						onChange={(e) =>
+							updateConfig("excelTextReplacementConfig", {
+								minNewTextOccurrences: e.target.value
+									? Number(e.target.value)
+									: 1,
+							})
+						}
+						className={inputClass}
+					/>
+				</label>
+				<label className="flex items-center gap-2 text-xs font-semibold text-slate-600">
+					<input
+						type="checkbox"
+						checked={
+							specialCondition.excelTextReplacementConfig
+								?.requireOldTextAbsent !== false
+						}
+						onChange={(e) =>
+							updateConfig("excelTextReplacementConfig", {
+								requireOldTextAbsent: e.target.checked,
+							})
+						}
+						className="h-4 w-4 rounded border-slate-300 text-blue-600"
+					/>
+					Bắt buộc không còn văn bản cũ
+				</label>
+			</div>
+		);
+	}
+
+	if (specialCondition.type === "excelPrintTitles") {
+		return (
+			<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-2">
+				<label className="text-xs font-semibold text-slate-600">
+					Tên worksheet
+					<input
+						value={specialCondition.excelPrintTitlesConfig?.worksheetName ?? ""}
+						onChange={(e) =>
+							updateConfig("excelPrintTitlesConfig", {
+								worksheetName: e.target.value,
+							})
+						}
+						placeholder="Costs"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-slate-600">
+					Hàng lặp lại ở đầu trang
+					<input
+						value={specialCondition.excelPrintTitlesConfig?.expectedRows ?? ""}
+						onChange={(e) =>
+							updateConfig("excelPrintTitlesConfig", {
+								expectedRows: e.target.value,
+							})
+						}
+						placeholder="1:3"
+						className={inputClass}
+					/>
+				</label>
+			</div>
+		);
+	}
+
+	if (specialCondition.type === "excelNumberFormat") {
+		return (
+			<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-3">
+				<label className="text-xs font-semibold text-slate-600">
+					Tên worksheet
+					<input
+						value={specialCondition.excelNumberFormatConfig?.worksheetName ?? ""}
+						onChange={(e) =>
+							updateConfig("excelNumberFormatConfig", {
+								worksheetName: e.target.value,
+							})
+						}
+						placeholder="Costs"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-slate-600">
+					Vùng ô
+					<input
+						value={specialCondition.excelNumberFormatConfig?.range ?? ""}
+						onChange={(e) =>
+							updateConfig("excelNumberFormatConfig", {
+								range: e.target.value,
+							})
+						}
+						placeholder="B:E"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-slate-600">
+					Loại định dạng
+					<select
+						value={
+							specialCondition.excelNumberFormatConfig?.category ?? "number"
+						}
+						onChange={(e) =>
+							updateConfig("excelNumberFormatConfig", {
+								category: e.target.value as
+									| "general"
+									| "number"
+									| "currency"
+									| "accounting"
+									| "percentage"
+									| "date"
+									| "time"
+									| "custom",
+							})
+						}
+						className={inputClass}
+					>
+						<option value="number">Số (Number)</option>
+						<option value="currency">Tiền tệ (Currency)</option>
+						<option value="accounting">Kế toán (Accounting)</option>
+						<option value="percentage">Phần trăm (Percentage)</option>
+						<option value="date">Ngày (Date)</option>
+						<option value="time">Thời gian (Time)</option>
+						<option value="general">Chung (General)</option>
+						<option value="custom">Tùy chỉnh (Custom)</option>
+					</select>
+				</label>
+				<label className="text-xs font-semibold text-slate-600">
+					Số chữ số thập phân
+					<input
+						type="number"
+						min={0}
+						value={
+							specialCondition.excelNumberFormatConfig?.decimalPlaces ?? ""
+						}
+						onChange={(e) =>
+							updateConfig("excelNumberFormatConfig", {
+								decimalPlaces:
+									e.target.value === "" ? undefined : Number(e.target.value),
+							})
+						}
+						placeholder="2"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-slate-600">
+					Ký hiệu
+					<input
+						value={specialCondition.excelNumberFormatConfig?.symbol ?? ""}
+						onChange={(e) =>
+							updateConfig("excelNumberFormatConfig", {
+								symbol: e.target.value,
+							})
+						}
+						placeholder="$ / VND / để trống"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-slate-600">
+					numFmtId hợp lệ nâng cao
+					<input
+						value={(
+							specialCondition.excelNumberFormatConfig
+								?.allowedNumberFormatIds ?? [1, 2, 3, 4]
+						).join(", ")}
+						onChange={(e) =>
+							updateConfig("excelNumberFormatConfig", {
+								allowedNumberFormatIds: e.target.value
+									.split(",")
+									.map((item) => Number(item.trim()))
+									.filter((item) => Number.isFinite(item) && item > 0),
+							})
+						}
+						placeholder="1, 2, 3, 4"
+						className={inputClass}
+					/>
+				</label>
+				<label className="flex items-center gap-2 text-xs font-medium text-slate-600">
+					<input
+						type="checkbox"
+						checked={
+							specialCondition.excelNumberFormatConfig
+								?.requireThousandsSeparator ?? false
+						}
+						onChange={(e) =>
+							updateConfig("excelNumberFormatConfig", {
+								requireThousandsSeparator: e.target.checked,
+							})
+						}
+						className="h-4 w-4 accent-blue-600"
+					/>
+					Bắt buộc có dấu phân tách hàng nghìn
+				</label>
+			</div>
+		);
+	}
+
+	if (specialCondition.type === "excelChartDataRange") {
+		return (
+			<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-2">
+				<label className="text-xs font-semibold text-slate-600">
+					File XML biểu đồ
+					<input
+						value={
+							specialCondition.excelChartDataRangeConfig?.chartSourceFile ?? ""
+						}
+						onChange={(e) =>
+							updateConfig("excelChartDataRangeConfig", {
+								chartSourceFile: e.target.value,
+							})
+						}
+						placeholder="xl/charts/chart1.xml"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-slate-600">
+					Số điểm dữ liệu yêu cầu
+					<input
+						type="number"
+						min={1}
+						value={
+							specialCondition.excelChartDataRangeConfig?.expectedPointCount ??
+							""
+						}
+						onChange={(e) =>
+							updateConfig("excelChartDataRangeConfig", {
+								expectedPointCount: e.target.value
+									? Number(e.target.value)
+									: undefined,
+							})
+						}
+						placeholder="4"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-slate-600">
+					Vùng nhãn trục
+					<input
+						value={
+							specialCondition.excelChartDataRangeConfig
+								?.expectedCategoryRange ?? ""
+						}
+						onChange={(e) =>
+							updateConfig("excelChartDataRangeConfig", {
+								expectedCategoryRange: e.target.value,
+							})
+						}
+						placeholder="Tents!$B$4:$B$7"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-slate-600">
+					Vùng giá trị
+					<input
+						value={
+							specialCondition.excelChartDataRangeConfig?.expectedValueRange ??
+							""
+						}
+						onChange={(e) =>
+							updateConfig("excelChartDataRangeConfig", {
+								expectedValueRange: e.target.value,
+							})
+						}
+						placeholder="Tents!$C$4:$C$7"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-slate-600 md:col-span-2">
+					Các vùng giá trị (mỗi dòng một series)
+					<textarea
+						value={(
+							specialCondition.excelChartDataRangeConfig
+								?.expectedValueRanges ?? []
+						).join("\n")}
+						onChange={(e) =>
+							updateConfig("excelChartDataRangeConfig", {
+								expectedValueRanges: e.target.value
+									.split(/\r?\n/)
+									.map((item) => item.trim())
+									.filter(Boolean),
+							})
+						}
+						placeholder={"Profits!$B$4:$B$9\nProfits!$C$4:$C$9"}
+						className={textareaClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-slate-600 md:col-span-2">
+					Tên series (mỗi dòng một series chú giải)
+					<textarea
+						value={(
+							specialCondition.excelChartDataRangeConfig
+								?.expectedSeriesNames ?? []
+						).join("\n")}
+						onChange={(e) =>
+							updateConfig("excelChartDataRangeConfig", {
+								expectedSeriesNames: e.target.value
+									.split(/\r?\n/)
+									.map((item) => item.trim())
+									.filter(Boolean),
+							})
+						}
+						placeholder={"Expense\nIncome"}
+						className={textareaClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-slate-600 md:col-span-2">
+					Nội dung nhãn cần có
+					<input
+						value={
+							specialCondition.excelChartDataRangeConfig
+								?.expectedCategoryText ?? ""
+						}
+						onChange={(e) =>
+							updateConfig("excelChartDataRangeConfig", {
+								expectedCategoryText: e.target.value,
+							})
+						}
+						placeholder="Giant Truck Bed Tent"
+						className={inputClass}
+					/>
+				</label>
+				<label className="flex items-center gap-2 text-xs font-semibold text-slate-600 md:col-span-2">
+					<input
+						type="checkbox"
+						checked={
+							specialCondition.excelChartDataRangeConfig
+								?.requireNoExtraSeries !== false
+						}
+						onChange={(e) =>
+							updateConfig("excelChartDataRangeConfig", {
+								requireNoExtraSeries: e.target.checked,
+							})
+						}
+						className="h-4 w-4 rounded border-slate-300 text-blue-600"
+					/>
+					Không cho thêm series/range ngoài dữ liệu yêu cầu
+				</label>
+			</div>
+		);
+	}
+
+	if (specialCondition.type === "excelChartLegend") {
+		return (
+			<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-2">
+				<label className="text-xs font-semibold text-slate-600">
+					File XML biểu đồ
+					<input
+						value={specialCondition.excelChartLegendConfig?.chartSourceFile ?? ""}
+						onChange={(e) =>
+							updateConfig("excelChartLegendConfig", {
+								chartSourceFile: e.target.value,
+							})
+						}
+						placeholder="xl/charts/chart1.xml"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-slate-600">
+					Vị trí chú giải
+					<select
+						value={specialCondition.excelChartLegendConfig?.position ?? "t"}
+						onChange={(e) =>
+							updateConfig("excelChartLegendConfig", {
+								position: e.target.value as "t" | "b" | "l" | "r" | "tr",
+							})
+						}
+						className={inputClass}
+					>
+						<option value="t">Trên</option>
+						<option value="b">Dưới</option>
+						<option value="l">Trái</option>
+						<option value="r">Phải</option>
+						<option value="tr">Góc trên bên phải</option>
+					</select>
+				</label>
+			</div>
+		);
+	}
+
+	if (specialCondition.type === "excelDefinedName") {
+		return (
+			<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-2">
+				<label className="text-xs font-semibold text-slate-600">
+					Tên named range
+					<input
+						value={specialCondition.excelDefinedNameConfig?.name ?? ""}
+						onChange={(e) =>
+							updateConfig("excelDefinedNameConfig", { name: e.target.value })
+						}
+						placeholder="Prices"
+						className={inputClass}
+					/>
+				</label>
+				<label className="flex items-center gap-2 text-xs font-semibold text-slate-600">
+					<input
+						type="checkbox"
+						checked={
+							specialCondition.excelDefinedNameConfig?.requireExactRanges !==
+							false
+						}
+						onChange={(e) =>
+							updateConfig("excelDefinedNameConfig", {
+								requireExactRanges: e.target.checked,
+							})
+						}
+						className="h-4 w-4 rounded border-slate-300 text-blue-600"
+					/>
+					Bắt đúng và không cho thêm vùng ngoài yêu cầu
+				</label>
+				<label className="text-xs font-semibold text-slate-600 md:col-span-2">
+					Vùng ô yêu cầu (mỗi dòng một vùng)
+					<textarea
+						value={(
+							specialCondition.excelDefinedNameConfig?.expectedRanges ?? []
+						).join("\n")}
+						onChange={(e) =>
+							updateConfig("excelDefinedNameConfig", {
+								expectedRanges: e.target.value
+									.split(/\r?\n/)
+									.map((item) => item.trim())
+									.filter(Boolean),
+							})
+						}
+						placeholder={"D5:D15\nD18:D26"}
+						className={textareaClass}
+					/>
+				</label>
+			</div>
+		);
+	}
+
+	if (specialCondition.type === "excelFormulaReferences") {
+		return (
+			<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-2">
+				<label className="text-xs font-semibold text-slate-600">
+					Tên worksheet
+					<input
+						value={
+							specialCondition.excelFormulaReferencesConfig?.worksheetName ?? ""
+						}
+						onChange={(e) =>
+							updateConfig("excelFormulaReferencesConfig", {
+								worksheetName: e.target.value,
+							})
+						}
+						placeholder="Price List"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-slate-600">
+					Ô công thức
+					<input
+						value={specialCondition.excelFormulaReferencesConfig?.cell ?? ""}
+						onChange={(e) =>
+							updateConfig("excelFormulaReferencesConfig", {
+								cell: e.target.value,
+							})
+						}
+						placeholder="H5"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-slate-600 md:col-span-2">
+					Named range bắt buộc (mỗi dòng một tên)
+					<textarea
+						value={(
+							specialCondition.excelFormulaReferencesConfig
+								?.requiredReferences ?? []
+						).join("\n")}
+						onChange={(e) =>
+							updateConfig("excelFormulaReferencesConfig", {
+								requiredReferences: e.target.value
+									.split(/\r?\n/)
+									.map((item) => item.trim())
+									.filter(Boolean),
+							})
+						}
+						placeholder={"Price_10G\nInstall_10G\nSupport_10G"}
+						className={textareaClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-slate-600">
+					Hàm bắt buộc (mỗi dòng một hàm)
+					<textarea
+						value={(
+							specialCondition.excelFormulaReferencesConfig
+								?.requiredFunctions ?? []
+						).join("\n")}
+						onChange={(e) =>
+							updateConfig("excelFormulaReferencesConfig", {
+								requiredFunctions: e.target.value
+									.split(/\r?\n/)
+									.map((item) => item.trim())
+									.filter(Boolean),
+							})
+						}
+						placeholder={"SUM\nCONCAT"}
+						className={textareaClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-slate-600">
+					Fragment công thức bắt buộc
+					<textarea
+						value={(
+							specialCondition.excelFormulaReferencesConfig
+								?.requiredFormulaFragments ?? []
+						).join("\n")}
+						onChange={(e) =>
+							updateConfig("excelFormulaReferencesConfig", {
+								requiredFormulaFragments: e.target.value
+									.split(/\r?\n/)
+									.map((item) => item.trim())
+									.filter(Boolean),
+							})
+						}
+						placeholder={'" - "'}
+						className={textareaClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-slate-600">
+					Công thức chính xác (không bắt buộc)
+					<input
+						value={
+							specialCondition.excelFormulaReferencesConfig?.expectedFormula ??
+							""
+						}
+						onChange={(e) =>
+							updateConfig("excelFormulaReferencesConfig", {
+								expectedFormula: e.target.value,
+							})
+						}
+						placeholder="=SUM(Price_10G,Install_10G,Support_10G)"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-slate-600">
+					Giá trị lưu trong ô (không bắt buộc)
+					<input
+						value={
+							specialCondition.excelFormulaReferencesConfig?.expectedValue ?? ""
+						}
+						onChange={(e) =>
+							updateConfig("excelFormulaReferencesConfig", {
+								expectedValue: e.target.value,
+							})
+						}
+						placeholder="Không bắt buộc"
+						className={inputClass}
+					/>
+				</label>
+				<label className="flex items-center gap-2 text-xs font-semibold text-slate-600 md:col-span-2">
+					<input
+						type="checkbox"
+						checked={
+							specialCondition.excelFormulaReferencesConfig
+								?.requireOnlyDefinedNameReferences !== false
+						}
+						onChange={(e) =>
+							updateConfig("excelFormulaReferencesConfig", {
+								requireOnlyDefinedNameReferences: e.target.checked,
+							})
+						}
+						className="h-4 w-4 rounded border-slate-300 text-blue-600"
+					/>
+					Không cho tham chiếu trực tiếp địa chỉ ô/vùng
+				</label>
+			</div>
+		);
+	}
+
+	if (specialCondition.type === "excelNoConditionalFormatting") {
+		return (
+			<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-2">
+				<label className="text-xs font-semibold text-slate-600">
+					Tên worksheet
+					<input
+						value={
+							specialCondition.excelNoConditionalFormattingConfig
+								?.worksheetName ?? ""
+						}
+						onChange={(e) =>
+							updateConfig("excelNoConditionalFormattingConfig", {
+								worksheetName: e.target.value,
+							})
+						}
+						placeholder="Price List"
+						className={inputClass}
+					/>
+				</label>
+				<label className="flex items-center gap-2 text-xs font-semibold text-slate-600">
+					<input
+						type="checkbox"
+						checked={
+							specialCondition.excelNoConditionalFormattingConfig
+								?.requireAllWorksheets ?? false
+						}
+						onChange={(e) =>
+							updateConfig("excelNoConditionalFormattingConfig", {
+								requireAllWorksheets: e.target.checked,
+							})
+						}
+						className="h-4 w-4 rounded border-slate-300 text-blue-600"
+					/>
+					Kiểm tra toàn bộ workbook
+				</label>
+			</div>
+		);
+	}
+
+	if (specialCondition.type === "excelFreezePanes") {
+		return (
+			<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-3">
+				<label className="text-xs font-semibold text-slate-600">
+					Tên worksheet
+					<input
+						value={specialCondition.excelFreezePanesConfig?.worksheetName ?? ""}
+						onChange={(e) =>
+							updateConfig("excelFreezePanesConfig", {
+								worksheetName: e.target.value,
+							})
+						}
+						placeholder="Catalog"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-slate-600">
+					Ô góc trên bên trái sau khi cố định
+					<input
+						value={specialCondition.excelFreezePanesConfig?.topLeftCell ?? "A4"}
+						onChange={(e) =>
+							updateConfig("excelFreezePanesConfig", {
+								topLeftCell: e.target.value,
+							})
+						}
+						placeholder="A4"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-slate-600">
+					Số hàng cố định (ySplit)
+					<input
+						type="number"
+						min={0}
+						value={specialCondition.excelFreezePanesConfig?.ySplit ?? 3}
+						onChange={(e) =>
+							updateConfig("excelFreezePanesConfig", {
+								ySplit: e.target.value ? Number(e.target.value) : 3,
+							})
+						}
+						className={inputClass}
+					/>
+				</label>
+				<label className="flex items-center gap-2 text-xs font-semibold text-slate-600 md:col-span-3">
+					<input
+						type="checkbox"
+						checked={
+							specialCondition.excelFreezePanesConfig
+								?.requireNoColumnFreeze !== false
+						}
+						onChange={(e) =>
+							updateConfig("excelFreezePanesConfig", {
+								requireNoColumnFreeze: e.target.checked,
+							})
+						}
+						className="h-4 w-4 rounded border-slate-300 text-blue-600"
+					/>
+					Chỉ cố định hàng, không cố định thêm cột
+				</label>
+			</div>
+		);
+	}
+
+	if (specialCondition.type === "excelDocumentProperty") {
+		return (
+			<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-3">
+				<label className="text-xs font-semibold text-slate-600">
+					Tên thuộc tính
+					<input
+						value={
+							specialCondition.excelDocumentPropertyConfig?.propertyName ?? ""
+						}
+						onChange={(e) =>
+							updateConfig("excelDocumentPropertyConfig", {
+								propertyName: e.target.value,
+							})
+						}
+						placeholder="Status"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-slate-600">
+					Giá trị yêu cầu
+					<input
+						value={
+							specialCondition.excelDocumentPropertyConfig?.expectedValue ?? ""
+						}
+						onChange={(e) =>
+							updateConfig("excelDocumentPropertyConfig", {
+								expectedValue: e.target.value,
+							})
+						}
+						placeholder="Draft"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-slate-600">
+					File nguồn
+					<input
+						value={
+							specialCondition.excelDocumentPropertyConfig?.sourceFile ??
+							"docProps/custom.xml"
+						}
+						onChange={(e) =>
+							updateConfig("excelDocumentPropertyConfig", {
+								sourceFile: e.target.value,
+							})
+						}
+						placeholder="docProps/custom.xml"
+						className={inputClass}
+					/>
+				</label>
+			</div>
+		);
+	}
+
+	if (specialCondition.type === "excelPrintArea") {
+		return (
+			<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-2">
+				<label className="text-xs font-semibold text-slate-600">
+					Tên worksheet
+					<input
+						value={specialCondition.excelPrintAreaConfig?.worksheetName ?? ""}
+						onChange={(e) =>
+							updateConfig("excelPrintAreaConfig", {
+								worksheetName: e.target.value,
+							})
+						}
+						placeholder="Q1 Sales"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-slate-600">
+					Vùng in
+					<input
+						value={specialCondition.excelPrintAreaConfig?.expectedRange ?? ""}
+						onChange={(e) =>
+							updateConfig("excelPrintAreaConfig", {
+								expectedRange: e.target.value,
+							})
+						}
+						placeholder="A1:F17"
+						className={inputClass}
+					/>
+				</label>
+				<label className="flex items-center gap-2 text-xs font-semibold text-slate-600 md:col-span-2">
+					<input
+						type="checkbox"
+						checked={
+							specialCondition.excelPrintAreaConfig?.requireExactRange !== false
+						}
+						onChange={(e) =>
+							updateConfig("excelPrintAreaConfig", {
+								requireExactRange: e.target.checked,
+							})
+						}
+						className="h-4 w-4 rounded border-slate-300 text-blue-600"
+					/>
+					Bắt đúng vùng in, không cho thêm vùng khác
+				</label>
+			</div>
+		);
+	}
+
+	if (specialCondition.type === "excelTextRotation") {
+		return (
+			<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-2">
+				<label className="text-xs font-semibold text-slate-600">
+					Tên worksheet
+					<input
+						value={specialCondition.excelTextRotationConfig?.worksheetName ?? ""}
+						onChange={(e) =>
+							updateConfig("excelTextRotationConfig", {
+								worksheetName: e.target.value,
+							})
+						}
+						placeholder="Price List"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-slate-600">
+					textRotation hợp lệ
+					<input
+						value={(
+							specialCondition.excelTextRotationConfig
+								?.allowedTextRotationValues ?? [45]
+						).join(", ")}
+						onChange={(e) =>
+							updateConfig("excelTextRotationConfig", {
+								allowedTextRotationValues: e.target.value
+									.split(",")
+									.map((item) => Number(item.trim()))
+									.filter((item) => Number.isFinite(item)),
+							})
+						}
+						placeholder="45"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-slate-600 md:col-span-2">
+					Tiêu đề cần xoay (mỗi dòng một tiêu đề)
+					<textarea
+						value={(
+							specialCondition.excelTextRotationConfig?.expectedTexts ?? []
+						).join("\n")}
+						onChange={(e) =>
+							updateConfig("excelTextRotationConfig", {
+								expectedTexts: e.target.value
+									.split(/\r?\n/)
+									.map((item) => item.trim())
+									.filter(Boolean),
+							})
+						}
+						placeholder={"Port Size\nBand Size\nPrice\nInstall\nSupport"}
+						className={textareaClass}
+					/>
+				</label>
+				<label className="flex items-center gap-2 text-xs font-semibold text-slate-600 md:col-span-2">
+					<input
+						type="checkbox"
+						checked={
+							specialCondition.excelTextRotationConfig?.requireAllTexts !==
+							false
+						}
+						onChange={(e) =>
+							updateConfig("excelTextRotationConfig", {
+								requireAllTexts: e.target.checked,
+							})
+						}
+						className="h-4 w-4 rounded border-slate-300 text-blue-600"
+					/>
+					Bắt buộc tất cả tiêu đề đều phải xoay đúng
+				</label>
+			</div>
+		);
+	}
+
+	if (specialCondition.type === "excelMultiColumnSort") {
+		return (
+			<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-2">
+				<label className="text-xs font-semibold text-slate-600">
+					Tên worksheet
+					<input
+						value={specialCondition.excelMultiColumnSortConfig?.worksheetName ?? ""}
+						onChange={(e) =>
+							updateConfig("excelMultiColumnSortConfig", {
+								worksheetName: e.target.value,
+							})
+						}
+						placeholder="Price List"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-slate-600">
+					Hàng tiêu đề
+					<input
+						type="number"
+						min={1}
+						value={specialCondition.excelMultiColumnSortConfig?.headerRow ?? 4}
+						onChange={(e) =>
+							updateConfig("excelMultiColumnSortConfig", {
+								headerRow: e.target.value ? Number(e.target.value) : 4,
+							})
+						}
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-slate-600 md:col-span-2">
+					Vùng dữ liệu (không bắt buộc)
+					<input
+						value={specialCondition.excelMultiColumnSortConfig?.dataRange ?? ""}
+						onChange={(e) =>
+							updateConfig("excelMultiColumnSortConfig", {
+								dataRange: e.target.value,
+							})
+						}
+						placeholder="A5:H26"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-slate-600 md:col-span-2">
+					Khóa sắp xếp (mỗi dòng: tiêu đề cột hoặc tiêu đề|desc)
+					<textarea
+						value={(
+							specialCondition.excelMultiColumnSortConfig?.keyColumns ?? []
+						)
+							.map(
+								(key) =>
+									`${key.headerName ?? key.column ?? ""}${
+										key.descending ? "|desc" : ""
+									}`,
+							)
+							.join("\n")}
+						onChange={(e) =>
+							updateConfig("excelMultiColumnSortConfig", {
+								keyColumns: e.target.value
+									.split(/\r?\n/)
+									.map((line) => line.trim())
+									.filter(Boolean)
+									.map((line) => {
+										const [name, direction] = line
+											.split("|")
+											.map((item) => item.trim());
+										return {
+											headerName: name,
+											descending:
+												direction?.toLowerCase() === "desc" ||
+												direction?.toLowerCase() === "z-a",
+										};
+									}),
+							})
+						}
+						placeholder={"Wired Equipment\nPort Size"}
+						className={textareaClass}
+					/>
+				</label>
+			</div>
+		);
+	}
+
+	if (specialCondition.type === "excelChartStyle") {
+		return (
+			<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-3">
+				<label className="text-xs font-semibold text-slate-600">
+					File XML biểu đồ
+					<input
+						value={specialCondition.excelChartStyleConfig?.chartSourceFile ?? ""}
+						onChange={(e) =>
+							updateConfig("excelChartStyleConfig", {
+								chartSourceFile: e.target.value,
+							})
+						}
+						placeholder="xl/charts/chart1.xml"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-slate-600">
+					File XML chart style
+					<input
+						value={specialCondition.excelChartStyleConfig?.styleSourceFile ?? ""}
+						onChange={(e) =>
+							updateConfig("excelChartStyleConfig", {
+								styleSourceFile: e.target.value,
+							})
+						}
+						placeholder="xl/charts/style1.xml"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-slate-600">
+					Mã style biểu đồ
+					<input
+						type="number"
+						min={1}
+						value={specialCondition.excelChartStyleConfig?.styleId ?? ""}
+						onChange={(e) =>
+							updateConfig("excelChartStyleConfig", {
+								styleId: e.target.value ? Number(e.target.value) : undefined,
+							})
+						}
+						placeholder="204"
+						className={inputClass}
+					/>
+				</label>
+			</div>
+		);
+	}
+
+	return null;
 };
 
 const prepareCondition = (
@@ -679,7 +2161,7 @@ const XmlGradingRulesPage = () => {
 			notify.error(
 				error instanceof Error
 					? error.message
-					: "Khong tai duoc chi tiet XML ruleset.",
+					: "Không tải được chi tiết XML ruleset.",
 			);
 		} finally {
 			setLoadingRuleSetId("");
@@ -879,8 +2361,16 @@ const XmlGradingRulesPage = () => {
 		ti: number,
 		specialCondition?: SpecialCondition,
 	) => {
+		const nextSpecialCondition =
+			specialCondition && !hasCustomFeedback(specialCondition.feedback)
+				? {
+						...specialCondition,
+						feedback: defaultSpecialConditionFeedback(specialCondition.type),
+					}
+				: specialCondition;
+
 		mutateTask(pi, ti, {
-			specialCondition,
+			specialCondition: nextSpecialCondition,
 		});
 	};
 
@@ -1854,8 +3344,7 @@ const XmlGradingRulesPage = () => {
 																																feedback:
 																																	task
 																																		.specialCondition
-																																		?.feedback ??
-																																	emptyFeedback(),
+																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
 																																config: task
 																																	.specialCondition
 																																	?.config ?? {
@@ -1881,8 +3370,7 @@ const XmlGradingRulesPage = () => {
 																																feedback:
 																																	task
 																																		.specialCondition
-																																		?.feedback ??
-																																	emptyFeedback(),
+																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
 																																imageInsertConfig:
 																																	task
 																																		.specialCondition
@@ -1923,8 +3411,7 @@ const XmlGradingRulesPage = () => {
 																																feedback:
 																																	task
 																																		.specialCondition
-																																		?.feedback ??
-																																	emptyFeedback(),
+																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
 																																convertTableToTextConfig:
 																																	task
 																																		.specialCondition
@@ -1959,8 +3446,7 @@ const XmlGradingRulesPage = () => {
 																																feedback:
 																																	task
 																																		.specialCondition
-																																		?.feedback ??
-																																	emptyFeedback(),
+																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
 																																hyperlinkConfig:
 																																	task
 																																		.specialCondition
@@ -1996,8 +3482,7 @@ const XmlGradingRulesPage = () => {
 																																feedback:
 																																	task
 																																		.specialCondition
-																																		?.feedback ??
-																																	emptyFeedback(),
+																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
 																																sectionBreakBeforeTextConfig:
 																																	task
 																																		.specialCondition
@@ -2032,8 +3517,7 @@ const XmlGradingRulesPage = () => {
 																																feedback:
 																																	task
 																																		.specialCondition
-																																		?.feedback ??
-																																	emptyFeedback(),
+																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
 																																pictureStyleConfig:
 																																	task
 																																		.specialCondition
@@ -2070,8 +3554,7 @@ const XmlGradingRulesPage = () => {
 																																feedback:
 																																	task
 																																		.specialCondition
-																																		?.feedback ??
-																																	emptyFeedback(),
+																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
 																																textBoxContainsTextConfig:
 																																	task
 																																		.specialCondition
@@ -2116,8 +3599,7 @@ const XmlGradingRulesPage = () => {
 																																feedback:
 																																	task
 																																		.specialCondition
-																																		?.feedback ??
-																																	emptyFeedback(),
+																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
 																																pageMarginsConfig:
 																																	task
 																																		.specialCondition
@@ -2151,8 +3633,7 @@ const XmlGradingRulesPage = () => {
 																																feedback:
 																																	task
 																																		.specialCondition
-																																		?.feedback ??
-																																	emptyFeedback(),
+																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
 																																documentStyleSetConfig:
 																																	task
 																																		.specialCondition
@@ -2191,8 +3672,7 @@ const XmlGradingRulesPage = () => {
 																																feedback:
 																																	task
 																																		.specialCondition
-																																		?.feedback ??
-																																	emptyFeedback(),
+																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
 																																pageBorderConfig:
 																																	task
 																																		.specialCondition
@@ -2234,8 +3714,7 @@ const XmlGradingRulesPage = () => {
 																																feedback:
 																																	task
 																																		.specialCondition
-																																		?.feedback ??
-																																	emptyFeedback(),
+																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
 																																excelTableNameConfig:
 																																	task
 																																		.specialCondition
@@ -2268,8 +3747,7 @@ const XmlGradingRulesPage = () => {
 																																feedback:
 																																	task
 																																		.specialCondition
-																																		?.feedback ??
-																																	emptyFeedback(),
+																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
 																																excelWorksheetPageSetupConfig:
 																																	task
 																																		.specialCondition
@@ -2299,8 +3777,7 @@ const XmlGradingRulesPage = () => {
 																																feedback:
 																																	task
 																																		.specialCondition
-																																		?.feedback ??
-																																	emptyFeedback(),
+																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
 																																excelClearCellFormattingConfig:
 																																	task
 																																		.specialCondition
@@ -2331,8 +3808,7 @@ const XmlGradingRulesPage = () => {
 																																feedback:
 																																	task
 																																		.specialCondition
-																																		?.feedback ??
-																																	emptyFeedback(),
+																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
 																																excelDataModelImportConfig:
 																																	task
 																																		.specialCondition
@@ -2368,8 +3844,7 @@ const XmlGradingRulesPage = () => {
 																																feedback:
 																																	task
 																																		.specialCondition
-																																		?.feedback ??
-																																	emptyFeedback(),
+																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
 																																excelCompatibilityReportConfig:
 																																	task
 																																		.specialCondition
@@ -2379,6 +3854,601 @@ const XmlGradingRulesPage = () => {
 																																		expectedTexts:
 																																			[],
 																																		requireNewWorksheet: true,
+																																	},
+																															},
+																														);
+																													}
+																													if (
+																														value ===
+																														"excelMergedRange"
+																													) {
+																														updateTaskSpecialCondition(
+																															pi,
+																															ti,
+																															{
+																																type: "excelMergedRange",
+																																score:
+																																	task
+																																		.specialCondition
+																																		?.score ??
+																																	0,
+																																feedback:
+																																	task
+																																		.specialCondition
+																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																																excelMergedRangeConfig:
+																																	task
+																																		.specialCondition
+																																		?.excelMergedRangeConfig ?? {
+																																		worksheetName:
+																																			"",
+																																		range:
+																																			"A1:E1",
+																																		requireNoHorizontalCenter: true,
+																																	},
+																															},
+																														);
+																													}
+																													if (
+																														value ===
+																														"excelCellHyperlink"
+																													) {
+																														updateTaskSpecialCondition(
+																															pi,
+																															ti,
+																															{
+																																type: "excelCellHyperlink",
+																																score:
+																																	task
+																																		.specialCondition
+																																		?.score ??
+																																	0,
+																																feedback:
+																																	task
+																																		.specialCondition
+																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																																excelCellHyperlinkConfig:
+																																	task
+																																		.specialCondition
+																																		?.excelCellHyperlinkConfig ?? {
+																																		worksheetName:
+																																			"",
+																																		cell:
+																																			"B13",
+																																		location:
+																																			"Fishing!A4",
+																																		target:
+																																			"",
+																																		display:
+																																			"",
+																																	},
+																															},
+																														);
+																													}
+																													if (
+																														value ===
+																														"excelIconSetConditionalFormatting"
+																													) {
+																														updateTaskSpecialCondition(
+																															pi,
+																															ti,
+																															{
+																																type: "excelIconSetConditionalFormatting",
+																																score:
+																																	task
+																																		.specialCondition
+																																		?.score ??
+																																	0,
+																																feedback:
+																																	task
+																																		.specialCondition
+																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																																excelIconSetConditionalFormattingConfig:
+																																	task
+																																		.specialCondition
+																																		?.excelIconSetConditionalFormattingConfig ?? {
+																																		worksheetName:
+																																			"",
+																																		range:
+																																			"C4:C11",
+																																		iconSet:
+																																			"3Flags",
+																																	},
+																															},
+																														);
+																													}
+																													if (
+																														value ===
+																														"excelChartDataRange"
+																													) {
+																														updateTaskSpecialCondition(
+																															pi,
+																															ti,
+																															{
+																																type: "excelChartDataRange",
+																																score:
+																																	task
+																																		.specialCondition
+																																		?.score ??
+																																	0,
+																																feedback:
+																																	task
+																																		.specialCondition
+																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																																excelChartDataRangeConfig:
+																																	task
+																																		.specialCondition
+																																		?.excelChartDataRangeConfig ?? {
+																																		chartSourceFile:
+																																			"xl/charts/chart1.xml",
+																																		expectedCategoryRange:
+																																			"Tents!$B$4:$B$7",
+																																		expectedValueRange:
+																																			"Tents!$C$4:$C$7",
+																																		expectedPointCount: 4,
+																																		expectedCategoryText:
+																																			"Giant Truck Bed Tent",
+																																		requireNoExtraSeries:
+																																			true,
+																																	},
+																															},
+																														);
+																													}
+																													if (
+																														value ===
+																														"excelTextReplacement"
+																													) {
+																														updateTaskSpecialCondition(
+																															pi,
+																															ti,
+																															{
+																																type: "excelTextReplacement",
+																																score:
+																																	task
+																																		.specialCondition
+																																		?.score ?? 0,
+																																feedback:
+																																	task
+																																		.specialCondition
+																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																																excelTextReplacementConfig:
+																																	task
+																																		.specialCondition
+																																		?.excelTextReplacementConfig ?? {
+																																		worksheetName:
+																																			"",
+																																		sourceFile:
+																																			"",
+																																		oldText:
+																																			"Choco",
+																																		newText:
+																																			"Chocolate",
+																																		minNewTextOccurrences: 1,
+																																		requireOldTextAbsent: true,
+																																		matchWholeWord: true,
+																																	},
+																															},
+																														);
+																													}
+																													if (
+																														value ===
+																														"excelPrintTitles"
+																													) {
+																														updateTaskSpecialCondition(
+																															pi,
+																															ti,
+																															{
+																																type: "excelPrintTitles",
+																																score:
+																																	task
+																																		.specialCondition
+																																		?.score ?? 0,
+																																feedback:
+																																	task
+																																		.specialCondition
+																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																																excelPrintTitlesConfig:
+																																	task
+																																		.specialCondition
+																																		?.excelPrintTitlesConfig ?? {
+																																		worksheetName:
+																																			"Costs",
+																																		expectedRows:
+																																			"1:3",
+																																	},
+																															},
+																														);
+																													}
+																													if (
+																														value ===
+																														"excelNumberFormat"
+																													) {
+																														updateTaskSpecialCondition(
+																															pi,
+																															ti,
+																															{
+																																type: "excelNumberFormat",
+																																score:
+																																	task
+																																		.specialCondition
+																																		?.score ?? 0,
+																																feedback:
+																																	task
+																																		.specialCondition
+																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																																excelNumberFormatConfig:
+																																	task
+																																		.specialCondition
+																																		?.excelNumberFormatConfig ?? {
+																																		worksheetName:
+																																			"Costs",
+																																		range:
+																																			"B:E",
+																																		category:
+																																			"number",
+																																		decimalPlaces:
+																																			2,
+																																		symbol:
+																																			"",
+																																		requireThousandsSeparator:
+																																			false,
+																																		allowedNumberFormatIds:
+																																			[
+																																				1,
+																																				2,
+																																				3,
+																																				4,
+																																			],
+																																		requireEveryNumericCell: true,
+																																	},
+																															},
+																														);
+																													}
+																													if (
+																														value ===
+																														"excelChartLegend"
+																													) {
+																														updateTaskSpecialCondition(
+																															pi,
+																															ti,
+																															{
+																																type: "excelChartLegend",
+																																score:
+																																	task
+																																		.specialCondition
+																																		?.score ?? 0,
+																																feedback:
+																																	task
+																																		.specialCondition
+																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																																excelChartLegendConfig:
+																																	task
+																																		.specialCondition
+																																		?.excelChartLegendConfig ?? {
+																																		chartSourceFile:
+																																			"xl/charts/chart1.xml",
+																																		position:
+																																			"t",
+																																	},
+																															},
+																														);
+																													}
+																													if (
+																														value ===
+																														"excelDefinedName"
+																													) {
+																														updateTaskSpecialCondition(
+																															pi,
+																															ti,
+																															{
+																																type: "excelDefinedName",
+																																score:
+																																	task
+																																		.specialCondition
+																																		?.score ?? 0,
+																																feedback:
+																																	task
+																																		.specialCondition
+																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																																excelDefinedNameConfig:
+																																	task
+																																		.specialCondition
+																																		?.excelDefinedNameConfig ?? {
+																																		name:
+																																			"Prices",
+																																		expectedRanges:
+																																			[
+																																				"D5:D15",
+																																				"D18:D26",
+																																			],
+																																		requireExactRanges:
+																																			true,
+																																	},
+																															},
+																														);
+																													}
+																													if (
+																														value ===
+																														"excelFormulaReferences"
+																													) {
+																														updateTaskSpecialCondition(
+																															pi,
+																															ti,
+																															{
+																																type: "excelFormulaReferences",
+																																score:
+																																	task
+																																		.specialCondition
+																																		?.score ?? 0,
+																																feedback:
+																																	task
+																																		.specialCondition
+																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																																excelFormulaReferencesConfig:
+																																	task
+																																		.specialCondition
+																																		?.excelFormulaReferencesConfig ?? {
+																																		worksheetName:
+																																			"Price List",
+																																		cell:
+																																			"H5",
+																																		requiredReferences:
+																																			[
+																																				"Price_10G",
+																																				"Install_10G",
+																																				"Support_10G",
+																																			],
+																																		requiredFunctions:
+																																			[],
+																																		requiredFormulaFragments:
+																																			[],
+																																		expectedFormula:
+																																			"",
+																																		expectedValue:
+																																			"",
+																																		requireOnlyDefinedNameReferences:
+																																			true,
+																																	},
+																															},
+																														);
+																													}
+																													if (
+																														value ===
+																														"excelNoConditionalFormatting"
+																													) {
+																														updateTaskSpecialCondition(
+																															pi,
+																															ti,
+																															{
+																																type: "excelNoConditionalFormatting",
+																																score:
+																																	task
+																																		.specialCondition
+																																		?.score ?? 0,
+																																feedback:
+																																	task
+																																		.specialCondition
+																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																																excelNoConditionalFormattingConfig:
+																																	task
+																																		.specialCondition
+																																		?.excelNoConditionalFormattingConfig ?? {
+																																		worksheetName:
+																																			"Price List",
+																																		requireAllWorksheets:
+																																			false,
+																																	},
+																															},
+																														);
+																													}
+																													if (
+																														value ===
+																														"excelTextRotation"
+																													) {
+																														updateTaskSpecialCondition(
+																															pi,
+																															ti,
+																															{
+																																type: "excelTextRotation",
+																																score:
+																																	task
+																																		.specialCondition
+																																		?.score ?? 0,
+																																feedback:
+																																	task
+																																		.specialCondition
+																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																																excelTextRotationConfig:
+																																	task
+																																		.specialCondition
+																																		?.excelTextRotationConfig ?? {
+																																		worksheetName:
+																																			"Price List",
+																																		expectedTexts:
+																																			[
+																																				"Port Size",
+																																				"Band Size",
+																																				"Price",
+																																				"Install",
+																																				"Support",
+																																			],
+																																		allowedTextRotationValues:
+																																			[
+																																				45,
+																																			],
+																																		requireAllTexts:
+																																			true,
+																																	},
+																															},
+																														);
+																													}
+																													if (
+																														value ===
+																														"excelMultiColumnSort"
+																													) {
+																														updateTaskSpecialCondition(
+																															pi,
+																															ti,
+																															{
+																																type: "excelMultiColumnSort",
+																																score:
+																																	task
+																																		.specialCondition
+																																		?.score ?? 0,
+																																feedback:
+																																	task
+																																		.specialCondition
+																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																																excelMultiColumnSortConfig:
+																																	task
+																																		.specialCondition
+																																		?.excelMultiColumnSortConfig ?? {
+																																		worksheetName:
+																																			"Price List",
+																																		headerRow: 4,
+																																		dataRange:
+																																			"",
+																																		keyColumns:
+																																			[
+																																				{
+																																					headerName:
+																																						"Wired Equipment",
+																																					descending:
+																																						false,
+																																				},
+																																				{
+																																					headerName:
+																																						"Port Size",
+																																					descending:
+																																						false,
+																																				},
+																																			],
+																																	},
+																															},
+																														);
+																													}
+																													if (
+																														value ===
+																														"excelFreezePanes"
+																													) {
+																														updateTaskSpecialCondition(
+																															pi,
+																															ti,
+																															{
+																																type: "excelFreezePanes",
+																																score:
+																																	task
+																																		.specialCondition
+																																		?.score ?? 0,
+																																feedback:
+																																	task
+																																		.specialCondition
+																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																																excelFreezePanesConfig:
+																																	task
+																																		.specialCondition
+																																		?.excelFreezePanesConfig ?? {
+																																		worksheetName:
+																																			"Catalog",
+																																		topLeftCell:
+																																			"A4",
+																																		ySplit: 3,
+																																		xSplit: 0,
+																																		requireNoColumnFreeze:
+																																			true,
+																																	},
+																															},
+																														);
+																													}
+																													if (
+																														value ===
+																														"excelDocumentProperty"
+																													) {
+																														updateTaskSpecialCondition(
+																															pi,
+																															ti,
+																															{
+																																type: "excelDocumentProperty",
+																																score:
+																																	task
+																																		.specialCondition
+																																		?.score ?? 0,
+																																feedback:
+																																	task
+																																		.specialCondition
+																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																																excelDocumentPropertyConfig:
+																																	task
+																																		.specialCondition
+																																		?.excelDocumentPropertyConfig ?? {
+																																		propertyName:
+																																			"Status",
+																																		expectedValue:
+																																			"Draft",
+																																		sourceFile:
+																																			"docProps/custom.xml",
+																																	},
+																															},
+																														);
+																													}
+																													if (
+																														value ===
+																														"excelPrintArea"
+																													) {
+																														updateTaskSpecialCondition(
+																															pi,
+																															ti,
+																															{
+																																type: "excelPrintArea",
+																																score:
+																																	task
+																																		.specialCondition
+																																		?.score ?? 0,
+																																feedback:
+																																	task
+																																		.specialCondition
+																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																																excelPrintAreaConfig:
+																																	task
+																																		.specialCondition
+																																		?.excelPrintAreaConfig ?? {
+																																		worksheetName:
+																																			"Q1 Sales",
+																																		expectedRange:
+																																			"A1:F17",
+																																		requireExactRange:
+																																			true,
+																																	},
+																															},
+																														);
+																													}
+																													if (
+																														value ===
+																														"excelChartStyle"
+																													) {
+																														updateTaskSpecialCondition(
+																															pi,
+																															ti,
+																															{
+																																type: "excelChartStyle",
+																																score:
+																																	task
+																																		.specialCondition
+																																		?.score ??
+																																	0,
+																																feedback:
+																																	task
+																																		.specialCondition
+																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																																excelChartStyleConfig:
+																																	task
+																																		.specialCondition
+																																		?.excelChartStyleConfig ?? {
+																																		chartSourceFile:
+																																			"xl/charts/chart1.xml",
+																																		styleSourceFile:
+																																			"xl/charts/style1.xml",
+																																		styleId: 204,
 																																	},
 																															},
 																														);
@@ -2422,8 +4492,8 @@ const XmlGradingRulesPage = () => {
 
 																								{!currentSpecialConditionSupported && (
 																									<div className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">
-																										Special condition nay khong
-																										ho tro cho subject{" "}
+																										Điều kiện đặc biệt này không
+																										hỗ trợ cho subject{" "}
 																										{selected.subject ||
 																											"unknown"}
 																										.
@@ -2474,7 +4544,7 @@ const XmlGradingRulesPage = () => {
 																									?.type && (
 																									<div className="mt-3 grid gap-3 md:grid-cols-2">
 																										<label className="text-xs font-semibold text-slate-600">
-																											Thong bao khi dung
+																											Thông báo khi đúng
 																											<input
 																												value={
 																													task.specialCondition
@@ -2500,12 +4570,12 @@ const XmlGradingRulesPage = () => {
 																														},
 																													)
 																												}
-																												placeholder="Da hoan thanh dung yeu cau."
+																												placeholder="Đã hoàn thành đúng yêu cầu."
 																												className={inputClass}
 																											/>
 																										</label>
 																										<label className="text-xs font-semibold text-slate-600">
-																											Thong bao khi sai
+																											Thông báo khi sai
 																											<input
 																												value={
 																													task.specialCondition
@@ -2530,12 +4600,12 @@ const XmlGradingRulesPage = () => {
 																														},
 																													)
 																												}
-																												placeholder="Ban chua thuc hien dung yeu cau."
+																												placeholder="Bạn chưa thực hiện đúng yêu cầu."
 																												className={inputClass}
 																											/>
 																										</label>
 																										<label className="text-xs font-semibold text-slate-600 md:col-span-2">
-																											Goi y cach sua
+																											Gợi ý cách sửa
 																											<input
 																												value={
 																													task.specialCondition
@@ -2560,7 +4630,7 @@ const XmlGradingRulesPage = () => {
 																														},
 																													)
 																												}
-																												placeholder="Vi du: Chon text -> Insert -> Link -> nhap URL dung."
+																												placeholder="Ví dụ: Chọn text -> Insert -> Link -> nhập URL đúng."
 																												className={inputClass}
 																											/>
 																										</label>
@@ -2572,7 +4642,7 @@ const XmlGradingRulesPage = () => {
 																									?.type && (
 																									<div className="mt-3 flex items-start gap-3 rounded-xl border border-violet-100 bg-violet-50/60 p-3">
 																										<div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-violet-100 text-violet-600">
-																											💡
+																											ðŸ’¡
 																										</div>
 
 																										<div>
@@ -2890,7 +4960,7 @@ const XmlGradingRulesPage = () => {
 																							<div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
 																								<div className="grid gap-3 md:grid-cols-2">
 																									<label className="text-xs font-semibold text-slate-600">
-																										Display text
+																										Văn bản hiển thị
 																										<input
 																											value={
 																												task.specialCondition
@@ -2921,7 +4991,7 @@ const XmlGradingRulesPage = () => {
 																										/>
 																									</label>
 																									<label className="text-xs font-semibold text-slate-600">
-																										Anchor text before
+																										Văn bản đứng trước
 																										<input
 																											value={
 																												task.specialCondition
@@ -2948,7 +5018,7 @@ const XmlGradingRulesPage = () => {
 																													},
 																												);
 																											}}
-																											placeholder="Nhap cum text dung truoc vi tri can link"
+																											placeholder="Nhập cụm text đứng trước vị trí cần link"
 																											className={inputClass}
 																										/>
 																									</label>
@@ -3090,7 +5160,7 @@ const XmlGradingRulesPage = () => {
 																							<div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
 																								<div className="grid gap-3 md:grid-cols-2">
 																									<label className="text-xs font-semibold text-slate-600">
-																										Source file
+																										File nguồn
 																										<input
 																											value={
 																												task.specialCondition
@@ -3124,7 +5194,7 @@ const XmlGradingRulesPage = () => {
 																										/>
 																									</label>
 																									<label className="text-xs font-semibold text-slate-600">
-																										Target text
+																										Văn bản mục tiêu
 																										<input
 																											value={
 																												task.specialCondition
@@ -3157,7 +5227,7 @@ const XmlGradingRulesPage = () => {
 																										/>
 																									</label>
 																									<label className="text-xs font-semibold text-slate-600">
-																										Break type
+																										Loại ngắt phần
 																										<select
 																											value={
 																												task.specialCondition
@@ -3189,19 +5259,19 @@ const XmlGradingRulesPage = () => {
 																											className={inputClass}
 																										>
 																											<option value="continuous">
-																												continuous
+																												Continuous
 																											</option>
 																											<option value="nextPage">
-																												nextPage
+																												Next Page
 																											</option>
 																											<option value="evenPage">
-																												evenPage
+																												Even Page
 																											</option>
 																											<option value="oddPage">
-																												oddPage
+																												Odd Page
 																											</option>
 																											<option value="nextColumn">
-																												nextColumn
+																												Next Column
 																											</option>
 																										</select>
 																									</label>
@@ -3326,7 +5396,7 @@ const XmlGradingRulesPage = () => {
 																							<div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
 																								<div className="grid gap-3 md:grid-cols-2">
 																									<label className="text-xs font-semibold text-slate-600">
-																										Source file
+																										File nguồn
 																										<input
 																											value={
 																												task.specialCondition
@@ -3360,7 +5430,7 @@ const XmlGradingRulesPage = () => {
 																										/>
 																									</label>
 																									<label className="text-xs font-semibold text-slate-600">
-																										Match mode
+																										Chế độ so khớp
 																										<select
 																											value={
 																												task.specialCondition
@@ -3393,15 +5463,15 @@ const XmlGradingRulesPage = () => {
 																											className={inputClass}
 																										>
 																											<option value="exact">
-																												Dung nguyen doan
+																												Đúng nguyên đoạn
 																											</option>
 																											<option value="contains">
-																												Chi can chua doan nay
+																												Chỉ cần chứa đoạn này
 																											</option>
 																										</select>
 																									</label>
 																									<label className="text-xs font-semibold text-slate-600 md:col-span-2">
-																										Expected text
+																										Văn bản yêu cầu
 																										<textarea
 																											value={
 																												task.specialCondition
@@ -3429,13 +5499,13 @@ const XmlGradingRulesPage = () => {
 																													},
 																												);
 																											}}
-																											placeholder="Nhap nguyen doan van bat dau bang Note:"
+																											placeholder="Nhập nguyên đoạn văn bắt đầu bằng Note:"
 																											rows={5}
 																											className={inputClass}
 																										/>
 																									</label>
 																									<label className="text-xs font-semibold text-slate-600">
-																										Target occurrence
+																										Lần xuất hiện mục tiêu
 																										<input
 																											type="number"
 																											min={1}
@@ -3508,7 +5578,7 @@ const XmlGradingRulesPage = () => {
 																											}}
 																											className="h-4 w-4 accent-blue-600"
 																										/>
-																										Phan biet hoa/thuong
+																										Phân biệt hoa/thường
 																									</label>
 																									<label className="flex items-center gap-2 text-xs font-medium text-slate-600">
 																										<input
@@ -3542,7 +5612,7 @@ const XmlGradingRulesPage = () => {
 																											}}
 																											className="h-4 w-4 accent-blue-600"
 																										/>
-																										Bat paste mac dinh
+																										Bắt paste mặc định
 																									</label>
 																									<label className="flex items-center gap-2 text-xs font-medium text-slate-600">
 																										<input
@@ -3576,12 +5646,12 @@ const XmlGradingRulesPage = () => {
 																											}}
 																											className="h-4 w-4 accent-blue-600"
 																										/>
-																										Khong con ngoai textbox
+																										Không còn ngoài hộp văn bản
 																									</label>
 																								</div>
 																								<label className="mt-3 block text-xs font-semibold text-slate-600">
-																									Run properties cam khi bat
-																									paste mac dinh
+																									Run properties cấm khi bắt
+																									paste mặc định
 																									<textarea
 																										value={(
 																											task.specialCondition
@@ -3620,14 +5690,14 @@ const XmlGradingRulesPage = () => {
 																										}}
 																										rows={5}
 																										placeholder={
-																											"De trong neu khong co dau hieu XML sai on dinh"
+																											"Để trống nếu không có dấu hiệu XML sai ổn định"
 																										}
 																										className={inputClass}
 																									/>
 																								</label>
 																								<label className="mt-3 block text-xs font-semibold text-slate-600">
-																									Mau chu cam khi bat paste mac
-																									dinh
+																									Màu chữ cấm khi bắt paste mặc
+																									định
 																									<textarea
 																										value={(
 																											task.specialCondition
@@ -3682,7 +5752,7 @@ const XmlGradingRulesPage = () => {
 																							<div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
 																								<div className="grid gap-3 md:grid-cols-3">
 																									<label className="text-xs font-semibold text-slate-600 md:col-span-3">
-																										Source file
+																										File nguồn
 																										<input
 																											value={
 																												task.specialCondition
@@ -3714,10 +5784,10 @@ const XmlGradingRulesPage = () => {
 																										/>
 																									</label>
 																									{[
-																										["top", "Le tren"],
-																										["bottom", "Le duoi"],
-																										["left", "Le trai"],
-																										["right", "Le phai"],
+																										["top", "Lề trên"],
+																										["bottom", "Lề dưới"],
+																										["left", "Lề trái"],
+																										["right", "Lề phải"],
 																										["gutter", "Gutter"],
 																									].map(([field, label]) => (
 																										<MarginUnitInput
@@ -3767,8 +5837,8 @@ const XmlGradingRulesPage = () => {
 																									))}
 																								</div>
 																								<p className="mt-2 text-xs text-slate-500">
-																									Nhap so mac dinh la inch. Vi
-																									du: 1, 1 in, 1.5 in, 2.54 cm,
+																									Nhập số mặc định là inch. Ví
+																									dụ: 1, 1 in, 1.5 in, 2.54 cm,
 																									3.81 cm.
 																								</p>
 																								<label className="mt-3 flex items-center gap-2 text-xs font-medium text-slate-600">
@@ -3801,7 +5871,7 @@ const XmlGradingRulesPage = () => {
 																										}}
 																										className="h-4 w-4 accent-blue-600"
 																									/>
-																									Ap dung cho tat ca section
+																									Áp dụng cho tất cả section
 																								</label>
 																							</div>
 																						)}
@@ -3810,7 +5880,7 @@ const XmlGradingRulesPage = () => {
 																							<div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
 																								<div className="grid gap-3 md:grid-cols-2">
 																									<label className="text-xs font-semibold text-slate-600 md:col-span-2">
-																										Source file
+																										File nguồn
 																										<input
 																											value={
 																												task.specialCondition
@@ -3842,7 +5912,7 @@ const XmlGradingRulesPage = () => {
 																										/>
 																									</label>
 																									<label className="text-xs font-semibold text-slate-600">
-																										Kieu duong vien
+																										Kiểu đường viền
 																										<select
 																											value={
 																												task.specialCondition
@@ -3872,19 +5942,19 @@ const XmlGradingRulesPage = () => {
 																											className={inputClass}
 																										>
 																											<option value="single">
-																												Duong lien
+																												Đường liền
 																											</option>
 																											<option value="double">
-																												Duong doi
+																												Đường đôi
 																											</option>
 																											<option value="dotted">
-																												Cham tron
+																												Chấm tròn
 																											</option>
 																											<option value="dashed">
-																												Net dut
+																												Nét đứt
 																											</option>
 																											<option value="dashSmallGap">
-																												Net dut ngan
+																												Nét đứt ngắn
 																											</option>
 																										</select>
 																									</label>
@@ -3916,7 +5986,7 @@ const XmlGradingRulesPage = () => {
 																										}}
 																									/>
 																									<label className="text-xs font-semibold text-slate-600">
-																										Mau vien
+																										Màu viền
 																										<select
 																											value={selectedPageBorderColorPreset(
 																												task.specialCondition
@@ -3968,12 +6038,12 @@ const XmlGradingRulesPage = () => {
 																												),
 																											)}
 																											<option value="custom">
-																												Tuy chinh
+																												Tùy chỉnh
 																											</option>
 																										</select>
 																									</label>
 																									<label className="text-xs font-semibold text-slate-600">
-																										Ma mau tuy chinh
+																										Mã màu tùy chỉnh
 																										<input
 																											value={
 																												task.specialCondition
@@ -3999,12 +6069,12 @@ const XmlGradingRulesPage = () => {
 																													},
 																												);
 																											}}
-																											placeholder="00B0F0 hoac Light Blue"
+																											placeholder="00B0F0 hoặc Light Blue"
 																											className={inputClass}
 																										/>
 																									</label>
 																									<label className="text-xs font-semibold text-slate-600 md:col-span-2">
-																										Mau chap nhan them
+																										Màu chấp nhận thêm
 																										<textarea
 																											value={(
 																												task.specialCondition
@@ -4078,7 +6148,7 @@ const XmlGradingRulesPage = () => {
 																											}}
 																											className="h-4 w-4 accent-blue-600"
 																										/>
-																										Bat buoc du 4 canh Box
+																										Bắt buộc đủ 4 cạnh Box
 																									</label>
 																									<label className="flex items-center gap-2 text-xs font-medium text-slate-600">
 																										<input
@@ -4111,12 +6181,12 @@ const XmlGradingRulesPage = () => {
 																											}}
 																											className="h-4 w-4 accent-blue-600"
 																										/>
-																										Ap dung cho tat ca section
+																										Áp dụng cho tất cả section
 																									</label>
 																								</div>
 																								<p className="mt-2 text-xs text-slate-500">
-																									Trong OpenXML, do day page
-																									border luu theo 1/8 pt: 1.5 pt
+																									Trong OpenXML, độ dày page
+																									border lưu theo 1/8 pt: 1.5 pt
 																									= 12.
 																								</p>
 																							</div>
@@ -4126,7 +6196,7 @@ const XmlGradingRulesPage = () => {
 																							<div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
 																								<div className="grid gap-3 md:grid-cols-2">
 																									<label className="text-xs font-semibold text-slate-600">
-																										Source file
+																										File nguồn
 																										<input
 																											value={
 																												task.specialCondition
@@ -4224,15 +6294,15 @@ const XmlGradingRulesPage = () => {
 																											className={inputClass}
 																										>
 																											<option value="all">
-																												Tat ca fragment
+																												Tất cả fragment
 																											</option>
 																											<option value="any">
-																												Bat ky fragment nao
+																												Bất kỳ fragment nào
 																											</option>
 																										</select>
 																									</label>
 																									<label className="text-xs font-semibold text-slate-600">
-																										Ignore attributes
+																										Thuộc tính bỏ qua
 																										<textarea
 																											value={(
 																												task.specialCondition
@@ -4276,7 +6346,7 @@ const XmlGradingRulesPage = () => {
 																										/>
 																									</label>
 																									<label className="text-xs font-semibold text-slate-600 md:col-span-2">
-																										Expected fragments
+																										Các fragment yêu cầu
 																										<textarea
 																											value={(
 																												task.specialCondition
@@ -4319,7 +6389,7 @@ const XmlGradingRulesPage = () => {
 																												);
 																											}}
 																											rows={8}
-																											placeholder="Dan cac doan XML on dinh trong word/styles.xml cua file dap an Lines (Simple). Tach nhieu fragment bang dong ---FRAGMENT---"
+																											placeholder="Dán các đoạn XML ổn định trong word/styles.xml của file đáp án Lines (Simple). Tách nhiều fragment bằng dòng ---FRAGMENT---"
 																											className={inputClass}
 																										/>
 																									</label>
@@ -4357,7 +6427,7 @@ const XmlGradingRulesPage = () => {
 																									"excelTableName" && (
 																									<div className="grid gap-3 md:grid-cols-2">
 																										<label className="text-xs font-semibold text-slate-600">
-																											Worksheet name
+																											Tên worksheet
 																											<input
 																												value={
 																													task.specialCondition
@@ -4392,7 +6462,7 @@ const XmlGradingRulesPage = () => {
 																											/>
 																										</label>
 																										<label className="text-xs font-semibold text-slate-600">
-																											Source file
+																											File nguồn
 																											<input
 																												value={
 																													task.specialCondition
@@ -4426,7 +6496,7 @@ const XmlGradingRulesPage = () => {
 																											/>
 																										</label>
 																										<label className="text-xs font-semibold text-slate-600">
-																											Expected name
+																											Tên yêu cầu
 																											<input
 																												value={
 																													task.specialCondition
@@ -4460,7 +6530,7 @@ const XmlGradingRulesPage = () => {
 																											/>
 																										</label>
 																										<label className="text-xs font-semibold text-slate-600">
-																											Original name
+																											Tên ban đầu
 																											<input
 																												value={
 																													task.specialCondition
@@ -4525,8 +6595,8 @@ const XmlGradingRulesPage = () => {
 																													);
 																												}}
 																											/>
-																											Require original name
-																											absent
+																											Bắt buộc không còn tên
+																											ban đầu
 																										</label>
 																									</div>
 																								)}
@@ -4535,7 +6605,7 @@ const XmlGradingRulesPage = () => {
 																									"excelWorksheetPageSetup" && (
 																									<div className="grid gap-3 md:grid-cols-3">
 																										<label className="text-xs font-semibold text-slate-600">
-																											Worksheet name
+																											Tên worksheet
 																											<input
 																												value={
 																													task.specialCondition
@@ -4570,7 +6640,7 @@ const XmlGradingRulesPage = () => {
 																											/>
 																										</label>
 																										<label className="text-xs font-semibold text-slate-600">
-																											Source file
+																											File nguồn
 																											<input
 																												value={
 																													task.specialCondition
@@ -4604,7 +6674,7 @@ const XmlGradingRulesPage = () => {
 																											/>
 																										</label>
 																										<label className="text-xs font-semibold text-slate-600">
-																											Orientation
+																											Hướng trang
 																											<select
 																												value={
 																													task.specialCondition
@@ -4639,10 +6709,10 @@ const XmlGradingRulesPage = () => {
 																												className={inputClass}
 																											>
 																												<option value="landscape">
-																													Landscape
+																													Ngang (Landscape)
 																												</option>
 																												<option value="portrait">
-																													Portrait
+																													Dọc (Portrait)
 																												</option>
 																											</select>
 																										</label>
@@ -4653,7 +6723,7 @@ const XmlGradingRulesPage = () => {
 																									"excelClearCellFormatting" && (
 																									<div className="grid gap-3 md:grid-cols-4">
 																										<label className="text-xs font-semibold text-slate-600">
-																											Worksheet name
+																											Tên worksheet
 																											<input
 																												value={
 																													task.specialCondition
@@ -4688,7 +6758,7 @@ const XmlGradingRulesPage = () => {
 																											/>
 																										</label>
 																										<label className="text-xs font-semibold text-slate-600">
-																											Source file
+																											File nguồn
 																											<input
 																												value={
 																													task.specialCondition
@@ -4722,7 +6792,7 @@ const XmlGradingRulesPage = () => {
 																											/>
 																										</label>
 																										<label className="text-xs font-semibold text-slate-600">
-																											Range
+																											Vùng ô
 																											<input
 																												value={
 																													task.specialCondition
@@ -4756,7 +6826,7 @@ const XmlGradingRulesPage = () => {
 																											/>
 																										</label>
 																										<label className="text-xs font-semibold text-slate-600">
-																											Default style id
+																											Mã style mặc định
 																											<input
 																												type="number"
 																												min={0}
@@ -4800,7 +6870,7 @@ const XmlGradingRulesPage = () => {
 																									"excelDataModelImport" && (
 																									<div className="grid gap-3 md:grid-cols-2">
 																										<label className="text-xs font-semibold text-slate-600">
-																											Source file name
+																											Tên file nguồn
 																											<input
 																												value={
 																													task.specialCondition
@@ -4835,7 +6905,7 @@ const XmlGradingRulesPage = () => {
 																											/>
 																										</label>
 																										<label className="text-xs font-semibold text-slate-600">
-																											Expected worksheet name
+																											Tên worksheet yêu cầu
 																											<input
 																												value={
 																													task.specialCondition
@@ -4870,7 +6940,7 @@ const XmlGradingRulesPage = () => {
 																											/>
 																										</label>
 																										<label className="text-xs font-semibold text-slate-600">
-																											Expected connection name
+																											Tên connection yêu cầu
 																											<input
 																												value={
 																													task.specialCondition
@@ -4936,7 +7006,7 @@ const XmlGradingRulesPage = () => {
 																													);
 																												}}
 																											/>
-																											Require connection
+																											Bắt buộc có connection
 																										</label>
 																										<label className="flex items-center gap-2 text-xs font-medium text-slate-600">
 																											<input
@@ -4970,7 +7040,7 @@ const XmlGradingRulesPage = () => {
 																													);
 																												}}
 																											/>
-																											Require imported worksheet
+																											Bắt buộc có worksheet đã import
 																										</label>
 																										<label className="flex items-center gap-2 text-xs font-medium text-slate-600">
 																											<input
@@ -5004,7 +7074,7 @@ const XmlGradingRulesPage = () => {
 																													);
 																												}}
 																											/>
-																											Require query table
+																											Bắt buộc có query table
 																										</label>
 																										<label className="flex items-center gap-2 text-xs font-medium text-slate-600">
 																											<input
@@ -5038,7 +7108,7 @@ const XmlGradingRulesPage = () => {
 																													);
 																												}}
 																											/>
-																											Require Data Model
+																											Bắt buộc có Data Model
 																										</label>
 																									</div>
 																								)}
@@ -5047,7 +7117,7 @@ const XmlGradingRulesPage = () => {
 																									"excelCompatibilityReport" && (
 																									<div className="grid gap-3 md:grid-cols-2">
 																										<label className="text-xs font-semibold text-slate-600">
-																											Worksheet name
+																											Tên worksheet
 																											<input
 																												value={
 																													task.specialCondition
@@ -5113,10 +7183,10 @@ const XmlGradingRulesPage = () => {
 																													);
 																												}}
 																											/>
-																											Require new worksheet
+																											Bắt buộc có worksheet mới
 																										</label>
 																										<label className="text-xs font-semibold text-slate-600 md:col-span-2">
-																											Expected texts
+																											Các văn bản yêu cầu
 																											<textarea
 																												value={(
 																													task.specialCondition
@@ -5169,6 +7239,19 @@ const XmlGradingRulesPage = () => {
 																										</label>
 																									</div>
 																								)}
+																								<ExcelProject02SpecialConditionEditor
+																									specialCondition={
+																										task.specialCondition
+																									}
+																									inputClass={inputClass}
+																									onChange={(specialCondition) =>
+																										updateTaskSpecialCondition(
+																											pi,
+																											ti,
+																											specialCondition,
+																										)
+																									}
+																								/>
 																							</div>
 																						)}
 																					</div>
@@ -6264,3 +8347,6 @@ const XmlGradingRulesPage = () => {
 };
 
 export default XmlGradingRulesPage;
+
+
+

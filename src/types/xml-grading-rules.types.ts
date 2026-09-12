@@ -51,7 +51,24 @@ export type SpecialConditionType =
 	| "excelWorksheetPageSetup"
 	| "excelClearCellFormatting"
 	| "excelDataModelImport"
-	| "excelCompatibilityReport";
+	| "excelCompatibilityReport"
+	| "excelMergedRange"
+	| "excelCellHyperlink"
+	| "excelIconSetConditionalFormatting"
+	| "excelChartDataRange"
+	| "excelChartStyle"
+	| "excelTextReplacement"
+	| "excelPrintTitles"
+	| "excelNumberFormat"
+	| "excelChartLegend"
+	| "excelDefinedName"
+	| "excelFormulaReferences"
+	| "excelNoConditionalFormatting"
+	| "excelTextRotation"
+	| "excelMultiColumnSort"
+	| "excelFreezePanes"
+	| "excelDocumentProperty"
+	| "excelPrintArea";
 
 export type ImageWrapType =
 	| "inline"
@@ -205,25 +222,151 @@ export interface ExcelCompatibilityReportConfig {
 	requireNewWorksheet?: boolean;
 }
 
-export interface SpecialCondition {
-	type: SpecialConditionType;
-	score: number;
-	feedback?: XmlConditionFeedback;
-	config?: PictureBulletConfig;
-	imageInsertConfig?: ImageInsertConfig; // MỚI
-	convertTableToTextConfig?: ConvertTableToTextConfig;
-	hyperlinkConfig?: HyperlinkConfig;
-	sectionBreakBeforeTextConfig?: SectionBreakBeforeTextConfig;
-	pictureStyleConfig?: PictureStyleConfig;
-	textBoxContainsTextConfig?: TextBoxContainsTextConfig;
-	pageMarginsConfig?: PageMarginsConfig;
-	documentStyleSetConfig?: DocumentStyleSetConfig;
-	pageBorderConfig?: PageBorderConfig;
-	excelTableNameConfig?: ExcelTableNameConfig;
-	excelWorksheetPageSetupConfig?: ExcelWorksheetPageSetupConfig;
-	excelClearCellFormattingConfig?: ExcelClearCellFormattingConfig;
-	excelDataModelImportConfig?: ExcelDataModelImportConfig;
-	excelCompatibilityReportConfig?: ExcelCompatibilityReportConfig;
+export interface ExcelMergedRangeConfig {
+	worksheetName?: string;
+	sourceFile?: string;
+	range?: string;
+	requireNoHorizontalCenter?: boolean;
+}
+
+export interface ExcelCellHyperlinkConfig {
+	worksheetName?: string;
+	sourceFile?: string;
+	cell?: string;
+	location?: string;
+	target?: string;
+	display?: string;
+}
+
+export interface ExcelIconSetConditionalFormattingConfig {
+	worksheetName?: string;
+	sourceFile?: string;
+	range?: string;
+	iconSet?: string;
+}
+
+export interface ExcelChartDataRangeConfig {
+	chartSourceFile?: string;
+	expectedCategoryRange?: string;
+	expectedValueRange?: string;
+	expectedValueRanges?: string[];
+	expectedSeriesNames?: string[];
+	expectedPointCount?: number;
+	expectedCategoryText?: string;
+	requireNoExtraSeries?: boolean;
+}
+
+export interface ExcelChartStyleConfig {
+	chartSourceFile?: string;
+	styleSourceFile?: string;
+	styleId?: number;
+}
+
+export interface ExcelTextReplacementConfig {
+	worksheetName?: string;
+	sourceFile?: string;
+	oldText?: string;
+	newText?: string;
+	minNewTextOccurrences?: number;
+	requireOldTextAbsent?: boolean;
+	matchWholeWord?: boolean;
+}
+
+export interface ExcelPrintTitlesConfig {
+	worksheetName?: string;
+	expectedRows?: string;
+}
+
+export interface ExcelNumberFormatConfig {
+	worksheetName?: string;
+	sourceFile?: string;
+	range?: string;
+	allowedNumberFormatIds?: number[];
+	category?:
+		| "general"
+		| "number"
+		| "currency"
+		| "accounting"
+		| "percentage"
+		| "date"
+		| "time"
+		| "custom";
+	decimalPlaces?: number;
+	symbol?: string;
+	requireThousandsSeparator?: boolean;
+	requireEveryNumericCell?: boolean;
+}
+
+export interface ExcelChartLegendConfig {
+	chartSourceFile?: string;
+	position?: "t" | "b" | "l" | "r" | "tr";
+}
+
+export interface ExcelDefinedNameConfig {
+	name?: string;
+	expectedRanges?: string[];
+	requireExactRanges?: boolean;
+}
+
+export interface ExcelFormulaReferencesConfig {
+	worksheetName?: string;
+	sourceFile?: string;
+	cell?: string;
+	requiredReferences?: string[];
+	requiredFunctions?: string[];
+	requiredFormulaFragments?: string[];
+	expectedFormula?: string;
+	expectedValue?: string;
+	requireOnlyDefinedNameReferences?: boolean;
+}
+
+export interface ExcelNoConditionalFormattingConfig {
+	worksheetName?: string;
+	sourceFile?: string;
+	requireAllWorksheets?: boolean;
+}
+
+export interface ExcelTextRotationConfig {
+	worksheetName?: string;
+	sourceFile?: string;
+	expectedTexts?: string[];
+	allowedTextRotationValues?: number[];
+	requireAllTexts?: boolean;
+}
+
+export interface ExcelSortKeyConfig {
+	headerName?: string;
+	column?: string;
+	descending?: boolean;
+}
+
+export interface ExcelMultiColumnSortConfig {
+	worksheetName?: string;
+	sourceFile?: string;
+	headerRow?: number;
+	dataRange?: string;
+	keyColumns?: ExcelSortKeyConfig[];
+}
+
+export interface ExcelFreezePanesConfig {
+	worksheetName?: string;
+	sourceFile?: string;
+	topLeftCell?: string;
+	ySplit?: number;
+	xSplit?: number;
+	requireNoColumnFreeze?: boolean;
+}
+
+export interface ExcelDocumentPropertyConfig {
+	propertyName?: string;
+	expectedValue?: string;
+	sourceFile?: string;
+}
+
+export interface ExcelPrintAreaConfig {
+	worksheetName?: string;
+	expectedRange?: string;
+	requireExactRange?: boolean;
 }
 
 export interface PictureBulletConfig {
@@ -273,6 +416,23 @@ export interface SpecialCondition {
 	excelClearCellFormattingConfig?: ExcelClearCellFormattingConfig;
 	excelDataModelImportConfig?: ExcelDataModelImportConfig;
 	excelCompatibilityReportConfig?: ExcelCompatibilityReportConfig;
+	excelMergedRangeConfig?: ExcelMergedRangeConfig;
+	excelCellHyperlinkConfig?: ExcelCellHyperlinkConfig;
+	excelIconSetConditionalFormattingConfig?: ExcelIconSetConditionalFormattingConfig;
+	excelChartDataRangeConfig?: ExcelChartDataRangeConfig;
+	excelChartStyleConfig?: ExcelChartStyleConfig;
+	excelTextReplacementConfig?: ExcelTextReplacementConfig;
+	excelPrintTitlesConfig?: ExcelPrintTitlesConfig;
+	excelNumberFormatConfig?: ExcelNumberFormatConfig;
+	excelChartLegendConfig?: ExcelChartLegendConfig;
+	excelDefinedNameConfig?: ExcelDefinedNameConfig;
+	excelFormulaReferencesConfig?: ExcelFormulaReferencesConfig;
+	excelNoConditionalFormattingConfig?: ExcelNoConditionalFormattingConfig;
+	excelTextRotationConfig?: ExcelTextRotationConfig;
+	excelMultiColumnSortConfig?: ExcelMultiColumnSortConfig;
+	excelFreezePanesConfig?: ExcelFreezePanesConfig;
+	excelDocumentPropertyConfig?: ExcelDocumentPropertyConfig;
+	excelPrintAreaConfig?: ExcelPrintAreaConfig;
 }
 
 export interface TaskXmlRule {
