@@ -1,12 +1,6 @@
-import {
-	FABMenu,
-	Icon,
-	NavigationBar,
-	NavigationBarItem,
-} from "@bug-on/m3-expressive";
+import { Icon, NavigationBar, NavigationBarItem } from "@bug-on/m3-expressive";
 import { type ReactNode, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { usePageActionsContext } from "../../context/PageActionsContext";
 import Header from "./Header";
 import ProfileModal from "./ProfileModal";
 import Sidebar, { type SidebarNavItem } from "./Sidebar";
@@ -19,11 +13,7 @@ interface LayoutProps {
 const Layout = ({ children, navItems }: LayoutProps) => {
 	const location = useLocation();
 	const navigate = useNavigate();
-	const { config } = usePageActionsContext();
-	const actions = config.actions || [];
-
 	const [isProfileOpen, setIsProfileOpen] = useState(false);
-	const [fabOpen, setFabOpen] = useState(false);
 
 	const isPathActive = (path: string) => {
 		if (path === "/dashboard") {
@@ -87,32 +77,6 @@ const Layout = ({ children, navItems }: LayoutProps) => {
 						/>
 					))}
 				</NavigationBar>
-
-				{/* Mobile FAB Menu: Chỉ hiển thị khi có action và trên mobile/tablet (lg:hidden) */}
-				{actions.length > 0 && (
-					<FABMenu
-						expanded={fabOpen}
-						onToggle={setFabOpen}
-						className="bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] sm:bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] lg:hidden z-50"
-						items={actions.map((act) => ({
-							id: act.id,
-							label: act.label,
-							icon: act.icon ? (
-								<Icon name={act.icon} />
-							) : (
-								<Icon name="circle" />
-							),
-							onClick: () => {
-								setFabOpen(false);
-								act.onClick?.();
-							},
-							disabled: act.disabled,
-						}))}
-						aria-label="Tùy chọn tác vụ trang"
-						colorVariant="primary"
-						alignment="end"
-					/>
-				)}
 			</main>
 
 			{/* Profile Modal dùng chung cho cả Sidebar và Header */}

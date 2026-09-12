@@ -62,7 +62,7 @@ export const ClassFormModal: React.FC<ClassFormModalProps> = ({
 						<DialogHeader className="mb-0 flex-row items-center gap-3 space-y-0 text-left">
 							<div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-m3-primary text-m3-on-primary">
 								<Icon
-									name={editingClass ? "edit_square" : "add_circle"}
+									name={editingClass ? "group" : "group_add"}
 									size={24}
 								/>
 							</div>

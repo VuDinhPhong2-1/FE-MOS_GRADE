@@ -166,7 +166,7 @@ const ClassScoreboardPage = () => {
 				<ProgressIndicator
 					variant="circular"
 					shape="wavy"
-					size={36}
+					size={64}
 					aria-label="Đang tải bảng điểm lớp"
 				/>
 				<span className="text-sm font-medium text-m3-on-surface-variant">

@@ -2,33 +2,27 @@ import {
 	Card,
 	CardContent,
 	Icon,
-	IconButton,
-	Menu,
-	MenuContent,
-	MenuDivider,
-	MenuGroup,
-	MenuItem,
-	MenuTrigger,
 	ProgressIndicator,
-	Search,
 } from "@bug-on/m3-expressive";
+import { useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import { usePageHeader } from "../context/PageActionsContext";
 import {
+	ClassActionToolbar,
 	ClassFormModal,
 	ClassGrid,
+	type ClassListProps,
 	ClassStatsGrid,
 	DeleteClassDialog,
 	HandoverModal,
 	useClassList,
 } from "../features/class-list";
-import type { School } from "../types";
 import StudentList from "./StudentList";
 
-interface ClassListProps {
-	selectedSchool: School;
-}
-
-const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
+const ClassList: React.FC<ClassListProps> = ({
+	selectedSchool,
+	onBackToSchools,
+}) => {
 	const {
 		classes,
 		visibleClasses,
@@ -42,6 +36,10 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
 		setClassStatusFilter,
 		classSearch,
 		setClassSearch,
+		classSearchActive,
+		setClassSearchActive,
+		openClassSearch,
+		closeClassSearch,
 		selectedGradeFilter,
 		setSelectedGradeFilter,
 		handleClearSearch,
@@ -79,133 +77,29 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
 		handleToggleHandover,
 	} = useClassList(selectedSchool);
 
+	const [, setSearchParams] = useSearchParams();
+
+	const handleBackToSchools = useCallback(() => {
+		if (onBackToSchools) {
+			onBackToSchools();
+			return;
+		}
+		setSearchParams((prev) => {
+			const next = new URLSearchParams(prev);
+			next.delete("schoolId");
+			next.delete("classId");
+			return next;
+		});
+	}, [onBackToSchools, setSearchParams]);
+
 	usePageHeader(
 		{
 			title: selectedClass ? `Lớp ${selectedClass.name}` : selectedSchool.name,
 			subtitle: selectedClass
 				? "Danh sách học sinh"
 				: "Danh sách lớp học trực thuộc",
-			searchSlot: !selectedClass ? (
-				<Search
-					id="classlist-search"
-					query={classSearch}
-					onQueryChange={setClassSearch}
-					onSearch={setClassSearch}
-					active={false}
-					onActiveChange={() => {}}
-					placeholder="Tìm theo tên lớp..."
-					aria-label="Tìm kiếm lớp học"
-					className="w-64 xl:w-72"
-					styleType="contained"
-				/>
-			) : undefined,
-			actions: !selectedClass
-				? [
-						{
-							id: "filter-classes",
-							label: "Lọc",
-							icon: "tune",
-							customNode: (
-								<Menu variant="expressive" colorVariant="vibrant">
-									<MenuTrigger asChild>
-										<IconButton
-											colorStyle="tonal"
-											size="md"
-											aria-label="Bộ lọc lớp học"
-											title="Bộ lọc lớp học"
-										>
-											<Icon name="tune" size={20} />
-										</IconButton>
-									</MenuTrigger>
-									<MenuContent
-										align="end"
-										className="w-64"
-										separatorStyle="gap"
-									>
-										<MenuGroup label="Trạng thái lớp">
-											<MenuItem
-												selected={classStatusFilter === "all"}
-												keepOpen
-												onClick={() => setClassStatusFilter("all")}
-											>
-												Tất cả trạng thái
-											</MenuItem>
-											<MenuItem
-												selected={classStatusFilter === "active"}
-												keepOpen
-												onClick={() => setClassStatusFilter("active")}
-											>
-												Đang hoạt động
-											</MenuItem>
-											<MenuItem
-												selected={classStatusFilter === "inactive"}
-												keepOpen
-												onClick={() => setClassStatusFilter("inactive")}
-											>
-												Ngừng hoạt động
-											</MenuItem>
-										</MenuGroup>
-										<MenuDivider isGapVariant className="bg-transparent" />
-										<MenuGroup label="Lọc theo khối">
-											<MenuItem
-												selected={selectedGradeFilter === ""}
-												keepOpen
-												onClick={() => setSelectedGradeFilter("")}
-											>
-												Tất cả các khối
-											</MenuItem>
-											<MenuItem
-												selected={selectedGradeFilter === "10"}
-												keepOpen
-												onClick={() => setSelectedGradeFilter("10")}
-											>
-												Khối 10
-											</MenuItem>
-											<MenuItem
-												selected={selectedGradeFilter === "11"}
-												keepOpen
-												onClick={() => setSelectedGradeFilter("11")}
-											>
-												Khối 11
-											</MenuItem>
-											<MenuItem
-												selected={selectedGradeFilter === "12"}
-												keepOpen
-												onClick={() => setSelectedGradeFilter("12")}
-											>
-												Khối 12
-											</MenuItem>
-										</MenuGroup>
-									</MenuContent>
-								</Menu>
-							),
-						},
-						...(canCreateClass
-							? [
-									{
-										id: "add-class",
-										label: "Thêm lớp mới",
-										icon: "add",
-										colorStyle: "filled" as const,
-										onClick: handleOpenAddModal,
-									},
-								]
-							: []),
-					]
-				: [],
 		},
-		[
-			selectedClass,
-			selectedSchool.name,
-			classSearch,
-			classStatusFilter,
-			selectedGradeFilter,
-			canCreateClass,
-			handleOpenAddModal,
-			setClassSearch,
-			setClassStatusFilter,
-			setSelectedGradeFilter,
-		],
+		[selectedClass, selectedSchool.name],
 	);
 
 	if (selectedClass) {
@@ -236,7 +130,7 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
 	}
 
 	return (
-		<div className="space-y-6">
+		<div className="space-y-6 pb-28">
 			{/* Thông báo lỗi nếu có */}
 			{error && (
 				<Card
@@ -267,6 +161,25 @@ const ClassList: React.FC<ClassListProps> = ({ selectedSchool }) => {
 				onHandoverClass={handleOpenHandoverModal}
 				onOpenAddModal={handleOpenAddModal}
 				onClearSearch={handleClearSearch}
+			/>
+
+			{/* Floating Action Toolbar */}
+			<ClassActionToolbar
+				onOpenAddModal={handleOpenAddModal}
+				canCreateClass={canCreateClass}
+				statusFilter={classStatusFilter}
+				onStatusFilterChange={setClassStatusFilter}
+				searchQuery={classSearch}
+				onSearchQueryChange={setClassSearch}
+				isSearchActive={classSearchActive}
+				onOpenSearch={openClassSearch}
+				onCloseSearch={closeClassSearch}
+				onSearchActiveChange={setClassSearchActive}
+				selectedGradeFilter={selectedGradeFilter}
+				onGradeFilterChange={setSelectedGradeFilter}
+				onBackToSchools={handleBackToSchools}
+				totalCount={classes.length}
+				displayedCount={visibleClasses.length}
 			/>
 
 			{/* Modal Bàn giao quyền lớp học */}

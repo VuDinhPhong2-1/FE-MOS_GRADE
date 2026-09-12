@@ -3,6 +3,7 @@ export * from "./ClassAnalyticsPanel";
 export * from "./DeleteStudentDialog";
 export * from "./EditStudentModal";
 export * from "./hooks/useStudentData";
+export * from "./hooks/useStudentQueries";
 export * from "./PasteStudentModal";
 export * from "./StudentActionToolbar";
 export * from "./StudentHeader";

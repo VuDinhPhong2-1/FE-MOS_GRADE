@@ -26,6 +26,7 @@
 		"@bug-on/m3-tokens": "^1.2.2",
 		"@react-oauth/google": "^0.13.4",
 		"@tailwindcss/vite": "^4.1.18",
+		"@tanstack/react-query": "^5.102.8",
 		"axios": "^1.13.2",
 		"clsx": "^2.1.1",
 		"html2canvas": "^1.4.1",

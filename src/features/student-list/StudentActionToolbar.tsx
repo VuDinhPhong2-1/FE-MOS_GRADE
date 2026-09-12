@@ -19,7 +19,6 @@ export interface StudentActionToolbarProps {
 	onOpenAddModal: () => void;
 	onGrade: () => void;
 	onOpenViewScores: () => void;
-	onReload: () => void;
 	onFileUpload: (e: ChangeEvent<HTMLInputElement>) => void;
 	onOpenPasteModal: () => void;
 	onSyncMetadata: () => void;
@@ -36,7 +35,6 @@ const StudentActionToolbarComponent = ({
 	onOpenAddModal,
 	onGrade,
 	onOpenViewScores,
-	onReload,
 	onFileUpload,
 	onOpenPasteModal,
 	onSyncMetadata,
@@ -82,26 +80,6 @@ const StudentActionToolbarComponent = ({
 						/>
 					}
 				>
-					{/* Tải lại danh sách */}
-					<TooltipBox
-						tooltip={<PlainTooltip>Tải lại danh sách</PlainTooltip>}
-						placement="top"
-					>
-						<ToolbarIconButton
-							aria-label="Tải lại danh sách"
-							onClick={onReload}
-							disabled={isLoading}
-							emphasis="standard"
-						>
-							<Icon
-								name="refresh"
-								variant="rounded"
-								size={24}
-								className={isLoading ? "animate-spin" : undefined}
-							/>
-						</ToolbarIconButton>
-					</TooltipBox>
-
 					{/* Chấm điểm cho lớp */}
 					{!readOnly && (
 						<TooltipBox
@@ -213,6 +191,7 @@ const StudentActionToolbarComponent = ({
 								aria-label="Thêm học sinh"
 								onClick={onOpenAddModal}
 								emphasis="filled"
+								width="wide"
 							>
 								<Icon
 									name="person_add"

@@ -58,16 +58,15 @@ export interface DeleteSchoolDialogProps {
 export type SchoolStatusFilter = "all" | "active" | "inactive";
 
 export interface SchoolActionToolbarProps {
-	isLoading: boolean;
-	onReload: () => void;
 	onOpenAddModal: () => void;
 	statusFilter: SchoolStatusFilter;
 	onStatusFilterChange: (status: SchoolStatusFilter) => void;
 	searchQuery: string;
 	onSearchQueryChange: (query: string) => void;
-	isSearchActive: boolean;
-	onOpenSearch: () => void;
-	onCloseSearch: () => void;
-	totalCount: number;
-	displayedCount: number;
+	isSearchActive?: boolean;
+	onOpenSearch?: () => void;
+	onCloseSearch?: () => void;
+	onSearchActiveChange?: (isActive: boolean) => void;
+	totalCount?: number;
+	displayedCount?: number;
 }
