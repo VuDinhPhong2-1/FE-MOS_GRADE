@@ -34,7 +34,6 @@ const SchoolList = () => {
 		isSubmitting,
 		schoolToDelete,
 		isDeleting,
-		fetchSchools,
 		openAddModal,
 		openEditModal,
 		closeModal,
@@ -80,6 +79,15 @@ const SchoolList = () => {
 		[setSearchParams],
 	);
 
+	const handleBackToSchools = useCallback(() => {
+		setSearchParams((prev) => {
+			const next = new URLSearchParams(prev);
+			next.delete("schoolId");
+			next.delete("classId");
+			return next;
+		});
+	}, [setSearchParams]);
+
 	const isViewingSchool = Boolean(selectedSchool || (schoolId && isLoading));
 
 	const pageHeaderConfig = useMemo(() => {
@@ -90,14 +98,6 @@ const SchoolList = () => {
 				"Danh sách các trường và cơ sở đào tạo trong hệ thống MOS Grader",
 			actions: [
 				{
-					id: "refresh-schools",
-					label: "Làm mới",
-					icon: "refresh",
-					colorStyle: "outlined" as const,
-					disabled: isLoading,
-					onClick: fetchSchools,
-				},
-				{
 					id: "add-school",
 					label: "Thêm trường",
 					icon: "add",
@@ -107,7 +107,7 @@ const SchoolList = () => {
 				},
 			],
 		};
-	}, [isViewingSchool, isLoading, fetchSchools, openAddModal]);
+	}, [isViewingSchool, isLoading, openAddModal]);
 
 	usePageHeader(pageHeaderConfig, [pageHeaderConfig]);
 
@@ -160,8 +160,6 @@ const SchoolList = () => {
 
 					{/* Floating Action Toolbar */}
 					<SchoolActionToolbar
-						isLoading={isLoading}
-						onReload={fetchSchools}
 						onOpenAddModal={openAddModal}
 						statusFilter={statusFilter}
 						onStatusFilterChange={setStatusFilter}
@@ -194,7 +192,10 @@ const SchoolList = () => {
 					/>
 				</>
 			) : (
-				<ClassList selectedSchool={selectedSchool} />
+				<ClassList
+					selectedSchool={selectedSchool}
+					onBackToSchools={handleBackToSchools}
+				/>
 			)}
 		</div>
 	);

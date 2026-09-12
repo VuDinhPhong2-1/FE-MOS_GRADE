@@ -331,7 +331,7 @@ const StudentList = ({
 	}, [flashMessage, showSnackbar]);
 
 	return (
-		<div className="mx-auto w-full space-y-4 pb-24 sm:pb-28">
+		<div className="mx-auto w-full space-y-4 pb-28">
 			{readOnly && (
 				<div className="flex items-center gap-2 rounded-2xl border border-m3-outline-variant/60 bg-m3-surface-container px-4 py-3 text-sm text-m3-on-surface shadow-xs">
 					<Icon
@@ -380,7 +380,6 @@ const StudentList = ({
 				onOpenAddModal={handleOpenAddModal}
 				onGrade={handleGrade}
 				onOpenViewScores={handleOpenViewScoresModal}
-				onReload={loadStudents}
 				onFileUpload={handleFileUpload}
 				onOpenPasteModal={handleOpenPasteModal}
 				onSyncMetadata={handleSyncStudentMetadataToGoogleSheet}

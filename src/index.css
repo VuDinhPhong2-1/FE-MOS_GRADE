@@ -55,3 +55,17 @@ td {
 	border: 2px solid transparent;
 	background-clip: content-box;
 }
+
+::-webkit-scrollbar-corner {
+	background: transparent;
+}
+
+@layer utilities {
+	.scrollbar-hide {
+		-ms-overflow-style: none;
+		scrollbar-width: none;
+	}
+	.scrollbar-hide::-webkit-scrollbar {
+		display: none;
+	}
+}

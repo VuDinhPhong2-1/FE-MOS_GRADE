@@ -1,17 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { authService } from "../../services/auth.service";
-import { classService } from "../../services/class.service";
-import studentService from "../../services/student.service";
 import type { School } from "../../types";
-import type { TeacherSummary } from "../../types/auth.types";
 import type {
 	Class,
 	CreateClassRequest,
 	UpdateClassRequest,
 } from "../../types/class.types";
 import { notify } from "../../utils/notify";
+import { useClassQueries } from "./hooks/useClassQueries";
 import {
 	getGradeOrderValue,
 	mapClassApiError,
@@ -23,10 +20,35 @@ export function useClassList(selectedSchool: School) {
 	const { getAccessToken, logout, user } = useAuth();
 	const [searchParams, setSearchParams] = useSearchParams();
 
-	// Class data state
-	const [classes, setClasses] = useState<Class[]>([]);
+	// Handover modal state
+	const [showHandoverModal, setShowHandoverModal] = useState(false);
+	const [handoverClass, setHandoverClass] = useState<Class | null>(null);
+	const [handoverError, setHandoverError] = useState("");
+	const [handoverBusyTeacherId, setHandoverBusyTeacherId] = useState<
+		string | null
+	>(null);
+	const [handoverSearch, setHandoverSearch] = useState("");
+
+	// TanStack Query hooks for server state
+	const {
+		classes,
+		isLoading,
+		classesError,
+		teachers,
+		isLoadingTeachers,
+		teachersError,
+		createClassMutation,
+		updateClassMutation,
+		deleteClassMutation,
+		toggleHandoverMutation,
+	} = useClassQueries({
+		schoolId: selectedSchool.id,
+		getAccessToken,
+		isHandoverModalOpen: showHandoverModal,
+	});
+
+	// UI state
 	const [selectedClass, setSelectedClass] = useState<Class | null>(null);
-	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState("");
 
 	// Filters state
@@ -51,17 +73,6 @@ export function useClassList(selectedSchool: School) {
 		academicYear: "2026 - 2027",
 		grade: "",
 	});
-
-	// Handover modal state
-	const [showHandoverModal, setShowHandoverModal] = useState(false);
-	const [handoverClass, setHandoverClass] = useState<Class | null>(null);
-	const [teachers, setTeachers] = useState<TeacherSummary[]>([]);
-	const [isLoadingTeachers, setIsLoadingTeachers] = useState(false);
-	const [handoverError, setHandoverError] = useState("");
-	const [handoverBusyTeacherId, setHandoverBusyTeacherId] = useState<
-		string | null
-	>(null);
-	const [handoverSearch, setHandoverSearch] = useState("");
 
 	// Delete modal state
 	const [classToDelete, setClassToDelete] = useState<Class | null>(null);
@@ -137,7 +148,7 @@ export function useClassList(selectedSchool: School) {
 					normalizeSearchText(cls.name).includes(searchKeyword);
 				const matchesGrade =
 					!selectedGradeFilter ||
-					(cls.grade && cls.grade.includes(selectedGradeFilter));
+					Boolean(cls.grade?.includes(selectedGradeFilter));
 				const matchesStatus =
 					classStatusFilter === "all" ||
 					(classStatusFilter === "active" && cls.isActive) ||
@@ -167,61 +178,7 @@ export function useClassList(selectedSchool: School) {
 			});
 	}, [classes, classSearch, classStatusFilter, selectedGradeFilter]);
 
-	const fetchClasses = useCallback(
-		async (retryCount = 0) => {
-			if (retryCount === 0) {
-				setIsLoading(true);
-				setError("");
-			}
-
-			try {
-				const data = await classService.getClassesBySchool(
-					selectedSchool.id,
-					getAccessToken,
-					true,
-				);
-				const classListWithStudents = await Promise.all(
-					data.map(async (cls) => {
-						try {
-							const students = await studentService.getStudentsByClassId(
-								cls.id,
-								getAccessToken,
-							);
-							return { ...cls, currentStudents: students.length };
-						} catch {
-							return {
-								...cls,
-								currentStudents:
-									cls.studentIds?.length ?? cls.currentStudents ?? 0,
-							};
-						}
-					}),
-				);
-
-				setClasses(classListWithStudents);
-				setError("");
-			} catch (err) {
-				// Tự động thử lại tối đa 2 lần nếu gặp lỗi ngắt socket / mạng chập chờn
-				if (retryCount < 2) {
-					await new Promise((resolve) =>
-						setTimeout(resolve, 400 * (retryCount + 1)),
-					);
-					return fetchClasses(retryCount + 1);
-				}
-				setError("Không thể tải danh sách lớp học");
-				console.error("Error fetching classes:", err);
-			} finally {
-				setIsLoading(false);
-			}
-		},
-		[selectedSchool.id, getAccessToken],
-	);
-
-	useEffect(() => {
-		fetchClasses();
-	}, [fetchClasses]);
-
-	// Sync selectedClass from URL params
+	// Sync selectedClass from URL params or updated classes
 	useEffect(() => {
 		const classId = searchParams.get("classId");
 		if (!classId) {
@@ -318,35 +275,22 @@ export function useClassList(selectedSchool: School) {
 						...formData,
 						isActive,
 					};
-					const updatedClass = await classService.updateClass(
-						editingClass.id,
-						updateData,
-						getAccessToken,
-					);
-					setClasses((prev) =>
-						prev.map((cls) =>
-							cls.id === updatedClass.id ? { ...cls, ...updatedClass } : cls,
-						),
-					);
+					await updateClassMutation.mutateAsync({
+						classId: editingClass.id,
+						payload: updateData,
+					});
+					notify.success("Cập nhật thông tin lớp học thành công");
 				} else {
-					const createdClass = await classService.createClass(
-						{
-							...formData,
-							schoolId: selectedSchool.id,
-						},
-						getAccessToken,
-					);
-					setClasses((prev) => [
-						createdClass,
-						...prev.filter((cls) => cls.id !== createdClass.id),
-					]);
+					await createClassMutation.mutateAsync({
+						...formData,
+						schoolId: selectedSchool.id,
+					});
+					notify.success("Tạo lớp học mới thành công");
 				}
 
 				setShowModal(false);
 				setEditingClass(null);
 				setIsActive(true);
-
-				await fetchClasses();
 			} catch (err) {
 				const mapped = mapClassApiError(err, handleUnauthorized);
 				setFormError(mapped);
@@ -356,14 +300,14 @@ export function useClassList(selectedSchool: School) {
 			}
 		},
 		[
+			createClassMutation,
 			createFormValidation,
 			editingClass,
-			fetchClasses,
 			formData,
-			getAccessToken,
 			handleUnauthorized,
 			isActive,
 			selectedSchool.id,
+			updateClassMutation,
 		],
 	);
 
@@ -402,10 +346,9 @@ export function useClassList(selectedSchool: School) {
 
 		try {
 			setIsDeletingClass(true);
-			await classService.deleteClass(classToDelete.id, getAccessToken);
+			await deleteClassMutation.mutateAsync(classToDelete.id);
 			notify.success(`Đã xóa lớp "${classToDelete.name}" thành công`);
 			setClassToDelete(null);
-			await fetchClasses();
 		} catch (err) {
 			notify.error(
 				err instanceof Error ? err.message : "Không thể xóa lớp học",
@@ -413,7 +356,7 @@ export function useClassList(selectedSchool: School) {
 		} finally {
 			setIsDeletingClass(false);
 		}
-	}, [classToDelete, fetchClasses, getAccessToken]);
+	}, [classToDelete, deleteClassMutation]);
 
 	const handleDeleteClass = useCallback(
 		(classIdOrCls: string | Class, className?: string) => {
@@ -423,7 +366,7 @@ export function useClassList(selectedSchool: School) {
 	);
 
 	const handleOpenHandoverModal = useCallback(
-		async (cls: Class) => {
+		(cls: Class) => {
 			if (!canHandoverClass(cls)) {
 				notify.warning(
 					"Chỉ giáo viên chính hoặc Admin mới được bàn giao quyền lớp.",
@@ -435,23 +378,8 @@ export function useClassList(selectedSchool: School) {
 			setHandoverClass(cls);
 			setHandoverError("");
 			setHandoverSearch("");
-			setIsLoadingTeachers(true);
-
-			try {
-				const teacherList = await authService.getTeachers(getAccessToken);
-				setTeachers(teacherList);
-			} catch (err) {
-				setTeachers([]);
-				setHandoverError(
-					err instanceof Error
-						? err.message
-						: "Không thể tải danh sách giáo viên",
-				);
-			} finally {
-				setIsLoadingTeachers(false);
-			}
 		},
-		[canHandoverClass, getAccessToken],
+		[canHandoverClass],
 	);
 
 	const handleCloseHandoverModal = useCallback(() => {
@@ -470,24 +398,13 @@ export function useClassList(selectedSchool: School) {
 			setHandoverError("");
 
 			try {
-				const updatedClass = granted
-					? await classService.revokeClassManagement(
-							handoverClass.id,
-							teacherId,
-							getAccessToken,
-						)
-					: await classService.grantClassManagement(
-							handoverClass.id,
-							teacherId,
-							getAccessToken,
-						);
+				const updatedClass = await toggleHandoverMutation.mutateAsync({
+					classId: handoverClass.id,
+					teacherId,
+					granted,
+				});
 
 				setHandoverClass(updatedClass);
-				setClasses((prev) =>
-					prev.map((cls) =>
-						cls.id === updatedClass.id ? { ...cls, ...updatedClass } : cls,
-					),
-				);
 				setSelectedClass((prev) =>
 					prev?.id === updatedClass.id ? { ...prev, ...updatedClass } : prev,
 				);
@@ -501,10 +418,19 @@ export function useClassList(selectedSchool: School) {
 				setHandoverBusyTeacherId(null);
 			}
 		},
-		[getAccessToken, handoverClass],
+		[handoverClass, toggleHandoverMutation],
 	);
 
 	const handleClearSearch = useCallback(() => {
+		setClassSearch("");
+	}, []);
+
+	const openClassSearch = useCallback(() => {
+		setClassSearchActive(true);
+	}, []);
+
+	const closeClassSearch = useCallback(() => {
+		setClassSearchActive(false);
 		setClassSearch("");
 	}, []);
 
@@ -514,7 +440,7 @@ export function useClassList(selectedSchool: School) {
 		visibleClasses,
 		selectedClass,
 		isLoading,
-		error,
+		error: error || classesError,
 		// Permissions
 		canCreateClass,
 		canManageClass,
@@ -526,6 +452,8 @@ export function useClassList(selectedSchool: School) {
 		setClassSearch,
 		classSearchActive,
 		setClassSearchActive,
+		openClassSearch,
+		closeClassSearch,
 		selectedGradeFilter,
 		setSelectedGradeFilter,
 		handleClearSearch,
@@ -559,7 +487,7 @@ export function useClassList(selectedSchool: School) {
 		handoverClass,
 		teachers,
 		isLoadingTeachers,
-		handoverError,
+		handoverError: handoverError || teachersError,
 		handoverBusyTeacherId,
 		handoverSearch,
 		setHandoverSearch,

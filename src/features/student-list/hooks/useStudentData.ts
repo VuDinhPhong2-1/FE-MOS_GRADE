@@ -1,11 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { assignmentService } from "../../../services/assignment.service";
-import studentService from "../../../services/student.service";
-import type { Assignment } from "../../../types/assignment.types";
 import type { Class } from "../../../types/class.types";
 import type { Student, StudentImportItem } from "../../../types/student.types";
 import type { CompetencyLevel } from "../types";
 import { isStudentActive, VALID_STATUSES } from "../types";
+import { useStudentQueries } from "./useStudentQueries";
 
 interface UseStudentDataOptions {
 	selectedClass: Class;
@@ -18,56 +16,43 @@ export const useStudentData = ({
 	readOnly,
 	getAccessToken,
 }: UseStudentDataOptions) => {
-	const [students, setStudents] = useState<Student[]>([]);
-	const [assignments, setAssignments] = useState<Assignment[]>([]);
-	const [isLoading, setIsLoading] = useState(false);
-	const [isStudentMetadataSyncing, setIsStudentMetadataSyncing] =
-		useState(false);
+	// Quản lý client-side draft students được import từ file Excel / Paste clipboard
+	const [tempStudents, setTempStudents] = useState<Student[]>([]);
 	const [inlineSavingStudentId, setInlineSavingStudentId] = useState<
 		string | null
 	>(null);
 	const [flashMessage, setFlashMessage] = useState("");
 
-	const loadStudents = useCallback(async () => {
-		if (!selectedClass?.id) return;
-		setIsLoading(true);
-		try {
-			const data = await studentService.getStudentsByClassId(
-				selectedClass.id,
-				getAccessToken,
-			);
-			setStudents(data);
-		} finally {
-			setIsLoading(false);
-		}
-	}, [selectedClass?.id, getAccessToken]);
+	const {
+		students: serverStudents,
+		isLoadingStudents,
+		assignments,
+		refetchStudents,
+		bulkImportMutation,
+		deleteStudentMutation,
+		updateStudentMutation,
+		syncMetadataMutation,
+	} = useStudentQueries({
+		classId: selectedClass.id,
+		schoolId: selectedClass.schoolId,
+		getAccessToken,
+	});
 
-	const loadAssignments = useCallback(async () => {
-		if (!selectedClass?.id) return;
-		try {
-			const data = await assignmentService.getByClass(
-				selectedClass.id,
-				getAccessToken,
-			);
-			setAssignments(data);
-		} catch {
-			setAssignments([]);
-		}
-	}, [selectedClass?.id, getAccessToken]);
-
+	// Reset draft temp students khi chuyển lớp
 	useEffect(() => {
-		if (selectedClass?.id) {
-			loadStudents();
-			loadAssignments();
+		if (selectedClass.id) {
+			setTempStudents([]);
 		}
-	}, [selectedClass?.id, loadStudents, loadAssignments]);
+	}, [selectedClass.id]);
 
+	// Tự động tắt flash message sau 2.5s
 	useEffect(() => {
 		if (!flashMessage) return;
 		const timer = window.setTimeout(() => setFlashMessage(""), 2500);
 		return () => window.clearTimeout(timer);
 	}, [flashMessage]);
 
+	// Cảnh báo người dùng khi đang lưu inline
 	useEffect(() => {
 		if (!inlineSavingStudentId) return;
 
@@ -80,13 +65,14 @@ export const useStudentData = ({
 		return () => window.removeEventListener("beforeunload", handleBeforeUnload);
 	}, [inlineSavingStudentId]);
 
+	// Ghép server students và client-only temp students
+	const students = useMemo(
+		() => [...serverStudents, ...tempStudents],
+		[serverStudents, tempStudents],
+	);
+
 	const appendImportedStudents = useCallback((imported: Student[]) => {
-		setStudents((prev) => {
-			const persisted = prev.filter(
-				(student) => !student.id.startsWith("temp-"),
-			);
-			return [...persisted, ...imported];
-		});
+		setTempStudents((prev) => [...prev, ...imported]);
 	}, []);
 
 	const handleSaveStudents = useCallback(async () => {
@@ -95,35 +81,28 @@ export const useStudentData = ({
 			return;
 		}
 
-		const newStudents = students.filter((st) => st.id.startsWith("temp-"));
-		if (newStudents.length === 0) {
+		if (tempStudents.length === 0) {
 			alert("Không có học sinh mới để lưu!");
 			return;
 		}
 
-		setIsLoading(true);
 		try {
-			const importItems: StudentImportItem[] = newStudents.map((st) => ({
+			const importItems: StudentImportItem[] = tempStudents.map((st) => ({
 				MiddleName: st.middleName,
 				FirstName: st.firstName,
 			}));
 
-			await studentService.bulkImportStudents(
-				{
-					Students: importItems,
-					ClassId: selectedClass.id,
-				},
-				getAccessToken,
-			);
+			await bulkImportMutation.mutateAsync({
+				Students: importItems,
+				ClassId: selectedClass.id,
+			});
 
-			await loadStudents();
+			setTempStudents([]);
 			setFlashMessage("Lưu danh sách học sinh thành công.");
 		} catch {
 			alert("Có lỗi xảy ra khi import học sinh!");
-		} finally {
-			setIsLoading(false);
 		}
-	}, [readOnly, students, selectedClass?.id, getAccessToken, loadStudents]);
+	}, [bulkImportMutation, readOnly, selectedClass.id, tempStudents]);
 
 	const handleDeleteStudent = useCallback(
 		async (student: Student) => {
@@ -133,33 +112,27 @@ export const useStudentData = ({
 			}
 
 			if (student.id.startsWith("temp-")) {
-				setStudents((prev) => prev.filter((st) => st.id !== student.id));
+				setTempStudents((prev) => prev.filter((st) => st.id !== student.id));
 				setFlashMessage("Đã xóa học sinh tạm khỏi danh sách.");
 				return;
 			}
 
-			setIsLoading(true);
 			try {
-				await studentService.deleteStudent(student.id, getAccessToken);
-				await loadStudents();
+				await deleteStudentMutation.mutateAsync(student.id);
 				setFlashMessage("Xóa học sinh thành công.");
 			} catch (err) {
 				alert(err instanceof Error ? err.message : "Không thể xóa học sinh.");
-			} finally {
-				setIsLoading(false);
 			}
 		},
-		[readOnly, getAccessToken, loadStudents],
+		[deleteStudentMutation, readOnly],
 	);
 
 	const handleInlineCompetencyChange = useCallback(
 		async (student: Student, level: CompetencyLevel) => {
-			if (readOnly) {
-				return;
-			}
+			if (readOnly) return;
 
 			if (student.id.startsWith("temp-")) {
-				setStudents((prev) =>
+				setTempStudents((prev) =>
 					prev.map((item) =>
 						item.id === student.id ? { ...item, competencyLevel: level } : item,
 					),
@@ -177,9 +150,9 @@ export const useStudentData = ({
 
 			setInlineSavingStudentId(student.id);
 			try {
-				const updatedStudent = await studentService.updateStudent(
-					student.id,
-					{
+				await updateStudentMutation.mutateAsync({
+					studentId: student.id,
+					payload: {
 						middleName: student.middleName?.trim() || "",
 						firstName: student.firstName?.trim() || "",
 						status,
@@ -188,23 +161,7 @@ export const useStudentData = ({
 						thi: Boolean(student.thi),
 						classId: student.classId || selectedClass.id,
 					},
-					getAccessToken,
-				);
-
-				setStudents((prev) =>
-					prev.map((item) =>
-						item.id === student.id
-							? {
-									...item,
-									competencyLevel: (updatedStudent.competencyLevel ??
-										level) as CompetencyLevel,
-									notes: updatedStudent.notes ?? item.notes,
-									status: updatedStudent.status ?? item.status,
-									thi: updatedStudent.thi ?? item.thi ?? false,
-								}
-							: item,
-					),
-				);
+				});
 				setFlashMessage("Cập nhật năng lực thành công.");
 			} catch (err) {
 				alert(
@@ -216,19 +173,17 @@ export const useStudentData = ({
 				setInlineSavingStudentId(null);
 			}
 		},
-		[readOnly, selectedClass?.id, getAccessToken],
+		[readOnly, selectedClass.id, updateStudentMutation],
 	);
 
 	const handleInlineExamToggle = useCallback(
 		async (student: Student) => {
-			if (readOnly) {
-				return;
-			}
+			if (readOnly) return;
 
 			const nextExamState = !(student.thi ?? false);
 
 			if (student.id.startsWith("temp-")) {
-				setStudents((prev) =>
+				setTempStudents((prev) =>
 					prev.map((item) =>
 						item.id === student.id ? { ...item, thi: nextExamState } : item,
 					),
@@ -238,25 +193,12 @@ export const useStudentData = ({
 
 			setInlineSavingStudentId(student.id);
 			try {
-				const updatedStudent = await studentService.updateStudent(
-					student.id,
-					{
+				await updateStudentMutation.mutateAsync({
+					studentId: student.id,
+					payload: {
 						thi: nextExamState,
 					},
-					getAccessToken,
-				);
-
-				const resolvedExamState = updatedStudent.thi ?? nextExamState;
-				setStudents((prev) =>
-					prev.map((item) =>
-						item.id === student.id
-							? {
-									...item,
-									thi: resolvedExamState,
-								}
-							: item,
-					),
-				);
+				});
 				setFlashMessage("Cập nhật trạng thái thi thành công.");
 			} catch (err) {
 				alert(
@@ -268,7 +210,7 @@ export const useStudentData = ({
 				setInlineSavingStudentId(null);
 			}
 		},
-		[readOnly, getAccessToken],
+		[readOnly, updateStudentMutation],
 	);
 
 	const handleSyncStudentMetadataToGoogleSheet = useCallback(async () => {
@@ -277,18 +219,13 @@ export const useStudentData = ({
 			return;
 		}
 
-		const hasNewTempStudents = students.some((st) => st.id.startsWith("temp-"));
-		if (hasNewTempStudents) {
+		if (tempStudents.length > 0) {
 			alert("Vui lòng lưu danh sách học sinh trước khi đồng bộ Google Sheet.");
 			return;
 		}
 
 		try {
-			setIsStudentMetadataSyncing(true);
-			const result = await studentService.syncStudentMetadataToGoogleSheet(
-				selectedClass.id,
-				getAccessToken,
-			);
+			const result = await syncMetadataMutation.mutateAsync();
 			setFlashMessage(
 				result.message ||
 					"Đã đồng bộ xếp loại và ghi chú học sinh lên Google Sheet.",
@@ -299,15 +236,10 @@ export const useStudentData = ({
 					? err.message
 					: "Không thể đồng bộ xếp loại và ghi chú lên Google Sheet.",
 			);
-		} finally {
-			setIsStudentMetadataSyncing(false);
 		}
-	}, [readOnly, students, selectedClass?.id, getAccessToken]);
+	}, [readOnly, syncMetadataMutation, tempStudents.length]);
 
-	const studentNewList = useMemo(
-		() => students.filter((st) => st.id.startsWith("temp-")),
-		[students],
-	);
+	const studentNewList = useMemo(() => tempStudents, [tempStudents]);
 
 	const activeStudents = useMemo(
 		() => students.filter((student) => isStudentActive(student)),
@@ -322,15 +254,18 @@ export const useStudentData = ({
 	return {
 		students,
 		assignments,
-		isLoading,
-		isStudentMetadataSyncing,
+		isLoading:
+			isLoadingStudents ||
+			bulkImportMutation.isPending ||
+			deleteStudentMutation.isPending,
+		isStudentMetadataSyncing: syncMetadataMutation.isPending,
 		inlineSavingStudentId,
 		flashMessage,
 		setFlashMessage,
 		studentNewList,
 		activeStudents,
 		inactiveStudentsCount,
-		loadStudents,
+		loadStudents: refetchStudents,
 		appendImportedStudents,
 		handleSaveStudents,
 		handleDeleteStudent,
