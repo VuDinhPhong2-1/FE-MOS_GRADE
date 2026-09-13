@@ -1,4 +1,5 @@
 import { Icon } from "@bug-on/m3-expressive";
+import type { ClipboardEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { usePageHeader } from "../context/PageActionsContext";
@@ -285,6 +286,126 @@ const specialConditionOptionsForSubject = (subject: string) => {
 	return specialConditionOptions.filter((option) =>
 		(option.subjects ?? ["word"]).includes(normalizedSubject),
 	);
+};
+
+type SpecialConditionOption = (typeof specialConditionOptions)[number];
+type GroupedSpecialConditionOption =
+	| { type: "group"; label: string }
+	| { type: "option"; option: SpecialConditionOption };
+
+const specialConditionGroups: Array<{
+	label: string;
+	matches: (option: SpecialConditionOption) => boolean;
+}> = [
+	{
+		label: "Word - Văn bản và bố cục",
+		matches: (option) =>
+			[
+				"convertTableToText",
+				"hyperlink",
+				"sectionBreakBeforeText",
+				"textBoxContainsText",
+				"pageMargins",
+				"documentStyleSet",
+				"pageBorder",
+			].includes(option.value),
+	},
+	{
+		label: "Word - Hình ảnh",
+		matches: (option) =>
+			["pictureBullet", "insertedImage", "pictureStyle"].includes(
+				option.value,
+			),
+	},
+	{
+		label: "Excel - Biểu đồ",
+		matches: (option) =>
+			["excelChartDataRange", "excelChartStyle", "excelChartLegend"].includes(
+				option.value,
+			),
+	},
+	{
+		label: "Excel - Dữ liệu và công thức",
+		matches: (option) =>
+			[
+				"excelTableName",
+				"excelDefinedName",
+				"excelFormulaReferences",
+				"excelTextReplacement",
+				"excelMultiColumnSort",
+				"excelDataModelImport",
+			].includes(option.value),
+	},
+	{
+		label: "Excel - Trang in và workbook",
+		matches: (option) =>
+			[
+				"excelWorksheetPageSetup",
+				"excelPrintTitles",
+				"excelFreezePanes",
+				"excelPrintArea",
+				"excelDocumentProperty",
+				"excelCompatibilityReport",
+			].includes(option.value),
+	},
+	{
+		label: "Excel - Định dạng",
+		matches: (option) =>
+			[
+				"excelClearCellFormatting",
+				"excelIconSetConditionalFormatting",
+				"excelNumberFormat",
+				"excelNoConditionalFormatting",
+				"excelTextRotation",
+				"excelMergedRange",
+				"excelCellHyperlink",
+			].includes(option.value),
+	},
+];
+
+const groupSpecialConditionOptions = (
+	options: SpecialConditionOption[],
+): GroupedSpecialConditionOption[] => {
+	const remaining = new Set(options);
+	const grouped: GroupedSpecialConditionOption[] = [];
+
+	for (const group of specialConditionGroups) {
+		const groupOptions = options.filter(
+			(option) => remaining.has(option) && group.matches(option),
+		);
+		if (groupOptions.length === 0) continue;
+		grouped.push({ type: "group", label: group.label });
+		grouped.push(
+			...groupOptions.map((option) => ({ type: "option" as const, option })),
+		);
+		groupOptions.forEach((option) => remaining.delete(option));
+	}
+
+	if (remaining.size > 0) {
+		grouped.push({ type: "group", label: "Khác" });
+		grouped.push(
+			...Array.from(remaining).map((option) => ({
+				type: "option" as const,
+				option,
+			})),
+		);
+	}
+
+	return grouped;
+};
+
+const splitTextareaLines = (value: string) =>
+	value.split(/\r?\n/).map((item) => item.trim());
+
+const cleanTextareaLines = (values?: string[]) =>
+	(values ?? []).map((item) => item.trim()).filter(Boolean);
+
+const textareaValueAfterPaste = (
+	event: ClipboardEvent<HTMLTextAreaElement>,
+) => {
+	const textarea = event.currentTarget;
+	const pastedText = event.clipboardData.getData("text");
+	return `${textarea.value.slice(0, textarea.selectionStart)}${pastedText}${textarea.value.slice(textarea.selectionEnd)}`;
 };
 
 const emptyRuleSet = (): GradingRuleSet => ({
@@ -1302,12 +1423,17 @@ const ExcelProject02SpecialConditionEditor = ({
 						).join("\n")}
 						onChange={(e) =>
 							updateConfig("excelChartDataRangeConfig", {
-								expectedValueRanges: e.target.value
-									.split(/\r?\n/)
-									.map((item) => item.trim())
-									.filter(Boolean),
+								expectedValueRanges: splitTextareaLines(e.target.value),
 							})
 						}
+						onPaste={(e) => {
+							e.preventDefault();
+							updateConfig("excelChartDataRangeConfig", {
+								expectedValueRanges: splitTextareaLines(
+									textareaValueAfterPaste(e),
+								),
+							});
+						}}
 						placeholder={"Profits!$B$4:$B$9\nProfits!$C$4:$C$9"}
 						className={textareaClass}
 					/>
@@ -1321,12 +1447,17 @@ const ExcelProject02SpecialConditionEditor = ({
 						).join("\n")}
 						onChange={(e) =>
 							updateConfig("excelChartDataRangeConfig", {
-								expectedSeriesNames: e.target.value
-									.split(/\r?\n/)
-									.map((item) => item.trim())
-									.filter(Boolean),
+								expectedSeriesNames: splitTextareaLines(e.target.value),
 							})
 						}
+						onPaste={(e) => {
+							e.preventDefault();
+							updateConfig("excelChartDataRangeConfig", {
+								expectedSeriesNames: splitTextareaLines(
+									textareaValueAfterPaste(e),
+								),
+							});
+						}}
 						placeholder={"Expense\nIncome"}
 						className={textareaClass}
 					/>
@@ -2030,6 +2161,80 @@ const prepareCondition = (
 			: undefined,
 });
 
+const prepareSpecialCondition = (
+	specialCondition?: SpecialCondition,
+): SpecialCondition | undefined => {
+	if (!specialCondition) return undefined;
+
+	const next: SpecialCondition = { ...specialCondition };
+
+	if (next.excelChartDataRangeConfig) {
+		next.excelChartDataRangeConfig = {
+			...next.excelChartDataRangeConfig,
+			expectedValueRanges: cleanTextareaLines(
+				next.excelChartDataRangeConfig.expectedValueRanges,
+			),
+			expectedSeriesNames: cleanTextareaLines(
+				next.excelChartDataRangeConfig.expectedSeriesNames,
+			),
+		};
+	}
+
+	if (next.excelDefinedNameConfig) {
+		next.excelDefinedNameConfig = {
+			...next.excelDefinedNameConfig,
+			expectedRanges: cleanTextareaLines(
+				next.excelDefinedNameConfig.expectedRanges,
+			),
+		};
+	}
+
+	if (next.excelFormulaReferencesConfig) {
+		next.excelFormulaReferencesConfig = {
+			...next.excelFormulaReferencesConfig,
+			requiredReferences: cleanTextareaLines(
+				next.excelFormulaReferencesConfig.requiredReferences,
+			),
+			requiredFunctions: cleanTextareaLines(
+				next.excelFormulaReferencesConfig.requiredFunctions,
+			),
+			requiredFormulaFragments: cleanTextareaLines(
+				next.excelFormulaReferencesConfig.requiredFormulaFragments,
+			),
+		};
+	}
+
+	if (next.excelTextRotationConfig) {
+		next.excelTextRotationConfig = {
+			...next.excelTextRotationConfig,
+			expectedTexts: cleanTextareaLines(next.excelTextRotationConfig.expectedTexts),
+		};
+	}
+
+	if (next.excelCompatibilityReportConfig) {
+		next.excelCompatibilityReportConfig = {
+			...next.excelCompatibilityReportConfig,
+			expectedTexts: cleanTextareaLines(
+				next.excelCompatibilityReportConfig.expectedTexts,
+			),
+		};
+	}
+
+	return next;
+};
+
+const prepareRuleSet = (ruleSet: GradingRuleSet): GradingRuleSet => ({
+	...ruleSet,
+	projects: ruleSet.projects.map((project) => ({
+		...project,
+		tasks: project.tasks.map((task) => ({
+			...task,
+			specialCondition: prepareSpecialCondition(task.specialCondition),
+			conditions: task.conditions.map(prepareCondition),
+		})),
+	})),
+});
+
 const XmlGradingRulesPage = () => {
 	const { getAccessToken, user } = useAuth();
 	const [ruleSets, setRuleSets] = useState<GradingRuleSetSummary[]>([]);
@@ -2072,6 +2277,8 @@ const XmlGradingRulesPage = () => {
 	const [saveError, setSaveError] = useState("");
 	const selectedRef = useRef(selected);
 	const saveScrollYRef = useRef(0);
+	const savingRef = useRef(false);
+	const saveRuleSetRef = useRef<() => Promise<void>>(async () => undefined);
 
 	// Luôn giữ snapshot mới nhất để thao tác Save không dùng state cũ
 	// trong trường hợp người dùng vừa nhập Condition rồi click Save ngay.
@@ -2184,6 +2391,9 @@ const XmlGradingRulesPage = () => {
 	};
 
 	const saveRuleSet = async () => {
+		if (savingRef.current) return;
+		savingRef.current = true;
+
 		// Giữ nguyên vị trí scroll: Save không được kéo người dùng về input
 		// hoặc nhảy đến Condition vừa sửa.
 		saveScrollYRef.current = window.scrollY;
@@ -2199,16 +2409,7 @@ const XmlGradingRulesPage = () => {
 
 		try {
 			// Chuẩn hóa từ snapshot mới nhất, không lấy selected từ closure cũ.
-			const payload = {
-				...current,
-				projects: current.projects.map((project) => ({
-					...project,
-					tasks: project.tasks.map((task) => ({
-						...task,
-						conditions: task.conditions.map(prepareCondition),
-					})),
-				})),
-			};
+			const payload = prepareRuleSet(current);
 
 			const saved = current.id
 				? await xmlGradingRulesService.update(
@@ -2242,8 +2443,60 @@ const XmlGradingRulesPage = () => {
 			});
 		} finally {
 			setSaving(false);
+			savingRef.current = false;
 		}
 	};
+
+	useEffect(() => {
+		saveRuleSetRef.current = saveRuleSet;
+	});
+
+	useEffect(() => {
+		const isSaveShortcut = (event: KeyboardEvent) =>
+			(event.ctrlKey || event.metaKey) &&
+			(event.key.toLowerCase() === "s" || event.code === "KeyS");
+
+		const handleSaveShortcut = (event: KeyboardEvent) => {
+			if (!isSaveShortcut(event)) return;
+
+			event.preventDefault();
+			event.stopPropagation();
+			event.stopImmediatePropagation();
+			void saveRuleSetRef.current();
+		};
+
+		window.addEventListener("keydown", handleSaveShortcut, {
+			capture: true,
+			passive: false,
+		});
+		window.addEventListener("keypress", handleSaveShortcut, {
+			capture: true,
+			passive: false,
+		});
+		document.addEventListener("keydown", handleSaveShortcut, {
+			capture: true,
+			passive: false,
+		});
+		document.addEventListener("keypress", handleSaveShortcut, {
+			capture: true,
+			passive: false,
+		});
+
+		return () => {
+			window.removeEventListener("keydown", handleSaveShortcut, {
+				capture: true,
+			});
+			window.removeEventListener("keypress", handleSaveShortcut, {
+				capture: true,
+			});
+			document.removeEventListener("keydown", handleSaveShortcut, {
+				capture: true,
+			});
+			document.removeEventListener("keypress", handleSaveShortcut, {
+				capture: true,
+			});
+		};
+	}, []);
 
 	const deleteRuleSet = async (id: string) => {
 		if (!window.confirm("Xóa ruleset này?")) return;
@@ -2256,7 +2509,7 @@ const XmlGradingRulesPage = () => {
 	const validateRuleSet = async () => {
 		try {
 			const result = await xmlGradingRulesService.validate(
-				selected,
+				prepareRuleSet(selectedRef.current),
 				getAccessToken,
 			);
 			setValidation(result);
@@ -3140,6 +3393,10 @@ const XmlGradingRulesPage = () => {
 																	const availableSpecialConditionOptions =
 																		specialConditionOptionsForSubject(
 																			selected.subject,
+																		);
+																	const groupedSpecialConditionOptions =
+																		groupSpecialConditionOptions(
+																			availableSpecialConditionOptions,
 																		);
 																	const currentSpecialConditionSupported =
 																		!task.specialCondition?.type ||
@@ -4460,17 +4717,30 @@ const XmlGradingRulesPage = () => {
 																													Không sử dụng
 																												</option>
 
-																												{availableSpecialConditionOptions.map(
-																													(option) => (
-																														<option
-																															key={option.value}
-																															value={
-																																option.value
-																															}
-																														>
-																															{option.label}
-																														</option>
-																													),
+																												{groupedSpecialConditionOptions.map(
+																													(item) =>
+																														item.type ===
+																														"group" ? (
+																															<option
+																																key={`group-${item.label}`}
+																																disabled
+																															>
+																																{`──── ${item.label} ────`}
+																															</option>
+																														) : (
+																															<option
+																																key={
+																																	item.option
+																																		.value
+																																}
+																																value={
+																																	item.option
+																																		.value
+																																}
+																															>
+																																{`  ${item.option.label}`}
+																															</option>
+																														),
 																												)}
 																											</select>
 
@@ -4642,7 +4912,10 @@ const XmlGradingRulesPage = () => {
 																									?.type && (
 																									<div className="mt-3 flex items-start gap-3 rounded-xl border border-violet-100 bg-violet-50/60 p-3">
 																										<div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-violet-100 text-violet-600">
-																											ðŸ’¡
+																											<Icon
+																												name="lightbulb"
+																												className="text-base"
+																											/>
 																										</div>
 
 																										<div>
