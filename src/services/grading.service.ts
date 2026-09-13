@@ -34,7 +34,9 @@ const splitSubjectAndProjectCode = (
 		.replace(/^\/+/, "")
 		.toLowerCase();
 
-	const match = normalized.match(/^(excel|word|ppt)\/(project\d{1,2})$/);
+	const match = normalized.match(
+		/^(excel|word|ppt)\/((?:(?:exam0[1-3]|practice0[1-3])\/)?project\d{1,2})$/,
+	);
 	if (!match) {
 		throw new Error(
 			`gradingApiEndpoint không đúng định dạng subject/projectCode: ${gradingEndpoint}`,

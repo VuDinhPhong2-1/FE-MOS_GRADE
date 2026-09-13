@@ -4,6 +4,7 @@ import type { AutoGradingTaskResultRequest } from "../../../types/score.types";
 import { getNotifyIssuesFromTaskResults } from "../../../utils/gradingIssues";
 import type { NotifyIssue } from "../../../utils/notify";
 import type {
+	AssignmentPresetCode,
 	BulkAssignmentDraft,
 	PracticeCode,
 	SubjectCode,
@@ -60,10 +61,10 @@ export const extractProjectNumberFromEndpoint = (
 	}
 
 	const subjectProjectMatch = normalized.match(
-		/^(excel|word|ppt|powerpoint)\/project(\d{1,2})$/i,
+		/^(excel|word|ppt|powerpoint)\/(?:(?:exam0[1-3]|practice0[1-3])\/)?project(\d{1,2})$/i,
 	);
 	if (subjectProjectMatch) {
-		return Number.parseInt(subjectProjectMatch[2], 10);
+		return Number.parseInt(subjectProjectMatch[1], 10);
 	}
 
 	return null;
@@ -90,6 +91,33 @@ export const resolvePracticeCodeByProjectNumber = (
 	if (projectNumber >= 9 && projectNumber <= 16) return "practice02";
 	if (projectNumber >= 17 && projectNumber <= 24) return "practice03";
 	return null;
+};
+
+export const getAssignmentPresetLabel = (
+	presetCode: AssignmentPresetCode,
+): string => {
+	const labels: Record<AssignmentPresetCode, string> = {
+		exam01: "Exam 1",
+		exam02: "Exam 2",
+		exam03: "Exam 3",
+		practice01: "Practice 1",
+		practice02: "Practice 2",
+		practice03: "Practice 3",
+		otth_odd: "OTTH lẻ",
+		otth_even: "OTTH chẵn",
+	};
+
+	return labels[presetCode];
+};
+
+export const getSubjectDisplayName = (subjectCode: SubjectCode): string => {
+	const labels: Record<SubjectCode, string> = {
+		excel: "Excel",
+		word: "Word",
+		ppt: "PPT",
+	};
+
+	return labels[subjectCode];
 };
 
 export const isExamReviewAssignment = (assignment: {
@@ -177,29 +205,34 @@ export const rankProjectCandidates = (
 export const buildBulkAssignmentDrafts = (
 	endpoints: GradingEndpointInfo[],
 	previousDrafts: BulkAssignmentDraft[],
-	practiceCode: PracticeCode,
+	presetCode: AssignmentPresetCode,
+	subjectCode?: SubjectCode,
 ): BulkAssignmentDraft[] => {
 	const previousMap = new Map(
 		previousDrafts.map((draft) => [draft.endpoint, draft]),
 	);
+	const presetLabel = getAssignmentPresetLabel(presetCode);
+	const subjectLabel = subjectCode ? getSubjectDisplayName(subjectCode) : "";
 
 	return endpoints.map((endpoint) => {
 		const previous = previousMap.get(endpoint.endpoint);
 		const previousName = (previous?.name || "").trim();
-		const legacyExamReviewPrefixName = `Ôn thi - ${endpoint.displayName}`;
-		const defaultName =
-			practiceCode === "exam_review"
-				? `${endpoint.displayName} - Ôn thi`
-				: endpoint.displayName;
-		const shouldUseDefaultExamReviewName =
-			practiceCode === "exam_review" &&
+		const projectNumber = extractProjectNumberFromEndpoint(endpoint.endpoint);
+		const projectLabel = projectNumber
+			? `Project ${String(projectNumber).padStart(2, "0")}`
+			: endpoint.displayName;
+		const defaultName = subjectLabel
+			? `${subjectLabel} ${presetLabel} - ${projectLabel}`
+			: endpoint.displayName;
+		const shouldUseDefaultName =
 			(previousName === "" ||
 				previousName === endpoint.displayName ||
-				previousName === legacyExamReviewPrefixName ||
 				previousName === `On thi - ${endpoint.displayName}` ||
-				previousName === `${endpoint.displayName} - On thi`);
+				previousName === `${endpoint.displayName} - On thi` ||
+				previousName === `${endpoint.displayName} - Ôn thi` ||
+				previousName.includes(" - Project "));
 		const nextName = previous
-			? shouldUseDefaultExamReviewName
+			? shouldUseDefaultName
 				? defaultName
 				: previous.name
 			: defaultName;
@@ -214,14 +247,18 @@ export const buildBulkAssignmentDrafts = (
 };
 
 export const deriveExamTypeFromPractice = (
-	practiceCode: PracticeCode,
-): "otth" | "onthi" => (practiceCode === "exam_review" ? "onthi" : "otth");
+	presetCode: AssignmentPresetCode,
+): "otth" | "gmetrix" => (presetCode.startsWith("exam") ? "gmetrix" : "otth");
+
+export const deriveExamTypeFromPreset = deriveExamTypeFromPractice;
 
 export const deriveProjectCodeFromEndpoint = (
 	endpoint: string,
 ): string | undefined => {
 	const projectNumber = extractProjectNumberFromEndpoint(endpoint);
-	const subjectMatch = endpoint.match(/^(excel|word|ppt|powerpoint)\//i);
+	const subjectMatch = endpoint.match(
+		/^(excel|word|ppt|powerpoint)(?:\/(exam0[1-3]|practice0[1-3]))?\//i,
+	);
 	if (!projectNumber || !subjectMatch) {
 		return undefined;
 	}
@@ -230,13 +267,17 @@ export const deriveProjectCodeFromEndpoint = (
 		subjectMatch[1].toLowerCase() === "powerpoint"
 			? "ppt"
 			: subjectMatch[1].toLowerCase();
-	return `${subject.toUpperCase()}_P${String(projectNumber).padStart(2, "0")}`;
+	const group = subjectMatch[2]?.toUpperCase();
+	const projectSuffix = `P${String(projectNumber).padStart(2, "0")}`;
+	return group
+		? `${subject.toUpperCase()}_${group}_${projectSuffix}`
+		: `${subject.toUpperCase()}_${projectSuffix}`;
 };
 
 export const resolveEndpointsBySubjectAndPractice = (
 	allEndpoints: GradingEndpointInfo[],
 	subjectCode: SubjectCode,
-	practiceCode: PracticeCode,
+	presetCode: AssignmentPresetCode,
 ): GradingEndpointInfo[] => {
 	const subjectEndpoints = allEndpoints.filter((endpoint) => {
 		const endpointSubject = (endpoint.subject || "excel").toLowerCase();
@@ -247,24 +288,30 @@ export const resolveEndpointsBySubjectAndPractice = (
 		return endpointSubject === subjectCode;
 	});
 
-	if (practiceCode === "exam_review") {
-		const examReviewNumbers =
-			subjectCode === "word"
-				? EXAM_REVIEW_PROJECT_NUMBERS_WORD
-				: EXAM_REVIEW_PROJECT_NUMBERS_EXCEL;
-
+	if (presetCode === "otth_odd" || presetCode === "otth_even") {
 		return subjectEndpoints.filter((endpoint) => {
-			const match = endpoint.endpoint.match(/project(\d{1,2})$/i);
-			if (!match) return false;
+			const normalizedEndpoint = endpoint.endpoint
+				.trim()
+				.replace(/\\/g, "/")
+				.toLowerCase();
+			if (!normalizedEndpoint.includes("/practice")) return false;
 
-			const projectNumber = Number.parseInt(match[1], 10);
-			return examReviewNumbers.includes(projectNumber);
+			const projectNumber = extractProjectNumberFromEndpoint(endpoint.endpoint);
+			if (!projectNumber) return false;
+
+			const isEven = projectNumber % 2 === 0;
+			return presetCode === "otth_even" ? isEven : !isEven;
 		});
 	}
 
-	return subjectEndpoints.filter(
-		(endpoint) => (endpoint.practiceCode || "").toLowerCase() === practiceCode,
-	);
+	const groupPrefix = `${subjectCode}/${presetCode}/`;
+	return subjectEndpoints.filter((endpoint) => {
+		const normalizedEndpoint = endpoint.endpoint
+			.trim()
+			.replace(/\\/g, "/")
+			.toLowerCase();
+		return normalizedEndpoint.startsWith(groupPrefix);
+	});
 };
 
 export const convertAutoScoreToAssignmentScale = (

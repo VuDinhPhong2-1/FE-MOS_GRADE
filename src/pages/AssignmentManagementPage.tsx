@@ -14,6 +14,16 @@ import type {
 } from "../types/assignment.types";
 import type { Class } from "../types/class.types";
 import type { StudentResponse } from "../types/student.types";
+import {
+	ASSIGNMENT_PRESET_OPTIONS,
+	type AssignmentPresetCode,
+	type SubjectCode as QuickCreateSubjectCode,
+} from "../features/grading/types/gradingFeature.types";
+import {
+	buildBulkAssignmentDrafts as buildSharedBulkAssignmentDrafts,
+	deriveExamTypeFromPreset,
+	resolveEndpointsBySubjectAndPractice,
+} from "../features/grading/utils/gradingUtils";
 
 type SubjectCode = "excel" | "word" | "ppt";
 type ExamTypeCode = "otth" | "onthi" | "gmetrix";
@@ -66,24 +76,15 @@ const gradingTypeLabels: Record<GradingTypeCode, string> = {
 	manual: "Thủ công",
 };
 
-const quickPracticeOptions = [
-	{ code: "practice01", label: "Practice 01" },
-	{ code: "practice02", label: "Practice 02" },
-	{ code: "practice03", label: "Practice 03" },
-	{ code: "exam_review", label: "Tạo bài ôn thi" },
-] as const;
+const quickPracticeOptions = ASSIGNMENT_PRESET_OPTIONS;
 
-type QuickPracticeCode = (typeof quickPracticeOptions)[number]["code"];
-type QuickSubjectCode = Extract<SubjectCode, "excel" | "word">;
+type QuickPracticeCode = AssignmentPresetCode;
+type QuickSubjectCode = QuickCreateSubjectCode;
 
 const quickSubjectOptions: Array<{ code: QuickSubjectCode; label: string }> = [
 	{ code: "excel", label: "Excel" },
 	{ code: "word", label: "Word" },
-];
-
-const examReviewProjectNumbersExcel = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22];
-const examReviewProjectNumbersWord = [
-	1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 20, 22,
+	{ code: "ppt", label: "PowerPoint" },
 ];
 
 const normalizeText = (value: string) =>
@@ -121,7 +122,9 @@ const getProjectNumberFromEndpoint = (endpoint?: string) => {
 
 const getProjectCodeForSubject = (endpoint: string) => {
 	const projectNumber = getProjectNumberFromEndpoint(endpoint);
-	const subjectMatch = endpoint.match(/^(excel|word|ppt|powerpoint)\//i);
+	const subjectMatch = endpoint.match(
+		/^(excel|word|ppt|powerpoint)(?:\/(exam0[1-3]|practice0[1-3]))?\//i,
+	);
 
 	if (!projectNumber || !subjectMatch) {
 		return getProjectCodeFromEndpoint(endpoint) || undefined;
@@ -131,7 +134,11 @@ const getProjectCodeForSubject = (endpoint: string) => {
 		subjectMatch[1].toLowerCase() === "powerpoint"
 			? "ppt"
 			: subjectMatch[1].toLowerCase();
-	return `${subject.toUpperCase()}_P${String(projectNumber).padStart(2, "0")}`;
+	const group = subjectMatch[2]?.toUpperCase();
+	const projectSuffix = `P${String(projectNumber).padStart(2, "0")}`;
+	return group
+		? `${subject.toUpperCase()}_${group}_${projectSuffix}`
+		: `${subject.toUpperCase()}_${projectSuffix}`;
 };
 
 const buildDefaultNameFromEndpoint = (endpoint?: GradingEndpointInfo) => {
@@ -140,48 +147,28 @@ const buildDefaultNameFromEndpoint = (endpoint?: GradingEndpointInfo) => {
 };
 
 const resolveQuickExamType = (practiceCode: QuickPracticeCode): ExamTypeCode =>
-	practiceCode === "exam_review" ? "onthi" : "otth";
+	deriveExamTypeFromPreset(practiceCode);
 
 const resolveQuickEndpoints = (
 	endpoints: GradingEndpointInfo[],
 	subjectCode: QuickSubjectCode,
 	practiceCode: QuickPracticeCode,
-) => {
-	const subjectEndpoints = endpoints.filter((endpoint) => {
-		const endpointSubject = (
-			endpoint.subject ||
-			endpoint.endpoint.split("/")[0] ||
-			""
-		).toLowerCase();
-
-		if (subjectCode === "excel") {
-			return endpointSubject === "excel" || !endpoint.subject;
-		}
-
-		return endpointSubject === subjectCode;
-	});
-
-	if (practiceCode === "exam_review") {
-		const projectNumbers =
-			subjectCode === "word"
-				? examReviewProjectNumbersWord
-				: examReviewProjectNumbersExcel;
-		return subjectEndpoints.filter((endpoint) => {
-			const projectNumber = getProjectNumberFromEndpoint(endpoint.endpoint);
-			return projectNumber !== null && projectNumbers.includes(projectNumber);
-		});
-	}
-
-	return subjectEndpoints.filter(
-		(endpoint) => (endpoint.practiceCode || "").toLowerCase() === practiceCode,
-	);
-};
+): GradingEndpointInfo[] =>
+	resolveEndpointsBySubjectAndPractice(endpoints, subjectCode, practiceCode);
 
 const buildQuickAssignmentDrafts = (
 	endpoints: GradingEndpointInfo[],
 	previousDrafts: QuickAssignmentDraft[],
 	practiceCode: QuickPracticeCode,
+	subjectCode: QuickSubjectCode,
 ): QuickAssignmentDraft[] => {
+	return buildSharedBulkAssignmentDrafts(
+		endpoints,
+		previousDrafts,
+		practiceCode,
+		subjectCode,
+	);
+
 	const previousByEndpoint = new Map(
 		previousDrafts.map((draft) => [draft.endpoint, draft]),
 	);
@@ -190,12 +177,12 @@ const buildQuickAssignmentDrafts = (
 		const previous = previousByEndpoint.get(endpoint.endpoint);
 		const previousName = previous?.name.trim() || "";
 		const defaultName =
-			practiceCode === "exam_review"
+			(practiceCode as string) === "exam_review"
 				? `${endpoint.displayName} - Ôn thi`
 				: endpoint.displayName;
 		const legacyExamReviewPrefixName = `Ôn thi - ${endpoint.displayName}`;
 		const shouldResetExamReviewName =
-			practiceCode === "exam_review" &&
+			(practiceCode as string) === "exam_review" &&
 			(previousName === "" ||
 				previousName === endpoint.displayName ||
 				previousName === legacyExamReviewPrefixName ||
@@ -540,9 +527,10 @@ const AssignmentManagementPage = ({
 				quickPracticeEndpoints,
 				previousDrafts,
 				quickPracticeCode,
+				quickSubject,
 			),
 		);
-	}, [quickPracticeEndpoints, quickPracticeCode]);
+	}, [quickPracticeEndpoints, quickPracticeCode, quickSubject]);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: Reset publication token when exam configuration changes
 	useEffect(() => {
@@ -572,7 +560,7 @@ const AssignmentManagementPage = ({
 			...prev,
 			gradingApiEndpoint: endpointValue,
 			projectCode:
-				getProjectCodeFromEndpoint(endpointValue) || prev.projectCode,
+				getProjectCodeForSubject(endpointValue) || prev.projectCode,
 			maxScore: endpoint?.maxScore ? String(endpoint.maxScore) : prev.maxScore,
 			name: prev.name.trim()
 				? prev.name
@@ -622,6 +610,7 @@ const AssignmentManagementPage = ({
 				quickPracticeEndpoints,
 				previousDrafts.map((draft) => ({ ...draft, name: "" })),
 				quickPracticeCode,
+				quickSubject,
 			),
 		);
 	};
@@ -713,9 +702,12 @@ const AssignmentManagementPage = ({
 			quickSubject,
 			practiceCode,
 		);
-		const drafts = buildQuickAssignmentDrafts(endpoints, [], practiceCode).map(
-			(draft) => ({ ...draft, selected: true }),
-		);
+		const drafts = buildQuickAssignmentDrafts(
+			endpoints,
+			[],
+			practiceCode,
+			quickSubject,
+		).map((draft) => ({ ...draft, selected: true }));
 		const practice = quickPracticeOptions.find(
 			(item) => item.code === practiceCode,
 		);
@@ -1801,11 +1793,10 @@ const AssignmentManagementPage = ({
 										</div>
 									</div>
 
-									{quickPracticeCode === "exam_review" && (
+									{quickPracticeCode.startsWith("otth") && (
 										<p className="mt-3 rounded-2xl border border-indigo-300 bg-indigo-50 dark:bg-indigo-950/30 p-2.5 text-xs text-indigo-800 dark:text-indigo-200">
-											{quickSubject === "excel"
-												? "Ôn thi Excel dùng project chẵn: 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22."
-												: "Ôn thi Word dùng project lẻ: 1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23 và thêm 20, 22."}
+											OTTH dùng lại rule Practice hiện có và chỉ lọc project theo
+											số lẻ/chẵn.
 										</p>
 									)}
 

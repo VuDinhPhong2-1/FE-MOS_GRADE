@@ -10,9 +10,24 @@ export const PRACTICE_OPTIONS = [
 
 export type PracticeCode = (typeof PRACTICE_OPTIONS)[number]["code"];
 
+export const ASSIGNMENT_PRESET_OPTIONS = [
+	{ code: "exam01", label: "Exam 1" },
+	{ code: "exam02", label: "Exam 2" },
+	{ code: "exam03", label: "Exam 3" },
+	{ code: "practice01", label: "Practice 1" },
+	{ code: "practice02", label: "Practice 2" },
+	{ code: "practice03", label: "Practice 3" },
+	{ code: "otth_odd", label: "OTTH lẻ" },
+	{ code: "otth_even", label: "OTTH chẵn" },
+] as const;
+
+export type AssignmentPresetCode =
+	(typeof ASSIGNMENT_PRESET_OPTIONS)[number]["code"];
+
 export const SUBJECT_OPTIONS = [
 	{ code: "excel", label: "Excel" },
 	{ code: "word", label: "Word" },
+	{ code: "ppt", label: "PowerPoint" },
 ] as const;
 
 export type SubjectCode = (typeof SUBJECT_OPTIONS)[number]["code"];

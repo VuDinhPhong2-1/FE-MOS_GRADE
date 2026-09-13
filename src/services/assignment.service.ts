@@ -29,6 +29,17 @@ const normalizeProjectEndpoint = (endpoint?: string): string | undefined => {
 		return `excel/project${excelMatch[1].padStart(2, "0")}`;
 	}
 
+	const groupedMatch = normalized.match(
+		/^(excel|word|ppt|powerpoint)\/(exam0[1-3]|practice0[1-3])\/project(\d{1,2})$/i,
+	);
+	if (groupedMatch) {
+		const subject =
+			groupedMatch[1].toLowerCase() === "powerpoint"
+				? "ppt"
+				: groupedMatch[1].toLowerCase();
+		return `${subject}/${groupedMatch[2].toLowerCase()}/project${groupedMatch[3].padStart(2, "0")}`;
+	}
+
 	return normalized;
 };
 

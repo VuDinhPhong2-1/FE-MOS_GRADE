@@ -9,9 +9,9 @@ import {
 import type React from "react";
 import type { GradingEndpointInfo } from "../../../../types/assignment.types";
 import {
+	ASSIGNMENT_PRESET_OPTIONS,
+	type AssignmentPresetCode,
 	type BulkAssignmentDraft,
-	PRACTICE_OPTIONS,
-	type PracticeCode,
 	SUBJECT_OPTIONS,
 	type SubjectCode,
 } from "../../types/gradingFeature.types";
@@ -19,14 +19,14 @@ import { resolveEndpointsBySubjectAndPractice } from "../../utils/gradingUtils";
 
 interface CreateAssignmentPanelProps {
 	newAssignmentSubject: SubjectCode;
-	newAssignmentPracticeCode: PracticeCode;
+	newAssignmentPracticeCode: AssignmentPresetCode;
 	bulkAssignmentDrafts: BulkAssignmentDraft[];
 	bulkAssignmentDescription: string;
 	isCreatingAssignment: boolean;
 	selectedBulkAssignmentCount: number;
 	gradingEndpoints: GradingEndpointInfo[];
 	onSubjectChange: (subject: SubjectCode) => void;
-	onPracticeChange: (practice: PracticeCode) => void;
+	onPracticeChange: (practice: AssignmentPresetCode) => void;
 	onDescriptionChange: (desc: string) => void;
 	onToggleDraftSelection: (endpoint: string) => void;
 	onDraftNameChange: (endpoint: string, name: string) => void;
@@ -34,7 +34,7 @@ interface CreateAssignmentPanelProps {
 	onClearDrafts: () => void;
 	onResetDraftNames: () => void;
 	onCreateBulkAssignments: () => void;
-	onQuickCreatePractice: (practice: PracticeCode) => void;
+	onQuickCreatePractice: (practice: AssignmentPresetCode) => void;
 	onBack: () => void;
 }
 
@@ -43,7 +43,7 @@ const subjectSelectOptions = SUBJECT_OPTIONS.map((s) => ({
 	label: s.label,
 }));
 
-const practiceSelectOptions = PRACTICE_OPTIONS.map((p) => ({
+const practiceSelectOptions = ASSIGNMENT_PRESET_OPTIONS.map((p) => ({
 	value: p.code,
 	label: p.label,
 }));
@@ -99,16 +99,15 @@ export const CreateAssignmentPanel: React.FC<CreateAssignmentPanelProps> = ({
 						label="Chọn phần *"
 						options={practiceSelectOptions}
 						value={newAssignmentPracticeCode}
-						onChange={(val) => onPracticeChange(val as PracticeCode)}
+						onChange={(val) => onPracticeChange(val as AssignmentPresetCode)}
 						fullWidth
 					/>
 				</div>
 
-				{newAssignmentPracticeCode === "exam_review" && (
+				{newAssignmentPracticeCode.startsWith("otth") && (
 					<div className="mb-4 p-3 rounded-2xl bg-m3-primary/10 border border-m3-primary/20 text-xs text-m3-primary font-medium">
-						{newAssignmentSubject === "excel"
-							? "Ôn thi Excel gồm các project số chẵn: 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22."
-							: "Ôn thi Word gồm các project số lẻ: 1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23 và thêm 20, 22."}
+						OTTH dùng lại rule Practice hiện có và chỉ lọc project theo số
+						lẻ/chẵn.
 					</div>
 				)}
 
@@ -117,7 +116,7 @@ export const CreateAssignmentPanel: React.FC<CreateAssignmentPanelProps> = ({
 						Tạo nhanh 1 chạm ({newAssignmentSubject.toUpperCase()})
 					</p>
 					<div className="mt-2.5 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
-						{PRACTICE_OPTIONS.map((practice) => {
+						{ASSIGNMENT_PRESET_OPTIONS.map((practice) => {
 							const practiceEndpoints = resolveEndpointsBySubjectAndPractice(
 								gradingEndpoints,
 								newAssignmentSubject,

@@ -3272,11 +3272,7 @@ const XmlGradingRulesPage = () => {
 										const projectExpanded = expandedProjects[pi] ?? false;
 										return (
 											<div
-												key={
-													project.projectCode ||
-													project.projectName ||
-													`project-${project.maxScore}`
-												}
+												key={`project-${pi}`}
 												className="group overflow-hidden rounded-3xl bg-m3-surface-container-low shadow-xs transition hover:shadow-md p-4 text-m3-on-surface"
 											>
 												{/* Project header */}

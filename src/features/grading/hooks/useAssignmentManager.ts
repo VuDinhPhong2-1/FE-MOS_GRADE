@@ -7,10 +7,10 @@ import type {
 	UpdateAssignmentRequest,
 } from "../../../types/assignment.types";
 import {
+	ASSIGNMENT_PRESET_OPTIONS,
+	type AssignmentPresetCode,
 	type BulkAssignmentDraft,
 	type GradingMode,
-	PRACTICE_OPTIONS,
-	type PracticeCode,
 	type SubjectCode,
 } from "../types/gradingFeature.types";
 import {
@@ -46,7 +46,7 @@ export const useAssignmentManager = ({
 	const [newAssignmentSubject, setNewAssignmentSubject] =
 		useState<SubjectCode>("excel");
 	const [newAssignmentPracticeCode, setNewAssignmentPracticeCode] =
-		useState<PracticeCode>("practice01");
+		useState<AssignmentPresetCode>("practice01");
 	const [bulkAssignmentDrafts, setBulkAssignmentDrafts] = useState<
 		BulkAssignmentDraft[]
 	>([]);
@@ -107,9 +107,15 @@ export const useAssignmentManager = ({
 				newAssignmentPracticeEndpoints,
 				previousDrafts,
 				newAssignmentPracticeCode,
+				newAssignmentSubject,
 			),
 		);
-	}, [chooseMode, newAssignmentPracticeEndpoints, newAssignmentPracticeCode]);
+	}, [
+		chooseMode,
+		newAssignmentPracticeEndpoints,
+		newAssignmentPracticeCode,
+		newAssignmentSubject,
+	]);
 
 	useEffect(() => {
 		if (chooseMode !== "manage") {
@@ -160,7 +166,12 @@ export const useAssignmentManager = ({
 
 	const handleResetBulkAssignmentNames = () => {
 		setBulkAssignmentDrafts((previousDrafts) =>
-			previousDrafts.map((draft) => ({ ...draft, name: draft.displayName })),
+			buildBulkAssignmentDrafts(
+				newAssignmentPracticeEndpoints,
+				previousDrafts.map((draft) => ({ ...draft, name: "" })),
+				newAssignmentPracticeCode,
+				newAssignmentSubject,
+			),
 		);
 	};
 
@@ -169,7 +180,7 @@ export const useAssignmentManager = ({
 		options?: {
 			closeOnSuccess?: boolean;
 			practiceLabel?: string;
-			practiceCode?: PracticeCode;
+			practiceCode?: AssignmentPresetCode;
 		},
 	) => {
 		if (isCreatingAssignment) return;
@@ -258,9 +269,11 @@ export const useAssignmentManager = ({
 		});
 	};
 
-	const handleQuickCreateByPractice = async (practiceCode: PracticeCode) => {
-		const practice = PRACTICE_OPTIONS.find(
-			(item: (typeof PRACTICE_OPTIONS)[number]) => item.code === practiceCode,
+	const handleQuickCreateByPractice = async (
+		practiceCode: AssignmentPresetCode,
+	) => {
+		const practice = ASSIGNMENT_PRESET_OPTIONS.find(
+			(item) => item.code === practiceCode,
 		);
 		const practiceEndpoints = resolveEndpointsBySubjectAndPractice(
 			gradingEndpoints,
@@ -271,6 +284,7 @@ export const useAssignmentManager = ({
 			practiceEndpoints,
 			[],
 			practiceCode,
+			newAssignmentSubject,
 		).map((draft) => ({ ...draft, selected: true }));
 
 		if (quickDrafts.length === 0) {
