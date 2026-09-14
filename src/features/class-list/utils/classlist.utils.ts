@@ -4,7 +4,7 @@ export const OBJECT_ID_REGEX = /^[a-fA-F0-9]{24}$/;
 export const VIETNAMESE_TONE_MARKS_REGEX = /[\u0300-\u036f]/g;
 
 export const GRADE_OPTIONS = [
-	{ label: "-- Không chọn khối --", value: "" },
+	{ label: "Không chọn khối", value: "" },
 	{ label: "Khối 10", value: "10" },
 	{ label: "Khối 11", value: "11" },
 	{ label: "Khối 12", value: "12" },

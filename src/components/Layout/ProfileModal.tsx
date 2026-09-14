@@ -2,7 +2,6 @@ import {
 	Button,
 	Dialog,
 	DialogBody,
-	DialogClose,
 	DialogContent,
 	DialogDescription,
 	DialogFooter,
@@ -11,7 +10,6 @@ import {
 	DialogPortal,
 	DialogTitle,
 	Icon,
-	IconButton,
 	TextField,
 } from "@bug-on/m3-expressive";
 import { type FormEvent, useEffect, useState } from "react";
@@ -129,23 +127,12 @@ export const ProfileModal = ({
 									Cập nhật hồ sơ cá nhân của bạn
 								</DialogDescription>
 							</DialogHeader>
-							<DialogClose asChild>
-								<IconButton
-									type="button"
-									size="sm"
-									colorStyle="standard"
-									aria-label="Đóng hộp thoại"
-									onClick={onClose}
-								>
-									<Icon name="close" />
-								</IconButton>
-							</DialogClose>
 						</div>
 
 						{/* Body */}
 						<DialogBody className="flex flex-1 flex-col gap-5 overflow-y-auto px-6 pt-2 pb-6 pr-5">
 							{/* Avatar Preview & Profile Summary Card */}
-							<div className="flex items-center gap-4 rounded-xl bg-m3-surface-container p-3 mb-4">
+							<div className="flex items-center gap-4 rounded-xl bg-m3-surface-container p-3 mb-4 text-m3-on-surface">
 								<div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full bg-m3-surface-container-highest ring-2 ring-m3-outline-variant/30">
 									{form.avatar ? (
 										<img
@@ -282,7 +269,7 @@ export const ProfileModal = ({
 							<div className="flex items-center gap-2.5">
 								<Button
 									type="button"
-									colorStyle="tonal"
+									colorStyle="text"
 									size="sm"
 									onClick={onClose}
 									disabled={saving}

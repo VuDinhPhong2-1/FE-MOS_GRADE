@@ -1,7 +1,18 @@
 import { Button, Icon, ProgressIndicator } from "@bug-on/m3-expressive";
 import { type FormEvent, useEffect, useMemo, useState } from "react";
+import { showConfirm } from "../components/common";
 import { useAuth } from "../context/AuthContext";
 import { usePageHeader } from "../context/PageActionsContext";
+import {
+	ASSIGNMENT_PRESET_OPTIONS,
+	type AssignmentPresetCode,
+	type SubjectCode as QuickCreateSubjectCode,
+} from "../features/grading/types/gradingFeature.types";
+import {
+	buildBulkAssignmentDrafts as buildSharedBulkAssignmentDrafts,
+	deriveExamTypeFromPreset,
+	resolveEndpointsBySubjectAndPractice,
+} from "../features/grading/utils/gradingUtils";
 import { assignmentService } from "../services/assignment.service";
 import { classService } from "../services/class.service";
 import { examPublicationService } from "../services/exam-publication.service";
@@ -14,16 +25,6 @@ import type {
 } from "../types/assignment.types";
 import type { Class } from "../types/class.types";
 import type { StudentResponse } from "../types/student.types";
-import {
-	ASSIGNMENT_PRESET_OPTIONS,
-	type AssignmentPresetCode,
-	type SubjectCode as QuickCreateSubjectCode,
-} from "../features/grading/types/gradingFeature.types";
-import {
-	buildBulkAssignmentDrafts as buildSharedBulkAssignmentDrafts,
-	deriveExamTypeFromPreset,
-	resolveEndpointsBySubjectAndPractice,
-} from "../features/grading/utils/gradingUtils";
 
 type SubjectCode = "excel" | "word" | "ppt";
 type ExamTypeCode = "otth" | "onthi" | "gmetrix";
@@ -161,44 +162,13 @@ const buildQuickAssignmentDrafts = (
 	previousDrafts: QuickAssignmentDraft[],
 	practiceCode: QuickPracticeCode,
 	subjectCode: QuickSubjectCode,
-): QuickAssignmentDraft[] => {
-	return buildSharedBulkAssignmentDrafts(
+): QuickAssignmentDraft[] =>
+	buildSharedBulkAssignmentDrafts(
 		endpoints,
 		previousDrafts,
 		practiceCode,
 		subjectCode,
 	);
-
-	const previousByEndpoint = new Map(
-		previousDrafts.map((draft) => [draft.endpoint, draft]),
-	);
-
-	return endpoints.map((endpoint) => {
-		const previous = previousByEndpoint.get(endpoint.endpoint);
-		const previousName = previous?.name.trim() || "";
-		const defaultName =
-			(practiceCode as string) === "exam_review"
-				? `${endpoint.displayName} - Ôn thi`
-				: endpoint.displayName;
-		const legacyExamReviewPrefixName = `Ôn thi - ${endpoint.displayName}`;
-		const shouldResetExamReviewName =
-			(practiceCode as string) === "exam_review" &&
-			(previousName === "" ||
-				previousName === endpoint.displayName ||
-				previousName === legacyExamReviewPrefixName ||
-				previousName === `On thi - ${endpoint.displayName}` ||
-				previousName === `${endpoint.displayName} - On thi`);
-
-		return {
-			endpoint: endpoint.endpoint,
-			displayName: endpoint.displayName || endpoint.endpoint,
-			maxScore: endpoint.maxScore || 100,
-			name:
-				previous && !shouldResetExamReviewName ? previous.name : defaultName,
-			selected: previous ? previous.selected : true,
-		};
-	});
-};
 
 const buildStudentDisplayName = (
 	student?: Pick<
@@ -559,8 +529,7 @@ const AssignmentManagementPage = ({
 		setForm((prev) => ({
 			...prev,
 			gradingApiEndpoint: endpointValue,
-			projectCode:
-				getProjectCodeForSubject(endpointValue) || prev.projectCode,
+			projectCode: getProjectCodeForSubject(endpointValue) || prev.projectCode,
 			maxScore: endpoint?.maxScore ? String(endpoint.maxScore) : prev.maxScore,
 			name: prev.name.trim()
 				? prev.name
@@ -925,9 +894,12 @@ const AssignmentManagementPage = ({
 	};
 
 	const handleDelete = async (assignment: Assignment) => {
-		const confirmed = window.confirm(
-			`Xóa bài tập "${assignment.name}"? Thao tác này phụ thuộc vào chính sách xóa hiện tại của backend.`,
-		);
+		const confirmed = await showConfirm({
+			title: "Xác nhận xóa bài tập",
+			message: `Xóa bài tập "${assignment.name}"? Thao tác này phụ thuộc vào chính sách xóa hiện tại của backend.`,
+			confirmLabel: "Xác nhận xóa",
+			variant: "destructive",
+		});
 
 		if (!confirmed) {
 			return;
@@ -1795,8 +1767,8 @@ const AssignmentManagementPage = ({
 
 									{quickPracticeCode.startsWith("otth") && (
 										<p className="mt-3 rounded-2xl border border-indigo-300 bg-indigo-50 dark:bg-indigo-950/30 p-2.5 text-xs text-indigo-800 dark:text-indigo-200">
-											OTTH dùng lại rule Practice hiện có và chỉ lọc project theo
-											số lẻ/chẵn.
+											OTTH dùng lại rule Practice hiện có và chỉ lọc project
+											theo số lẻ/chẵn.
 										</p>
 									)}
 

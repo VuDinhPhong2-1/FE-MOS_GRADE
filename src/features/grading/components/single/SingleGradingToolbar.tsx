@@ -55,7 +55,7 @@ export const SingleGradingToolbar: React.FC<SingleGradingToolbarProps> = ({
 
 	const assignmentSelectOptions = useMemo(
 		() => [
-			{ value: "", label: "-- Chọn bài tập --" },
+			{ value: "", label: "Chọn bài tập" },
 			...autoAssignments.map((a) => ({
 				value: a.id,
 				label: `${a.name} (Tự động - Điểm tối đa: ${a.maxScore})`,

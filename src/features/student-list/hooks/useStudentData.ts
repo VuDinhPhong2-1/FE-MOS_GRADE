@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { showAlert } from "../../../components/common";
 import type { Class } from "../../../types/class.types";
 import type { Student, StudentImportItem } from "../../../types/student.types";
 import type { CompetencyLevel } from "../types";
@@ -77,12 +78,20 @@ export const useStudentData = ({
 
 	const handleSaveStudents = useCallback(async () => {
 		if (readOnly) {
-			alert("Bạn chỉ có quyền xem lớp này.");
+			void showAlert({
+				title: "Không có quyền",
+				message: "Bạn chỉ có quyền xem lớp này.",
+				variant: "warning",
+			});
 			return;
 		}
 
 		if (tempStudents.length === 0) {
-			alert("Không có học sinh mới để lưu!");
+			void showAlert({
+				title: "Thông báo",
+				message: "Không có học sinh mới để lưu!",
+				variant: "info",
+			});
 			return;
 		}
 
@@ -100,14 +109,22 @@ export const useStudentData = ({
 			setTempStudents([]);
 			setFlashMessage("Lưu danh sách học sinh thành công.");
 		} catch {
-			alert("Có lỗi xảy ra khi import học sinh!");
+			void showAlert({
+				title: "Lỗi import",
+				message: "Có lỗi xảy ra khi import học sinh!",
+				variant: "error",
+			});
 		}
 	}, [bulkImportMutation, readOnly, selectedClass.id, tempStudents]);
 
 	const handleDeleteStudent = useCallback(
 		async (student: Student) => {
 			if (readOnly) {
-				alert("Bạn chỉ có quyền xem lớp này.");
+				void showAlert({
+					title: "Không có quyền",
+					message: "Bạn chỉ có quyền xem lớp này.",
+					variant: "warning",
+				});
 				return;
 			}
 
@@ -121,7 +138,12 @@ export const useStudentData = ({
 				await deleteStudentMutation.mutateAsync(student.id);
 				setFlashMessage("Xóa học sinh thành công.");
 			} catch (err) {
-				alert(err instanceof Error ? err.message : "Không thể xóa học sinh.");
+				void showAlert({
+					title: "Lỗi xóa học sinh",
+					message:
+						err instanceof Error ? err.message : "Không thể xóa học sinh.",
+					variant: "error",
+				});
 			}
 		},
 		[deleteStudentMutation, readOnly],
@@ -164,11 +186,14 @@ export const useStudentData = ({
 				});
 				setFlashMessage("Cập nhật năng lực thành công.");
 			} catch (err) {
-				alert(
-					err instanceof Error
-						? err.message
-						: "Không thể cập nhật năng lực học sinh.",
-				);
+				void showAlert({
+					title: "Lỗi cập nhật",
+					message:
+						err instanceof Error
+							? err.message
+							: "Không thể cập nhật năng lực học sinh.",
+					variant: "error",
+				});
 			} finally {
 				setInlineSavingStudentId(null);
 			}
@@ -201,11 +226,14 @@ export const useStudentData = ({
 				});
 				setFlashMessage("Cập nhật trạng thái thi thành công.");
 			} catch (err) {
-				alert(
-					err instanceof Error
-						? err.message
-						: "Không thể cập nhật trạng thái thi.",
-				);
+				void showAlert({
+					title: "Lỗi cập nhật",
+					message:
+						err instanceof Error
+							? err.message
+							: "Không thể cập nhật trạng thái thi.",
+					variant: "error",
+				});
 			} finally {
 				setInlineSavingStudentId(null);
 			}
@@ -215,12 +243,21 @@ export const useStudentData = ({
 
 	const handleSyncStudentMetadataToGoogleSheet = useCallback(async () => {
 		if (readOnly) {
-			alert("Bạn chỉ có quyền xem lớp này.");
+			void showAlert({
+				title: "Không có quyền",
+				message: "Bạn chỉ có quyền xem lớp này.",
+				variant: "warning",
+			});
 			return;
 		}
 
 		if (tempStudents.length > 0) {
-			alert("Vui lòng lưu danh sách học sinh trước khi đồng bộ Google Sheet.");
+			void showAlert({
+				title: "Cần lưu danh sách",
+				message:
+					"Vui lòng lưu danh sách học sinh trước khi đồng bộ Google Sheet.",
+				variant: "warning",
+			});
 			return;
 		}
 
@@ -231,11 +268,14 @@ export const useStudentData = ({
 					"Đã đồng bộ xếp loại và ghi chú học sinh lên Google Sheet.",
 			);
 		} catch (err) {
-			alert(
-				err instanceof Error
-					? err.message
-					: "Không thể đồng bộ xếp loại và ghi chú lên Google Sheet.",
-			);
+			void showAlert({
+				title: "Lỗi đồng bộ",
+				message:
+					err instanceof Error
+						? err.message
+						: "Không thể đồng bộ xếp loại và ghi chú lên Google Sheet.",
+				variant: "error",
+			});
 		}
 	}, [readOnly, syncMetadataMutation, tempStudents.length]);
 

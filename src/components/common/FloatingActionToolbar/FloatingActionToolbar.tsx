@@ -22,6 +22,7 @@ import type { FloatingActionToolbarProps } from "./types";
 
 const FloatingActionToolbarComponent = ({
 	startFab,
+	endFab,
 	actions,
 	search,
 	infoSlot,
@@ -202,7 +203,7 @@ const FloatingActionToolbarComponent = ({
 									onQueryChange={search.onQueryChange}
 									onSearch={search.onQueryChange}
 									active={false}
-									onActiveChange={() => { }}
+									onActiveChange={() => {}}
 									placeholder={search.placeholder}
 									aria-label={search.ariaLabel}
 									className={search.widthClassName || "w-56 sm:w-72 md:w-80"}
@@ -250,6 +251,31 @@ const FloatingActionToolbarComponent = ({
 			{infoSlot && infoSlotPosition === "after" && !isSearchActive && (
 				<div className="flex shrink-0 items-center">{infoSlot}</div>
 			)}
+
+			{/* End FAB (hiển thị sau toolbar, tự thu gọn mượt mà khi search active) */}
+			<AnimatePresence initial={false}>
+				{endFab && !isSearchActive && (
+					<motion.div
+						key="floating-end-fab"
+						initial={{ opacity: 0, scale: 0.6, width: 0 }}
+						animate={{
+							opacity: 1,
+							scale: 1,
+							width: "auto",
+							transition: FAST_SPATIAL_SPRING,
+						}}
+						exit={{
+							opacity: 0,
+							scale: 0.6,
+							width: 0,
+							transition: { duration: 0.14, ease: "easeInOut" },
+						}}
+						className="flex shrink-0 items-center justify-center p-2 -m-2 overflow-hidden"
+					>
+						{endFab}
+					</motion.div>
+				)}
+			</AnimatePresence>
 
 			{/* FAB đóng tìm kiếm khi search đang active */}
 			<AnimatePresence initial={false}>

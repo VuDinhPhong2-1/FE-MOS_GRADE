@@ -1,4 +1,10 @@
 import {
+	Button,
+	DatePicker,
+	DatePickerDialog,
+	useDatePickerState,
+} from "@bug-on/m3-expressive";
+import {
 	type FormEvent,
 	useCallback,
 	useEffect,
@@ -11,11 +17,13 @@ import {
 	AttendanceModal,
 	type ComputerRoomFormState,
 	createDefaultForm,
+	formatDateViFromYmd,
 	getWeekStart,
 	isDateInWeek,
 	normalizeTimeValue,
 	parseApiDateToLocalYmd,
 	RoomManagerModal,
+	ScheduleActionToolbar,
 	ScheduleFormModal,
 	type ScheduleFormState,
 	ScheduleTable,
@@ -23,6 +31,8 @@ import {
 	useAttendancePanel,
 	useRoomManager,
 	useScheduleData,
+	utcMsToYmd,
+	ymdToUtcMs,
 } from "../features/teacher-schedule";
 import { scheduleService } from "../services/schedule.service";
 import type {
@@ -74,6 +84,36 @@ const TeacherSchedule = () => {
 		loadComputerRoomsForForm,
 		resolveSchoolNameForSchedule,
 	} = useScheduleData({ getAccessToken });
+
+	// State for Date Picker dialog
+	const [datePickerOpen, setDatePickerOpen] = useState(false);
+
+	const datePickerState = useDatePickerState({
+		initialSelectedDateMs: weekStart ? ymdToUtcMs(weekStart) : null,
+		locale: { locale: "vi-VN", weekStartsOn: 1 },
+	});
+
+	const { selectDate, navigateToMonth } = datePickerState;
+
+	// Sync datePickerState when weekStart changes (e.g. from Tuần trước / Tuần sau)
+	useEffect(() => {
+		if (weekStart) {
+			const ms = ymdToUtcMs(weekStart);
+			selectDate(ms);
+			const [y, m] = weekStart.split("-").map(Number);
+			if (y && m) {
+				navigateToMonth(y, m - 1);
+			}
+		}
+	}, [weekStart, selectDate, navigateToMonth]);
+
+	const handleConfirmDate = useCallback(() => {
+		if (datePickerState.selectedDateMs !== null) {
+			const ymd = utcMsToYmd(datePickerState.selectedDateMs);
+			setWeekStart(toYmd(getWeekStart(new Date(`${ymd}T00:00:00`))));
+		}
+		setDatePickerOpen(false);
+	}, [datePickerState.selectedDateMs, setWeekStart]);
 
 	// Hook: Attendance & Reports panel
 	const {
@@ -381,67 +421,38 @@ const TeacherSchedule = () => {
 		[setRoomForm],
 	);
 
-	// Top header actions
+	// Top header info
 	usePageHeader(
 		{
 			title: "Lịch dạy trong tuần",
-			subtitle: "Quản lý lịch giảng dạy, phòng máy và điểm danh theo tuần",
-			actions: [
-				{
-					id: "create-schedule",
-					label: "Thêm lịch",
-					icon: "add",
-					colorStyle: "filled",
-					onClick: openCreate,
-				},
-				{
-					id: "manage-rooms",
-					label: "Quản lý phòng máy",
-					icon: "desktop_windows",
-					colorStyle: "tonal",
-					onClick: () => openRoomManager(form.schoolId || schools[0]?.id),
-				},
-				{
-					id: "copy-next-week",
-					label: copying ? "Đang sao chép..." : "Sao chép tuần sau",
-					icon: "content_copy",
-					colorStyle: "tonal",
-					onClick: () => {
-						void handleCopyToNextWeek();
-					},
-					disabled: copying || loading,
-				},
-			],
+			subtitle: (
+				<span>
+					Tuần:{" "}
+					<strong className="font-semibold text-m3-primary">
+						{formatDateViFromYmd(weekStart)}
+					</strong>{" "}
+					đến{" "}
+					<strong className="font-semibold text-m3-primary">
+						{formatDateViFromYmd(weekEnd)}
+					</strong>
+				</span>
+			),
 		},
-		[
-			openCreate,
-			openRoomManager,
-			form.schoolId,
-			schools,
-			copying,
-			loading,
-			handleCopyToNextWeek,
-		],
+		[weekStart, weekEnd],
 	);
 
 	return (
-		<div className="min-h-full space-y-5 p-1 sm:p-2">
-			{/* Bảng lịch dạy và thanh điều hướng */}
+		<div className="min-h-full space-y-5 pb-20 sm:pb-18">
+			{/* Bảng lịch dạy */}
 			<ScheduleTable
 				schedules={schedules}
 				loading={loading}
 				copying={copying}
-				weekStart={weekStart}
-				weekEnd={weekEnd}
 				todayYmd={todayYmd}
 				nowMinutesInDay={nowMinutesInDay}
 				selectedScheduleIds={selectedScheduleIds}
 				areAllSchedulesSelected={areAllSchedulesSelected}
 				resolveSchoolNameForSchedule={resolveSchoolNameForSchedule}
-				onShiftWeek={shiftWeek}
-				onSelectWeekDate={(dateStr) =>
-					setWeekStart(toYmd(getWeekStart(new Date(`${dateStr}T00:00:00`))))
-				}
 				onToggleSelectAll={toggleSelectAllSchedules}
 				onToggleSelectSchedule={toggleScheduleSelection}
 				onClearSelection={() => setSelectedScheduleIds([])}
@@ -458,6 +469,7 @@ const TeacherSchedule = () => {
 				onDeleteSchedule={(item) => {
 					void handleDeleteSchedule(item);
 				}}
+				hideSelectionBar={true}
 			/>
 
 			{/* Modal điểm danh & báo cáo */}
@@ -542,6 +554,65 @@ const TeacherSchedule = () => {
 				onClassChange={handleFormClassChange}
 				onRoomChange={handleFormRoomChange}
 			/>
+
+			{/* Thanh tác vụ nổi (Floating Action Toolbar) */}
+			<ScheduleActionToolbar
+				weekStart={weekStart}
+				weekEnd={weekEnd}
+				onShiftWeek={shiftWeek}
+				onOpenDatePicker={() => setDatePickerOpen(true)}
+				selectedScheduleIds={selectedScheduleIds}
+				copying={copying}
+				loading={loading}
+				onOpenCreate={openCreate}
+				onOpenRoomManager={() =>
+					openRoomManager(form.schoolId || schools[0]?.id)
+				}
+				onCopyToNextWeek={() => {
+					void handleCopyToNextWeek();
+				}}
+				onCopySelectedToNextWeek={() => {
+					void handleCopySelectedToNextWeek();
+				}}
+				onDeleteSelected={() => {
+					void handleDeleteSelected();
+				}}
+				onClearSelection={() => setSelectedScheduleIds([])}
+			/>
+
+			{/* Modal Date Picker Dialog cho việc chọn tuần */}
+			<DatePickerDialog
+				open={datePickerOpen}
+				onDismiss={() => setDatePickerOpen(false)}
+				title="Chọn ngày trong tuần"
+				className="w-[calc(100vw-2rem)]! sm:w-100! max-w-md!"
+				confirmButton={
+					<Button
+						type="button"
+						colorStyle="filled"
+						size="sm"
+						onClick={handleConfirmDate}
+					>
+						Xác nhận
+					</Button>
+				}
+				dismissButton={
+					<Button
+						type="button"
+						colorStyle="text"
+						size="sm"
+						onClick={() => setDatePickerOpen(false)}
+					>
+						Hủy
+					</Button>
+				}
+			>
+				<DatePicker
+					state={datePickerState}
+					title="Chọn ngày trong tuần"
+					className="w-full! max-w-none!"
+				/>
+			</DatePickerDialog>
 		</div>
 	);
 };

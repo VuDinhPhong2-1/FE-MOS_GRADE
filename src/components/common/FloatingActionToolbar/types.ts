@@ -28,6 +28,13 @@ export interface FloatingActionToolbarProps {
 	startFab?: ReactNode;
 
 	/**
+	 * End FAB hiển thị phía sau (bên phải) Toolbar.
+	 * Thường dùng cho hành động chính như Thêm mới (Add).
+	 * Tự động ẩn/thu gọn mượt mà khi Search active.
+	 */
+	endFab?: ReactNode;
+
+	/**
 	 * Các action buttons tuỳ chỉnh hiển thị khi search không active.
 	 * Ví dụ: Menu lọc, Nút thêm, Nút xuất file...
 	 */

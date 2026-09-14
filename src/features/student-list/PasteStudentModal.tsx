@@ -10,12 +10,12 @@ import {
 	DialogPortal,
 	DialogTitle,
 	Icon,
-	IconButton,
 	TextField,
 	type TextFieldHandle,
 } from "@bug-on/m3-expressive";
 import { AnimatePresence, motion } from "motion/react";
 import { memo, useMemo, useRef, useState } from "react";
+import { DialogHeaderIcon } from "../../components/common";
 import type { Student } from "../../types/student.types";
 import {
 	mapRowsToTempStudents,
@@ -64,7 +64,7 @@ const PasteStudentModalComponent = ({
 		if (readOnly) return;
 		try {
 			const text = await navigator.clipboard.readText();
-			if (!text || !text.trim()) {
+			if (!text?.trim()) {
 				setError("Bộ nhớ tạm không có nội dung văn bản.");
 				return;
 			}
@@ -112,9 +112,7 @@ const PasteStudentModalComponent = ({
 					{/* Header */}
 					<div className="flex items-center justify-between border-b border-m3-outline-variant/40 px-6 pt-5 pb-3">
 						<DialogHeader className="mb-0 flex-row items-center gap-3 space-y-0 text-left">
-							<div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-m3-primary text-m3-on-primary">
-								<Icon name="content_paste" size={20} />
-							</div>
+							<DialogHeaderIcon icon="content_paste" />
 							<div>
 								<DialogTitle className="text-lg font-bold text-m3-on-surface">
 									Dán danh sách học sinh
@@ -124,15 +122,6 @@ const PasteStudentModalComponent = ({
 								</DialogDescription>
 							</div>
 						</DialogHeader>
-						<IconButton
-							type="button"
-							size="sm"
-							colorStyle="standard"
-							aria-label="Đóng"
-							onClick={handleClose}
-						>
-							<Icon name="close" />
-						</IconButton>
 					</div>
 
 					<DialogBody className="flex flex-1 flex-col gap-4 overflow-y-auto px-6 py-4">

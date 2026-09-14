@@ -164,11 +164,13 @@ export function PublicExamPage() {
 		try {
 			const nextState = normalizeAgentState(await action());
 			setAgentState(nextState);
-			setSuccessMessage(
-				typeof successText === "function"
-					? successText(nextState!)
-					: successText,
-			);
+			if (nextState) {
+				setSuccessMessage(
+					typeof successText === "function"
+						? successText(nextState)
+						: successText,
+				);
+			}
 		} catch (err: unknown) {
 			setAgentError(
 				err instanceof Error ? err.message : "Khong goi duoc Local Agent.",
@@ -337,7 +339,7 @@ export function PublicExamPage() {
 										disabled={loadingAction !== null}
 										className="w-full rounded-xl border border-slate-300 bg-white px-3 py-3 text-sm"
 									>
-										<option value="">-- Chon hoc sinh --</option>
+										<option value="">Chon hoc sinh</option>
 										{publication.students.map((student) => (
 											<option key={student.id} value={student.id}>
 												{student.fullName}

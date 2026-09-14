@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { showAlert } from "../../../components/common";
 import { useAuth } from "../../../context/AuthContext";
 import { gradingService } from "../../../services/grading.service";
 import { scoreService } from "../../../services/score.service";
@@ -163,13 +164,17 @@ export const useSingleGrading = ({
 	);
 
 	const validateExcelFile = useCallback(
-		(file: File, showAlert = true): boolean => {
+		(file: File, shouldShowAlert = true): boolean => {
 			const isValid = isValidSubmissionFileName(file.name);
-			if (!isValid && showAlert) {
+			if (!isValid && shouldShowAlert) {
 				const accepted = getAcceptedSubmissionFileTypes(
 					selectedAssignmentData?.gradingApiEndpoint || undefined,
 				);
-				alert(`File phải có định dạng: ${accepted}`);
+				void showAlert({
+					title: "Định dạng file không hỗ trợ",
+					message: `File phải có định dạng: ${accepted}`,
+					variant: "warning",
+				});
 			}
 			return isValid;
 		},
@@ -215,7 +220,11 @@ export const useSingleGrading = ({
 			if (!student) return;
 
 			if (!selectedAssignment) {
-				alert("Vui lòng chọn bài tập trước khi chấm điểm.");
+				void showAlert({
+					title: "Chưa chọn bài tập",
+					message: "Vui lòng chọn bài tập trước khi chấm điểm.",
+					variant: "warning",
+				});
 				return;
 			}
 			const gradingEndpoint =
@@ -406,7 +415,11 @@ export const useSingleGrading = ({
 
 			if (files.length === 0) return;
 			if (!selectedAssignment) {
-				alert("Vui lòng chọn bài tập trước khi chọn nhiều file.");
+				void showAlert({
+					title: "Chưa chọn bài tập",
+					message: "Vui lòng chọn bài tập trước khi chọn nhiều file.",
+					variant: "warning",
+				});
 				return;
 			}
 			if (isBulkUploading) return;
@@ -443,7 +456,11 @@ export const useSingleGrading = ({
 							`Bỏ qua ${extraFiles} file do vượt số học sinh trong danh sách.`,
 						);
 					}
-					alert(notes.join("\n"));
+					void showAlert({
+						title: "Thông báo tải file",
+						message: notes.join("\n\n"),
+						variant: "warning",
+					});
 				}
 			} finally {
 				setIsBulkUploading(false);
@@ -531,7 +548,11 @@ export const useSingleGrading = ({
 						`Bỏ qua ${extraFiles} file do vượt số học sinh còn lại trong danh sách.`,
 					);
 				}
-				alert(notes.join("\n"));
+				void showAlert({
+					title: "Thông báo tải file",
+					message: notes.join("\n\n"),
+					variant: "warning",
+				});
 			}
 		},
 		[gradingStudents, validateExcelFile, uploadStudentFile],
@@ -659,11 +680,14 @@ export const useSingleGrading = ({
 					return next;
 				});
 			} catch (error) {
-				alert(
-					error instanceof Error
-						? error.message
-						: "Không thể hoàn tác file vừa chọn.",
-				);
+				void showAlert({
+					title: "Lỗi hoàn tác",
+					message:
+						error instanceof Error
+							? error.message
+							: "Không thể hoàn tác file vừa chọn.",
+					variant: "error",
+				});
 				if (selectedAssignment) {
 					await loadExistingScores(selectedAssignment);
 				}
@@ -685,7 +709,11 @@ export const useSingleGrading = ({
 
 	const handleSaveAllScores = useCallback(async () => {
 		if (!selectedAssignment) {
-			alert("Vui lòng chọn bài tập!");
+			void showAlert({
+				title: "Chưa chọn bài tập",
+				message: "Vui lòng chọn bài tập!",
+				variant: "warning",
+			});
 			return;
 		}
 
@@ -721,12 +749,20 @@ export const useSingleGrading = ({
 				getAccessToken,
 			);
 
-			alert("Lưu điểm thành công!");
+			void showAlert({
+				title: "Thành công",
+				message: "Lưu điểm thành công!",
+				variant: "success",
+			});
 			if (onSuccess) await onSuccess();
 			if (onClose) onClose();
 		} catch (error) {
 			console.error("Lỗi khi lưu điểm:", error);
-			alert(getReadableErrorMessage(error, "Không thể lưu điểm!"));
+			void showAlert({
+				title: "Lỗi lưu điểm",
+				message: getReadableErrorMessage(error, "Không thể lưu điểm!"),
+				variant: "error",
+			});
 		} finally {
 			isSavingScoresRef.current = false;
 			setLoading(false);

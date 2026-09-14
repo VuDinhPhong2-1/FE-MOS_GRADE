@@ -12,6 +12,7 @@ import {
 } from "@bug-on/m3-expressive";
 import type { FC } from "react";
 import { useEffect, useMemo, useState } from "react";
+import { showAlert } from "../../components/common";
 import { useAuth } from "../../context/AuthContext";
 import studentService from "../../services/student.service";
 import type { Assignment } from "../../types/assignment.types";
@@ -1121,11 +1122,14 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 				...prev,
 				[studentId]: previousLevel,
 			}));
-			alert(
-				error instanceof Error
-					? error.message
-					: "Không thể cập nhật xếp loại học sinh.",
-			);
+			void showAlert({
+				title: "Lỗi cập nhật",
+				message:
+					error instanceof Error
+						? error.message
+						: "Không thể cập nhật xếp loại học sinh.",
+				variant: "error",
+			});
 		} finally {
 			setSavingClassificationStudentId(null);
 		}
@@ -1177,11 +1181,14 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 			onStudentNotesUpdated?.(studentId, draftNotes);
 		} catch (error) {
 			setNotesByStudentId((prev) => ({ ...prev, [studentId]: persistedNotes }));
-			alert(
-				error instanceof Error
-					? error.message
-					: "Không thể cập nhật ghi chú học sinh.",
-			);
+			void showAlert({
+				title: "Lỗi cập nhật",
+				message:
+					error instanceof Error
+						? error.message
+						: "Không thể cập nhật ghi chú học sinh.",
+				variant: "error",
+			});
 		} finally {
 			setSavingNotesStudentId(null);
 		}
@@ -1197,11 +1204,11 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 		(isTotalScoreColumnVisible ? 1 : 0) +
 		(isOtthPercentageColumnVisible ? 1 : 0);
 	const containerClassName = isPageMode
-		? "flex w-full flex-col overflow-hidden rounded-4xl bg-m3-surface-container shadow-sm"
-		: "flex h-full w-full flex-col overflow-hidden bg-m3-surface-container";
+		? "flex w-full flex-col overflow-hidden rounded-4xl bg-m3-surface-container shadow-sm text-m3-on-surface"
+		: "flex h-full w-full flex-col overflow-hidden bg-m3-surface-container-high text-m3-on-surface";
 	const content = (
 		<div className={containerClassName}>
-			<div className="flex items-center justify-between bg-linear-to-r from-m3-surface-container-high to-m3-surface-container px-4 py-4 sm:px-6 sm:py-5">
+			<div className="flex items-center justify-between border-b border-m3-outline-variant/30 bg-m3-surface-container-high px-4 py-4 sm:px-6 sm:py-5">
 				<div className="flex items-center gap-3">
 					<div className="grid h-10 w-10 place-items-center rounded-2xl bg-m3-primary font-bold text-m3-on-primary">
 						BD
@@ -1232,7 +1239,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 			</div>
 
 			<div className="flex-1 overflow-auto px-2 pb-3 pt-3 sm:px-4 sm:pb-4 sm:pt-4 lg:px-5">
-				<div className="mb-3 rounded-2xl border border-m3-outline-variant/30 bg-m3-surface-container-low p-4 shadow-2xs">
+				<div className="mb-3 rounded-2xl border border-m3-outline-variant/30 bg-m3-surface-container p-4 shadow-2xs text-m3-on-surface">
 					<div className="mb-3 flex flex-wrap items-center justify-between gap-3">
 						<div className="text-sm font-semibold text-m3-on-surface">
 							Tùy chỉnh cột điểm
@@ -1844,7 +1851,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 				<DialogOverlay className="bg-black/60 backdrop-blur-xs" />
 				<DialogContent
 					hideCloseButton
-					className="flex h-[96vh] w-[calc(100vw-0.5rem)] max-w-480 flex-col overflow-hidden rounded-4xl bg-m3-surface-container p-0 shadow-2xl border border-m3-outline-variant/30 sm:h-[94vh] sm:w-[calc(100vw-1.5rem)]"
+					className="flex h-[96vh] w-[calc(100vw-0.5rem)] max-w-480 flex-col overflow-hidden rounded-4xl bg-m3-surface-container-high p-0 shadow-2xl border border-m3-outline-variant/30 sm:h-[94vh] sm:w-[calc(100vw-1.5rem)] text-m3-on-surface"
 				>
 					{content}
 				</DialogContent>

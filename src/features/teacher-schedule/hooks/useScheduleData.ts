@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { showConfirm } from "../../../components/common";
 import { classService } from "../../../services/class.service";
 import { computerRoomService } from "../../../services/computer-room.service";
 import { scheduleService } from "../../../services/schedule.service";
@@ -159,9 +160,12 @@ export const useScheduleData = ({ getAccessToken }: UseScheduleDataProps) => {
 
 	const handleDeleteSchedule = useCallback(
 		async (item: ScheduleItem) => {
-			const confirmed = window.confirm(
-				`Xóa lịch "${item.subject} - ${item.className}"?`,
-			);
+			const confirmed = await showConfirm({
+				title: "Xác nhận xóa lịch",
+				message: `Bạn có chắc chắn muốn xóa lịch "${item.subject} - ${item.className}"?`,
+				confirmLabel: "Xác nhận xóa",
+				variant: "destructive",
+			});
 			if (!confirmed) return;
 			try {
 				await scheduleService.delete(item.id, getAccessToken);
@@ -182,9 +186,12 @@ export const useScheduleData = ({ getAccessToken }: UseScheduleDataProps) => {
 			return;
 		}
 
-		const confirmed = window.confirm(
-			`Xóa ${selectedSchedules.length} lịch đã chọn?`,
-		);
+		const confirmed = await showConfirm({
+			title: "Xác nhận xóa nhiều lịch",
+			message: `Bạn có chắc chắn muốn xóa ${selectedSchedules.length} lịch đã chọn?`,
+			confirmLabel: "Xác nhận xóa",
+			variant: "destructive",
+		});
 		if (!confirmed) return;
 
 		const results = await Promise.allSettled(
@@ -220,9 +227,11 @@ export const useScheduleData = ({ getAccessToken }: UseScheduleDataProps) => {
 				return;
 			}
 
-			const confirmed = window.confirm(
-				`Sao chép ${sourceSchedules.length} lịch ${sourceLabel} sang tuần sau?`,
-			);
+			const confirmed = await showConfirm({
+				title: "Xác nhận sao chép lịch",
+				message: `Sao chép ${sourceSchedules.length} lịch ${sourceLabel} sang tuần sau?`,
+				confirmLabel: "Sao chép",
+			});
 			if (!confirmed) return;
 
 			setCopying(true);

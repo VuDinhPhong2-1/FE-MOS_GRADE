@@ -1,6 +1,7 @@
-﻿import html2canvas from "html2canvas";
+import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import * as XLSX from "xlsx-js-style";
+import { showAlert } from "../components/common";
 
 const ensureExt = (fileName: string, ext: ".xlsx" | ".pdf") =>
 	fileName.toLowerCase().endsWith(ext) ? fileName : `${fileName}${ext}`;
@@ -20,7 +21,7 @@ const normalizeColor = (
 	raw: string,
 	cssProp: keyof CSSStyleDeclaration,
 ): string => {
-	if (!raw || !raw.includes("oklch(")) return raw;
+	if (!raw?.includes("oklch(")) return raw;
 
 	const probe = document.createElement("span");
 	probe.style.position = "fixed";
@@ -58,14 +59,14 @@ const applySafeComputedStylesForPdf = (
 		const target = targetNodes[i];
 		const computed = window.getComputedStyle(source);
 
-		colorProps.forEach((prop) => {
+		for (const prop of colorProps) {
 			const value = (computed as unknown as Record<string, string>)[
 				prop as string
 			];
-			if (!value) return;
+			if (!value) continue;
 			(target.style as unknown as Record<string, string>)[prop as string] =
 				normalizeColor(value, prop);
-		});
+		}
 	}
 };
 
@@ -161,7 +162,7 @@ const buildStyledSheet = ({
 		};
 	}
 
-	(ws as XLSX.WorkSheet & { ["!freeze"]?: unknown })["!freeze"] = {
+	(ws as XLSX.WorkSheet & { "!freeze"?: unknown })["!freeze"] = {
 		xSplit: 0,
 		ySplit: headerRowIndex,
 		topLeftCell: `A${headerRowIndex + 1}`,
@@ -274,17 +275,17 @@ const buildStyledSheet = ({
 	}
 
 	// Attach comments to body cells (if provided).
-	(comments || []).forEach((comment) => {
+	for (const comment of comments || []) {
 		const text = (comment.text || "").trim();
-		if (!text) return;
-		if (comment.row < 0 || comment.col < 0) return;
-		if (comment.row >= body.length || comment.col >= header.length) return;
+		if (!text) continue;
+		if (comment.row < 0 || comment.col < 0) continue;
+		if (comment.row >= body.length || comment.col >= header.length) continue;
 
 		const address = XLSX.utils.encode_cell({
 			r: bodyStartRowIndex + comment.row,
 			c: comment.col,
 		});
-		if (!ws[address]) return;
+		if (!ws[address]) continue;
 
 		const cell = ws[address] as XLSX.CellObject & {
 			c?: Array<{ a?: string; t?: string }>;
@@ -299,7 +300,7 @@ const buildStyledSheet = ({
 		commentBlock.hidden = true;
 
 		cell.c = commentBlock;
-	});
+	}
 
 	return ws;
 };
@@ -321,7 +322,7 @@ export const exportToExcel = (
 	});
 	XLSX.utils.book_append_sheet(wb, mainSheet, sheetName);
 
-	(options?.extraSheets || []).forEach((sheet) => {
+	for (const sheet of options?.extraSheets || []) {
 		const ws = buildStyledSheet({
 			header: sheet.header,
 			body: sheet.body,
@@ -330,7 +331,7 @@ export const exportToExcel = (
 			comments: sheet.comments,
 		});
 		XLSX.utils.book_append_sheet(wb, ws, sheet.sheetName);
-	});
+	}
 
 	XLSX.writeFile(wb, ensureExt(fileName, ".xlsx"), {
 		bookType: "xlsx",
@@ -362,7 +363,7 @@ export const exportToPdf = async (elementId: string, fileName: string) => {
 		clone.style.width = `${input.scrollWidth}px`;
 		applySafeComputedStylesForPdf(input, clone);
 
-		clone.querySelectorAll<HTMLElement>("*").forEach((el) => {
+		for (const el of Array.from(clone.querySelectorAll<HTMLElement>("*"))) {
 			const computed = window.getComputedStyle(el);
 			if (computed.position === "sticky") {
 				el.style.position = "static";
@@ -376,7 +377,7 @@ export const exportToPdf = async (elementId: string, fileName: string) => {
 			if (computed.maxHeight !== "none") {
 				el.style.maxHeight = "none";
 			}
-		});
+		}
 
 		cloneWrapper.appendChild(clone);
 		document.body.appendChild(cloneWrapper);
@@ -415,7 +416,11 @@ export const exportToPdf = async (elementId: string, fileName: string) => {
 		pdf.save(ensureExt(fileName, ".pdf"));
 	} catch (error) {
 		console.error("Lỗi khi xuất PDF:", error);
-		alert("Không thể xuất file PDF. Vui lòng thử lại.");
+		void showAlert({
+			title: "Lỗi xuất PDF",
+			message: "Không thể xuất file PDF. Vui lòng thử lại.",
+			variant: "error",
+		});
 	} finally {
 		if (cloneWrapper.parentNode) {
 			cloneWrapper.parentNode.removeChild(cloneWrapper);

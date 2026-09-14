@@ -11,10 +11,10 @@ import {
 	DialogPortal,
 	DialogTitle,
 	Icon,
-	IconButton,
 	Select,
 	TextField,
 } from "@bug-on/m3-expressive";
+import { DialogHeaderIcon } from "../../../components/common";
 import type { Class, CreateClassRequest } from "../../../types/class.types";
 import { GRADE_OPTIONS } from "../utils/classlist.utils";
 
@@ -60,12 +60,7 @@ export const ClassFormModal: React.FC<ClassFormModalProps> = ({
 					{/* Header */}
 					<div className="flex items-center justify-between px-6 pt-5 pb-3">
 						<DialogHeader className="mb-0 flex-row items-center gap-3 space-y-0 text-left">
-							<div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-m3-primary text-m3-on-primary">
-								<Icon
-									name={editingClass ? "group" : "group_add"}
-									size={24}
-								/>
-							</div>
+							<DialogHeaderIcon icon={editingClass ? "group" : "group_add"} />
 							<div>
 								<DialogTitle className="text-lg font-bold text-m3-on-surface">
 									{editingClass ? "Chỉnh sửa lớp học" : "Thêm lớp học mới"}
@@ -77,15 +72,6 @@ export const ClassFormModal: React.FC<ClassFormModalProps> = ({
 								</DialogDescription>
 							</div>
 						</DialogHeader>
-						<IconButton
-							type="button"
-							size="sm"
-							colorStyle="standard"
-							aria-label="Đóng hộp thoại lớp"
-							onClick={onClose}
-						>
-							<Icon name="close" />
-						</IconButton>
 					</div>
 
 					{/* Form */}
@@ -127,6 +113,7 @@ export const ClassFormModal: React.FC<ClassFormModalProps> = ({
 									disabled={isSubmitting}
 									fullWidth
 									className="pt-4"
+									showDividers={false}
 								/>
 
 								<TextField

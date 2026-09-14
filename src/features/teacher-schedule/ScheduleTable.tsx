@@ -1,14 +1,11 @@
 import {
 	Button,
+	ButtonDistribute,
 	Checkbox,
-	DatePicker,
-	DatePickerDialog,
 	Icon,
 	IconButton,
 	ProgressIndicator,
-	useDatePickerState,
 } from "@bug-on/m3-expressive";
-import { useCallback, useEffect, useState } from "react";
 import type { ScheduleItem } from "../../types/schedule.types";
 import {
 	formatDateViFromYmd,
@@ -17,23 +14,17 @@ import {
 	lessonTimelineStatusClasses,
 	lessonTimelineStatusLabels,
 	parseApiDateToLocalYmd,
-	utcMsToYmd,
-	ymdToUtcMs,
 } from "./utils";
 
 interface ScheduleTableProps {
 	schedules: ScheduleItem[];
 	loading: boolean;
 	copying: boolean;
-	weekStart: string;
-	weekEnd: string;
 	todayYmd: string;
 	nowMinutesInDay: number;
 	selectedScheduleIds: string[];
 	areAllSchedulesSelected: boolean;
 	resolveSchoolNameForSchedule: (item: ScheduleItem) => string;
-	onShiftWeek: (offsetDays: number) => void;
-	onSelectWeekDate: (dateStr: string) => void;
 	onToggleSelectAll: () => void;
 	onToggleSelectSchedule: (scheduleId: string) => void;
 	onClearSelection: () => void;
@@ -42,21 +33,18 @@ interface ScheduleTableProps {
 	onOpenAttendance: (item: ScheduleItem) => void;
 	onOpenEdit: (item: ScheduleItem) => void;
 	onDeleteSchedule: (item: ScheduleItem) => void;
+	hideSelectionBar?: boolean;
 }
 
 export const ScheduleTable = ({
 	schedules,
 	loading,
 	copying,
-	weekStart,
-	weekEnd,
 	todayYmd,
 	nowMinutesInDay,
 	selectedScheduleIds,
 	areAllSchedulesSelected,
 	resolveSchoolNameForSchedule,
-	onShiftWeek,
-	onSelectWeekDate,
 	onToggleSelectAll,
 	onToggleSelectSchedule,
 	onClearSelection,
@@ -65,96 +53,18 @@ export const ScheduleTable = ({
 	onOpenAttendance,
 	onOpenEdit,
 	onDeleteSchedule,
+	hideSelectionBar = false,
 }: ScheduleTableProps) => {
-	// State for Date Picker dialog
-	const [datePickerOpen, setDatePickerOpen] = useState(false);
-
-	const datePickerState = useDatePickerState({
-		initialSelectedDateMs: weekStart ? ymdToUtcMs(weekStart) : null,
-		locale: { locale: "vi-VN", weekStartsOn: 1 },
-	});
-
-	const { selectDate, navigateToMonth } = datePickerState;
-
-	// Sync datePickerState when weekStart changes (e.g. from Tuần trước / Tuần sau)
-	useEffect(() => {
-		if (weekStart) {
-			const ms = ymdToUtcMs(weekStart);
-			selectDate(ms);
-			const [y, m] = weekStart.split("-").map(Number);
-			if (y && m) {
-				navigateToMonth(y, m - 1);
-			}
-		}
-	}, [weekStart, selectDate, navigateToMonth]);
-
-	const handleConfirmDate = useCallback(() => {
-		if (datePickerState.selectedDateMs !== null) {
-			const ymd = utcMsToYmd(datePickerState.selectedDateMs);
-			onSelectWeekDate(ymd);
-		}
-		setDatePickerOpen(false);
-	}, [datePickerState.selectedDateMs, onSelectWeekDate]);
-
 	return (
 		<>
-			<section className="rounded-3xl bg-m3-surface-container p-0 shadow-xs overflow-hidden">
-				{/* Toolbar điều hướng tuần */}
-				<div className="flex flex-wrap items-center justify-between gap-3 p-3 sm:p-4">
-					<div className="flex flex-wrap items-center gap-2">
-						<Button
-							type="button"
-							colorStyle="tonal"
-							size="sm"
-							icon={<Icon name="chevron_left" className="text-base" />}
-							onClick={() => onShiftWeek(-7)}
-						>
-							Tuần trước
-						</Button>
-
-						<Button
-							type="button"
-							colorStyle="tonal"
-							size="sm"
-							icon={
-								<Icon
-									name="calendar_month"
-									className="text-base text-m3-primary"
-								/>
-							}
-							onClick={() => setDatePickerOpen(true)}
-							className="font-medium"
-							title="Nhấn để chọn ngày trong lịch"
-						>
-							{formatDateViFromYmd(weekStart)}
-						</Button>
-
-						<Button
-							type="button"
-							colorStyle="tonal"
-							size="sm"
-							icon={<Icon name="chevron_right" className="text-base" />}
-							iconPosition="trailing"
-							onClick={() => onShiftWeek(7)}
-						>
-							Tuần sau
-						</Button>
-					</div>
-
-					<div className="rounded-xl border border-m3-primary/20 bg-m3-primary/10 px-3 py-1.5 text-xs font-semibold text-m3-primary">
-						Tuần: <strong>{formatDateViFromYmd(weekStart)}</strong> đến{" "}
-						<strong>{formatDateViFromYmd(weekEnd)}</strong>
-					</div>
-				</div>
-
-				{selectedScheduleIds.length > 0 && (
-					<div className="mx-4 mb-4 flex flex-col gap-3 rounded-2xl border border-m3-primary/30 bg-m3-primary/10 px-4 py-3 text-sm text-m3-on-surface sm:mx-5 sm:mb-5 sm:flex-row sm:items-center sm:justify-between">
+			{!hideSelectionBar && selectedScheduleIds.length > 0 && (
+				<section className="rounded-3xl bg-m3-surface-container p-4 shadow-xs overflow-hidden">
+					<div className="flex flex-col gap-3 rounded-2xl border border-m3-primary/30 bg-m3-primary/10 px-4 py-3 text-sm text-m3-on-surface sm:flex-row sm:items-center sm:justify-between">
 						<p>
 							Đã chọn <strong>{selectedScheduleIds.length}</strong> lịch dạy
 						</p>
 						<div className="flex flex-wrap items-center gap-2">
 							<Button
-								type="button"
 								colorStyle="tonal"
 								size="sm"
 								icon={<Icon name="content_copy" className="text-sm" />}
@@ -164,7 +74,6 @@ export const ScheduleTable = ({
 								{copying ? "Đang sao chép..." : "Sao chép đã chọn"}
 							</Button>
 							<Button
-								type="button"
 								colorStyle="outlined"
 								size="sm"
 								className="border-m3-error/40! text-m3-error! hover:bg-m3-error-container/20!"
@@ -174,20 +83,15 @@ export const ScheduleTable = ({
 							>
 								Xóa đã chọn
 							</Button>
-							<Button
-								type="button"
-								colorStyle="text"
-								size="sm"
-								onClick={onClearSelection}
-							>
+							<Button colorStyle="text" size="sm" onClick={onClearSelection}>
 								Bỏ chọn
 							</Button>
 						</div>
 					</div>
-				)}
-			</section>
+				</section>
+			)}
 
-			<section className="rounded-3xl bg-m3-surface-container overflow-hidden shadow-xs">
+			<section className="rounded-2xl bg-m3-surface-container overflow-hidden">
 				<div className="overflow-x-auto">
 					<table className="min-w-full text-sm">
 						<thead className="sticky top-0 z-10 border-b border-m3-outline-variant/60 bg-m3-surface-container-high text-m3-on-surface-variant backdrop-blur-xs">
@@ -232,7 +136,7 @@ export const ScheduleTable = ({
 								<th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-m3-on-surface-variant">
 									Ghi chú
 								</th>
-								<th className="px-3 py-3 text-right font-semibold text-m3-on-surface-variant">
+								<th className="px-3 py-3 text-center font-semibold text-m3-on-surface-variant">
 									Hành động
 								</th>
 							</tr>
@@ -361,48 +265,46 @@ export const ScheduleTable = ({
 												{item.notes || "-"}
 											</td>
 											<td className="px-3 py-3 text-right">
-												<div className="inline-flex items-center gap-1">
+												<ButtonDistribute
+													mode="dynamic"
+													size="sm"
+													weights={[2, 2, 1]}
+													gap={4}
+													expandRatio={0.1}
+												>
 													<IconButton
-														type="button"
 														aria-label="Điểm danh"
-														colorStyle="tonal"
-														size="xs"
+														size="sm"
 														onClick={(event) => {
 															event.stopPropagation();
 															onOpenAttendance(item);
 														}}
 													>
-														<Icon
-															name="fact_check"
-															className="text-sm text-m3-primary"
-														/>
+														<Icon name="fact_check" size={20} />
 													</IconButton>
 													<IconButton
-														type="button"
 														aria-label="Chỉnh sửa"
-														colorStyle="outlined"
-														size="xs"
+														size="sm"
 														onClick={(event) => {
 															event.stopPropagation();
 															onOpenEdit(item);
 														}}
 													>
-														<Icon name="edit" className="text-sm" />
+														<Icon name="edit" size={20} />
 													</IconButton>
 													<IconButton
-														type="button"
 														aria-label="Xóa"
-														colorStyle="outlined"
-														size="xs"
+														colorStyle="standard"
+														size="sm"
 														className="border-m3-error/30! text-m3-error! hover:bg-m3-error-container/20!"
 														onClick={(event) => {
 															event.stopPropagation();
 															onDeleteSchedule(item);
 														}}
 													>
-														<Icon name="delete" className="text-sm" />
+														<Icon name="delete" size={20} />
 													</IconButton>
-												</div>
+												</ButtonDistribute>
 											</td>
 										</tr>
 									);
@@ -416,40 +318,6 @@ export const ScheduleTable = ({
 					điểm danh. Tick checkbox để chọn nhiều lịch rồi xóa/sao chép cùng lúc.
 				</div>
 			</section>
-
-			{/* Modal Date Picker Dialog cho việc chọn tuần */}
-			<DatePickerDialog
-				open={datePickerOpen}
-				onDismiss={() => setDatePickerOpen(false)}
-				title="Chọn ngày trong tuần"
-				className="w-[calc(100vw-2rem)]! sm:w-100! max-w-md!"
-				confirmButton={
-					<Button
-						type="button"
-						colorStyle="filled"
-						size="sm"
-						onClick={handleConfirmDate}
-					>
-						Xác nhận
-					</Button>
-				}
-				dismissButton={
-					<Button
-						type="button"
-						colorStyle="text"
-						size="sm"
-						onClick={() => setDatePickerOpen(false)}
-					>
-						Hủy
-					</Button>
-				}
-			>
-				<DatePicker
-					state={datePickerState}
-					title="Chọn ngày trong tuần"
-					className="w-full! max-w-none!"
-				/>
-			</DatePickerDialog>
 		</>
 	);
 };

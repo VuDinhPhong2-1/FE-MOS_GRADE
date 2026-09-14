@@ -5,7 +5,12 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App";
-import { ErrorModal, ToastCenter } from "./components/common";
+import {
+	AlertDialogProvider,
+	ConfirmDialogProvider,
+	ErrorModal,
+	ToastCenter,
+} from "./components/common";
 import { queryClient } from "./lib/queryClient";
 import { installAlertInterceptor } from "./utils/notify";
 import "./index.css";
@@ -26,7 +31,12 @@ window.addEventListener("error", (event) => {
 	}
 });
 
-createRoot(document.getElementById("root")!).render(
+const rootElement = document.getElementById("root");
+if (!rootElement) {
+	throw new Error("Root element not found");
+}
+
+createRoot(rootElement).render(
 	<StrictMode>
 		<MD3ThemeProvider
 			defaultMode="light"
@@ -39,9 +49,13 @@ createRoot(document.getElementById("root")!).render(
 			<QueryClientProvider client={queryClient}>
 				<GoogleOAuthProvider clientId={googleClientId}>
 					<BrowserRouter useTransitions={false}>
-						<App />
-						<ToastCenter />
-						<ErrorModal />
+						<AlertDialogProvider>
+							<ConfirmDialogProvider>
+								<App />
+								<ToastCenter />
+								<ErrorModal />
+							</ConfirmDialogProvider>
+						</AlertDialogProvider>
 					</BrowserRouter>
 				</GoogleOAuthProvider>
 			</QueryClientProvider>

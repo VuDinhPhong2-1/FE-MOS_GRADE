@@ -1,5 +1,6 @@
 import { Icon, ProgressIndicator } from "@bug-on/m3-expressive";
 import { useEffect, useMemo, useState } from "react";
+import { showAlert, showConfirm } from "../components/common";
 import { useAuth } from "../context/AuthContext";
 import { ResultCard } from "../features/grading";
 import { gradingService } from "../services/grading.service";
@@ -275,7 +276,11 @@ const GradingView = () => {
 	const setSelectedFile = (file: File | null) => {
 		if (!file) return;
 		if (!isValidGradingFile(file)) {
-			alert("File phai co dinh dang .xls, .xlsx, .xlsm, .docx hoac .txt");
+			void showAlert({
+				title: "Định dạng file không hỗ trợ",
+				message: "File phải có định dạng .xls, .xlsx, .xlsm, .docx hoặc .txt",
+				variant: "warning",
+			});
 			return;
 		}
 		setStudentFile(file);
@@ -285,7 +290,11 @@ const GradingView = () => {
 
 	const handleGrade = async () => {
 		if (!studentFile) {
-			alert("Vui long chon file bai lam hoc sinh!");
+			void showAlert({
+				title: "Chưa chọn file",
+				message: "Vui lòng chọn file bài làm của học sinh!",
+				variant: "warning",
+			});
 			return;
 		}
 
@@ -380,7 +389,13 @@ const GradingView = () => {
 	};
 
 	const handleDeleteBugNote = async (noteId: string) => {
-		if (!window.confirm("Ban co chac chan muon xoa bug note nay?")) {
+		const confirmed = await showConfirm({
+			title: "Xác nhận xóa bug note",
+			message: "Bạn có chắc chắn muốn xóa bug note này?",
+			confirmLabel: "Xác nhận xóa",
+			variant: "destructive",
+		});
+		if (!confirmed) {
 			return;
 		}
 
@@ -563,6 +578,7 @@ const GradingView = () => {
 				)}
 
 				<button
+					type="button"
 					onClick={handleGrade}
 					disabled={loading || loadingProjects || projectOptions.length === 0}
 					className="flex w-full items-center justify-center gap-2 rounded-md bg-blue-600 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:bg-gray-400"

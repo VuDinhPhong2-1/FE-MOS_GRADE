@@ -225,12 +225,12 @@ export const buildBulkAssignmentDrafts = (
 			? `${subjectLabel} ${presetLabel} - ${projectLabel}`
 			: endpoint.displayName;
 		const shouldUseDefaultName =
-			(previousName === "" ||
-				previousName === endpoint.displayName ||
-				previousName === `On thi - ${endpoint.displayName}` ||
-				previousName === `${endpoint.displayName} - On thi` ||
-				previousName === `${endpoint.displayName} - Ôn thi` ||
-				previousName.includes(" - Project "));
+			previousName === "" ||
+			previousName === endpoint.displayName ||
+			previousName === `On thi - ${endpoint.displayName}` ||
+			previousName === `${endpoint.displayName} - On thi` ||
+			previousName === `${endpoint.displayName} - Ôn thi` ||
+			previousName.includes(" - Project ");
 		const nextName = previous
 			? shouldUseDefaultName
 				? defaultName

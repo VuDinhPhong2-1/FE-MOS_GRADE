@@ -72,11 +72,26 @@ const ClassActionToolbarComponent = ({
 		return `Đang lọc: ${parts.join(", ")}`;
 	}, [hasActiveFilters, statusFilter, selectedGradeFilter]);
 
-	// Action buttons dành riêng cho Class List: Bộ lọc đa tiêu chí & Nút thêm lớp
+	// Action buttons dành riêng cho Class List: Nút quay lại & Bộ lọc đa tiêu chí
 	const actions = (
 		<>
+			{/* Quay lại danh sách trường */}
+			{onBackToSchools && (
+				<TooltipBox
+					tooltip={<PlainTooltip>Quay lại danh sách trường</PlainTooltip>}
+					placement="top"
+				>
+					<ToolbarIconButton
+						aria-label="Quay lại danh sách trường"
+						onClick={handleBack}
+					>
+						<Icon name="arrow_back" size={24} />
+					</ToolbarIconButton>
+				</TooltipBox>
+			)}
+
 			{/* Menu bộ lọc (Trạng thái + Khối) */}
-			<Menu variant="expressive" colorVariant="vibrant">
+			<Menu variant="expressive" colorVariant="vibrant" density={-2}>
 				<MenuTrigger asChild>
 					<div>
 						<TooltipBox
@@ -157,51 +172,33 @@ const ClassActionToolbarComponent = ({
 					</MenuGroup>
 				</MenuContent>
 			</Menu>
-
-			{/* Nút thêm lớp mới (chỉ hiện khi có quyền tạo) */}
-			{canCreateClass && (
-				<TooltipBox
-					tooltip={<PlainTooltip>Thêm lớp mới</PlainTooltip>}
-					placement="top"
-				>
-					<ToolbarIconButton
-						aria-label="Thêm lớp mới"
-						emphasis="filled"
-						width="wide"
-						onClick={handleOpenAddModal}
-					>
-						<Icon name="group_add" size={24} />
-					</ToolbarIconButton>
-				</TooltipBox>
-			)}
 		</>
 	);
 
-	// Start FAB cho phép quay lại danh sách trường
-	const startFab = useMemo(() => {
-		if (!onBackToSchools) return undefined;
+	// End FAB cho phép thêm lớp mới
+	const endFab = useMemo(() => {
+		if (!canCreateClass) return undefined;
 
 		return (
 			<TooltipBox
-				tooltip={<PlainTooltip>Quay lại danh sách trường</PlainTooltip>}
+				tooltip={<PlainTooltip>Thêm lớp mới</PlainTooltip>}
 				placement="top"
 			>
 				<FAB
 					colorStyle="tertiary"
-					size="md"
-					aria-label="Quay lại danh sách trường"
-					onClick={handleBack}
-					icon={<Icon name="arrow_back" size={24} />}
+					aria-label="Thêm lớp mới"
+					onClick={handleOpenAddModal}
+					icon={<Icon name="group_add" size={24} />}
 				/>
 			</TooltipBox>
 		);
-	}, [onBackToSchools, handleBack]);
+	}, [canCreateClass, handleOpenAddModal]);
 
 	return (
 		<FloatingActionToolbar
 			ariaLabel="Thanh công cụ quản lý lớp học"
-			startFab={startFab}
 			actions={actions}
+			endFab={endFab}
 			search={searchConfig}
 			isSearchActive={isSearchActive}
 			onOpenSearch={onOpenSearch}

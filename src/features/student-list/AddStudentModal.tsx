@@ -11,12 +11,12 @@ import {
 	DialogPortal,
 	DialogTitle,
 	Icon,
-	IconButton,
 	Select,
 	type SelectOption,
 	TextField,
 } from "@bug-on/m3-expressive";
 import { type FormEvent, memo, useEffect, useState } from "react";
+import { DialogHeaderIcon } from "../../components/common";
 import studentService from "../../services/student.service";
 import type { AddStudentForm, CompetencyLevel } from "./types";
 import { VALID_COMPETENCY_LEVELS, VALID_STATUSES } from "./types";
@@ -132,9 +132,7 @@ const AddStudentModalComponent = ({
 					{/* Header */}
 					<div className="flex items-center justify-between border-b border-m3-outline-variant/40 px-6 pt-5 pb-3">
 						<DialogHeader className="mb-0 flex-row items-center gap-3 space-y-0 text-left">
-							<div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-m3-primary text-m3-on-primary">
-								<Icon name="person_add" size={20} />
-							</div>
+							<DialogHeaderIcon icon="person_add" />
 							<div>
 								<DialogTitle className="text-lg font-bold text-m3-on-surface">
 									Thêm học sinh
@@ -144,16 +142,6 @@ const AddStudentModalComponent = ({
 								</DialogDescription>
 							</div>
 						</DialogHeader>
-						<IconButton
-							type="button"
-							size="sm"
-							colorStyle="standard"
-							aria-label="Đóng"
-							onClick={onClose}
-							disabled={isSubmitting}
-						>
-							<Icon name="close" />
-						</IconButton>
 					</div>
 
 					{/* Form */}

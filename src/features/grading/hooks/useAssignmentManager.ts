@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { showAlert, showConfirm } from "../../../components/common";
 import { useAuth } from "../../../context/AuthContext";
 import { assignmentService } from "../../../services/assignment.service";
 import type {
@@ -187,13 +188,21 @@ export const useAssignmentManager = ({
 
 		const selectedDrafts = drafts.filter((draft) => draft.selected);
 		if (selectedDrafts.length === 0) {
-			alert("Vui lòng chọn ít nhất 1 project để tạo bài tập.");
+			void showAlert({
+				title: "Chưa chọn project",
+				message: "Vui lòng chọn ít nhất 1 project để tạo bài tập.",
+				variant: "warning",
+			});
 			return;
 		}
 
 		const invalidDraft = selectedDrafts.find((draft) => !draft.name.trim());
 		if (invalidDraft) {
-			alert(`Tên bài tập cho ${invalidDraft.displayName} không được để trống.`);
+			void showAlert({
+				title: "Tên bài tập trống",
+				message: `Tên bài tập cho ${invalidDraft.displayName} không được để trống.`,
+				variant: "warning",
+			});
 			return;
 		}
 
@@ -238,9 +247,11 @@ export const useAssignmentManager = ({
 				? ` cho ${options.practiceLabel}`
 				: "";
 			if (failedAssignments.length === 0) {
-				alert(
-					`Tạo thành công ${createdAssignments.length} bài tập${practiceSuffix}.`,
-				);
+				void showAlert({
+					title: "Thành công",
+					message: `Tạo thành công ${createdAssignments.length} bài tập${practiceSuffix}.`,
+					variant: "success",
+				});
 				if (options?.closeOnSuccess) {
 					setChooseMode(null);
 				}
@@ -248,15 +259,19 @@ export const useAssignmentManager = ({
 			}
 
 			if (createdAssignments.length > 0) {
-				alert(
-					`Đã tạo ${createdAssignments.length}/${selectedDrafts.length} bài tập${practiceSuffix}.\nLỗi:\n${failedAssignments.join("\n")}`,
-				);
+				void showAlert({
+					title: "Tạo bài tập có lỗi",
+					message: `Đã tạo ${createdAssignments.length}/${selectedDrafts.length} bài tập${practiceSuffix}.\n\nLỗi:\n${failedAssignments.join("\n")}`,
+					variant: "warning",
+				});
 				return;
 			}
 
-			alert(
-				`Không thể tạo bài tập${practiceSuffix}.\n${failedAssignments.join("\n")}`,
-			);
+			void showAlert({
+				title: "Lỗi tạo bài tập",
+				message: `Không thể tạo bài tập${practiceSuffix}.\n\n${failedAssignments.join("\n")}`,
+				variant: "error",
+			});
 		} finally {
 			setIsCreatingAssignment(false);
 		}
@@ -288,9 +303,11 @@ export const useAssignmentManager = ({
 		).map((draft) => ({ ...draft, selected: true }));
 
 		if (quickDrafts.length === 0) {
-			alert(
-				`Không có project ${practice?.label || practiceCode} cho môn ${newAssignmentSubject.toUpperCase()}.`,
-			);
+			void showAlert({
+				title: "Không tìm thấy project",
+				message: `Không có project ${practice?.label || practiceCode} cho môn ${newAssignmentSubject.toUpperCase()}.`,
+				variant: "info",
+			});
 			return;
 		}
 
@@ -330,13 +347,20 @@ export const useAssignmentManager = ({
 		);
 
 		if (selectedActiveAssignments.length === 0) {
-			alert("Vui lòng chọn ít nhất 1 bài tập đang dùng.");
+			void showAlert({
+				title: "Chưa chọn bài tập",
+				message: "Vui lòng chọn ít nhất 1 bài tập đang dùng.",
+				variant: "warning",
+			});
 			return;
 		}
 
-		const confirmed = confirm(
-			`Bạn có chắc muốn bỏ hoạt động ${selectedActiveAssignments.length} bài tập đã chọn?`,
-		);
+		const confirmed = await showConfirm({
+			title: "Xác nhận bỏ hoạt động",
+			message: `Bạn có chắc muốn bỏ hoạt động ${selectedActiveAssignments.length} bài tập đã chọn?`,
+			confirmLabel: "Bỏ hoạt động",
+			variant: "destructive",
+		});
 		if (!confirmed) return;
 
 		setAssignmentSubmitLoading(true);
@@ -391,28 +415,38 @@ export const useAssignmentManager = ({
 			}
 
 			if (failedAssignments.length === 0) {
-				alert(`Đã bỏ hoạt động ${updatedAssignments.length} bài tập.`);
+				void showAlert({
+					title: "Thành công",
+					message: `Đã bỏ hoạt động ${updatedAssignments.length} bài tập.`,
+					variant: "success",
+				});
 				return;
 			}
 
 			if (updatedAssignments.length > 0) {
-				alert(
-					`Đã bỏ hoạt động ${updatedAssignments.length}/${selectedActiveAssignments.length} bài tập.\nLỗi:\n${failedAssignments.join("\n")}`,
-				);
+				void showAlert({
+					title: "Bỏ hoạt động có lỗi",
+					message: `Đã bỏ hoạt động ${updatedAssignments.length}/${selectedActiveAssignments.length} bài tập.\n\nLỗi:\n${failedAssignments.join("\n")}`,
+					variant: "warning",
+				});
 				return;
 			}
 
-			alert(
-				`Không thể bỏ hoạt động các bài tập đã chọn.\n${failedAssignments.join("\n")}`,
-			);
+			void showAlert({
+				title: "Lỗi bỏ hoạt động",
+				message: `Không thể bỏ hoạt động các bài tập đã chọn.\n\n${failedAssignments.join("\n")}`,
+				variant: "error",
+			});
 		} catch (error) {
 			console.error("Lỗi khi bỏ hoạt động nhiều bài tập:", error);
-			alert(
-				getReadableErrorMessage(
+			void showAlert({
+				title: "Lỗi",
+				message: getReadableErrorMessage(
 					error,
 					"Không thể bỏ hoạt động các bài tập đã chọn.",
 				),
-			);
+				variant: "error",
+			});
 		} finally {
 			setAssignmentSubmitLoading(false);
 		}
@@ -436,14 +470,22 @@ export const useAssignmentManager = ({
 	const handleSaveAssignmentEdit = async () => {
 		if (!editingAssignment) return;
 		if (!assignmentEditForm.name?.trim()) {
-			alert("Vui lòng nhập tên bài tập.");
+			void showAlert({
+				title: "Thiếu thông tin",
+				message: "Vui lòng nhập tên bài tập.",
+				variant: "warning",
+			});
 			return;
 		}
 		if (
 			assignmentEditForm.gradingType === "auto" &&
 			!assignmentEditForm.gradingApiEndpoint
 		) {
-			alert("Bài tập auto phải có đầu chấm điểm.");
+			void showAlert({
+				title: "Thiếu thông tin",
+				message: "Bài tập auto phải có đầu chấm điểm.",
+				variant: "warning",
+			});
 			return;
 		}
 
@@ -476,19 +518,34 @@ export const useAssignmentManager = ({
 				return prev.map((item) => (item.id === updated.id ? updated : item));
 			});
 			setEditingAssignment(null);
-			alert("Cập nhật bài tập thành công.");
+			void showAlert({
+				title: "Thành công",
+				message: "Cập nhật bài tập thành công.",
+				variant: "success",
+			});
 		} catch (error) {
 			console.error("Lỗi khi cập nhật bài tập:", error);
-			alert(
-				error instanceof Error ? error.message : "Không thể cập nhật bài tập.",
-			);
+			void showAlert({
+				title: "Lỗi",
+				message:
+					error instanceof Error
+						? error.message
+						: "Không thể cập nhật bài tập.",
+				variant: "error",
+			});
 		} finally {
 			setAssignmentSubmitLoading(false);
 		}
 	};
 
 	const handleDeleteAssignment = async (assignment: Assignment) => {
-		if (!confirm(`Bạn có chắc muốn xóa bài tập "${assignment.name}"?`)) return;
+		const confirmed = await showConfirm({
+			title: "Xác nhận xóa bài tập",
+			message: `Bạn có chắc muốn xóa bài tập "${assignment.name}"?`,
+			confirmLabel: "Xác nhận xóa",
+			variant: "destructive",
+		});
+		if (!confirmed) return;
 		setAssignmentSubmitLoading(true);
 		try {
 			await assignmentService.delete(assignment.id, getAccessToken);
@@ -503,12 +560,21 @@ export const useAssignmentManager = ({
 			if (onAssignmentsUpdated) {
 				onAssignmentsUpdated([assignment.id]);
 			}
-			alert(
-				showInactiveAssignments ? "Bài tập đã được ẩn." : "Đã xóa bài tập.",
-			);
+			void showAlert({
+				title: "Thành công",
+				message: showInactiveAssignments
+					? "Bài tập đã được ẩn."
+					: "Đã xóa bài tập.",
+				variant: "success",
+			});
 		} catch (error) {
 			console.error("Lỗi khi xóa bài tập:", error);
-			alert(error instanceof Error ? error.message : "Không thể xóa bài tập.");
+			void showAlert({
+				title: "Lỗi",
+				message:
+					error instanceof Error ? error.message : "Không thể xóa bài tập.",
+				variant: "error",
+			});
 		} finally {
 			setAssignmentSubmitLoading(false);
 		}

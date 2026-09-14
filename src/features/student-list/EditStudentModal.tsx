@@ -11,12 +11,12 @@ import {
 	DialogPortal,
 	DialogTitle,
 	Icon,
-	IconButton,
 	Select,
 	type SelectOption,
 	TextField,
 } from "@bug-on/m3-expressive";
 import { type FormEvent, memo, useEffect, useState } from "react";
+import { DialogHeaderIcon, showConfirm } from "../../components/common";
 import studentService from "../../services/student.service";
 import type { Student } from "../../types/student.types";
 import type { CompetencyLevel, EditStudentForm } from "./types";
@@ -110,13 +110,18 @@ const EditStudentModalComponent = ({
 		return () => window.removeEventListener("beforeunload", handleBeforeUnload);
 	}, [isOpen, hasUnsavedChanges]);
 
-	const handleClose = () => {
+	const handleClose = async () => {
 		if (isSubmitting) return;
-		if (
-			hasUnsavedChanges &&
-			!confirm("Bạn có thay đổi chưa lưu. Bạn có chắc muốn đóng?")
-		) {
-			return;
+		if (hasUnsavedChanges) {
+			const confirmed = await showConfirm({
+				title: "Thay đổi chưa lưu",
+				message: "Bạn có thay đổi chưa lưu. Bạn có chắc muốn đóng?",
+				confirmLabel: "Đóng và bỏ thay đổi",
+				cancelLabel: "Ở lại",
+				variant: "destructive",
+				icon: "warning",
+			});
+			if (!confirmed) return;
 		}
 		onClose();
 	};
@@ -192,9 +197,10 @@ const EditStudentModalComponent = ({
 				>
 					<div className="flex items-center justify-between border-b border-m3-outline-variant/40 px-6 pt-5 pb-3">
 						<DialogHeader className="mb-0 flex-row items-center gap-3 space-y-0 text-left">
-							<div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-m3-secondary text-m3-on-secondary">
-								<Icon name="edit" size={20} />
-							</div>
+							<DialogHeaderIcon
+								icon="edit"
+								className="bg-m3-secondary text-m3-on-secondary"
+							/>
 							<div>
 								<DialogTitle className="text-lg font-bold text-m3-on-surface">
 									Sửa học sinh
@@ -204,16 +210,6 @@ const EditStudentModalComponent = ({
 								</DialogDescription>
 							</div>
 						</DialogHeader>
-						<IconButton
-							type="button"
-							size="sm"
-							colorStyle="standard"
-							aria-label="Đóng"
-							onClick={handleClose}
-							disabled={isSubmitting}
-						>
-							<Icon name="close" />
-						</IconButton>
 					</div>
 
 					<form

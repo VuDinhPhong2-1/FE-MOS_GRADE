@@ -11,7 +11,6 @@ import {
 	DialogPortal,
 	DialogTitle,
 	Icon,
-	IconButton,
 	ProgressIndicator,
 	Select,
 	TextField,
@@ -50,7 +49,7 @@ export const EditAssignmentModal: React.FC<EditAssignmentModalProps> = ({
 }) => {
 	const endpointOptions = useMemo(
 		() => [
-			{ value: "", label: "-- Chọn đầu chấm điểm --" },
+			{ value: "", label: "Chọn đầu chấm điểm" },
 			...gradingEndpoints.map((ep) => ({
 				value: ep.endpoint,
 				label: ep.displayName,
@@ -67,7 +66,10 @@ export const EditAssignmentModal: React.FC<EditAssignmentModalProps> = ({
 		<Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
 			<DialogPortal>
 				<DialogOverlay />
-				<DialogContent className="max-w-2xl w-full rounded-3xl bg-m3-surface-container p-0 shadow-2xl border border-m3-outline-variant/30 overflow-hidden">
+				<DialogContent
+					hideCloseButton
+					className="max-w-2xl w-full rounded-3xl bg-m3-surface-container-high p-0 shadow-2xl border border-m3-outline-variant/30 overflow-hidden text-m3-on-surface"
+				>
 					{/* Header */}
 					<div className="flex items-center justify-between px-6 pt-5 pb-3 border-b border-m3-outline-variant/20">
 						<DialogHeader>
@@ -79,15 +81,6 @@ export const EditAssignmentModal: React.FC<EditAssignmentModalProps> = ({
 								động.
 							</DialogDescription>
 						</DialogHeader>
-						<IconButton
-							type="button"
-							size="sm"
-							colorStyle="standard"
-							aria-label="Đóng"
-							onClick={onClose}
-						>
-							<Icon name="close" />
-						</IconButton>
 					</div>
 
 					{/* Body */}

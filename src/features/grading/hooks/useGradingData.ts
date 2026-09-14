@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { showAlert } from "../../../components/common";
 import { useAuth } from "../../../context/AuthContext";
 import { assignmentService } from "../../../services/assignment.service";
 import type {
@@ -35,7 +36,11 @@ export const useGradingData = ({
 			setAssignments(data);
 		} catch (error) {
 			console.error("Lỗi khi tải danh sách bài tập:", error);
-			alert("Không thể tải danh sách bài tập!");
+			void showAlert({
+				title: "Lỗi tải dữ liệu",
+				message: "Không thể tải danh sách bài tập!",
+				variant: "error",
+			});
 		} finally {
 			setIsLoadingAssignments(false);
 		}

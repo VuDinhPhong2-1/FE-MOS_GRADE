@@ -5,6 +5,7 @@ export * from "./hooks/useRoomManager";
 export * from "./hooks/useScheduleData";
 export * from "./ReportTabContent";
 export * from "./RoomManagerModal";
+export * from "./ScheduleActionToolbar";
 export * from "./ScheduleFormModal";
 export * from "./ScheduleTable";
 export * from "./types";

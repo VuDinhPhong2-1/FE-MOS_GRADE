@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { showAlert } from "../../components/common";
 import { useAuth } from "../../context/AuthContext";
 import type { School } from "../../types";
 import type {
@@ -211,7 +212,11 @@ export function useClassList(selectedSchool: School) {
 
 	const handleOpenAddModal = useCallback(() => {
 		if (!canCreateClass) {
-			alert("Bạn không có quyền tạo lớp trong trường này.");
+			void showAlert({
+				title: "Không có quyền",
+				message: "Bạn không có quyền tạo lớp trong trường này.",
+				variant: "warning",
+			});
 			return;
 		}
 

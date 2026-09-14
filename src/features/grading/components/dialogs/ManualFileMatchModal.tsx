@@ -58,7 +58,10 @@ export const ManualFileMatchModal: React.FC<ManualFileMatchModalProps> = ({
 		<Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
 			<DialogPortal>
 				<DialogOverlay />
-				<DialogContent className="max-w-4xl w-full rounded-3xl bg-m3-surface-container p-0 shadow-2xl border border-m3-outline-variant/30 overflow-hidden flex flex-col max-h-[85vh]">
+				<DialogContent
+					hideCloseButton
+					className="max-w-4xl w-full rounded-3xl bg-m3-surface-container-high p-0 shadow-2xl border border-m3-outline-variant/30 overflow-hidden flex flex-col max-h-[85vh] text-m3-on-surface"
+				>
 					{/* Header */}
 					<div className="flex items-center justify-between px-6 pt-5 pb-3 border-b border-m3-outline-variant/20">
 						<DialogHeader>
@@ -70,21 +73,12 @@ export const ManualFileMatchModal: React.FC<ManualFileMatchModalProps> = ({
 								file bên dưới. Vui lòng chọn bài tập tương ứng.
 							</DialogDescription>
 						</DialogHeader>
-						<IconButton
-							type="button"
-							size="sm"
-							colorStyle="standard"
-							aria-label="Đóng"
-							onClick={onClose}
-						>
-							<Icon name="close" />
-						</IconButton>
 					</div>
 
 					{/* Body */}
 					<DialogBody className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
-						<div className="rounded-2xl border border-m3-outline-variant/20 overflow-hidden shadow-2xs">
-							<table className="min-w-full divide-y divide-m3-outline-variant/20 bg-m3-surface">
+						<div className="rounded-2xl border border-m3-outline-variant/20 overflow-hidden shadow-2xs bg-m3-surface-container text-m3-on-surface">
+							<table className="min-w-full divide-y divide-m3-outline-variant/20 bg-m3-surface-container">
 								<thead className="bg-m3-surface-container-low">
 									<tr>
 										<th className="px-3 py-2.5 text-left text-xs font-semibold text-m3-on-surface-variant">
@@ -110,7 +104,7 @@ export const ManualFileMatchModal: React.FC<ManualFileMatchModalProps> = ({
 											studentNameById.get(item.studentId) || item.studentId;
 
 										const candidateOptions = [
-											{ value: "", label: "-- Chọn bài tập --" },
+											{ value: "", label: "Chọn bài tập" },
 											...item.candidateAssignmentIds.map((assignId) => ({
 												value: assignId,
 												label: assignmentNameById.get(assignId) || assignId,

@@ -2,7 +2,6 @@ import {
 	Button,
 	Dialog,
 	DialogBody,
-	DialogClose,
 	DialogContent,
 	DialogDescription,
 	DialogFooter,
@@ -11,10 +10,10 @@ import {
 	DialogPortal,
 	DialogTitle,
 	Icon,
-	IconButton,
 	TextField,
 } from "@bug-on/m3-expressive";
 import { type FormEvent, useCallback, useState } from "react";
+import { DialogHeaderIcon } from "../../components/common";
 import type { CreateSchoolRequest, School } from "../../types";
 import { EMPTY_FORM, type SchoolFormModalProps } from "./types";
 
@@ -68,12 +67,9 @@ const SchoolFormContent = ({
 			{/* Modal Header */}
 			<div className="flex items-center justify-between px-6 pt-5 pb-3">
 				<DialogHeader className="mb-0 flex-row items-center gap-3 space-y-0 text-left">
-					<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-m3-primary/10 text-m3-primary">
-						<Icon
-							name={editingSchool ? "edit_square" : "domain_add"}
-							className="text-xl"
-						/>
-					</div>
+					<DialogHeaderIcon
+						icon={editingSchool ? "edit_square" : "domain_add"}
+					/>
 					<div>
 						<DialogTitle className="text-lg font-bold text-m3-on-surface">
 							{editingSchool ? "Chỉnh sửa trường học" : "Thêm trường học mới"}
@@ -83,18 +79,6 @@ const SchoolFormContent = ({
 						</DialogDescription>
 					</div>
 				</DialogHeader>
-				<DialogClose asChild>
-					<IconButton
-						type="button"
-						size="sm"
-						colorStyle="standard"
-						aria-label="Đóng"
-						disabled={isSubmitting}
-						onClick={onClose}
-					>
-						<Icon name="close" className="text-xl" />
-					</IconButton>
-				</DialogClose>
 			</div>
 
 			{/* Modal Body */}
@@ -102,7 +86,7 @@ const SchoolFormContent = ({
 				<div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
 					<TextField
 						variant="outlined"
-						label="Tên trường *"
+						label="Tên trường"
 						placeholder="VD: Trường THPT Chu Văn An"
 						required
 						disabled={isSubmitting}
@@ -115,7 +99,7 @@ const SchoolFormContent = ({
 
 					<TextField
 						variant="outlined"
-						label="Mã trường *"
+						label="Mã trường"
 						placeholder="VD: CVA-HN"
 						required
 						disabled={isSubmitting}

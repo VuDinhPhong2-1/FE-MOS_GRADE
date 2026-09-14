@@ -340,7 +340,7 @@ export const GradingWorkspace: React.FC<GradingWorkspaceProps> = ({
 										variant="outlined"
 										label="Chấm nhanh 1 bài tập cụ thể"
 										options={[
-											{ value: "", label: "-- Chọn bài tập để chấm lẻ --" },
+											{ value: "", label: "Chọn bài tập để chấm lẻ" },
 											...activeAutoAssignments.map((a) => ({
 												value: a.id,
 												label: `${a.name} (Điểm tối đa: ${a.maxScore})`,

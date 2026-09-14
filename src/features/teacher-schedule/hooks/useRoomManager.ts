@@ -1,4 +1,5 @@
 import { type FormEvent, useCallback, useMemo, useState } from "react";
+import { showConfirm } from "../../../components/common";
 import { computerRoomService } from "../../../services/computer-room.service";
 import type {
 	ComputerRoom,
@@ -110,7 +111,12 @@ export const useRoomManager = ({
 			currentScheduleRoomId?: string,
 			onRoomCleared?: () => void,
 		) => {
-			const confirmed = window.confirm(`Xóa phòng máy "${room.name}"?`);
+			const confirmed = await showConfirm({
+				title: "Xác nhận xóa phòng máy",
+				message: `Bạn có chắc chắn muốn xóa phòng máy "${room.name}"?`,
+				confirmLabel: "Xác nhận xóa",
+				variant: "destructive",
+			});
 			if (!confirmed) return;
 			try {
 				await computerRoomService.delete(room.id, getAccessToken);

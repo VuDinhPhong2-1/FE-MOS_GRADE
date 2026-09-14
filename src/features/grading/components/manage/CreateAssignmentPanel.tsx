@@ -87,20 +87,22 @@ export const CreateAssignmentPanel: React.FC<CreateAssignmentPanelProps> = ({
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
 					<Select
 						variant="outlined"
-						label="Chọn môn *"
+						label="Chọn môn"
 						options={subjectSelectOptions}
 						value={newAssignmentSubject}
 						onChange={(val) => onSubjectChange(val as SubjectCode)}
 						fullWidth
+						required
 					/>
 
 					<Select
 						variant="outlined"
-						label="Chọn phần *"
+						label="Chọn phần"
 						options={practiceSelectOptions}
 						value={newAssignmentPracticeCode}
 						onChange={(val) => onPracticeChange(val as AssignmentPresetCode)}
 						fullWidth
+						required
 					/>
 				</div>
 

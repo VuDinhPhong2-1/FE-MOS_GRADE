@@ -11,7 +11,6 @@ import {
 	DialogPortal,
 	DialogTitle,
 	Icon,
-	IconButton,
 	List,
 	ListItem,
 	ProgressIndicator,
@@ -19,6 +18,7 @@ import {
 } from "@bug-on/m3-expressive";
 import type React from "react";
 import { useMemo } from "react";
+import { DialogHeaderIcon } from "../../../components/common";
 import type { TeacherSummary } from "../../../types/auth.types";
 import type { Class } from "../../../types/class.types";
 
@@ -80,9 +80,7 @@ export const HandoverModal: React.FC<HandoverModalProps> = ({
 							{/* Header */}
 							<div className="flex items-center justify-between px-6 pt-5 pb-3">
 								<DialogHeader className="mb-0 flex-row items-center gap-3 space-y-0 text-left">
-									<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-m3-primary/10 text-m3-primary">
-										<Icon name="supervisor_account" className="text-xl" />
-									</div>
+									<DialogHeaderIcon icon="supervisor_account" />
 									<div>
 										<DialogTitle className="text-lg font-bold text-m3-on-surface">
 											Bàn giao quyền lớp:{" "}
@@ -96,15 +94,6 @@ export const HandoverModal: React.FC<HandoverModalProps> = ({
 										</DialogDescription>
 									</div>
 								</DialogHeader>
-								<IconButton
-									type="button"
-									size="sm"
-									colorStyle="standard"
-									aria-label="Đóng hộp thoại bàn giao"
-									onClick={onClose}
-								>
-									<Icon name="close" className="text-lg" />
-								</IconButton>
 							</div>
 
 							{/* Body */}

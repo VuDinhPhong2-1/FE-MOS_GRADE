@@ -1,6 +1,7 @@
 import { Icon } from "@bug-on/m3-expressive";
 import type { ClipboardEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { showConfirm } from "../components/common";
 import { useAuth } from "../context/AuthContext";
 import { usePageHeader } from "../context/PageActionsContext";
 import {
@@ -86,7 +87,8 @@ const specialConditionOptions: Array<{
 	{
 		value: "hyperlink",
 		label: "Siêu liên kết Word",
-		description: "Kiểm tra văn bản hiển thị và URL của siêu liên kết trong Word.",
+		description:
+			"Kiểm tra văn bản hiển thị và URL của siêu liên kết trong Word.",
 	},
 	{
 		value: "sectionBreakBeforeText",
@@ -313,9 +315,7 @@ const specialConditionGroups: Array<{
 	{
 		label: "Word - Hình ảnh",
 		matches: (option) =>
-			["pictureBullet", "insertedImage", "pictureStyle"].includes(
-				option.value,
-			),
+			["pictureBullet", "insertedImage", "pictureStyle"].includes(option.value),
 	},
 	{
 		label: "Excel - Biểu đồ",
@@ -378,7 +378,9 @@ const groupSpecialConditionOptions = (
 		grouped.push(
 			...groupOptions.map((option) => ({ type: "option" as const, option })),
 		);
-		groupOptions.forEach((option) => remaining.delete(option));
+		for (const option of groupOptions) {
+			remaining.delete(option);
+		}
 	}
 
 	if (remaining.size > 0) {
@@ -466,12 +468,14 @@ const defaultSpecialConditionFeedback = (
 			return {
 				successDetail: "Đã tạo đúng siêu liên kết cho ô yêu cầu.",
 				errorMessage: "Siêu liên kết của ô yêu cầu chưa đúng.",
-				fixAction: "Chọn ô cần liên kết -> Insert -> Link -> chọn đúng sheet và ô đích.",
+				fixAction:
+					"Chọn ô cần liên kết -> Insert -> Link -> chọn đúng sheet và ô đích.",
 			};
 		case "excelIconSetConditionalFormatting":
 			return {
 				successDetail: "Đã áp dụng đúng Icon Set Conditional Formatting.",
-				errorMessage: "Conditional Formatting Icon Set chưa đúng vùng ô hoặc loại biểu tượng.",
+				errorMessage:
+					"Conditional Formatting Icon Set chưa đúng vùng ô hoặc loại biểu tượng.",
 				fixAction:
 					"Chọn đúng vùng ô -> Home -> Conditional Formatting -> Icon Sets -> chọn đúng icon set.",
 			};
@@ -479,18 +483,21 @@ const defaultSpecialConditionFeedback = (
 			return {
 				successDetail: "Đã mở rộng đúng vùng dữ liệu của biểu đồ.",
 				errorMessage: "Biểu đồ chưa bao gồm đúng vùng dữ liệu yêu cầu.",
-				fixAction: "Chọn biểu đồ -> Select Data -> mở rộng category/value range đến đúng hàng yêu cầu.",
+				fixAction:
+					"Chọn biểu đồ -> Select Data -> mở rộng category/value range đến đúng hàng yêu cầu.",
 			};
 		case "excelChartStyle":
 			return {
 				successDetail: "Đã áp dụng đúng Chart Style.",
 				errorMessage: "Chart Style của biểu đồ chưa đúng.",
-				fixAction: "Chọn biểu đồ -> Chart Design -> Chart Styles -> chọn đúng style yêu cầu.",
+				fixAction:
+					"Chọn biểu đồ -> Chart Design -> Chart Styles -> chọn đúng style yêu cầu.",
 			};
 		case "excelTextReplacement":
 			return {
 				successDetail: "Đã thay thế đúng toàn bộ văn bản yêu cầu.",
-				errorMessage: "Workbook vẫn còn văn bản cũ hoặc chưa có đủ văn bản mới.",
+				errorMessage:
+					"Workbook vẫn còn văn bản cũ hoặc chưa có đủ văn bản mới.",
 				fixAction:
 					"Dùng Find and Replace để thay tất cả các lần xuất hiện của văn bản cũ bằng văn bản mới.",
 			};
@@ -520,28 +527,33 @@ const defaultSpecialConditionFeedback = (
 		case "excelDefinedName":
 			return {
 				successDetail: "Đã tạo đúng named range với tên và các vùng ô yêu cầu.",
-				errorMessage: "Named range chưa đúng tên, thiếu vùng ô hoặc có thêm vùng ngoài yêu cầu.",
+				errorMessage:
+					"Named range chưa đúng tên, thiếu vùng ô hoặc có thêm vùng ngoài yêu cầu.",
 				fixAction:
 					"Chọn đúng các vùng ô không liền kề -> Formulas -> Define Name -> nhập đúng tên vùng.",
 			};
 		case "excelFormulaReferences":
 			return {
 				successDetail: "Công thức đã dùng đúng các named range yêu cầu.",
-				errorMessage: "Công thức chưa dùng đủ named range hoặc đang tham chiếu trực tiếp ô/vùng.",
+				errorMessage:
+					"Công thức chưa dùng đủ named range hoặc đang tham chiếu trực tiếp ô/vùng.",
 				fixAction:
 					"Nhập lại công thức bằng đúng các named range được yêu cầu, không thay bằng địa chỉ ô nếu task yêu cầu dùng named range.",
 			};
 		case "excelNoConditionalFormatting":
 			return {
-				successDetail: "Đã xóa toàn bộ conditional formatting trên worksheet yêu cầu.",
+				successDetail:
+					"Đã xóa toàn bộ conditional formatting trên worksheet yêu cầu.",
 				errorMessage: "Worksheet vẫn còn conditional formatting.",
 				fixAction:
 					"Chọn worksheet -> Home -> Conditional Formatting -> Clear Rules -> Clear Rules from Entire Sheet.",
 			};
 		case "excelTextRotation":
 			return {
-				successDetail: "Các tiêu đề đã được xoay chữ đúng Angle Counterclockwise.",
-				errorMessage: "Một hoặc nhiều tiêu đề chưa được xoay chữ đúng Angle Counterclockwise.",
+				successDetail:
+					"Các tiêu đề đã được xoay chữ đúng Angle Counterclockwise.",
+				errorMessage:
+					"Một hoặc nhiều tiêu đề chưa được xoay chữ đúng Angle Counterclockwise.",
 				fixAction:
 					"Chọn các ô tiêu đề yêu cầu -> Home -> Orientation -> Angle Counterclockwise.",
 			};
@@ -555,7 +567,8 @@ const defaultSpecialConditionFeedback = (
 		case "excelFreezePanes":
 			return {
 				successDetail: "Đã cố định đúng các hàng cần giữ khi cuộn dọc.",
-				errorMessage: "Worksheet chưa cố định đúng các hàng cần giữ khi cuộn dọc.",
+				errorMessage:
+					"Worksheet chưa cố định đúng các hàng cần giữ khi cuộn dọc.",
 				fixAction:
 					"Chọn ô ngay bên dưới các hàng cần giữ -> View -> Freeze Panes -> Freeze Panes.",
 			};
@@ -792,7 +805,7 @@ const parsePageBorderWidthInput = (value: string) => {
 	if (!raw) return undefined;
 
 	const xmlMatch = raw.match(/^(\d+)\s*(xml|sz|eighth|eighths)?$/);
-	if (xmlMatch && xmlMatch[2]) {
+	if (xmlMatch?.[2]) {
 		const width = Number(xmlMatch[1]);
 		return Number.isFinite(width) && width > 0 ? width : undefined;
 	}
@@ -915,7 +928,8 @@ const ExcelProject02SpecialConditionEditor = ({
 }: ExcelProject02SpecialConditionEditorProps) => {
 	const updateConfig = (configKey: keyof SpecialCondition, patch: object) => {
 		const currentConfig =
-			(specialCondition[configKey] as Record<string, unknown> | undefined) ?? {};
+			(specialCondition[configKey] as Record<string, unknown> | undefined) ??
+			{};
 		onChange({
 			...specialCondition,
 			[configKey]: {
@@ -979,7 +993,9 @@ const ExcelProject02SpecialConditionEditor = ({
 				<label className="text-xs font-semibold text-slate-600">
 					Tên worksheet
 					<input
-						value={specialCondition.excelCellHyperlinkConfig?.worksheetName ?? ""}
+						value={
+							specialCondition.excelCellHyperlinkConfig?.worksheetName ?? ""
+						}
 						onChange={(e) =>
 							updateConfig("excelCellHyperlinkConfig", {
 								worksheetName: e.target.value,
@@ -1106,7 +1122,9 @@ const ExcelProject02SpecialConditionEditor = ({
 				<label className="text-xs font-semibold text-slate-600">
 					File nguồn
 					<input
-						value={specialCondition.excelTextReplacementConfig?.sourceFile ?? ""}
+						value={
+							specialCondition.excelTextReplacementConfig?.sourceFile ?? ""
+						}
 						onChange={(e) =>
 							updateConfig("excelTextReplacementConfig", {
 								sourceFile: e.target.value,
@@ -1220,7 +1238,9 @@ const ExcelProject02SpecialConditionEditor = ({
 				<label className="text-xs font-semibold text-slate-600">
 					Tên worksheet
 					<input
-						value={specialCondition.excelNumberFormatConfig?.worksheetName ?? ""}
+						value={
+							specialCondition.excelNumberFormatConfig?.worksheetName ?? ""
+						}
 						onChange={(e) =>
 							updateConfig("excelNumberFormatConfig", {
 								worksheetName: e.target.value,
@@ -1418,8 +1438,8 @@ const ExcelProject02SpecialConditionEditor = ({
 					Các vùng giá trị (mỗi dòng một series)
 					<textarea
 						value={(
-							specialCondition.excelChartDataRangeConfig
-								?.expectedValueRanges ?? []
+							specialCondition.excelChartDataRangeConfig?.expectedValueRanges ??
+							[]
 						).join("\n")}
 						onChange={(e) =>
 							updateConfig("excelChartDataRangeConfig", {
@@ -1442,8 +1462,8 @@ const ExcelProject02SpecialConditionEditor = ({
 					Tên series (mỗi dòng một series chú giải)
 					<textarea
 						value={(
-							specialCondition.excelChartDataRangeConfig
-								?.expectedSeriesNames ?? []
+							specialCondition.excelChartDataRangeConfig?.expectedSeriesNames ??
+							[]
 						).join("\n")}
 						onChange={(e) =>
 							updateConfig("excelChartDataRangeConfig", {
@@ -1504,7 +1524,9 @@ const ExcelProject02SpecialConditionEditor = ({
 				<label className="text-xs font-semibold text-slate-600">
 					File XML biểu đồ
 					<input
-						value={specialCondition.excelChartLegendConfig?.chartSourceFile ?? ""}
+						value={
+							specialCondition.excelChartLegendConfig?.chartSourceFile ?? ""
+						}
 						onChange={(e) =>
 							updateConfig("excelChartLegendConfig", {
 								chartSourceFile: e.target.value,
@@ -1813,8 +1835,8 @@ const ExcelProject02SpecialConditionEditor = ({
 					<input
 						type="checkbox"
 						checked={
-							specialCondition.excelFreezePanesConfig
-								?.requireNoColumnFreeze !== false
+							specialCondition.excelFreezePanesConfig?.requireNoColumnFreeze !==
+							false
 						}
 						onChange={(e) =>
 							updateConfig("excelFreezePanesConfig", {
@@ -1936,7 +1958,9 @@ const ExcelProject02SpecialConditionEditor = ({
 				<label className="text-xs font-semibold text-slate-600">
 					Tên worksheet
 					<input
-						value={specialCondition.excelTextRotationConfig?.worksheetName ?? ""}
+						value={
+							specialCondition.excelTextRotationConfig?.worksheetName ?? ""
+						}
 						onChange={(e) =>
 							updateConfig("excelTextRotationConfig", {
 								worksheetName: e.target.value,
@@ -2009,7 +2033,9 @@ const ExcelProject02SpecialConditionEditor = ({
 				<label className="text-xs font-semibold text-slate-600">
 					Tên worksheet
 					<input
-						value={specialCondition.excelMultiColumnSortConfig?.worksheetName ?? ""}
+						value={
+							specialCondition.excelMultiColumnSortConfig?.worksheetName ?? ""
+						}
 						onChange={(e) =>
 							updateConfig("excelMultiColumnSortConfig", {
 								worksheetName: e.target.value,
@@ -2092,7 +2118,9 @@ const ExcelProject02SpecialConditionEditor = ({
 				<label className="text-xs font-semibold text-slate-600">
 					File XML biểu đồ
 					<input
-						value={specialCondition.excelChartStyleConfig?.chartSourceFile ?? ""}
+						value={
+							specialCondition.excelChartStyleConfig?.chartSourceFile ?? ""
+						}
 						onChange={(e) =>
 							updateConfig("excelChartStyleConfig", {
 								chartSourceFile: e.target.value,
@@ -2105,7 +2133,9 @@ const ExcelProject02SpecialConditionEditor = ({
 				<label className="text-xs font-semibold text-slate-600">
 					File XML chart style
 					<input
-						value={specialCondition.excelChartStyleConfig?.styleSourceFile ?? ""}
+						value={
+							specialCondition.excelChartStyleConfig?.styleSourceFile ?? ""
+						}
 						onChange={(e) =>
 							updateConfig("excelChartStyleConfig", {
 								styleSourceFile: e.target.value,
@@ -2207,7 +2237,9 @@ const prepareSpecialCondition = (
 	if (next.excelTextRotationConfig) {
 		next.excelTextRotationConfig = {
 			...next.excelTextRotationConfig,
-			expectedTexts: cleanTextareaLines(next.excelTextRotationConfig.expectedTexts),
+			expectedTexts: cleanTextareaLines(
+				next.excelTextRotationConfig.expectedTexts,
+			),
 		};
 	}
 
@@ -2499,7 +2531,13 @@ const XmlGradingRulesPage = () => {
 	}, []);
 
 	const deleteRuleSet = async (id: string) => {
-		if (!window.confirm("Xóa ruleset này?")) return;
+		const confirmed = await showConfirm({
+			title: "Xác nhận xóa ruleset",
+			message: "Bạn có chắc chắn muốn xóa ruleset này?",
+			confirmLabel: "Xác nhận xóa",
+			variant: "destructive",
+		});
+		if (!confirmed) return;
 		await xmlGradingRulesService.delete(id, getAccessToken);
 		startNewRuleSet();
 		await loadRuleSets();
@@ -2679,7 +2717,7 @@ const XmlGradingRulesPage = () => {
 		URL.revokeObjectURL(url);
 	};
 
-	// --- GIAO DIỆN HIỂN THỊ KẾT QUẢ CHẤM ĐIỂM CHI TIẾT ---
+	// -GIAO DIỆN HIỂN THỊ KẾT QUẢ CHẤM ĐIỂM CHI TIẾT ---
 	const renderGradeResult = () => {
 		if (!gradeJson) return null;
 
@@ -3272,7 +3310,11 @@ const XmlGradingRulesPage = () => {
 										const projectExpanded = expandedProjects[pi] ?? false;
 										return (
 											<div
-												key={`project-${pi}`}
+												key={
+													project.projectCode
+														? `project-${project.projectCode}`
+														: `project-${project.projectName || pi}`
+												}
 												className="group overflow-hidden rounded-3xl bg-m3-surface-container-low shadow-xs transition hover:shadow-md p-4 text-m3-on-surface"
 											>
 												{/* Project header */}
@@ -3597,7 +3639,10 @@ const XmlGradingRulesPage = () => {
 																																feedback:
 																																	task
 																																		.specialCondition
-																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																																		?.feedback ??
+																																	defaultSpecialConditionFeedback(
+																																		value as SpecialConditionType,
+																																	),
 																																config: task
 																																	.specialCondition
 																																	?.config ?? {
@@ -3623,7 +3668,10 @@ const XmlGradingRulesPage = () => {
 																																feedback:
 																																	task
 																																		.specialCondition
-																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																																		?.feedback ??
+																																	defaultSpecialConditionFeedback(
+																																		value as SpecialConditionType,
+																																	),
 																																imageInsertConfig:
 																																	task
 																																		.specialCondition
@@ -3664,7 +3712,10 @@ const XmlGradingRulesPage = () => {
 																																feedback:
 																																	task
 																																		.specialCondition
-																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																																		?.feedback ??
+																																	defaultSpecialConditionFeedback(
+																																		value as SpecialConditionType,
+																																	),
 																																convertTableToTextConfig:
 																																	task
 																																		.specialCondition
@@ -3699,7 +3750,10 @@ const XmlGradingRulesPage = () => {
 																																feedback:
 																																	task
 																																		.specialCondition
-																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																																		?.feedback ??
+																																	defaultSpecialConditionFeedback(
+																																		value as SpecialConditionType,
+																																	),
 																																hyperlinkConfig:
 																																	task
 																																		.specialCondition
@@ -3735,7 +3789,10 @@ const XmlGradingRulesPage = () => {
 																																feedback:
 																																	task
 																																		.specialCondition
-																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																																		?.feedback ??
+																																	defaultSpecialConditionFeedback(
+																																		value as SpecialConditionType,
+																																	),
 																																sectionBreakBeforeTextConfig:
 																																	task
 																																		.specialCondition
@@ -3770,7 +3827,10 @@ const XmlGradingRulesPage = () => {
 																																feedback:
 																																	task
 																																		.specialCondition
-																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																																		?.feedback ??
+																																	defaultSpecialConditionFeedback(
+																																		value as SpecialConditionType,
+																																	),
 																																pictureStyleConfig:
 																																	task
 																																		.specialCondition
@@ -3807,7 +3867,10 @@ const XmlGradingRulesPage = () => {
 																																feedback:
 																																	task
 																																		.specialCondition
-																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																																		?.feedback ??
+																																	defaultSpecialConditionFeedback(
+																																		value as SpecialConditionType,
+																																	),
 																																textBoxContainsTextConfig:
 																																	task
 																																		.specialCondition
@@ -3852,7 +3915,10 @@ const XmlGradingRulesPage = () => {
 																																feedback:
 																																	task
 																																		.specialCondition
-																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																																		?.feedback ??
+																																	defaultSpecialConditionFeedback(
+																																		value as SpecialConditionType,
+																																	),
 																																pageMarginsConfig:
 																																	task
 																																		.specialCondition
@@ -3886,7 +3952,10 @@ const XmlGradingRulesPage = () => {
 																																feedback:
 																																	task
 																																		.specialCondition
-																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																																		?.feedback ??
+																																	defaultSpecialConditionFeedback(
+																																		value as SpecialConditionType,
+																																	),
 																																documentStyleSetConfig:
 																																	task
 																																		.specialCondition
@@ -3925,7 +3994,10 @@ const XmlGradingRulesPage = () => {
 																																feedback:
 																																	task
 																																		.specialCondition
-																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																																		?.feedback ??
+																																	defaultSpecialConditionFeedback(
+																																		value as SpecialConditionType,
+																																	),
 																																pageBorderConfig:
 																																	task
 																																		.specialCondition
@@ -3967,7 +4039,10 @@ const XmlGradingRulesPage = () => {
 																																feedback:
 																																	task
 																																		.specialCondition
-																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																																		?.feedback ??
+																																	defaultSpecialConditionFeedback(
+																																		value as SpecialConditionType,
+																																	),
 																																excelTableNameConfig:
 																																	task
 																																		.specialCondition
@@ -4000,7 +4075,10 @@ const XmlGradingRulesPage = () => {
 																																feedback:
 																																	task
 																																		.specialCondition
-																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																																		?.feedback ??
+																																	defaultSpecialConditionFeedback(
+																																		value as SpecialConditionType,
+																																	),
 																																excelWorksheetPageSetupConfig:
 																																	task
 																																		.specialCondition
@@ -4030,7 +4108,10 @@ const XmlGradingRulesPage = () => {
 																																feedback:
 																																	task
 																																		.specialCondition
-																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																																		?.feedback ??
+																																	defaultSpecialConditionFeedback(
+																																		value as SpecialConditionType,
+																																	),
 																																excelClearCellFormattingConfig:
 																																	task
 																																		.specialCondition
@@ -4061,7 +4142,10 @@ const XmlGradingRulesPage = () => {
 																																feedback:
 																																	task
 																																		.specialCondition
-																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																																		?.feedback ??
+																																	defaultSpecialConditionFeedback(
+																																		value as SpecialConditionType,
+																																	),
 																																excelDataModelImportConfig:
 																																	task
 																																		.specialCondition
@@ -4097,7 +4181,10 @@ const XmlGradingRulesPage = () => {
 																																feedback:
 																																	task
 																																		.specialCondition
-																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																																		?.feedback ??
+																																	defaultSpecialConditionFeedback(
+																																		value as SpecialConditionType,
+																																	),
 																																excelCompatibilityReportConfig:
 																																	task
 																																		.specialCondition
@@ -4128,7 +4215,10 @@ const XmlGradingRulesPage = () => {
 																																feedback:
 																																	task
 																																		.specialCondition
-																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																																		?.feedback ??
+																																	defaultSpecialConditionFeedback(
+																																		value as SpecialConditionType,
+																																	),
 																																excelMergedRangeConfig:
 																																	task
 																																		.specialCondition
@@ -4159,21 +4249,21 @@ const XmlGradingRulesPage = () => {
 																																feedback:
 																																	task
 																																		.specialCondition
-																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																																		?.feedback ??
+																																	defaultSpecialConditionFeedback(
+																																		value as SpecialConditionType,
+																																	),
 																																excelCellHyperlinkConfig:
 																																	task
 																																		.specialCondition
 																																		?.excelCellHyperlinkConfig ?? {
 																																		worksheetName:
 																																			"",
-																																		cell:
-																																			"B13",
+																																		cell: "B13",
 																																		location:
 																																			"Fishing!A4",
-																																		target:
-																																			"",
-																																		display:
-																																			"",
+																																		target: "",
+																																		display: "",
 																																	},
 																															},
 																														);
@@ -4195,7 +4285,10 @@ const XmlGradingRulesPage = () => {
 																																feedback:
 																																	task
 																																		.specialCondition
-																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																																		?.feedback ??
+																																	defaultSpecialConditionFeedback(
+																																		value as SpecialConditionType,
+																																	),
 																																excelIconSetConditionalFormattingConfig:
 																																	task
 																																		.specialCondition
@@ -4227,7 +4320,10 @@ const XmlGradingRulesPage = () => {
 																																feedback:
 																																	task
 																																		.specialCondition
-																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																																		?.feedback ??
+																																	defaultSpecialConditionFeedback(
+																																		value as SpecialConditionType,
+																																	),
 																																excelChartDataRangeConfig:
 																																	task
 																																		.specialCondition
@@ -4241,8 +4337,7 @@ const XmlGradingRulesPage = () => {
 																																		expectedPointCount: 4,
 																																		expectedCategoryText:
 																																			"Giant Truck Bed Tent",
-																																		requireNoExtraSeries:
-																																			true,
+																																		requireNoExtraSeries: true,
 																																	},
 																															},
 																														);
@@ -4259,11 +4354,15 @@ const XmlGradingRulesPage = () => {
 																																score:
 																																	task
 																																		.specialCondition
-																																		?.score ?? 0,
+																																		?.score ??
+																																	0,
 																																feedback:
 																																	task
 																																		.specialCondition
-																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																																		?.feedback ??
+																																	defaultSpecialConditionFeedback(
+																																		value as SpecialConditionType,
+																																	),
 																																excelTextReplacementConfig:
 																																	task
 																																		.specialCondition
@@ -4295,11 +4394,15 @@ const XmlGradingRulesPage = () => {
 																																score:
 																																	task
 																																		.specialCondition
-																																		?.score ?? 0,
+																																		?.score ??
+																																	0,
 																																feedback:
 																																	task
 																																		.specialCondition
-																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																																		?.feedback ??
+																																	defaultSpecialConditionFeedback(
+																																		value as SpecialConditionType,
+																																	),
 																																excelPrintTitlesConfig:
 																																	task
 																																		.specialCondition
@@ -4324,11 +4427,15 @@ const XmlGradingRulesPage = () => {
 																																score:
 																																	task
 																																		.specialCondition
-																																		?.score ?? 0,
+																																		?.score ??
+																																	0,
 																																feedback:
 																																	task
 																																		.specialCondition
-																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																																		?.feedback ??
+																																	defaultSpecialConditionFeedback(
+																																		value as SpecialConditionType,
+																																	),
 																																excelNumberFormatConfig:
 																																	task
 																																		.specialCondition
@@ -4339,17 +4446,12 @@ const XmlGradingRulesPage = () => {
 																																			"B:E",
 																																		category:
 																																			"number",
-																																		decimalPlaces:
-																																			2,
-																																		symbol:
-																																			"",
-																																		requireThousandsSeparator:
-																																			false,
+																																		decimalPlaces: 2,
+																																		symbol: "",
+																																		requireThousandsSeparator: false,
 																																		allowedNumberFormatIds:
 																																			[
-																																				1,
-																																				2,
-																																				3,
+																																				1, 2, 3,
 																																				4,
 																																			],
 																																		requireEveryNumericCell: true,
@@ -4369,11 +4471,15 @@ const XmlGradingRulesPage = () => {
 																																score:
 																																	task
 																																		.specialCondition
-																																		?.score ?? 0,
+																																		?.score ??
+																																	0,
 																																feedback:
 																																	task
 																																		.specialCondition
-																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																																		?.feedback ??
+																																	defaultSpecialConditionFeedback(
+																																		value as SpecialConditionType,
+																																	),
 																																excelChartLegendConfig:
 																																	task
 																																		.specialCondition
@@ -4398,24 +4504,26 @@ const XmlGradingRulesPage = () => {
 																																score:
 																																	task
 																																		.specialCondition
-																																		?.score ?? 0,
+																																		?.score ??
+																																	0,
 																																feedback:
 																																	task
 																																		.specialCondition
-																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																																		?.feedback ??
+																																	defaultSpecialConditionFeedback(
+																																		value as SpecialConditionType,
+																																	),
 																																excelDefinedNameConfig:
 																																	task
 																																		.specialCondition
 																																		?.excelDefinedNameConfig ?? {
-																																		name:
-																																			"Prices",
+																																		name: "Prices",
 																																		expectedRanges:
 																																			[
 																																				"D5:D15",
 																																				"D18:D26",
 																																			],
-																																		requireExactRanges:
-																																			true,
+																																		requireExactRanges: true,
 																																	},
 																															},
 																														);
@@ -4432,19 +4540,22 @@ const XmlGradingRulesPage = () => {
 																																score:
 																																	task
 																																		.specialCondition
-																																		?.score ?? 0,
+																																		?.score ??
+																																	0,
 																																feedback:
 																																	task
 																																		.specialCondition
-																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																																		?.feedback ??
+																																	defaultSpecialConditionFeedback(
+																																		value as SpecialConditionType,
+																																	),
 																																excelFormulaReferencesConfig:
 																																	task
 																																		.specialCondition
 																																		?.excelFormulaReferencesConfig ?? {
 																																		worksheetName:
 																																			"Price List",
-																																		cell:
-																																			"H5",
+																																		cell: "H5",
 																																		requiredReferences:
 																																			[
 																																				"Price_10G",
@@ -4459,8 +4570,7 @@ const XmlGradingRulesPage = () => {
 																																			"",
 																																		expectedValue:
 																																			"",
-																																		requireOnlyDefinedNameReferences:
-																																			true,
+																																		requireOnlyDefinedNameReferences: true,
 																																	},
 																															},
 																														);
@@ -4477,19 +4587,22 @@ const XmlGradingRulesPage = () => {
 																																score:
 																																	task
 																																		.specialCondition
-																																		?.score ?? 0,
+																																		?.score ??
+																																	0,
 																																feedback:
 																																	task
 																																		.specialCondition
-																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																																		?.feedback ??
+																																	defaultSpecialConditionFeedback(
+																																		value as SpecialConditionType,
+																																	),
 																																excelNoConditionalFormattingConfig:
 																																	task
 																																		.specialCondition
 																																		?.excelNoConditionalFormattingConfig ?? {
 																																		worksheetName:
 																																			"Price List",
-																																		requireAllWorksheets:
-																																			false,
+																																		requireAllWorksheets: false,
 																																	},
 																															},
 																														);
@@ -4506,11 +4619,15 @@ const XmlGradingRulesPage = () => {
 																																score:
 																																	task
 																																		.specialCondition
-																																		?.score ?? 0,
+																																		?.score ??
+																																	0,
 																																feedback:
 																																	task
 																																		.specialCondition
-																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																																		?.feedback ??
+																																	defaultSpecialConditionFeedback(
+																																		value as SpecialConditionType,
+																																	),
 																																excelTextRotationConfig:
 																																	task
 																																		.specialCondition
@@ -4526,11 +4643,8 @@ const XmlGradingRulesPage = () => {
 																																				"Support",
 																																			],
 																																		allowedTextRotationValues:
-																																			[
-																																				45,
-																																			],
-																																		requireAllTexts:
-																																			true,
+																																			[45],
+																																		requireAllTexts: true,
 																																	},
 																															},
 																														);
@@ -4547,11 +4661,15 @@ const XmlGradingRulesPage = () => {
 																																score:
 																																	task
 																																		.specialCondition
-																																		?.score ?? 0,
+																																		?.score ??
+																																	0,
 																																feedback:
 																																	task
 																																		.specialCondition
-																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																																		?.feedback ??
+																																	defaultSpecialConditionFeedback(
+																																		value as SpecialConditionType,
+																																	),
 																																excelMultiColumnSortConfig:
 																																	task
 																																		.specialCondition
@@ -4566,14 +4684,12 @@ const XmlGradingRulesPage = () => {
 																																				{
 																																					headerName:
 																																						"Wired Equipment",
-																																					descending:
-																																						false,
+																																					descending: false,
 																																				},
 																																				{
 																																					headerName:
 																																						"Port Size",
-																																					descending:
-																																						false,
+																																					descending: false,
 																																				},
 																																			],
 																																	},
@@ -4592,11 +4708,15 @@ const XmlGradingRulesPage = () => {
 																																score:
 																																	task
 																																		.specialCondition
-																																		?.score ?? 0,
+																																		?.score ??
+																																	0,
 																																feedback:
 																																	task
 																																		.specialCondition
-																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																																		?.feedback ??
+																																	defaultSpecialConditionFeedback(
+																																		value as SpecialConditionType,
+																																	),
 																																excelFreezePanesConfig:
 																																	task
 																																		.specialCondition
@@ -4607,8 +4727,7 @@ const XmlGradingRulesPage = () => {
 																																			"A4",
 																																		ySplit: 3,
 																																		xSplit: 0,
-																																		requireNoColumnFreeze:
-																																			true,
+																																		requireNoColumnFreeze: true,
 																																	},
 																															},
 																														);
@@ -4625,11 +4744,15 @@ const XmlGradingRulesPage = () => {
 																																score:
 																																	task
 																																		.specialCondition
-																																		?.score ?? 0,
+																																		?.score ??
+																																	0,
 																																feedback:
 																																	task
 																																		.specialCondition
-																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																																		?.feedback ??
+																																	defaultSpecialConditionFeedback(
+																																		value as SpecialConditionType,
+																																	),
 																																excelDocumentPropertyConfig:
 																																	task
 																																		.specialCondition
@@ -4656,11 +4779,15 @@ const XmlGradingRulesPage = () => {
 																																score:
 																																	task
 																																		.specialCondition
-																																		?.score ?? 0,
+																																		?.score ??
+																																	0,
 																																feedback:
 																																	task
 																																		.specialCondition
-																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																																		?.feedback ??
+																																	defaultSpecialConditionFeedback(
+																																		value as SpecialConditionType,
+																																	),
 																																excelPrintAreaConfig:
 																																	task
 																																		.specialCondition
@@ -4669,8 +4796,7 @@ const XmlGradingRulesPage = () => {
 																																			"Q1 Sales",
 																																		expectedRange:
 																																			"A1:F17",
-																																		requireExactRange:
-																																			true,
+																																		requireExactRange: true,
 																																	},
 																															},
 																														);
@@ -4692,7 +4818,10 @@ const XmlGradingRulesPage = () => {
 																																feedback:
 																																	task
 																																		.specialCondition
-																																		?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																																		?.feedback ??
+																																	defaultSpecialConditionFeedback(
+																																		value as SpecialConditionType,
+																																	),
 																																excelChartStyleConfig:
 																																	task
 																																		.specialCondition
@@ -6864,8 +6993,8 @@ const XmlGradingRulesPage = () => {
 																													);
 																												}}
 																											/>
-																											Bắt buộc không còn tên
-																											ban đầu
+																											Bắt buộc không còn tên ban
+																											đầu
 																										</label>
 																									</div>
 																								)}
@@ -7309,7 +7438,8 @@ const XmlGradingRulesPage = () => {
 																													);
 																												}}
 																											/>
-																											Bắt buộc có worksheet đã import
+																											Bắt buộc có worksheet đã
+																											import
 																										</label>
 																										<label className="flex items-center gap-2 text-xs font-medium text-slate-600">
 																											<input
@@ -7513,7 +7643,9 @@ const XmlGradingRulesPage = () => {
 																										task.specialCondition
 																									}
 																									inputClass={inputClass}
-																									onChange={(specialCondition) =>
+																									onChange={(
+																										specialCondition,
+																									) =>
 																										updateTaskSpecialCondition(
 																											pi,
 																											ti,
@@ -8616,6 +8748,3 @@ const XmlGradingRulesPage = () => {
 };
 
 export default XmlGradingRulesPage;
-
-
-

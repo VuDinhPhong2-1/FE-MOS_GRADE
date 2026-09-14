@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from "react";
+import { showAlert } from "../../../components/common";
 import { useAuth } from "../../../context/AuthContext";
 import { gradingService } from "../../../services/grading.service";
 import { scoreService } from "../../../services/score.service";
@@ -219,7 +220,11 @@ export const useMultiGrading = ({
 				setMultiPersistedScores(nextPersistedMap);
 			} catch (error) {
 				console.error("Lỗi khi tải điểm của nhiều bài tập:", error);
-				alert("Không thể tải điểm cho nhiều bài tập!");
+				void showAlert({
+					title: "Lỗi tải dữ liệu",
+					message: "Không thể tải điểm cho nhiều bài tập!",
+					variant: "error",
+				});
 			}
 		},
 		[getAccessToken, gradingStudents, initializeMultiAutoStates],
@@ -736,7 +741,11 @@ export const useMultiGrading = ({
 					);
 				}
 				if (notes.length > 0) {
-					alert(notes.join("\n"));
+					void showAlert({
+						title: "Thông báo gán file",
+						message: notes.join("\n\n"),
+						variant: "info",
+					});
 				}
 			}
 		},
@@ -824,7 +833,11 @@ export const useMultiGrading = ({
 			);
 			if (!target) return;
 			if (!target.selectedAssignmentId) {
-				alert("Vui lòng chọn cột bài tập trước khi gán file.");
+				void showAlert({
+					title: "Chưa chọn cột bài tập",
+					message: "Vui lòng chọn cột bài tập trước khi gán file.",
+					variant: "warning",
+				});
 				return;
 			}
 			await applyPendingManualMultiFileMatches([target]);
@@ -837,7 +850,11 @@ export const useMultiGrading = ({
 			(item) => item.selectedAssignmentId,
 		);
 		if (readyMatches.length === 0) {
-			alert("Chưa có file nào được chọn cột bài tập để gán.");
+			void showAlert({
+				title: "Chưa có file",
+				message: "Chưa có file nào được chọn cột bài tập để gán.",
+				variant: "warning",
+			});
 			return;
 		}
 
@@ -845,9 +862,12 @@ export const useMultiGrading = ({
 		for (const match of readyMatches) {
 			const key = `${match.studentId}::${match.selectedAssignmentId}`;
 			if (duplicateKey.has(key)) {
-				alert(
-					"Có ít nhất 2 file đang chọn cùng một cột bài tập cho cùng 1 học sinh. Vui lòng chỉnh lại trước khi gán.",
-				);
+				void showAlert({
+					title: "Trùng lặp cột bài tập",
+					message:
+						"Có ít nhất 2 file đang chọn cùng một cột bài tập cho cùng 1 học sinh. Vui lòng chỉnh lại trước khi gán.",
+					variant: "warning",
+				});
 				return;
 			}
 			duplicateKey.add(key);
@@ -858,7 +878,11 @@ export const useMultiGrading = ({
 
 	const handleSaveMultipleAssignments = useCallback(async () => {
 		if (multiAssignmentIds.length === 0) {
-			alert("Vui lòng chọn ít nhất 1 bài tập!");
+			void showAlert({
+				title: "Chưa chọn bài tập",
+				message: "Vui lòng chọn ít nhất 1 bài tập!",
+				variant: "warning",
+			});
 			return;
 		}
 
@@ -960,25 +984,37 @@ export const useMultiGrading = ({
 			}
 
 			if (failedAssignments.length === 0) {
-				alert(
-					`Lưu điểm thành công cho ${savedAssignmentCount} bài tập có thay đổi!`,
-				);
+				void showAlert({
+					title: "Thành công",
+					message: `Lưu điểm thành công cho ${savedAssignmentCount} bài tập có thay đổi!`,
+					variant: "success",
+				});
 				if (onSuccess) await onSuccess();
 				return;
 			}
 
 			if (savedAssignmentCount > 0) {
-				alert(
-					`Đã lưu điểm ${savedAssignmentCount} bài tập.\nMột số bài tập bị lỗi:\n${failedAssignments.join("\n")}`,
-				);
+				void showAlert({
+					title: "Lưu điểm một phần",
+					message: `Đã lưu điểm ${savedAssignmentCount} bài tập.\n\nMột số bài tập bị lỗi:\n${failedAssignments.join("\n")}`,
+					variant: "warning",
+				});
 				if (onSuccess) await onSuccess();
 				return;
 			}
 
-			alert(`Lưu điểm thất bại:\n${failedAssignments.join("\n")}`);
+			void showAlert({
+				title: "Lưu điểm thất bại",
+				message: `Lưu điểm thất bại:\n\n${failedAssignments.join("\n")}`,
+				variant: "error",
+			});
 		} catch (error) {
 			console.error("Lỗi khi lưu điểm nhiều bài:", error);
-			alert("Không thể lưu điểm các bài tập đã chọn!");
+			void showAlert({
+				title: "Lỗi lưu điểm",
+				message: "Không thể lưu điểm các bài tập đã chọn!",
+				variant: "error",
+			});
 		} finally {
 			isSavingScoresRef.current = false;
 			setLoading(false);
