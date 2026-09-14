@@ -1,4 +1,4 @@
-import { Icon } from "@bug-on/m3-expressive";
+import { Button, Icon, Select, TextField } from "@bug-on/m3-expressive";
 import { useEffect, useMemo, useState } from "react";
 import type {
 	ScheduleAttendanceResponse,
@@ -255,14 +255,14 @@ const buildClassSummaryFromStudents = (
 ): string => {
 	const classMap = new Map<string, ClassCount>();
 
-	students.forEach((student) => {
+	for (const student of students) {
 		if (!isRecord(student)) {
-			return;
+			continue;
 		}
 
 		const className = readClassName(student) ?? fallbackClassName;
 		if (!className) {
-			return;
+			continue;
 		}
 
 		const studentId = readStudentId(student);
@@ -280,7 +280,7 @@ const buildClassSummaryFromStudents = (
 		}
 
 		classMap.set(className, current);
-	});
+	}
 
 	return Array.from(classMap.values()).map(formatClassCount).join(", ");
 };
@@ -647,35 +647,38 @@ export const ReportTabContent = ({
 
 	const reportActions = (
 		<div className="flex flex-wrap items-center justify-end gap-2">
-			<button
+			<Button
 				type="button"
+				colorStyle="tonal"
+				size="xs"
+				icon={<Icon name="visibility" className="text-base" />}
 				onClick={() => setPreviewOpen((current) => !current)}
-				className="inline-flex items-center gap-1.5 rounded-xl border border-m3-outline-variant/70 bg-m3-surface px-3 py-2 text-xs font-bold text-m3-on-surface transition hover:border-m3-primary hover:text-m3-primary"
 			>
-				<Icon name="visibility" className="text-base" />
 				{previewOpen ? "Ẩn xem trước" : "Xem trước"}
-			</button>
-			<button
+			</Button>
+			<Button
 				type="button"
+				colorStyle="tonal"
+				size="xs"
+				icon={<Icon name="content_copy" className="text-base" />}
 				onClick={handleCopyReport}
-				className="inline-flex items-center gap-1.5 rounded-xl border border-m3-outline-variant/70 bg-m3-surface px-3 py-2 text-xs font-bold text-m3-on-surface transition hover:border-m3-primary hover:text-m3-primary"
 			>
-				<Icon name="content_copy" className="text-base" />
 				Sao chép Zalo
-			</button>
-			<button
+			</Button>
+			<Button
 				type="button"
+				colorStyle="filled"
+				size="xs"
+				icon={<Icon name="print" className="text-base" />}
 				onClick={() => printPlainReport(activeReportTitle, activeReportText)}
-				className="inline-flex items-center gap-1.5 rounded-xl bg-m3-primary px-3 py-2 text-xs font-bold text-m3-on-primary transition hover:brightness-105"
 			>
-				<Icon name="print" className="text-base" />
 				In báo cáo
-			</button>
+			</Button>
 		</div>
 	);
 
 	const reportPreview = previewOpen ? (
-		<pre className="whitespace-pre-wrap rounded-2xl border border-m3-outline-variant/60 bg-m3-surface p-4 text-sm leading-6 text-m3-on-surface">
+		<pre className="whitespace-pre-wrap rounded-2xl bg-m3-surface-container-low p-4 text-sm leading-6 text-m3-on-surface">
 			{activeReportText}
 		</pre>
 	) : null;
@@ -752,7 +755,7 @@ export const ReportTabContent = ({
 		<>
 			{activeStep === "startLesson" && (
 				<div className="pt-3">
-					<div className="space-y-4 rounded-3xl border border-m3-outline-variant/60 bg-m3-surface-container p-4 sm:p-5 shadow-xs">
+					<div className="space-y-4 rounded-3xl bg-m3-surface-container-high p-4 sm:p-5 shadow-xs">
 						<div className="flex items-center gap-2">
 							<Icon name="description" className="text-base text-m3-primary" />
 							<h4 className="font-bold text-m3-primary">
@@ -768,151 +771,119 @@ export const ReportTabContent = ({
 							</p>
 						)}
 						<div className="grid gap-3 sm:grid-cols-2">
-							<label className="grid gap-1 text-sm">
-								<span className="font-medium text-m3-on-surface">
-									Tên giáo viên
-								</span>
-								<input
-									value={reportsDraft.startLesson.teacherName}
-									onChange={(e) =>
-										onUpdateStartLessonField("teacherName", e.target.value)
+							<TextField
+								dense
+								variant="filled"
+								label="Tên giáo viên"
+								value={reportsDraft.startLesson.teacherName}
+								onChange={(val) => onUpdateStartLessonField("teacherName", val)}
+								className="w-full"
+							/>
+							<TextField
+								dense
+								variant="filled"
+								label="Tên trợ giảng"
+								value={reportsDraft.startLesson.assistantName}
+								onChange={(val) =>
+									onUpdateStartLessonField("assistantName", val)
+								}
+								className="w-full"
+							/>
+							<TextField
+								dense
+								variant="filled"
+								label="Phòng máy"
+								value={reportsDraft.startLesson.roomName}
+								onChange={(val) => onUpdateStartLessonField("roomName", val)}
+								disabled={hasRoomSnapshot}
+								className="w-full"
+							/>
+							<TextField
+								dense
+								variant="filled"
+								label="Tổng số máy"
+								value={reportsDraft.startLesson.totalMachines}
+								onChange={(val) =>
+									onUpdateStartLessonField("totalMachines", val)
+								}
+								disabled={hasRoomSnapshot}
+								className="w-full"
+							/>
+							<TextField
+								dense
+								variant="filled"
+								label="Tổng số máy lỗi (mô tả)"
+								value={
+									brokenMachinesSummary ??
+									reportsDraft.startLesson.brokenMachinesSummary
+								}
+								onChange={(val) => {
+									if (brokenMachinesSummary === null) {
+										onUpdateStartLessonField("brokenMachinesSummary", val);
 									}
-									className="rounded-xl border border-m3-outline-variant/60 bg-m3-surface px-3 py-2 text-sm text-m3-on-surface outline-none focus:border-m3-primary"
-								/>
-							</label>
-							<label className="grid gap-1 text-sm">
-								<span className="font-medium text-m3-on-surface">
-									Tên trợ giảng
-								</span>
-								<input
-									value={reportsDraft.startLesson.assistantName}
-									onChange={(e) =>
-										onUpdateStartLessonField("assistantName", e.target.value)
+								}}
+								readOnly={brokenMachinesSummary !== null}
+								className="w-full sm:col-span-2"
+							/>
+							<TextField
+								dense
+								variant="filled"
+								label="Số máy thiếu cho học sinh"
+								value={
+									missingMachinesForStudents !== null
+										? String(missingMachinesForStudents)
+										: reportsDraft.startLesson.missingMachinesForStudents
+								}
+								onChange={(val) => {
+									if (missingMachinesForStudents === null) {
+										onUpdateStartLessonField("missingMachinesForStudents", val);
 									}
-									className="rounded-xl border border-m3-outline-variant/60 bg-m3-surface px-3 py-2 text-sm text-m3-on-surface outline-none focus:border-m3-primary"
-								/>
-							</label>
-							<label className="grid gap-1 text-sm">
-								<span className="font-medium text-m3-on-surface">
-									Phòng máy
-								</span>
-								<input
-									value={reportsDraft.startLesson.roomName}
-									onChange={(e) =>
-										onUpdateStartLessonField("roomName", e.target.value)
-									}
-									className="rounded-xl border border-m3-outline-variant/60 bg-m3-surface px-3 py-2 text-sm text-m3-on-surface outline-none focus:border-m3-primary disabled:opacity-50"
-									disabled={hasRoomSnapshot}
-								/>
-							</label>
-							<label className="grid gap-1 text-sm">
-								<span className="font-medium text-m3-on-surface">
-									Tổng số máy
-								</span>
-								<input
-									value={reportsDraft.startLesson.totalMachines}
-									onChange={(e) =>
-										onUpdateStartLessonField("totalMachines", e.target.value)
-									}
-									className="rounded-xl border border-m3-outline-variant/60 bg-m3-surface px-3 py-2 text-sm text-m3-on-surface outline-none focus:border-m3-primary disabled:opacity-50"
-									disabled={hasRoomSnapshot}
-								/>
-							</label>
-							<label className="grid gap-1 text-sm sm:col-span-2">
-								<span className="font-medium text-m3-on-surface">
-									Tổng số máy lỗi (mô tả)
-								</span>
-								<input
-									value={
-										brokenMachinesSummary ??
-										reportsDraft.startLesson.brokenMachinesSummary
-									}
-									onChange={(e) => {
-										if (brokenMachinesSummary === null) {
-											onUpdateStartLessonField(
-												"brokenMachinesSummary",
-												e.target.value,
-											);
-										}
-									}}
-									readOnly={brokenMachinesSummary !== null}
-									className="rounded-xl border border-m3-outline-variant/60 bg-m3-surface px-3 py-2 text-sm text-m3-on-surface outline-none focus:border-m3-primary read-only:cursor-default read-only:bg-m3-surface-container-low"
-								/>
-							</label>
-							<label className="grid gap-1 text-sm">
-								<span className="font-medium text-m3-on-surface">
-									Số máy thiếu cho học sinh
-								</span>
-								<input
-									value={
-										missingMachinesForStudents !== null
-											? String(missingMachinesForStudents)
-											: reportsDraft.startLesson.missingMachinesForStudents
-									}
-									onChange={(e) => {
-										if (missingMachinesForStudents === null) {
-											onUpdateStartLessonField(
-												"missingMachinesForStudents",
-												e.target.value,
-											);
-										}
-									}}
-									readOnly={missingMachinesForStudents !== null}
-									className="rounded-xl border border-m3-outline-variant/60 bg-m3-surface px-3 py-2 text-sm text-m3-on-surface outline-none focus:border-m3-primary read-only:cursor-default read-only:bg-m3-surface-container-low"
-								/>
-							</label>
-							<label className="grid gap-1 text-sm">
-								<span className="font-medium text-m3-on-surface">
-									Tình trạng NetSupport
-								</span>
-								<input
-									value={reportsDraft.startLesson.netSupportStatus}
-									onChange={(e) =>
-										onUpdateStartLessonField("netSupportStatus", e.target.value)
-									}
-									className="rounded-xl border border-m3-outline-variant/60 bg-m3-surface px-3 py-2 text-sm text-m3-on-surface outline-none focus:border-m3-primary disabled:opacity-50"
-									disabled={hasRoomSnapshot}
-								/>
-							</label>
-							<label className="grid gap-1 text-sm">
-								<span className="font-medium text-m3-on-surface">
-									Tình trạng loa, âm ly
-								</span>
-								<input
-									value={reportsDraft.startLesson.audioStatus}
-									onChange={(e) =>
-										onUpdateStartLessonField("audioStatus", e.target.value)
-									}
-									className="rounded-xl border border-m3-outline-variant/60 bg-m3-surface px-3 py-2 text-sm text-m3-on-surface outline-none focus:border-m3-primary disabled:opacity-50"
-									disabled={hasRoomSnapshot}
-								/>
-							</label>
-							<label className="grid gap-1 text-sm">
-								<span className="font-medium text-m3-on-surface">
-									Tình trạng máy lạnh, quạt
-								</span>
-								<input
-									value={reportsDraft.startLesson.coolingStatus}
-									onChange={(e) =>
-										onUpdateStartLessonField("coolingStatus", e.target.value)
-									}
-									className="rounded-xl border border-m3-outline-variant/60 bg-m3-surface px-3 py-2 text-sm text-m3-on-surface outline-none focus:border-m3-primary disabled:opacity-50"
-									disabled={hasRoomSnapshot}
-								/>
-							</label>
-							<label className="grid gap-1 text-sm sm:col-span-2">
-								<span className="font-medium text-m3-on-surface">
-									Tình trạng vệ sinh phòng máy
-								</span>
-								<input
-									value={reportsDraft.startLesson.hygieneStatus}
-									onChange={(e) =>
-										onUpdateStartLessonField("hygieneStatus", e.target.value)
-									}
-									className="rounded-xl border border-m3-outline-variant/60 bg-m3-surface px-3 py-2 text-sm text-m3-on-surface outline-none focus:border-m3-primary disabled:opacity-50"
-									disabled={hasRoomSnapshot}
-								/>
-							</label>
+								}}
+								readOnly={missingMachinesForStudents !== null}
+								className="w-full"
+							/>
+							<TextField
+								dense
+								variant="filled"
+								label="Tình trạng NetSupport"
+								value={reportsDraft.startLesson.netSupportStatus}
+								onChange={(val) =>
+									onUpdateStartLessonField("netSupportStatus", val)
+								}
+								disabled={hasRoomSnapshot}
+								className="w-full"
+							/>
+							<TextField
+								dense
+								variant="filled"
+								label="Tình trạng loa, âm ly"
+								value={reportsDraft.startLesson.audioStatus}
+								onChange={(val) => onUpdateStartLessonField("audioStatus", val)}
+								disabled={hasRoomSnapshot}
+								className="w-full"
+							/>
+							<TextField
+								dense
+								variant="filled"
+								label="Tình trạng máy lạnh, quạt"
+								value={reportsDraft.startLesson.coolingStatus}
+								onChange={(val) =>
+									onUpdateStartLessonField("coolingStatus", val)
+								}
+								disabled={hasRoomSnapshot}
+								className="w-full"
+							/>
+							<TextField
+								dense
+								variant="filled"
+								label="Tình trạng vệ sinh phòng máy"
+								value={reportsDraft.startLesson.hygieneStatus}
+								onChange={(val) =>
+									onUpdateStartLessonField("hygieneStatus", val)
+								}
+								disabled={hasRoomSnapshot}
+								className="w-full sm:col-span-2"
+							/>
 						</div>
 					</div>
 				</div>
@@ -920,7 +891,7 @@ export const ReportTabContent = ({
 
 			{activeStep === "professional" && (
 				<div className="pt-3">
-					<div className="space-y-4 rounded-3xl border border-m3-outline-variant/60 bg-m3-surface-container p-4 sm:p-5 shadow-xs">
+					<div className="space-y-4 rounded-3xl bg-m3-surface-container-high p-4 sm:p-5 shadow-xs">
 						<div className="flex items-center gap-2">
 							<Icon name="menu_book" className="text-base text-m3-secondary" />
 							<h4 className="font-bold text-m3-secondary">
@@ -930,107 +901,90 @@ export const ReportTabContent = ({
 						{reportActions}
 						{reportPreview}
 						<div className="grid gap-3 sm:grid-cols-2">
-							<label className="grid gap-1 text-sm">
-								<span className="font-medium text-m3-on-surface">
-									Tên giáo viên
-								</span>
-								<input
-									value={reportsDraft.professional.teacherName}
-									onChange={(e) =>
-										onUpdateProfessionalField("teacherName", e.target.value)
-									}
-									className="rounded-xl border border-m3-outline-variant/60 bg-m3-surface px-3 py-2 text-sm text-m3-on-surface outline-none focus:border-m3-primary"
-								/>
-							</label>
-							<label className="grid gap-1 text-sm">
-								<span className="font-medium text-m3-on-surface">Lớp</span>
-								<input
-									value={reportsDraft.professional.className}
-									onChange={(e) =>
-										onUpdateProfessionalField("className", e.target.value)
-									}
-									className="rounded-xl border border-m3-outline-variant/60 bg-m3-surface px-3 py-2 text-sm text-m3-on-surface outline-none focus:border-m3-primary"
-								/>
-							</label>
-							<label className="grid gap-1 text-sm">
-								<span className="font-medium text-m3-on-surface">Môn</span>
-								<input
-									value={reportsDraft.professional.subjectName}
-									onChange={(e) =>
-										onUpdateProfessionalField("subjectName", e.target.value)
-									}
-									className="rounded-xl border border-m3-outline-variant/60 bg-m3-surface px-3 py-2 text-sm text-m3-on-surface outline-none focus:border-m3-primary"
-								/>
-							</label>
-							<label className="grid gap-1 text-sm">
-								<span className="font-medium text-m3-on-surface">
-									Tài liệu dạy
-								</span>
-								<input
-									value={"THDD"}
-									onChange={(e) =>
-										onUpdateProfessionalField(
-											"teachingMaterials",
-											e.target.value,
-										)
-									}
-									className="rounded-xl border border-m3-outline-variant/60 bg-m3-surface px-3 py-2 text-sm text-m3-on-surface outline-none focus:border-m3-primary"
-								/>
-							</label>
-							<label className="grid gap-1 text-sm sm:col-span-2">
-								<span className="font-medium text-m3-on-surface">
-									Nội dung dạy
-								</span>
-								<textarea
-									value={reportsDraft.professional.teachingContent}
-									onChange={(e) =>
-										onUpdateProfessionalField("teachingContent", e.target.value)
-									}
-									className="min-h-20 w-full rounded-xl border border-m3-outline-variant/60 bg-m3-surface p-3 text-sm text-m3-on-surface outline-none focus:border-m3-primary"
-								/>
-							</label>
-							<label className="grid gap-1 text-sm">
-								<span className="font-medium text-m3-on-surface">
-									Số tiết dự kiến
-								</span>
-								<input
-									value={FIXED_PLANNED_LESSONS}
-									readOnly
-									className="rounded-xl border border-m3-outline-variant/60 bg-m3-surface-container-low px-3 py-2 text-sm text-m3-on-surface outline-none"
-								/>
-							</label>
-							<label className="grid gap-1 text-sm">
-								<span className="font-medium text-m3-on-surface">
-									Số tiết đã dạy
-								</span>
-								<input
-									value={reportsDraft.professional.taughtLessons}
-									onChange={(e) =>
-										onUpdateProfessionalField("taughtLessons", e.target.value)
-									}
-									className="rounded-xl border border-m3-outline-variant/60 bg-m3-surface px-3 py-2 text-sm text-m3-on-surface outline-none focus:border-m3-primary"
-								/>
-							</label>
-							<label className="grid gap-1 text-sm">
-								<span className="font-medium text-m3-on-surface">
-									Số lần hoàn thành OTTH
-								</span>
-								<input
-									value={FIXED_PRACTICE_COMPLETIONS}
-									readOnly
-									className="rounded-xl border border-m3-outline-variant/60 bg-m3-surface-container-low px-3 py-2 text-sm text-m3-on-surface outline-none"
-								/>
-							</label>
-							<label className="grid gap-1 text-sm">
-								<span className="font-medium text-m3-on-surface">
-									Tỷ lệ kết quả Gmetrix
-								</span>
-								<input
-									value={FIXED_GMETRIX_RESULT_RATE}
-									readOnly
-									className="rounded-xl border border-m3-outline-variant/60 bg-m3-surface-container-low px-3 py-2 text-sm text-m3-on-surface outline-none"
-								/>
-							</label>
+							<TextField
+								dense
+								variant="filled"
+								label="Tên giáo viên"
+								value={reportsDraft.professional.teacherName}
+								onChange={(val) =>
+									onUpdateProfessionalField("teacherName", val)
+								}
+								className="w-full"
+							/>
+							<TextField
+								dense
+								variant="filled"
+								label="Lớp"
+								value={reportsDraft.professional.className}
+								onChange={(val) => onUpdateProfessionalField("className", val)}
+								className="w-full"
+							/>
+							<TextField
+								dense
+								variant="filled"
+								label="Môn"
+								value={reportsDraft.professional.subjectName}
+								onChange={(val) =>
+									onUpdateProfessionalField("subjectName", val)
+								}
+								className="w-full"
+							/>
+							<TextField
+								dense
+								variant="filled"
+								label="Tài liệu dạy"
+								value={reportsDraft.professional.teachingMaterials || "THDD"}
+								onChange={(val) =>
+									onUpdateProfessionalField("teachingMaterials", val)
+								}
+								className="w-full"
+							/>
+							<TextField
+								variant="filled"
+								type="textarea"
+								rows={3}
+								autoResize
+								label="Nội dung dạy"
+								value={reportsDraft.professional.teachingContent}
+								onChange={(val) =>
+									onUpdateProfessionalField("teachingContent", val)
+								}
+								className="w-full sm:col-span-2"
+							/>
+							<TextField
+								dense
+								variant="filled"
+								label="Số tiết dự kiến"
+								value={FIXED_PLANNED_LESSONS}
+								readOnly
+								className="w-full"
+							/>
+							<TextField
+								dense
+								variant="filled"
+								label="Số tiết đã dạy"
+								value={reportsDraft.professional.taughtLessons}
+								onChange={(val) =>
+									onUpdateProfessionalField("taughtLessons", val)
+								}
+								className="w-full"
+							/>
+							<TextField
+								dense
+								variant="filled"
+								label="Số lần hoàn thành OTTH"
+								value={FIXED_PRACTICE_COMPLETIONS}
+								readOnly
+								className="w-full"
+							/>
+							<TextField
+								dense
+								variant="filled"
+								label="Tỷ lệ kết quả Gmetrix"
+								value={FIXED_GMETRIX_RESULT_RATE}
+								readOnly
+								className="w-full"
+							/>
 						</div>
 					</div>
 				</div>
@@ -1038,7 +992,7 @@ export const ReportTabContent = ({
 
 			{activeStep === "endLesson" && (
 				<div className="pt-3">
-					<div className="space-y-4 rounded-3xl border border-m3-outline-variant/60 bg-m3-surface-container p-4 sm:p-5 shadow-xs">
+					<div className="space-y-4 rounded-3xl bg-m3-surface-container-high p-4 sm:p-5 shadow-xs">
 						<div className="flex items-center gap-2">
 							<Icon name="assignment" className="text-base text-m3-tertiary" />
 							<h4 className="font-bold text-m3-tertiary">
@@ -1053,249 +1007,188 @@ export const ReportTabContent = ({
 								phòng máy trong database.
 							</p>
 						)}
-						<div className="rounded-2xl border border-m3-tertiary/30 bg-m3-tertiary-container/20 px-4 py-2.5 text-xs text-m3-on-tertiary-container">
+						<div className="rounded-2xl bg-m3-tertiary-container/30 px-4 py-2.5 text-xs text-m3-on-tertiary-container">
 							{attendanceData.roomSessionContext?.isSharedRoomSession
 								? `Đang là báo cáo cuối buổi dùng chung cho ${attendanceData.roomSessionContext.sharedClasses.length} lớp cùng phòng (${attendanceData.roomSessionContext.sessionLabel.toLowerCase()}).`
 								: "Chỉ có 1 lớp trong cùng phòng/buổi nên báo cáo cuối buổi áp dụng cho lịch hiện tại."}
 						</div>
 						<div className="grid gap-3 sm:grid-cols-2">
-							<label className="grid gap-1 text-sm">
-								<span className="font-medium text-m3-on-surface">
-									Tên giáo viên
-								</span>
-								<input
-									value={reportsDraft.endLesson.teacherName}
-									onChange={(e) =>
-										onUpdateEndLessonField("teacherName", e.target.value)
+							<TextField
+								dense
+								variant="filled"
+								label="Tên giáo viên"
+								value={reportsDraft.endLesson.teacherName}
+								onChange={(val) => onUpdateEndLessonField("teacherName", val)}
+								className="w-full"
+							/>
+							<TextField
+								dense
+								variant="filled"
+								label="Tên trợ giảng"
+								value={reportsDraft.endLesson.assistantName}
+								onChange={(val) => onUpdateEndLessonField("assistantName", val)}
+								className="w-full"
+							/>
+							<TextField
+								dense
+								variant="filled"
+								label="Phòng máy"
+								value={reportsDraft.endLesson.roomName}
+								onChange={(val) => onUpdateEndLessonField("roomName", val)}
+								disabled={hasRoomSnapshot}
+								className="w-full"
+							/>
+							<TextField
+								dense
+								variant="filled"
+								label="Tổng số máy"
+								value={reportsDraft.endLesson.totalMachines}
+								onChange={(val) => onUpdateEndLessonField("totalMachines", val)}
+								disabled={hasRoomSnapshot}
+								className="w-full"
+							/>
+							<TextField
+								dense
+								variant="filled"
+								label="Số lượng học sinh các lớp cùng phòng"
+								value={
+									classStudentCountSummary ||
+									reportsDraft.endLesson.classStudentCountSummary
+								}
+								readOnly
+								className="w-full sm:col-span-2"
+							/>
+							<TextField
+								dense
+								variant="filled"
+								label="Tỷ lệ học sinh có tài liệu"
+								value={reportsDraft.endLesson.studentMaterialCoverageRate}
+								onChange={(val) =>
+									onUpdateEndLessonField("studentMaterialCoverageRate", val)
+								}
+								className="w-full"
+							/>
+							<TextField
+								dense
+								variant="filled"
+								label="Tổng số máy lỗi (mô tả)"
+								value={
+									brokenMachinesSummary ??
+									reportsDraft.endLesson.brokenMachinesSummary
+								}
+								onChange={(val) => {
+									if (brokenMachinesSummary === null) {
+										onUpdateEndLessonField("brokenMachinesSummary", val);
 									}
-									className="rounded-xl border border-m3-outline-variant/60 bg-m3-surface px-3 py-2 text-sm text-m3-on-surface outline-none focus:border-m3-primary"
-								/>
-							</label>
-							<label className="grid gap-1 text-sm">
-								<span className="font-medium text-m3-on-surface">
-									Tên trợ giảng
-								</span>
-								<input
-									value={reportsDraft.endLesson.assistantName}
-									onChange={(e) =>
-										onUpdateEndLessonField("assistantName", e.target.value)
+								}}
+								readOnly={brokenMachinesSummary !== null}
+								className="w-full"
+							/>
+							<TextField
+								dense
+								variant="filled"
+								label="Số máy còn thiếu cho HS"
+								value={
+									missingMachinesForStudents !== null
+										? String(missingMachinesForStudents)
+										: reportsDraft.endLesson.missingMachinesForStudents
+								}
+								onChange={(val) => {
+									if (missingMachinesForStudents === null) {
+										onUpdateEndLessonField("missingMachinesForStudents", val);
 									}
-									className="rounded-xl border border-m3-outline-variant/60 bg-m3-surface px-3 py-2 text-sm text-m3-on-surface outline-none focus:border-m3-primary"
-								/>
-							</label>
-							<label className="grid gap-1 text-sm">
-								<span className="font-medium text-m3-on-surface">
-									Phòng máy
-								</span>
-								<input
-									value={reportsDraft.endLesson.roomName}
-									onChange={(e) =>
-										onUpdateEndLessonField("roomName", e.target.value)
-									}
-									className="rounded-xl border border-m3-outline-variant/60 bg-m3-surface px-3 py-2 text-sm text-m3-on-surface outline-none focus:border-m3-primary disabled:opacity-50"
-									disabled={hasRoomSnapshot}
-								/>
-							</label>
-							<label className="grid gap-1 text-sm">
-								<span className="font-medium text-m3-on-surface">
-									Tổng số máy
-								</span>
-								<input
-									value={reportsDraft.endLesson.totalMachines}
-									onChange={(e) =>
-										onUpdateEndLessonField("totalMachines", e.target.value)
-									}
-									className="rounded-xl border border-m3-outline-variant/60 bg-m3-surface px-3 py-2 text-sm text-m3-on-surface outline-none focus:border-m3-primary disabled:opacity-50"
-									disabled={hasRoomSnapshot}
-								/>
-							</label>
-							<label className="grid gap-1 text-sm sm:col-span-2">
-								<span className="font-medium text-m3-on-surface">
-									Số lượng học sinh các lớp cùng phòng
-								</span>
-								<input
-									value={
-										classStudentCountSummary ||
-										reportsDraft.endLesson.classStudentCountSummary
-									}
-									readOnly
-									className="rounded-xl border border-m3-outline-variant/60 bg-m3-surface px-3 py-2 text-sm text-m3-on-surface outline-none focus:border-m3-primary"
-								/>
-							</label>
-							<label className="grid gap-1 text-sm">
-								<span className="font-medium text-m3-on-surface">
-									Tỷ lệ học sinh có tài liệu
-								</span>
-								<input
-									value={reportsDraft.endLesson.studentMaterialCoverageRate}
-									onChange={(e) =>
-										onUpdateEndLessonField(
-											"studentMaterialCoverageRate",
-											e.target.value,
-										)
-									}
-									className="rounded-xl border border-m3-outline-variant/60 bg-m3-surface px-3 py-2 text-sm text-m3-on-surface outline-none focus:border-m3-primary"
-								/>
-							</label>
-							<label className="grid gap-1 text-sm">
-								<span className="font-medium text-m3-on-surface">
-									Tổng số máy lỗi (mô tả)
-								</span>
-								<input
-									value={
-										brokenMachinesSummary ??
-										reportsDraft.endLesson.brokenMachinesSummary
-									}
-									onChange={(e) => {
-										if (brokenMachinesSummary === null) {
-											onUpdateEndLessonField(
-												"brokenMachinesSummary",
-												e.target.value,
-											);
-										}
-									}}
-									readOnly={brokenMachinesSummary !== null}
-									className="rounded-xl border border-m3-outline-variant/60 bg-m3-surface px-3 py-2 text-sm text-m3-on-surface outline-none focus:border-m3-primary read-only:cursor-default read-only:bg-m3-surface-container-low"
-								/>
-							</label>
-							<label className="grid gap-1 text-sm">
-								<span className="font-medium text-m3-on-surface">
-									Số máy còn thiếu cho HS
-								</span>
-								<input
-									value={
-										missingMachinesForStudents !== null
-											? String(missingMachinesForStudents)
-											: reportsDraft.endLesson.missingMachinesForStudents
-									}
-									onChange={(e) => {
-										if (missingMachinesForStudents === null) {
-											onUpdateEndLessonField(
-												"missingMachinesForStudents",
-												e.target.value,
-											);
-										}
-									}}
-									readOnly={missingMachinesForStudents !== null}
-									className="rounded-xl border border-m3-outline-variant/60 bg-m3-surface px-3 py-2 text-sm text-m3-on-surface outline-none focus:border-m3-primary read-only:cursor-default read-only:bg-m3-surface-container-low"
-								/>
-							</label>
-							<label className="grid gap-1 text-sm">
-								<span className="font-medium text-m3-on-surface">
-									Tình trạng NetSupport
-								</span>
-								<input
-									value={reportsDraft.endLesson.netSupportStatus}
-									onChange={(e) =>
-										onUpdateEndLessonField("netSupportStatus", e.target.value)
-									}
-									className="rounded-xl border border-m3-outline-variant/60 bg-m3-surface px-3 py-2 text-sm text-m3-on-surface outline-none focus:border-m3-primary disabled:opacity-50"
-									disabled={hasRoomSnapshot}
-								/>
-							</label>
-							<label className="grid gap-1 text-sm">
-								<span className="font-medium text-m3-on-surface">
-									Tình trạng loa, âm ly
-								</span>
-								<input
-									value={reportsDraft.endLesson.audioStatus}
-									onChange={(e) =>
-										onUpdateEndLessonField("audioStatus", e.target.value)
-									}
-									className="rounded-xl border border-m3-outline-variant/60 bg-m3-surface px-3 py-2 text-sm text-m3-on-surface outline-none focus:border-m3-primary disabled:opacity-50"
-									disabled={hasRoomSnapshot}
-								/>
-							</label>
-							<label className="grid gap-1 text-sm">
-								<span className="font-medium text-m3-on-surface">
-									Tình trạng máy lạnh, quạt
-								</span>
-								<input
-									value={reportsDraft.endLesson.coolingStatus}
-									onChange={(e) =>
-										onUpdateEndLessonField("coolingStatus", e.target.value)
-									}
-									className="rounded-xl border border-m3-outline-variant/60 bg-m3-surface px-3 py-2 text-sm text-m3-on-surface outline-none focus:border-m3-primary disabled:opacity-50"
-									disabled={hasRoomSnapshot}
-								/>
-							</label>
-							<label className="grid gap-1 text-sm">
-								<span className="font-medium text-m3-on-surface">
-									Đã tắt các thiết bị điện
-								</span>
-								<input
-									value={reportsDraft.endLesson.devicesPoweredOffStatus}
-									onChange={(e) =>
-										onUpdateEndLessonField(
-											"devicesPoweredOffStatus",
-											e.target.value,
-										)
-									}
-									className="rounded-xl border border-m3-outline-variant/60 bg-m3-surface px-3 py-2 text-sm text-m3-on-surface outline-none focus:border-m3-primary disabled:opacity-50"
-									disabled={hasRoomSnapshot}
-								/>
-							</label>
-							<label className="grid gap-1 text-sm">
-								<span className="font-medium text-m3-on-surface">
-									HS sắp xếp ghế ngồi
-								</span>
-								<input
-									value={reportsDraft.endLesson.seatingOrderStatus}
-									onChange={(e) =>
-										onUpdateEndLessonField("seatingOrderStatus", e.target.value)
-									}
-									className="rounded-xl border border-m3-outline-variant/60 bg-m3-surface px-3 py-2 text-sm text-m3-on-surface outline-none focus:border-m3-primary disabled:opacity-50"
-									disabled={hasRoomSnapshot}
-								/>
-							</label>
-							<label className="grid gap-1 text-sm">
-								<span className="font-medium text-m3-on-surface">
-									HS vệ sinh phòng máy
-								</span>
-								<input
-									value={reportsDraft.endLesson.roomHygieneStatus}
-									onChange={(e) =>
-										onUpdateEndLessonField("roomHygieneStatus", e.target.value)
-									}
-									className="rounded-xl border border-m3-outline-variant/60 bg-m3-surface px-3 py-2 text-sm text-m3-on-surface outline-none focus:border-m3-primary disabled:opacity-50"
-									disabled={hasRoomSnapshot}
-								/>
-							</label>
-							<label className="grid gap-1 text-sm">
-								<span className="font-medium text-m3-on-surface">
-									Tuân thủ nội quy của HS
-								</span>
-								<select
-									value={reportsDraft.endLesson.studentRuleComplianceStatus}
-									onChange={(e) =>
-										onUpdateEndLessonField(
-											"studentRuleComplianceStatus",
-											e.target.value,
-										)
-									}
-									className="rounded-xl border border-m3-outline-variant/60 bg-m3-surface px-3 py-2 text-sm text-m3-on-surface outline-none focus:border-m3-primary"
-								>
-									<option value="">Chọn mức độ</option>
-									<option value="Tốt">Tốt</option>
-									<option value="Khá">Khá</option>
-									<option value="Kém">Kém</option>
-								</select>
-							</label>
-							<label className="grid gap-1 text-sm sm:col-span-2">
-								<span className="font-medium text-m3-on-surface">
-									Danh sách vi phạm
-								</span>
-								<textarea
-									value={reportsDraft.endLesson.violationListSummary}
-									onChange={(e) =>
-										onUpdateEndLessonField(
-											"violationListSummary",
-											e.target.value,
-										)
-									}
-									className="min-h-20 w-full rounded-xl border border-m3-outline-variant/60 bg-m3-surface p-3 text-sm text-m3-on-surface outline-none focus:border-m3-primary"
-								/>
-							</label>
+								}}
+								readOnly={missingMachinesForStudents !== null}
+								className="w-full"
+							/>
+							<TextField
+								dense
+								variant="filled"
+								label="Tình trạng NetSupport"
+								value={reportsDraft.endLesson.netSupportStatus}
+								onChange={(val) =>
+									onUpdateEndLessonField("netSupportStatus", val)
+								}
+								disabled={hasRoomSnapshot}
+								className="w-full"
+							/>
+							<TextField
+								dense
+								variant="filled"
+								label="Tình trạng loa, âm ly"
+								value={reportsDraft.endLesson.audioStatus}
+								onChange={(val) => onUpdateEndLessonField("audioStatus", val)}
+								disabled={hasRoomSnapshot}
+								className="w-full"
+							/>
+							<TextField
+								dense
+								variant="filled"
+								label="Tình trạng máy lạnh, quạt"
+								value={reportsDraft.endLesson.coolingStatus}
+								onChange={(val) => onUpdateEndLessonField("coolingStatus", val)}
+								disabled={hasRoomSnapshot}
+								className="w-full"
+							/>
+							<TextField
+								dense
+								variant="filled"
+								label="Đã tắt các thiết bị điện"
+								value={reportsDraft.endLesson.devicesPoweredOffStatus}
+								onChange={(val) =>
+									onUpdateEndLessonField("devicesPoweredOffStatus", val)
+								}
+								disabled={hasRoomSnapshot}
+								className="w-full"
+							/>
+							<TextField
+								dense
+								variant="filled"
+								label="HS sắp xếp ghế ngồi"
+								value={reportsDraft.endLesson.seatingOrderStatus}
+								onChange={(val) =>
+									onUpdateEndLessonField("seatingOrderStatus", val)
+								}
+								disabled={hasRoomSnapshot}
+								className="w-full"
+							/>
+							<TextField
+								dense
+								variant="filled"
+								label="HS vệ sinh phòng máy"
+								value={reportsDraft.endLesson.roomHygieneStatus}
+								onChange={(val) =>
+									onUpdateEndLessonField("roomHygieneStatus", val)
+								}
+								disabled={hasRoomSnapshot}
+								className="w-full"
+							/>
+							<Select
+								label="Tuân thủ nội quy của HS"
+								value={reportsDraft.endLesson.studentRuleComplianceStatus}
+								options={[
+									{ label: "Chọn mức độ", value: "" },
+									{ label: "Tốt", value: "Tốt" },
+									{ label: "Khá", value: "Khá" },
+									{ label: "Kém", value: "Kém" },
+								]}
+								onChange={(val) =>
+									onUpdateEndLessonField("studentRuleComplianceStatus", val)
+								}
+								className="w-full"
+							/>
+							<TextField
+								variant="filled"
+								type="textarea"
+								rows={3}
+								autoResize
+								label="Danh sách vi phạm"
+								value={reportsDraft.endLesson.violationListSummary}
+								onChange={(val) =>
+									onUpdateEndLessonField("violationListSummary", val)
+								}
+								className="w-full sm:col-span-2"
+							/>
 						</div>
 					</div>
 				</div>

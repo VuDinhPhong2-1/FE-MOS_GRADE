@@ -7,6 +7,7 @@ import {
 } from "@bug-on/m3-expressive";
 import { memo } from "react";
 import type { Student } from "../../types/student.types";
+import { cn } from "../../utils/utils";
 import type { CompetencyLevel } from "./types";
 import {
 	competencyBadgeClass,
@@ -37,14 +38,18 @@ const StudentTableRowComponent = ({
 }: StudentTableRowProps) => {
 	const isActive = isStudentActive(student);
 	const isTemp = student.id.startsWith("temp-");
+	const isBanded = index % 2 === 1;
 
 	return (
 		<tr
-			className={`transition-colors ${
+			className={cn(
+				"transition-colors",
 				isActive
-					? "hover:bg-m3-surface-container-high/60"
-					: "bg-m3-error-container/15 hover:bg-m3-error-container/25"
-			}`}
+					? isBanded
+						? "bg-m3-surface-container-high/30 hover:bg-m3-surface-container-high/60"
+						: "bg-transparent hover:bg-m3-surface-container-high/60"
+					: "bg-m3-error-container/15 hover:bg-m3-error-container/25",
+			)}
 		>
 			<td className="px-3 py-4 text-m3-on-surface-variant sm:px-6">
 				{index + 1}

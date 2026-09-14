@@ -1,6 +1,12 @@
-import { Chip, Icon, IconButton } from "@bug-on/m3-expressive";
+import {
+	ButtonDistribute,
+	Chip,
+	Icon,
+	IconButton,
+} from "@bug-on/m3-expressive";
 import type React from "react";
 import { memo, useCallback } from "react";
+import { cn } from "../../utils/utils";
 import type { SchoolRowProps } from "./types";
 
 export const SchoolRow = memo(function SchoolRow({
@@ -43,12 +49,17 @@ export const SchoolRow = memo(function SchoolRow({
 		[onDelete, school],
 	);
 
+	const isBanded = index % 2 === 1;
+
 	return (
 		<tr
-			className="group cursor-pointer transition-colors hover:bg-m3-surface-container-high/60 focus-within:bg-m3-primary/5"
+			className={cn(
+				"group cursor-pointer transition-colors",
+				isBanded ? "bg-m3-surface-container-high/30" : "bg-transparent",
+				"hover:bg-m3-surface-container-high/60 focus-within:bg-m3-primary/5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-m3-primary",
+			)}
 			onClick={handleRowClick}
 			onKeyDown={handleKeyDown}
-			role="button"
 			tabIndex={0}
 			aria-label={`Xem lớp học của trường ${school.name}`}
 			title="Bấm để xem danh sách lớp"
@@ -76,7 +87,13 @@ export const SchoolRow = memo(function SchoolRow({
 				</div>
 			</td>
 			<td className="px-6 py-4 text-center">
-				<div className="flex items-center justify-center gap-1">
+				<ButtonDistribute
+					mode="dynamic"
+					size="sm"
+					weights={[2, 1]}
+					gap={4}
+					expandRatio={0.1}
+				>
 					<IconButton
 						type="button"
 						size="sm"
@@ -103,22 +120,7 @@ export const SchoolRow = memo(function SchoolRow({
 							<Icon name="delete" className="text-base" />
 						</IconButton>
 					)}
-					<IconButton
-						type="button"
-						size="sm"
-						colorStyle="standard"
-						disabled={isDeleting}
-						onClick={(e) => {
-							e.stopPropagation();
-							handleRowClick();
-						}}
-						className="text-m3-primary"
-						title="Xem danh sách lớp"
-						aria-label={`Xem danh sách lớp của ${school.name}`}
-					>
-						<Icon name="chevron_right" className="text-base" />
-					</IconButton>
-				</div>
+				</ButtonDistribute>
 			</td>
 		</tr>
 	);

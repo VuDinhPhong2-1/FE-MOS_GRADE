@@ -1,5 +1,20 @@
-import { Button, Icon, ProgressIndicator } from "@bug-on/m3-expressive";
+import {
+	Button,
+	Card,
+	Chip,
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogOverlay,
+	DialogPortal,
+	DialogTitle,
+	Icon,
+	ProgressIndicator,
+} from "@bug-on/m3-expressive";
 import type { ComponentProps } from "react";
+import { DialogHeaderIcon } from "../../components/common";
 import type {
 	AttendanceStatus,
 	ScheduleAttendanceResponse,
@@ -121,187 +136,209 @@ export const AttendanceModal = ({
 	const activeReportTab: ReportStepTab | null =
 		attendanceTab === "attendance" ? null : attendanceTab;
 
-	if (!open) return null;
-
 	return (
-		<div className="fixed inset-0 z-50 bg-black/60 p-0 backdrop-blur-xs sm:grid sm:place-items-center sm:p-4">
-			<div className="flex h-dvh w-full flex-col overflow-hidden rounded-none bg-m3-surface-container shadow-2xl sm:h-auto sm:max-h-[94vh] sm:max-w-5xl sm:rounded-4xl">
-				<div
-					className="shrink-0 border-b border-m3-outline-variant/60 bg-m3-surface-container-high px-4 py-4 sm:px-6 shadow-xs"
-					style={{ paddingTop: "calc(0.75rem + env(safe-area-inset-top))" }}
+		<Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
+			<DialogPortal open={open}>
+				<DialogOverlay />
+				<DialogContent
+					hideCloseButton
+					className="flex max-h-[92vh] w-[calc(100%-2rem)] max-w-5xl flex-col overflow-hidden rounded-4xl bg-m3-surface-container-high p-0 text-m3-on-surface shadow-2xl"
 				>
-					<div className="flex flex-wrap items-center justify-between gap-2">
-						<div>
-							<h3 className="text-xl font-bold tracking-tight text-m3-on-surface font-md3-expressive">
-								Điểm danh học sinh
-							</h3>
-							{attendanceData ? (
-								<p className="text-sm text-m3-on-surface-variant">
-									{attendanceData.subject} - {attendanceData.className} -{" "}
-									{formatDateViFromYmd(
-										parseApiDateToLocalYmd(attendanceData.date),
+					{/* Modal Header */}
+					<div className="flex items-center justify-between px-6 pt-5 pb-3">
+						<DialogHeader className="mb-0 flex-row items-center gap-3 space-y-0 text-left">
+							<DialogHeaderIcon icon="fact_check" />
+							<div>
+								<DialogTitle className="text-lg font-bold text-m3-on-surface font-md3-expressive">
+									Điểm danh học sinh
+								</DialogTitle>
+								<DialogDescription className="text-xs text-m3-on-surface-variant">
+									{attendanceData ? (
+										<span>
+											{attendanceData.subject} - {attendanceData.className} -{" "}
+											{formatDateViFromYmd(
+												parseApiDateToLocalYmd(attendanceData.date),
+											)}
+											{" · "}
+											{attendanceData.startTime} - {attendanceData.endTime}
+										</span>
+									) : (
+										"Cập nhật thông tin điểm danh và báo cáo buổi dạy."
 									)}
-									{" · "}
-									{attendanceData.startTime} - {attendanceData.endTime}
-								</p>
-							) : null}
+								</DialogDescription>
+							</div>
+						</DialogHeader>
+					</div>
+
+					{/* Sub-header info badges */}
+					{(attendanceSchoolName || attendanceData?.computerRoom) && (
+						<div className="flex flex-wrap items-center gap-2 px-6 pb-3 text-xs">
 							{attendanceSchoolName ? (
-								<p className="text-xs font-medium text-m3-primary">
-									Trường: {attendanceSchoolName}
-								</p>
+								<Chip
+									variant="assist"
+									leadingIcon={<Icon name="domain" size={16} />}
+									label={`Trường: ${attendanceSchoolName}`}
+									className="border-0 bg-m3-primary-container text-m3-on-primary-container font-medium"
+								/>
 							) : null}
 							{attendanceData?.computerRoom ? (
-								<p className="text-xs text-m3-on-surface-variant">
-									Phòng máy:{" "}
-									<span className="font-semibold text-m3-on-surface">
-										{attendanceData.computerRoom.name}
-									</span>
-									{" · "}
-									Tổng máy:{" "}
-									<span className="font-semibold text-m3-on-surface">
-										{attendanceData.computerRoom.totalMachinesText}
-									</span>
-									{" · "}
-									Máy lỗi:{" "}
-									<span className="font-semibold text-m3-on-surface">
-										{attendanceData.computerRoom.brokenMachineCount}
-									</span>
-									{" · "}
-									Thiếu cho HS:{" "}
-									<span className="font-semibold text-m3-on-surface">
-										{attendanceMissingMachinesByFormula ??
-											attendanceData.computerRoom.missingMachinesForStudents}
-									</span>
-								</p>
+								<Chip
+									variant="assist"
+									leadingIcon={<Icon name="desktop_windows" size={16} />}
+									label={
+										<span>
+											Phòng máy:{" "}
+											<span className="font-semibold text-m3-on-surface">
+												{attendanceData.computerRoom.name}
+											</span>
+											{" · "}
+											Tổng máy:{" "}
+											<span className="font-semibold text-m3-on-surface">
+												{attendanceData.computerRoom.totalMachinesText}
+											</span>
+											{" · "}
+											Máy lỗi:{" "}
+											<span className="font-semibold text-m3-on-surface">
+												{attendanceData.computerRoom.brokenMachineCount}
+											</span>
+											{" · "}
+											Thiếu cho HS:{" "}
+											<span className="font-semibold text-m3-on-surface">
+												{attendanceMissingMachinesByFormula ??
+													attendanceData.computerRoom
+														.missingMachinesForStudents}
+											</span>
+										</span>
+									}
+									className="border-0 bg-m3-surface-container-highest text-m3-on-surface-variant"
+								/>
 							) : null}
 							{attendanceData?.computerRoom?.brokenMachinesDetail ? (
-								<p className="text-xs text-m3-error">
-									Chi tiết máy hỏng:{" "}
-									{attendanceData.computerRoom.brokenMachinesDetail}
-								</p>
+								<Chip
+									variant="assist"
+									leadingIcon={<Icon name="error" size={16} />}
+									label={`Chi tiết máy hỏng: ${attendanceData.computerRoom.brokenMachinesDetail}`}
+									className="border-0 bg-m3-error-container text-m3-on-error-container"
+								/>
 							) : null}
-						</div>
-						<Button
-							type="button"
-							colorStyle="outlined"
-							size="sm"
-							onClick={onClose}
-							disabled={attendanceSaving}
-						>
-							<Icon name="close" className="text-base" />
-							Đóng
-						</Button>
-					</div>
-				</div>
-
-				<div className="min-h-0 flex-1 space-y-4 overflow-y-auto bg-m3-surface p-4 sm:p-6">
-					{attendanceLoading && (
-						<div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
-							<ProgressIndicator
-								variant="circular"
-								shape="wavy"
-								size={28}
-								aria-label="Đang tải danh sách học sinh..."
-							/>
-							<p className="text-xs text-m3-on-surface-variant font-medium">
-								Đang tải danh sách học sinh...
-							</p>
 						</div>
 					)}
 
-					{!attendanceLoading && attendanceData && (
-						<>
-							<div className="rounded-3xl border border-m3-outline-variant/60 bg-m3-surface-container px-3 py-3 shadow-xs sm:px-4">
-								<div className="mb-2 flex items-center justify-between gap-2">
-									<p className="text-xs font-semibold uppercase tracking-wide text-m3-primary">
-										Menu báo cáo
-									</p>
-									<p className="hidden text-xs text-m3-on-surface-variant sm:block">
-										Chọn mục để chuyển trang, không cần bấm Tiếp tục.
-									</p>
-								</div>
+					{/* Content */}
+					<div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4 sm:p-6">
+						{attendanceLoading && (
+							<div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
+								<ProgressIndicator
+									variant="circular"
+									shape="wavy"
+									size={64}
+									aria-label="Đang tải danh sách học sinh..."
+								/>
+								<p className="text-xs text-m3-on-surface-variant font-medium">
+									Đang tải danh sách học sinh...
+								</p>
+							</div>
+						)}
 
-								<div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-									{attendanceMenuItems.map((item) => {
-										const isActive = attendanceTab === item.value;
+						{!attendanceLoading && attendanceData && (
+							<>
+								<div className="rounded-3xl bg-m3-surface-container p-3 sm:p-4">
+									<p className="text-xs font-semibold uppercase tracking-wider text-m3-primary mb-2.5">
+										Báo cáo
+									</p>
 
-										return (
-											<button
-												key={item.value}
-												type="button"
-												onClick={() => onTabChange(item.value)}
-												disabled={attendanceSaving}
-												className={`rounded-2xl border px-3 py-2.5 text-left transition-all disabled:cursor-not-allowed disabled:opacity-60 ${
-													isActive
-														? "border-m3-primary bg-m3-primary-container/50 shadow-sm"
-														: "border-m3-outline-variant/60 bg-m3-surface hover:border-m3-primary/60 hover:bg-m3-surface-container-high"
-												}`}
-											>
-												<span
-													className={`flex items-center gap-2 text-sm font-bold ${
-														isActive ? "text-m3-primary" : "text-m3-on-surface"
+									<div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
+										{attendanceMenuItems.map((item) => {
+											const isActive = attendanceTab === item.value;
+
+											return (
+												<Card
+													key={item.value}
+													variant="filled"
+													interactive
+													onClick={() => onTabChange(item.value)}
+													disabled={attendanceSaving}
+													className={`rounded-2xl p-3.5 text-left transition-all duration-200 cursor-pointer ${
+														isActive
+															? "bg-m3-primary-container text-m3-on-primary-container shadow-xs"
+															: "bg-m3-surface-container-low hover:bg-m3-surface-container-low text-m3-on-surface"
 													}`}
 												>
-													<Icon name={item.icon} className="text-base" />
-													{item.label}
-												</span>
-												<span className="mt-1 block text-xs leading-snug text-m3-on-surface-variant">
-													{item.description}
-												</span>
-											</button>
-										);
-									})}
+													<span
+														className={`flex items-center gap-2 text-sm font-bold ${
+															isActive
+																? "text-m3-on-primary-container"
+																: "text-m3-on-surface"
+														}`}
+													>
+														<Icon
+															name={item.icon}
+															size={18}
+															className={
+																isActive
+																	? "text-m3-on-primary-container"
+																	: "text-m3-primary"
+															}
+														/>
+														{item.label}
+													</span>
+													<span
+														className={`mt-1.5 block text-xs leading-snug ${
+															isActive
+																? "text-m3-on-primary-container/80"
+																: "text-m3-on-surface-variant"
+														}`}
+													>
+														{item.description}
+													</span>
+												</Card>
+											);
+										})}
+									</div>
 								</div>
-							</div>
 
-							{attendanceTab === "attendance" ? (
-								<AttendanceTabContent
-									attendanceData={attendanceData}
-									attendanceDraft={attendanceDraft}
-									attendanceStats={attendanceStats}
-									attendanceKeyword={attendanceKeyword}
-									attendanceNameSortDirection={attendanceNameSortDirection}
-									attendanceSyncing={attendanceSyncing}
-									attendanceSaving={attendanceSaving}
-									attendanceLoading={attendanceLoading}
-									hasUnsavedAttendanceChanges={hasUnsavedAttendanceChanges}
-									filteredAttendanceStudents={filteredAttendanceStudents}
-									onKeywordChange={onKeywordChange}
-									onToggleNameSort={onToggleNameSort}
-									onSetAllStatus={onSetAllStatus}
-									onToggleStatus={onToggleStatus}
-									onUpdateNote={onUpdateNote}
-									onSyncToGoogleSheet={onSyncToGoogleSheet}
-								/>
-							) : activeReportTab ? (
-								<ReportTabContent
-									activeStep={activeReportTab}
-									reportsDraft={reportsDraft}
-									hasRoomSnapshot={hasRoomSnapshot}
-									attendanceData={attendanceData}
-									attendanceDraft={attendanceDraft}
-									onUpdateStartLessonField={onUpdateStartLessonField}
-									onUpdateProfessionalField={onUpdateProfessionalField}
-									onUpdateEndLessonField={onUpdateEndLessonField}
-								/>
-							) : null}
-						</>
-					)}
-				</div>
+								{attendanceTab === "attendance" ? (
+									<AttendanceTabContent
+										attendanceData={attendanceData}
+										attendanceDraft={attendanceDraft}
+										attendanceStats={attendanceStats}
+										attendanceKeyword={attendanceKeyword}
+										attendanceNameSortDirection={attendanceNameSortDirection}
+										attendanceSyncing={attendanceSyncing}
+										attendanceSaving={attendanceSaving}
+										attendanceLoading={attendanceLoading}
+										hasUnsavedAttendanceChanges={hasUnsavedAttendanceChanges}
+										filteredAttendanceStudents={filteredAttendanceStudents}
+										onKeywordChange={onKeywordChange}
+										onToggleNameSort={onToggleNameSort}
+										onSetAllStatus={onSetAllStatus}
+										onToggleStatus={onToggleStatus}
+										onUpdateNote={onUpdateNote}
+										onSyncToGoogleSheet={onSyncToGoogleSheet}
+									/>
+								) : activeReportTab ? (
+									<ReportTabContent
+										activeStep={activeReportTab}
+										reportsDraft={reportsDraft}
+										hasRoomSnapshot={hasRoomSnapshot}
+										attendanceData={attendanceData}
+										attendanceDraft={attendanceDraft}
+										onUpdateStartLessonField={onUpdateStartLessonField}
+										onUpdateProfessionalField={onUpdateProfessionalField}
+										onUpdateEndLessonField={onUpdateEndLessonField}
+									/>
+								) : null}
+							</>
+						)}
+					</div>
 
-				<div
-					className="shrink-0 border-t border-m3-outline-variant/60 bg-m3-surface-container-high px-4 py-3"
-					style={{
-						paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))",
-					}}
-				>
-					<div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+					{/* Modal Footer */}
+					<DialogFooter className="gap-2 border-t border-m3-outline-variant/60 px-6 py-3 mt-0 bg-m3-surface-container-high">
 						<Button
 							type="button"
-							colorStyle="tonal"
+							colorStyle="text"
 							onClick={onClose}
 							disabled={attendanceSaving}
-							className="w-full sm:w-auto"
 						>
 							Hủy
 						</Button>
@@ -313,13 +350,12 @@ export const AttendanceModal = ({
 								attendanceSaving || attendanceLoading || !attendanceData
 							}
 							loading={attendanceSaving}
-							className="w-full sm:w-auto"
 						>
 							Lưu điểm danh &amp; báo cáo
 						</Button>
-					</div>
-				</div>
-			</div>
-		</div>
+					</DialogFooter>
+				</DialogContent>
+			</DialogPortal>
+		</Dialog>
 	);
 };

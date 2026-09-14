@@ -1,4 +1,4 @@
-﻿import type { Assignment } from "../types/assignment.types";
+import type { Assignment } from "../types/assignment.types";
 import type { Student } from "../types/student.types";
 
 export interface DisplayStudentRow {
@@ -26,10 +26,10 @@ export const prepareStudentDataForDisplay = (
 
 		const totalScore = 0;
 		const calculatedScores: { [key: string]: number } = {};
-		assignments.forEach((assignment) => {
+		for (const assignment of assignments) {
 			// TODO: replace with real score data by assignment.
 			calculatedScores[assignment.id] = 0;
-		});
+		}
 		// Average score across assignments
 		const averageOverallScore =
 			assignments.length > 0

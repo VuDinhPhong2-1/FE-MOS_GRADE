@@ -1,29 +1,50 @@
-import { Button, Icon } from "@bug-on/m3-expressive";
+import { Button, Card, Icon, TextField } from "@bug-on/m3-expressive";
+import {
+	createColumnHelper,
+	createSortedRowModel,
+	rowSortingFeature,
+	tableFeatures,
+	useTable,
+} from "@tanstack/react-table";
+import { useMemo } from "react";
+import {
+	DataTable,
+	SortableHeader,
+	TableEmptyState,
+} from "../../components/data-table";
 import type {
 	AttendanceStatus,
 	ScheduleAttendanceResponse,
 	ScheduleAttendanceStudent,
 } from "../../types/schedule.types";
 import type { AttendanceDraftState } from "./types";
+import { vietnameseCollator } from "./utils";
 
-interface AttendanceTabContentProps {
+export interface AttendanceTabContentProps {
 	attendanceData: ScheduleAttendanceResponse | null;
 	attendanceDraft: Record<string, AttendanceDraftState>;
 	attendanceStats: { present: number; absent: number };
 	attendanceKeyword: string;
-	attendanceNameSortDirection: "none" | "asc" | "desc";
+	attendanceNameSortDirection?: "none" | "asc" | "desc";
 	attendanceSyncing: boolean;
 	attendanceSaving: boolean;
 	attendanceLoading: boolean;
 	hasUnsavedAttendanceChanges: boolean;
 	filteredAttendanceStudents: ScheduleAttendanceStudent[];
 	onKeywordChange: (keyword: string) => void;
-	onToggleNameSort: () => void;
+	onToggleNameSort?: () => void;
 	onSetAllStatus: (status: AttendanceStatus) => void;
 	onToggleStatus: (studentId: string) => void;
 	onUpdateNote: (studentId: string, note: string) => void;
 	onSyncToGoogleSheet: () => void;
 }
+
+const features = tableFeatures({
+	rowSortingFeature,
+	sortedRowModel: createSortedRowModel(),
+});
+
+const helper = createColumnHelper<typeof features, ScheduleAttendanceStudent>();
 
 export const AttendanceTabContent = ({
 	attendanceData,
@@ -43,52 +64,194 @@ export const AttendanceTabContent = ({
 	onUpdateNote,
 	onSyncToGoogleSheet,
 }: AttendanceTabContentProps) => {
+	const columns = useMemo(
+		() =>
+			helper.columns([
+				helper.display({
+					id: "index",
+					header: "STT",
+					meta: {
+						className: "w-16 text-center",
+						align: "center",
+					},
+					cell: ({ row }) => (
+						<span className="text-m3-on-surface-variant">{row.index + 1}</span>
+					),
+				}),
+				helper.accessor("firstName", {
+					id: "name",
+					header: ({ header }) => (
+						<SortableHeader header={header} title="Họ và tên" />
+					),
+					meta: {
+						className: "px-3 py-2.5",
+					},
+					sortFn: (rowA, rowB) => {
+						const byFirst = vietnameseCollator.compare(
+							rowA.original.firstName || "",
+							rowB.original.firstName || "",
+						);
+						if (byFirst !== 0) return byFirst;
+						return vietnameseCollator.compare(
+							rowA.original.middleName || "",
+							rowB.original.middleName || "",
+						);
+					},
+					cell: ({ row }) => (
+						<div>
+							<p className="font-medium text-m3-on-surface">
+								{row.original.middleName} {row.original.firstName}
+							</p>
+							<p className="text-xs text-m3-on-surface-variant">
+								Trạng thái: {row.original.studentStatus || "-"}
+							</p>
+						</div>
+					),
+				}),
+				helper.display({
+					id: "status",
+					header: "Trạng thái",
+					meta: {
+						className: "px-3 py-2.5",
+					},
+					cell: ({ row }) => {
+						const draft = attendanceDraft[row.original.studentId] ?? {
+							status: "Present" as AttendanceStatus,
+							note: "",
+						};
+						const isAbsent = draft.status === "Absent";
+						return (
+							<Button
+								colorStyle={isAbsent ? "outlined" : "tonal"}
+								size="xs"
+								className={isAbsent ? "border-m3-error/50! text-m3-error!" : ""}
+								onClick={() => onToggleStatus(row.original.studentId)}
+							>
+								{isAbsent ? "Vắng" : "Có mặt"}
+							</Button>
+						);
+					},
+				}),
+				helper.display({
+					id: "note",
+					header: "Ghi chú điểm danh",
+					meta: {
+						className: "px-3 py-1.5",
+					},
+					cell: ({ row }) => {
+						const draft = attendanceDraft[row.original.studentId] ?? {
+							status: "Present" as AttendanceStatus,
+							note: "",
+						};
+						return (
+							<TextField
+								dense
+								variant="filled"
+								value={draft.note}
+								onChange={(val) => onUpdateNote(row.original.studentId, val)}
+								placeholder="Ghi chú..."
+								className="w-full min-w-56"
+							/>
+						);
+					},
+				}),
+			]),
+		[attendanceDraft, onToggleStatus, onUpdateNote],
+	);
+
+	const table = useTable({
+		features,
+		columns,
+		data: filteredAttendanceStudents,
+		getRowId: (row) => row.studentId,
+	});
+
+	const nameColumn = table.getColumn("name");
+	const isNameSorted = nameColumn?.getIsSorted();
+
+	const handleHeaderSort = () => {
+		if (nameColumn) {
+			nameColumn.toggleSorting();
+		} else if (onToggleNameSort) {
+			onToggleNameSort();
+		}
+	};
+
+	const sortIndicator =
+		isNameSorted === "asc"
+			? "▲"
+			: isNameSorted === "desc"
+				? "▼"
+				: attendanceNameSortDirection === "asc"
+					? "▲"
+					: attendanceNameSortDirection === "desc"
+						? "▼"
+						: "⇅";
+
 	return (
 		<div className="space-y-4 pt-3">
-			<div className="grid gap-2 sm:grid-cols-2">
-				<div className="rounded-2xl border border-m3-primary/30 bg-m3-primary-container/20 px-4 py-2.5 text-sm text-m3-on-primary-container">
-					Có mặt: <strong>{attendanceStats.present}</strong>
-				</div>
-				<div className="rounded-2xl border border-m3-error/30 bg-m3-error-container/20 px-4 py-2.5 text-sm text-m3-on-error-container">
-					Vắng: <strong>{attendanceStats.absent}</strong>
-				</div>
+			<div className="grid gap-3 sm:grid-cols-2">
+				<Card
+					variant="filled"
+					className="rounded-2xl bg-m3-primary-container px-4 py-3 text-sm text-m3-on-primary-container"
+				>
+					<span className="flex items-center gap-2 font-medium">
+						<Icon
+							name="check_circle"
+							size={18}
+							className="text-m3-on-primary-container"
+						/>
+						Có mặt:{" "}
+						<strong className="text-base">{attendanceStats.present}</strong>
+					</span>
+				</Card>
+				<Card
+					variant="filled"
+					className="rounded-2xl bg-m3-error-container px-4 py-3 text-sm text-m3-on-error-container"
+				>
+					<span className="flex items-center gap-2 font-medium">
+						<Icon
+							name="cancel"
+							size={18}
+							className="text-m3-on-error-container"
+						/>
+						Vắng:{" "}
+						<strong className="text-base">{attendanceStats.absent}</strong>
+					</span>
+				</Card>
 			</div>
 
-			<div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-				<input
+			<div className="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:items-center">
+				<TextField
+					dense
+					variant="outlined"
 					value={attendanceKeyword}
-					onChange={(event) => onKeywordChange(event.target.value)}
+					onChange={onKeywordChange}
 					placeholder="Tìm theo tên học sinh..."
-					className="w-full rounded-xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2 text-sm text-m3-on-surface focus:border-m3-primary focus:outline-hidden sm:max-w-xs"
+					leadingIcon={<Icon name="search" size={18} />}
+					trailingIconMode="clear"
+					className="w-full sm:max-w-xs"
 				/>
 
 				<Button
-					type="button"
 					colorStyle="outlined"
 					size="sm"
-					onClick={onToggleNameSort}
+					onClick={handleHeaderSort}
 					title="Sắp xếp theo tên"
 				>
-					Tên{" "}
-					{attendanceNameSortDirection === "asc"
-						? "▲"
-						: attendanceNameSortDirection === "desc"
-							? "▼"
-							: "⇅"}
+					Tên {sortIndicator}
 				</Button>
 
 				<Button
-					type="button"
-					colorStyle="tonal"
+					colorStyle="filled"
 					size="sm"
-					icon={<Icon name="done_all" className="text-sm" />}
+					icon={<Icon name="done_all" size={20} />}
 					onClick={() => onSetAllStatus("Present")}
 				>
 					Tất cả có mặt
 				</Button>
 
 				<Button
-					type="button"
 					colorStyle="outlined"
 					size="sm"
 					className="border-m3-error/40! text-m3-error! hover:bg-m3-error-container/20!"
@@ -98,13 +261,13 @@ export const AttendanceTabContent = ({
 				</Button>
 
 				<Button
-					type="button"
 					colorStyle="tonal"
 					size="sm"
 					icon={
 						<Icon
 							name="refresh"
-							className={attendanceSyncing ? "animate-spin text-sm" : "text-sm"}
+							size={20}
+							className={attendanceSyncing ? "animate-spin" : ""}
 						/>
 					}
 					onClick={onSyncToGoogleSheet}
@@ -131,20 +294,22 @@ export const AttendanceTabContent = ({
 			</p>
 
 			{/* Mobile view */}
-			<div className="space-y-2 md:hidden">
-				{filteredAttendanceStudents.map((student, index) => {
+			<div className="space-y-2.5 md:hidden">
+				{table.getRowModel().rows.map((row, index) => {
+					const student = row.original;
 					const draft = attendanceDraft[student.studentId] ?? {
 						status: "Present" as AttendanceStatus,
 						note: "",
 					};
 					const isAbsent = draft.status === "Absent";
 					return (
-						<article
+						<Card
 							key={student.studentId}
-							className={`rounded-2xl border p-3.5 transition-colors ${
+							variant="filled"
+							className={`rounded-2xl p-3.5 transition-colors ${
 								isAbsent
-									? "border-m3-error/40 bg-m3-error-container/20 text-m3-on-error-container"
-									: "border-m3-outline-variant/60 bg-m3-surface-container text-m3-on-surface"
+									? "bg-m3-error-container/25 text-m3-on-error-container"
+									: "bg-m3-surface-container text-m3-on-surface"
 							}`}
 						>
 							<div className="flex items-start justify-between gap-3">
@@ -160,7 +325,6 @@ export const AttendanceTabContent = ({
 									</p>
 								</div>
 								<Button
-									type="button"
 									colorStyle={isAbsent ? "outlined" : "filled"}
 									size="sm"
 									className={isAbsent ? "border-m3-error! text-m3-error!" : ""}
@@ -170,117 +334,51 @@ export const AttendanceTabContent = ({
 								</Button>
 							</div>
 
-							<input
-								value={draft.note}
-								onChange={(event) =>
-									onUpdateNote(student.studentId, event.target.value)
-								}
-								className="mt-2.5 w-full rounded-xl border border-m3-outline-variant/60 bg-m3-surface px-3 py-1.5 text-sm text-m3-on-surface outline-none focus:border-m3-primary"
-								placeholder="Ghi chú..."
-							/>
-						</article>
+							<div className="mt-2.5">
+								<TextField
+									dense
+									variant="filled"
+									value={draft.note}
+									onChange={(val) => onUpdateNote(student.studentId, val)}
+									placeholder="Ghi chú..."
+									className="w-full"
+								/>
+							</div>
+						</Card>
 					);
 				})}
 
 				{filteredAttendanceStudents.length === 0 && (
-					<div className="rounded-2xl border border-m3-outline-variant/60 bg-m3-surface-container px-3 py-8 text-center text-sm text-m3-on-surface-variant">
+					<Card
+						variant="filled"
+						className="rounded-2xl bg-m3-surface-container px-3 py-8 text-center text-sm text-m3-on-surface-variant"
+					>
 						Không có học sinh phù hợp với từ khóa tìm kiếm.
-					</div>
+					</Card>
 				)}
 			</div>
 
-			{/* Desktop table */}
-			<div className="hidden overflow-x-auto rounded-2xl border border-m3-outline-variant/60 md:block">
-				<table className="min-w-full text-sm">
-					<thead className="bg-m3-surface-container-high text-m3-on-surface-variant">
-						<tr>
-							<th className="px-3 py-2 text-left font-semibold">STT</th>
-							<th className="px-3 py-2 text-left font-semibold">
-								<button
-									type="button"
-									onClick={onToggleNameSort}
-									className="inline-flex items-center gap-1 hover:text-m3-on-surface"
-									title="Sắp xếp theo tên"
-								>
-									Họ và tên
-									<span className="text-[10px] text-m3-on-surface-variant/60">
-										{attendanceNameSortDirection === "asc"
-											? "▲"
-											: attendanceNameSortDirection === "desc"
-												? "▼"
-												: "⇅"}
-									</span>
-								</button>
-							</th>
-							<th className="px-3 py-2 text-left font-semibold">Trạng thái</th>
-							<th className="px-3 py-2 text-left font-semibold">
-								Ghi chú điểm danh
-							</th>
-						</tr>
-					</thead>
-					<tbody>
-						{filteredAttendanceStudents.map((student, index) => {
-							const draft = attendanceDraft[student.studentId] ?? {
-								status: "Present" as AttendanceStatus,
-								note: "",
-							};
-							const isAbsent = draft.status === "Absent";
-							return (
-								<tr
-									key={student.studentId}
-									className={`border-t border-m3-outline-variant/30 transition-colors hover:bg-m3-surface-container-high/60 ${
-										isAbsent ? "bg-m3-error-container/15" : ""
-									}`}
-								>
-									<td className="px-3 py-2 text-m3-on-surface-variant">
-										{index + 1}
-									</td>
-									<td className="px-3 py-2.5">
-										<p className="font-medium text-m3-on-surface">
-											{student.middleName} {student.firstName}
-										</p>
-										<p className="text-xs text-m3-on-surface-variant">
-											Trạng thái: {student.studentStatus || "-"}
-										</p>
-									</td>
-									<td className="px-3 py-2.5">
-										<Button
-											type="button"
-											colorStyle={isAbsent ? "outlined" : "tonal"}
-											size="xs"
-											className={
-												isAbsent ? "border-m3-error/50! text-m3-error!" : ""
-											}
-											onClick={() => onToggleStatus(student.studentId)}
-										>
-											{isAbsent ? "Vắng" : "Có mặt"}
-										</Button>
-									</td>
-									<td className="px-3 py-2.5">
-										<input
-											value={draft.note}
-											onChange={(event) =>
-												onUpdateNote(student.studentId, event.target.value)
-											}
-											className="w-full min-w-60 rounded-xl border border-m3-outline-variant/60 bg-m3-surface px-3 py-1.5 text-sm text-m3-on-surface outline-none focus:border-m3-primary"
-											placeholder="Ghi chú..."
-										/>
-									</td>
-								</tr>
-							);
-						})}
-						{filteredAttendanceStudents.length === 0 && (
-							<tr>
-								<td
-									colSpan={4}
-									className="px-3 py-8 text-center text-m3-on-surface-variant"
-								>
-									Không có học sinh phù hợp với từ khóa tìm kiếm.
-								</td>
-							</tr>
-						)}
-					</tbody>
-				</table>
+			{/* Desktop table with TanStack Table v9 DataTable */}
+			<div className="hidden md:block">
+				<DataTable
+					table={table}
+					isLoading={attendanceLoading}
+					loadingAriaLabel="Đang tải danh sách điểm danh..."
+					minWidthClassName="min-w-full text-sm"
+					getRowClassName={(row) => {
+						const draft = attendanceDraft[row.original.studentId] ?? {
+							status: "Present" as AttendanceStatus,
+							note: "",
+						};
+						return draft.status === "Absent" ? "bg-m3-error-container/15" : "";
+					}}
+					emptyState={
+						<TableEmptyState
+							icon="person_search"
+							title="Không có học sinh phù hợp với từ khóa tìm kiếm."
+						/>
+					}
+				/>
 			</div>
 		</div>
 	);

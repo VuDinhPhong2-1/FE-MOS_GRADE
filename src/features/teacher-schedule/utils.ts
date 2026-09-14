@@ -348,12 +348,12 @@ export const buildAttendanceDraft = (
 	data: ScheduleAttendanceResponse,
 ): Record<string, AttendanceDraftState> => {
 	const next: Record<string, AttendanceDraftState> = {};
-	data.students.forEach((student) => {
+	for (const student of data.students) {
 		next[student.studentId] = {
 			status: student.attendanceStatus || "Present",
 			note: student.note || "",
 		};
-	});
+	}
 	return next;
 };
 

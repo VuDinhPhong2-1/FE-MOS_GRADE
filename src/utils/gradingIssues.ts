@@ -26,19 +26,19 @@ export const getNotifyIssuesFromTaskResults = (
 	const issues: NotifyIssue[] = [];
 	const seen = new Set<string>();
 
-	taskResults.forEach((task) => {
-		(task.displayIssues || []).forEach((issue) => {
+	for (const task of taskResults) {
+		for (const issue of task.displayIssues || []) {
 			const heading = normalizeIssueText(issue.heading || "");
 			const message = normalizeIssueText(issue.message || "");
 			const fixAction = normalizeIssueText(issue.fixAction || "");
 
 			if (!heading || !message) {
-				return;
+				continue;
 			}
 
 			const dedupKey = toIssueDedupKey(`${heading}\n${message}\n${fixAction}`);
 			if (seen.has(dedupKey)) {
-				return;
+				continue;
 			}
 
 			seen.add(dedupKey);
@@ -47,8 +47,8 @@ export const getNotifyIssuesFromTaskResults = (
 				message,
 				fixAction,
 			});
-		});
-	});
+		}
+	}
 
 	return issues;
 };

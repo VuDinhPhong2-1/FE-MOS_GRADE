@@ -14,19 +14,15 @@ import {
 	ClassAnalyticsPanel,
 	DeleteStudentDialog,
 	EditStudentModal,
-	isStudentActive,
 	mapRowsToTempStudents,
-	type NameSortDirection,
 	normalizeText,
 	PasteStudentModal,
-	type StatusSortDirection,
 	StudentActionToolbar,
 	StudentHeader,
 	type StudentListProps,
 	StudentTable,
 	StudentToolbar,
 	useStudentData,
-	vietnameseCollator,
 } from "../features/student-list";
 import type { Student } from "../types/student.types";
 
@@ -41,10 +37,6 @@ const StudentList = ({
 	const location = useLocation();
 
 	const [searchKeyword, setSearchKeyword] = useState("");
-	const [nameSortDirection, setNameSortDirection] =
-		useState<NameSortDirection>("none");
-	const [statusSortDirection, setStatusSortDirection] =
-		useState<StatusSortDirection>("none");
 
 	const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 	const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -75,68 +67,11 @@ const StudentList = ({
 
 	const displayedStudents = useMemo(() => {
 		const keyword = normalizeText(searchKeyword);
-		let list = [...students];
-
-		if (keyword) {
-			list = list.filter((st) =>
-				normalizeText(`${st.middleName} ${st.firstName}`).includes(keyword),
-			);
-		}
-
-		if (nameSortDirection === "asc") {
-			list.sort((a, b) => {
-				const byFirstName = vietnameseCollator.compare(
-					a.firstName || "",
-					b.firstName || "",
-				);
-				if (byFirstName !== 0) return byFirstName;
-				return vietnameseCollator.compare(
-					a.middleName || "",
-					b.middleName || "",
-				);
-			});
-		} else if (nameSortDirection === "desc") {
-			list.sort((a, b) => {
-				const byFirstName = vietnameseCollator.compare(
-					b.firstName || "",
-					a.firstName || "",
-				);
-				if (byFirstName !== 0) return byFirstName;
-				return vietnameseCollator.compare(
-					b.middleName || "",
-					a.middleName || "",
-				);
-			});
-		} else if (statusSortDirection === "active-first") {
-			list.sort(
-				(a, b) => Number(isStudentActive(b)) - Number(isStudentActive(a)),
-			);
-		} else if (statusSortDirection === "inactive-first") {
-			list.sort(
-				(a, b) => Number(isStudentActive(a)) - Number(isStudentActive(b)),
-			);
-		}
-
-		return list;
-	}, [students, searchKeyword, nameSortDirection, statusSortDirection]);
-
-	const toggleNameSort = useCallback(() => {
-		setStatusSortDirection("none");
-		setNameSortDirection((prev) => {
-			if (prev === "none") return "asc";
-			if (prev === "asc") return "desc";
-			return "none";
-		});
-	}, []);
-
-	const toggleStatusSort = useCallback(() => {
-		setNameSortDirection("none");
-		setStatusSortDirection((prev) => {
-			if (prev === "none") return "active-first";
-			if (prev === "active-first") return "inactive-first";
-			return "none";
-		});
-	}, []);
+		if (!keyword) return students;
+		return students.filter((st) =>
+			normalizeText(`${st.middleName} ${st.firstName}`).includes(keyword),
+		);
+	}, [students, searchKeyword]);
 
 	const selectedClassId = selectedClass?.id;
 	const selectedClassName = selectedClass?.name;
@@ -393,10 +328,6 @@ const StudentList = ({
 				isLoading={isLoading}
 				readOnly={readOnly}
 				inlineSavingStudentId={inlineSavingStudentId}
-				nameSortDirection={nameSortDirection}
-				statusSortDirection={statusSortDirection}
-				onToggleNameSort={toggleNameSort}
-				onToggleStatusSort={toggleStatusSort}
 				onCompetencyChange={handleInlineCompetencyChange}
 				onExamToggle={handleInlineExamToggle}
 				onEdit={handleOpenEditStudent}

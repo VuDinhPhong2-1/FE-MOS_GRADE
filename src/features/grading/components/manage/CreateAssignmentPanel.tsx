@@ -212,29 +212,33 @@ export const CreateAssignmentPanel: React.FC<CreateAssignmentPanelProps> = ({
 							Phần này chưa có project khả dụng trong hệ thống.
 						</p>
 					) : (
-						<div className="mt-4 overflow-x-auto rounded-xl border border-m3-outline-variant/30 bg-m3-surface">
+						<div className="mt-4 overflow-x-auto rounded-2xl border border-m3-outline-variant/30 bg-m3-surface-container overflow-hidden">
 							<table className="min-w-full divide-y divide-m3-outline-variant/20">
-								<thead className="bg-m3-surface-container-low">
-									<tr>
-										<th className="px-3 py-2 text-left text-[11px] font-bold uppercase text-m3-on-surface-variant w-14">
+								<thead className="bg-m3-surface-container-high">
+									<tr className="h-12 border-b border-m3-outline-variant/60 bg-m3-surface-container-high">
+										<th className="h-12 px-3 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-m3-on-surface-variant w-14 align-middle">
 											Chọn
 										</th>
-										<th className="px-3 py-2 text-left text-[11px] font-bold uppercase text-m3-on-surface-variant min-w-36">
+										<th className="h-12 px-3 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-m3-on-surface-variant min-w-36 align-middle">
 											Project gốc
 										</th>
-										<th className="px-3 py-2 text-left text-[11px] font-bold uppercase text-m3-on-surface-variant min-w-56">
+										<th className="h-12 px-3 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-m3-on-surface-variant min-w-56 align-middle">
 											Tên bài tập hiển thị
 										</th>
-										<th className="px-3 py-2 text-center text-[11px] font-bold uppercase text-m3-on-surface-variant w-24">
+										<th className="h-12 px-3 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-m3-on-surface-variant w-24 align-middle">
 											Điểm tối đa
 										</th>
 									</tr>
 								</thead>
-								<tbody className="divide-y divide-m3-outline-variant/20">
-									{bulkAssignmentDrafts.map((draft) => (
+								<tbody className="divide-y divide-m3-outline-variant/20 bg-m3-surface-container">
+									{bulkAssignmentDrafts.map((draft, index) => (
 										<tr
 											key={draft.endpoint}
-											className="hover:bg-m3-surface-container-high/30 transition-colors"
+											className={`transition-colors ${
+												index % 2 === 1
+													? "bg-m3-surface-container-high/25"
+													: "bg-transparent"
+											} hover:bg-m3-surface-container-high/40`}
 										>
 											<td className="px-3 py-2">
 												<Checkbox

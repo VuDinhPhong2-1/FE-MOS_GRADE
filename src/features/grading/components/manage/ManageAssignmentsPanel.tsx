@@ -119,11 +119,11 @@ export const ManageAssignmentsPanel: React.FC<ManageAssignmentsPanelProps> = ({
 				</div>
 			</div>
 
-			<div className="rounded-3xl bg-m3-surface overflow-hidden shadow-xs border border-m3-outline-variant/30">
+			<div className="rounded-2xl bg-m3-surface-container overflow-hidden shadow-xs border border-m3-outline-variant/30">
 				<table className="min-w-full divide-y divide-m3-outline-variant/30">
-					<thead className="bg-m3-surface-container-low">
-						<tr>
-							<th className="px-3 py-3 text-center text-xs font-semibold text-m3-on-surface-variant uppercase tracking-wider w-12">
+					<thead className="bg-m3-surface-container-high">
+						<tr className="h-12 border-b border-m3-outline-variant/60 bg-m3-surface-container-high">
+							<th className="h-12 px-3 py-3.5 text-center text-xs font-bold text-m3-on-surface-variant uppercase tracking-wider w-12 align-middle">
 								<Checkbox
 									aria-label="Chọn tất cả bài tập đang dùng"
 									checked={isAllManageActiveSelected}
@@ -136,31 +136,35 @@ export const ManageAssignmentsPanel: React.FC<ManageAssignmentsPanelProps> = ({
 									}
 								/>
 							</th>
-							<th className="px-3 py-3 text-left text-xs font-semibold text-m3-on-surface-variant uppercase tracking-wider">
+							<th className="h-12 px-3 py-3.5 text-left text-xs font-bold text-m3-on-surface-variant uppercase tracking-wider align-middle">
 								Tên bài tập
 							</th>
-							<th className="px-3 py-3 text-left text-xs font-semibold text-m3-on-surface-variant uppercase tracking-wider">
+							<th className="h-12 px-3 py-3.5 text-left text-xs font-bold text-m3-on-surface-variant uppercase tracking-wider align-middle">
 								Loại
 							</th>
-							<th className="px-3 py-3 text-left text-xs font-semibold text-m3-on-surface-variant uppercase tracking-wider">
+							<th className="h-12 px-3 py-3.5 text-left text-xs font-bold text-m3-on-surface-variant uppercase tracking-wider align-middle">
 								Endpoint
 							</th>
-							<th className="px-3 py-3 text-center text-xs font-semibold text-m3-on-surface-variant uppercase tracking-wider">
+							<th className="h-12 px-3 py-3.5 text-center text-xs font-bold text-m3-on-surface-variant uppercase tracking-wider align-middle">
 								Điểm tối đa
 							</th>
-							<th className="px-3 py-3 text-center text-xs font-semibold text-m3-on-surface-variant uppercase tracking-wider">
+							<th className="h-12 px-3 py-3.5 text-center text-xs font-bold text-m3-on-surface-variant uppercase tracking-wider align-middle">
 								Trạng thái
 							</th>
-							<th className="px-3 py-3 text-center text-xs font-semibold text-m3-on-surface-variant uppercase tracking-wider">
+							<th className="h-12 px-3 py-3.5 text-center text-xs font-bold text-m3-on-surface-variant uppercase tracking-wider align-middle">
 								Hành động
 							</th>
 						</tr>
 					</thead>
-					<tbody className="divide-y divide-m3-outline-variant/20 bg-m3-surface">
-						{assignments.map((assignment) => (
+					<tbody className="divide-y divide-m3-outline-variant/20 bg-m3-surface-container">
+						{assignments.map((assignment, index) => (
 							<tr
 								key={assignment.id}
-								className="hover:bg-m3-surface-container-high/40 transition-colors"
+								className={`transition-colors ${
+									index % 2 === 1
+										? "bg-m3-surface-container-high/25"
+										: "bg-transparent"
+								} hover:bg-m3-surface-container-high/40`}
 							>
 								<td
 									className="px-3 py-3 text-center"
