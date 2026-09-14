@@ -34,6 +34,9 @@
 			},
 			"complexity": {
 				"noForEach": "warn"
+			},
+			"style": {
+				"noNonNullAssertion": "off"
 			}
 		}
 	},

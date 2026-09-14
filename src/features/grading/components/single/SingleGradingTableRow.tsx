@@ -113,10 +113,14 @@ const SingleGradingTableRowComponent: React.FC<SingleGradingTableRowProps> = ({
 		);
 	};
 
+	const isBanded = index % 2 === 1;
+
 	return (
 		<tr
 			ref={onRowRef}
-			className="hover:bg-m3-surface-container-high/40 transition-colors"
+			className={`transition-colors ${
+				isBanded ? "bg-m3-surface-container-high/25" : "bg-transparent"
+			} hover:bg-m3-surface-container-high/40`}
 		>
 			<td className="px-4 py-3 text-sm text-m3-on-surface-variant">
 				{index + 1}

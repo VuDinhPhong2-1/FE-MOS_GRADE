@@ -1453,26 +1453,42 @@ const AssignmentManagementPage = ({
 									</p>
 								</div>
 							) : (
-								<div className="max-h-110 overflow-auto px-6 py-4">
+								<div className="max-h-110 overflow-auto rounded-2xl border border-m3-outline-variant/30 bg-m3-surface-container">
 									<table className="min-w-full table-fixed divide-y divide-m3-outline-variant/40 text-sm">
 										<thead className="sticky top-0 z-10 bg-m3-surface-container-high text-left text-xs font-bold uppercase tracking-wider text-m3-on-surface-variant">
-											<tr>
-												<th className="w-[28%] px-4 py-3">Bài tập</th>
-												<th className="w-[11%] px-4 py-3">Môn</th>
-												<th className="w-[14%] px-4 py-3">Loại</th>
-												<th className="w-[10%] px-4 py-3">Điểm</th>
-												<th className="w-[16%] px-4 py-3">Project</th>
-												<th className="w-[11%] px-4 py-3">Trạng thái</th>
-												<th className="w-[10%] px-4 py-3 text-right">
+											<tr className="h-12 border-b border-m3-outline-variant/60 bg-m3-surface-container-high">
+												<th className="w-[28%] px-4 py-3.5 align-middle">
+													Bài tập
+												</th>
+												<th className="w-[11%] px-4 py-3.5 align-middle">
+													Môn
+												</th>
+												<th className="w-[14%] px-4 py-3.5 align-middle">
+													Loại
+												</th>
+												<th className="w-[10%] px-4 py-3.5 align-middle">
+													Điểm
+												</th>
+												<th className="w-[16%] px-4 py-3.5 align-middle">
+													Project
+												</th>
+												<th className="w-[11%] px-4 py-3.5 align-middle">
+													Trạng thái
+												</th>
+												<th className="w-[10%] px-4 py-3.5 align-middle text-right">
 													Thao tác
 												</th>
 											</tr>
 										</thead>
-										<tbody className="divide-y divide-m3-outline-variant/30 bg-m3-surface">
-											{filteredAssignments.map((assignment) => (
+										<tbody className="divide-y divide-m3-outline-variant/30 bg-m3-surface-container">
+											{filteredAssignments.map((assignment, index) => (
 												<tr
 													key={assignment.id}
-													className="h-14 align-middle hover:bg-m3-surface-container-high/60 transition-colors"
+													className={`h-14 align-middle transition-colors ${
+														index % 2 === 1
+															? "bg-m3-surface-container-high/25"
+															: "bg-transparent"
+													} hover:bg-m3-surface-container-high/60`}
 												>
 													<td className="px-4 py-2">
 														<div
@@ -1888,27 +1904,34 @@ const AssignmentManagementPage = ({
 												Phần này chưa có project khả dụng để tạo nhanh.
 											</div>
 										) : (
-											<div className="max-h-72 overflow-auto">
+											<div className="max-h-72 overflow-auto rounded-2xl border border-m3-outline-variant/30 bg-m3-surface-container">
 												<table className="min-w-full divide-y divide-m3-outline-variant/30 text-xs">
-													<thead className="sticky top-0 bg-m3-surface-container-high">
-														<tr>
-															<th className="w-16 px-3 py-2 text-left font-bold text-m3-on-surface-variant">
+													<thead className="sticky top-0 z-10 bg-m3-surface-container-high text-left text-xs font-bold uppercase tracking-wider text-m3-on-surface-variant">
+														<tr className="h-12 border-b border-m3-outline-variant/60 bg-m3-surface-container-high">
+															<th className="w-16 px-3 py-3.5 align-middle">
 																Chọn
 															</th>
-															<th className="px-3 py-2 text-left font-bold text-m3-on-surface-variant">
+															<th className="px-3 py-3.5 align-middle">
 																Project
 															</th>
-															<th className="px-3 py-2 text-left font-bold text-m3-on-surface-variant">
+															<th className="px-3 py-3.5 align-middle">
 																Tên bài tập
 															</th>
-															<th className="w-28 px-3 py-2 text-right font-bold text-m3-on-surface-variant">
+															<th className="w-28 px-3 py-3.5 align-middle text-right">
 																Điểm
 															</th>
 														</tr>
 													</thead>
-													<tbody className="divide-y divide-m3-outline-variant/30 bg-m3-surface">
-														{quickAssignmentDrafts.map((draft) => (
-															<tr key={draft.endpoint}>
+													<tbody className="divide-y divide-m3-outline-variant/30 bg-m3-surface-container">
+														{quickAssignmentDrafts.map((draft, index) => (
+															<tr
+																key={draft.endpoint}
+																className={`transition-colors ${
+																	index % 2 === 1
+																		? "bg-m3-surface-container-high/25"
+																		: "bg-transparent"
+																} hover:bg-m3-surface-container-high/40`}
+															>
 																<td className="px-3 py-2">
 																	<input
 																		type="checkbox"

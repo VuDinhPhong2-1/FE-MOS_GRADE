@@ -2774,12 +2774,14 @@ const XmlGradingRulesPage = () => {
 					</div>
 					<div className="flex items-center gap-2">
 						<button
+							type="button"
 							onClick={() => setViewRawJson(!viewRawJson)}
 							className="rounded-lg border border-m3-outline-variant bg-m3-surface px-3 py-1 text-xs font-medium text-m3-on-surface hover:bg-m3-surface-container"
 						>
 							{viewRawJson ? "Giao diện Bảng" : "Xem JSON"}
 						</button>
 						<button
+							type="button"
 							onClick={copyJsonToClipboard}
 							title="Sao chép JSON"
 							className="rounded-lg border border-m3-outline-variant bg-m3-surface p-1.5 text-m3-on-surface-variant hover:bg-m3-surface-container"
@@ -2787,6 +2789,7 @@ const XmlGradingRulesPage = () => {
 							<Icon name="content_copy" className="text-sm" />
 						</button>
 						<button
+							type="button"
 							onClick={() => downloadJson()}
 							title="Tải xuống JSON"
 							className="rounded-lg border border-m3-outline-variant bg-m3-surface p-1.5 text-m3-on-surface-variant hover:bg-m3-surface-container"
@@ -2847,103 +2850,123 @@ const XmlGradingRulesPage = () => {
 						</div>
 
 						{/* BẢNG KẾT QUẢ CHẤM ĐIỂM CHI TIẾT */}
-						<div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
+						<div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
 							<table className="w-full text-left text-xs text-slate-600">
-								<thead className="border-b border-slate-200 bg-slate-100/80 font-semibold uppercase tracking-wider text-slate-700">
-									<tr>
-										<th className="px-3 py-2.5 w-12 text-center">STT</th>
-										<th className="px-3 py-2.5 w-32">Mã Task</th>
-										<th className="px-4 py-2.5">Nhiệm vụ (Task Name)</th>
-										<th className="px-3 py-2.5 w-24 text-center">Trạng thái</th>
-										<th className="px-3 py-2.5 w-28 text-right">Điểm số</th>
+								<thead className="border-b border-slate-200 bg-slate-100/80 text-xs font-bold uppercase tracking-wider text-slate-700">
+									<tr className="h-12">
+										<th className="h-12 px-3 py-3.5 w-12 text-center align-middle">
+											STT
+										</th>
+										<th className="h-12 px-3 py-3.5 w-32 align-middle">
+											Mã Task
+										</th>
+										<th className="h-12 px-4 py-3.5 align-middle">
+											Nhiệm vụ (Task Name)
+										</th>
+										<th className="h-12 px-3 py-3.5 w-24 text-center align-middle">
+											Trạng thái
+										</th>
+										<th className="h-12 px-3 py-3.5 w-28 text-right align-middle">
+											Điểm số
+										</th>
 									</tr>
 								</thead>
 								<tbody className="divide-y divide-slate-100">
 									{Array.isArray(tasksList) && tasksList.length > 0 ? (
-										tasksList.map((task: GradeTaskResultView) => {
-											const taskPassed = task.isPassed ?? (task.score ?? 0) > 0;
-											return (
-												<tr
-													key={
-														task.taskId || task.taskName || `task-${task.score}`
-													}
-													className="hover:bg-slate-50/80 transition-colors"
-												>
-													<td className="px-3 py-3 text-center font-medium text-slate-400">
-														{task.taskId}
-													</td>
-													<td className="px-3 py-3 font-mono font-medium text-slate-800">
-														{task.taskId}
-													</td>
-													<td className="px-4 py-3">
-														<div className="font-medium text-slate-900 leading-snug">
-															{task.taskName}
-														</div>
+										tasksList.map(
+											(task: GradeTaskResultView, index: number) => {
+												const taskPassed =
+													task.isPassed ?? (task.score ?? 0) > 0;
+												return (
+													<tr
+														key={
+															task.taskId ||
+															task.taskName ||
+															`task-${task.score}`
+														}
+														className={`transition-colors ${
+															index % 2 === 1 ? "bg-slate-50/70" : "bg-white"
+														} hover:bg-slate-100/80`}
+													>
+														<td className="px-3 py-3 text-center font-medium text-slate-400">
+															{task.taskId}
+														</td>
+														<td className="px-3 py-3 font-mono font-medium text-slate-800">
+															{task.taskId}
+														</td>
+														<td className="px-4 py-3">
+															<div className="font-medium text-slate-900 leading-snug">
+																{task.taskName}
+															</div>
 
-														{/* Chi tiết điều kiện XML / Details */}
-														{Array.isArray(task.details) &&
-															task.details.length > 0 && (
-																<div className="mt-1.5 space-y-1">
-																	{task.details.map((detail: string) => (
-																		<div
-																			key={detail}
-																			className="text-[11px] font-mono text-slate-500 bg-slate-50 border border-slate-100 p-1 rounded"
-																		>
-																			{detail}
-																		</div>
-																	))}
-																</div>
-															)}
+															{/* Chi tiết điều kiện XML / Details */}
+															{Array.isArray(task.details) &&
+																task.details.length > 0 && (
+																	<div className="mt-1.5 space-y-1">
+																		{task.details.map((detail: string) => (
+																			<div
+																				key={detail}
+																				className="text-[11px] font-mono text-slate-500 bg-slate-50 border border-slate-100 p-1 rounded"
+																			>
+																				{detail}
+																			</div>
+																		))}
+																	</div>
+																)}
 
-														{/* Lỗi (nếu có) */}
-														{Array.isArray(task.errors) &&
-															task.errors.length > 0 && (
-																<div className="mt-1.5 text-[11px] text-rose-600 bg-rose-50 border border-rose-100 p-1 rounded">
-																	{task.errors.join(", ")}
-																</div>
-															)}
-														{Array.isArray(task.errors) &&
-															task.errors.length > 0 && (
-																<div className="mt-1.5 text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-100 p-1 rounded">
-																	{(task.fixActions ?? []).join(", ")}
-																</div>
-															)}
-													</td>
-													<td className="px-3 py-3 text-center">
-														<span
-															className={cx(
-																"inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold",
-																taskPassed
-																	? "bg-emerald-100 text-emerald-800"
-																	: "bg-rose-100 text-rose-800",
-															)}
-														>
-															{taskPassed ? (
-																<Icon name="check_circle" className="text-xs" />
-															) : (
-																<Icon name="cancel" className="text-xs" />
-															)}
-															{taskPassed ? "Đạt" : "Sai"}
-														</span>
-													</td>
-													<td className="px-3 py-3 text-right font-bold text-slate-800">
-														<span
-															className={
-																taskPassed
-																	? "text-emerald-700"
-																	: "text-rose-600"
-															}
-														>
-															{task.score ?? 0}
-														</span>
-														<span className="text-slate-400 font-normal">
-															{" "}
-															/ {task.maxScore ?? 0}
-														</span>
-													</td>
-												</tr>
-											);
-										})
+															{/* Lỗi (nếu có) */}
+															{Array.isArray(task.errors) &&
+																task.errors.length > 0 && (
+																	<div className="mt-1.5 text-[11px] text-rose-600 bg-rose-50 border border-rose-100 p-1 rounded">
+																		{task.errors.join(", ")}
+																	</div>
+																)}
+															{Array.isArray(task.errors) &&
+																task.errors.length > 0 && (
+																	<div className="mt-1.5 text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-100 p-1 rounded">
+																		{(task.fixActions ?? []).join(", ")}
+																	</div>
+																)}
+														</td>
+														<td className="px-3 py-3 text-center">
+															<span
+																className={cx(
+																	"inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold",
+																	taskPassed
+																		? "bg-emerald-100 text-emerald-800"
+																		: "bg-rose-100 text-rose-800",
+																)}
+															>
+																{taskPassed ? (
+																	<Icon
+																		name="check_circle"
+																		className="text-xs"
+																	/>
+																) : (
+																	<Icon name="cancel" className="text-xs" />
+																)}
+																{taskPassed ? "Đạt" : "Sai"}
+															</span>
+														</td>
+														<td className="px-3 py-3 text-right font-bold text-slate-800">
+															<span
+																className={
+																	taskPassed
+																		? "text-emerald-700"
+																		: "text-rose-600"
+																}
+															>
+																{task.score ?? 0}
+															</span>
+															<span className="text-slate-400 font-normal">
+																{" "}
+																/ {task.maxScore ?? 0}
+															</span>
+														</td>
+													</tr>
+												);
+											},
+										)
 									) : (
 										<tr>
 											<td
@@ -3025,6 +3048,7 @@ const XmlGradingRulesPage = () => {
 							</p>
 						</div>
 						<button
+							type="button"
 							onClick={loadRuleSets}
 							className={iconButtonClass}
 							title="Làm mới"
@@ -3062,6 +3086,7 @@ const XmlGradingRulesPage = () => {
 							const isLoadingDetail = loadingRuleSetId === item.id;
 							return (
 								<button
+									type="button"
 									key={item.id}
 									onClick={() => void openRuleSet(item)}
 									disabled={isLoadingDetail}
@@ -3148,6 +3173,7 @@ const XmlGradingRulesPage = () => {
 							<div className="flex items-center gap-2">
 								{selected.id && (
 									<button
+										type="button"
 										onClick={() => deleteRuleSet(selected.id)}
 										title="Xóa ruleset"
 										className="inline-flex h-9 w-9 items-center justify-center rounded-full text-m3-error transition-colors hover:bg-m3-error-container"
@@ -3188,6 +3214,7 @@ const XmlGradingRulesPage = () => {
 								["test", "Test XML"],
 							].map(([key, label]) => (
 								<button
+									type="button"
 									key={key}
 									onClick={() => setActiveTab(key as typeof activeTab)}
 									className={cx(
@@ -3288,6 +3315,7 @@ const XmlGradingRulesPage = () => {
 										</p>
 									</div>
 									<button
+										type="button"
 										onClick={() => {
 											const next = {
 												...selected,
@@ -3320,6 +3348,7 @@ const XmlGradingRulesPage = () => {
 												{/* Project header */}
 												<div className="flex items-center gap-3 bg-m3-surface-container px-4 py-3.5 rounded-2xl shadow-xs">
 													<button
+														type="button"
 														onClick={() => toggleProject(pi)}
 														className="flex min-w-0 flex-1 items-center gap-3 text-left p-2"
 													>
@@ -3338,6 +3367,7 @@ const XmlGradingRulesPage = () => {
 														</div>
 													</button>
 													<button
+														type="button"
 														onClick={() =>
 															replaceSelected({
 																...selected,
@@ -3409,6 +3439,7 @@ const XmlGradingRulesPage = () => {
 																	</p>
 																</div>
 																<button
+																	type="button"
 																	onClick={() =>
 																		mutateProject(pi, {
 																			tasks: [...project.tasks, emptyTask()],
@@ -3451,6 +3482,7 @@ const XmlGradingRulesPage = () => {
 																		>
 																			<div className="flex items-center gap-2 px-3.5 py-3">
 																				<button
+																					type="button"
 																					onClick={() => toggleTask(taskKey)}
 																					className="flex min-w-0 flex-1 items-center gap-3 text-left"
 																				>
@@ -3470,6 +3502,7 @@ const XmlGradingRulesPage = () => {
 																					</span>
 																				</button>
 																				<button
+																					type="button"
 																					onClick={() =>
 																						mutateProject(pi, {
 																							tasks: project.tasks.filter(
@@ -7668,6 +7701,7 @@ const XmlGradingRulesPage = () => {
 																								</p>
 																							</div>
 																							<button
+																								type="button"
 																								onClick={() =>
 																									mutateTask(pi, ti, {
 																										conditions: [
@@ -7716,6 +7750,7 @@ const XmlGradingRulesPage = () => {
 																													</span>
 																												</div>
 																												<button
+																													type="button"
 																													onClick={() =>
 																														mutateTask(pi, ti, {
 																															conditions:
@@ -7737,6 +7772,7 @@ const XmlGradingRulesPage = () => {
 
 																											<div className="mt-3 rounded-lg border border-m3-outline-variant/60 bg-m3-surface-container-lowest">
 																												<button
+																													type="button"
 																													onClick={() =>
 																														toggleConditionBasics(
 																															conditionKey,
@@ -7906,6 +7942,7 @@ const XmlGradingRulesPage = () => {
 																														Các biến thể dự kiến
 																													</span>
 																													<button
+																														type="button"
 																														onClick={() => {
 																															const variants =
 																																expectedVariantsForEdit(
@@ -7964,6 +8001,7 @@ const XmlGradingRulesPage = () => {
 																																					1}
 																																			</span>
 																																			<button
+																																				type="button"
 																																				onClick={() => {
 																																					const variants =
 																																						expectedVariantsForEdit(
@@ -8126,6 +8164,7 @@ const XmlGradingRulesPage = () => {
 																											</div>
 
 																											<button
+																												type="button"
 																												onClick={() =>
 																													toggleAdvanced(
 																														conditionKey,
@@ -8409,6 +8448,7 @@ const XmlGradingRulesPage = () => {
 																			Project chưa có Task
 																		</p>
 																		<button
+																			type="button"
 																			onClick={() =>
 																				mutateProject(pi, {
 																					tasks: [emptyTask()],
@@ -8441,6 +8481,7 @@ const XmlGradingRulesPage = () => {
 												Tạo project đầu tiên để xây ruleset.
 											</p>
 											<button
+												type="button"
 												onClick={() =>
 													replaceSelected({
 														...selected,
@@ -8471,6 +8512,7 @@ const XmlGradingRulesPage = () => {
 									</p>
 								</div>
 								<button
+									type="button"
 									onClick={validateRuleSet}
 									className="inline-flex items-center gap-2 rounded-xl bg-m3-primary px-3.5 py-2 text-sm font-semibold text-m3-on-primary hover:bg-m3-primary/90"
 								>
@@ -8630,6 +8672,7 @@ const XmlGradingRulesPage = () => {
 								</label>
 
 								<button
+									type="button"
 									onClick={gradeWithXmlRules}
 									disabled={isTestGrading}
 									className={cx(
@@ -8673,6 +8716,7 @@ const XmlGradingRulesPage = () => {
 									<p className="mt-0.5">{saveError}</p>
 								</div>
 								<button
+									type="button"
 									onClick={() => setSaveError("")}
 									className="ml-auto shrink-0 text-m3-on-error-container/60 hover:text-m3-error"
 									title="Đóng"
@@ -8720,6 +8764,7 @@ const XmlGradingRulesPage = () => {
 
 						<div className="flex items-center gap-2">
 							<button
+								type="button"
 								onClick={validateRuleSet}
 								disabled={saving}
 								className="inline-flex items-center gap-2 rounded-xl border border-m3-outline-variant bg-m3-surface-container px-3.5 py-2.5 text-sm font-bold text-m3-primary transition hover:bg-m3-surface-container-high disabled:opacity-50"

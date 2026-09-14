@@ -1,4 +1,10 @@
+import {
+	createColumnHelper,
+	tableFeatures,
+	useTable,
+} from "@tanstack/react-table";
 import type React from "react";
+import { useMemo } from "react";
 import type { Assignment } from "../../../../types/assignment.types";
 import type { StudentGradingState } from "../../../../types/grading.types";
 import type { Student } from "../../../../types/student.types";
@@ -35,6 +41,9 @@ interface SingleGradingTableProps {
 	onUndo: (studentId: string) => void;
 }
 
+const features = tableFeatures({});
+const helper = createColumnHelper<typeof features, Student>();
+
 export const SingleGradingTable: React.FC<SingleGradingTableProps> = ({
 	gradingStudents,
 	studentGradingStates,
@@ -50,6 +59,60 @@ export const SingleGradingTable: React.FC<SingleGradingTableProps> = ({
 	onDrop,
 	onUndo,
 }) => {
+	const columns = useMemo(
+		() =>
+			helper.columns([
+				helper.display({
+					id: "index",
+					header: "STT",
+					meta: {
+						headerClassName:
+							"px-4 py-3 text-left text-xs font-semibold text-m3-on-surface-variant uppercase tracking-wider",
+					},
+				}),
+				helper.display({
+					id: "student",
+					header: "Học sinh",
+					meta: {
+						headerClassName:
+							"px-4 py-3 text-left text-xs font-semibold text-m3-on-surface-variant uppercase tracking-wider",
+					},
+				}),
+				helper.display({
+					id: "file",
+					header: "File bài làm",
+					meta: {
+						headerClassName:
+							"px-4 py-3 text-center text-xs font-semibold text-m3-on-surface-variant uppercase tracking-wider",
+					},
+				}),
+				helper.display({
+					id: "score",
+					header: "Điểm",
+					meta: {
+						headerClassName:
+							"px-4 py-3 text-center text-xs font-semibold text-m3-on-surface-variant uppercase tracking-wider",
+					},
+				}),
+				helper.display({
+					id: "status",
+					header: "Trạng thái",
+					meta: {
+						headerClassName:
+							"px-4 py-3 text-center text-xs font-semibold text-m3-on-surface-variant uppercase tracking-wider",
+					},
+				}),
+			]),
+		[],
+	);
+
+	const table = useTable({
+		features,
+		columns,
+		data: gradingStudents,
+		getRowId: (row) => row.id,
+	});
+
 	return (
 		<div
 			data-student-scroll-container="true"
@@ -59,27 +122,31 @@ export const SingleGradingTable: React.FC<SingleGradingTableProps> = ({
 				<caption className="caption-top px-4 py-3 text-left text-sm font-semibold text-m3-on-surface border-b border-m3-outline-variant/20">
 					Bảng chấm điểm học sinh ({gradingStudents.length} học sinh)
 				</caption>
-				<thead className="sticky top-0 z-10 bg-m3-surface-container-low shadow-xs">
-					<tr>
-						<th className="px-4 py-3 text-left text-xs font-semibold text-m3-on-surface-variant uppercase tracking-wider">
-							STT
-						</th>
-						<th className="px-4 py-3 text-left text-xs font-semibold text-m3-on-surface-variant uppercase tracking-wider">
-							Học sinh
-						</th>
-						<th className="px-4 py-3 text-center text-xs font-semibold text-m3-on-surface-variant uppercase tracking-wider">
-							File bài làm
-						</th>
-						<th className="px-4 py-3 text-center text-xs font-semibold text-m3-on-surface-variant uppercase tracking-wider">
-							Điểm
-						</th>
-						<th className="px-4 py-3 text-center text-xs font-semibold text-m3-on-surface-variant uppercase tracking-wider">
-							Trạng thái
-						</th>
-					</tr>
+				<thead className="sticky top-0 z-10 bg-m3-surface-container-high shadow-xs">
+					{table.getHeaderGroups().map((headerGroup) => (
+						<tr
+							key={headerGroup.id}
+							className="h-12 border-b border-m3-outline-variant/60 bg-m3-surface-container-high text-xs font-bold uppercase tracking-wider text-m3-on-surface-variant"
+						>
+							{headerGroup.headers.map((header) => (
+								<th
+									key={header.id}
+									className={
+										header.column.columnDef.meta?.headerClassName ||
+										"h-12 px-4 py-3.5 align-middle text-xs font-bold text-m3-on-surface-variant uppercase tracking-wider"
+									}
+								>
+									{header.isPlaceholder ? null : (
+										<table.FlexRender header={header} />
+									)}
+								</th>
+							))}
+						</tr>
+					))}
 				</thead>
-				<tbody className="bg-m3-surface divide-y divide-m3-outline-variant/20">
-					{gradingStudents.map((student, index) => {
+				<tbody className="divide-y divide-m3-outline-variant/20 bg-m3-surface-container">
+					{table.getRowModel().rows.map((row, index) => {
+						const student = row.original;
 						const state = studentGradingStates.get(student.id);
 						const persistedScore = singlePersistedScores.get(student.id);
 						const canUndoSingle =

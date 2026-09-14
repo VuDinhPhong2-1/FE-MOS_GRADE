@@ -197,12 +197,12 @@ export const useAttendancePanel = ({
 			if (!attendanceData) return;
 			setAttendanceDraft((prev) => {
 				const next: Record<string, AttendanceDraftState> = {};
-				attendanceData.students.forEach((student) => {
+				for (const student of attendanceData.students) {
 					next[student.studentId] = {
 						status,
 						note: prev[student.studentId]?.note ?? "",
 					};
-				});
+				}
 				return next;
 			});
 		},

@@ -79,27 +79,27 @@ export const ManualFileMatchModal: React.FC<ManualFileMatchModalProps> = ({
 					<DialogBody className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
 						<div className="rounded-2xl border border-m3-outline-variant/20 overflow-hidden shadow-2xs bg-m3-surface-container text-m3-on-surface">
 							<table className="min-w-full divide-y divide-m3-outline-variant/20 bg-m3-surface-container">
-								<thead className="bg-m3-surface-container-low">
-									<tr>
-										<th className="px-3 py-2.5 text-left text-xs font-semibold text-m3-on-surface-variant">
+								<thead className="bg-m3-surface-container-high">
+									<tr className="h-12 border-b border-m3-outline-variant/60 bg-m3-surface-container-high">
+										<th className="h-12 px-3 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-m3-on-surface-variant align-middle">
 											Học sinh
 										</th>
-										<th className="px-3 py-2.5 text-left text-xs font-semibold text-m3-on-surface-variant">
+										<th className="h-12 px-3 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-m3-on-surface-variant align-middle">
 											Tên file
 										</th>
-										<th className="px-3 py-2.5 text-left text-xs font-semibold text-m3-on-surface-variant">
+										<th className="h-12 px-3 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-m3-on-surface-variant align-middle">
 											Lý do
 										</th>
-										<th className="px-3 py-2.5 text-left text-xs font-semibold text-m3-on-surface-variant min-w-50">
+										<th className="h-12 px-3 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-m3-on-surface-variant min-w-50 align-middle">
 											Gán vào bài tập
 										</th>
-										<th className="px-3 py-2.5 text-center text-xs font-semibold text-m3-on-surface-variant">
+										<th className="h-12 px-3 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-m3-on-surface-variant align-middle">
 											Hành động
 										</th>
 									</tr>
 								</thead>
 								<tbody className="divide-y divide-m3-outline-variant/20">
-									{matches.map((item) => {
+									{matches.map((item, index) => {
 										const studentName =
 											studentNameById.get(item.studentId) || item.studentId;
 
@@ -114,7 +114,11 @@ export const ManualFileMatchModal: React.FC<ManualFileMatchModalProps> = ({
 										return (
 											<tr
 												key={item.id}
-												className="hover:bg-m3-surface-container-high/30 transition-colors"
+												className={`transition-colors ${
+													index % 2 === 1
+														? "bg-m3-surface-container-high/25"
+														: "bg-transparent"
+												} hover:bg-m3-surface-container-high/40`}
 											>
 												<td className="px-3 py-2.5 text-xs font-semibold text-m3-on-surface">
 													{studentName}

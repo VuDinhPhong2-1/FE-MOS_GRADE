@@ -11,7 +11,7 @@ import {
 	TextField,
 } from "@bug-on/m3-expressive";
 import type { FC } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { showAlert } from "../../components/common";
 import { useAuth } from "../../context/AuthContext";
 import studentService from "../../services/student.service";
@@ -92,21 +92,26 @@ const formatScore = (value: number): string => {
 
 const getScorePillClass = (score: number, maxScore: number): string => {
 	if (!Number.isFinite(maxScore) || maxScore <= 0) {
-		return "border-slate-200 bg-slate-100 text-slate-600";
+		return "border-m3-outline-variant/60 bg-m3-surface-container-high text-m3-on-surface-variant";
 	}
 	const ratio = score / maxScore;
-	if (ratio >= 0.85) return "border-emerald-200 bg-emerald-50 text-emerald-700";
-	if (ratio >= 0.65) return "border-blue-200 bg-blue-50 text-blue-700";
-	if (ratio > 0) return "border-amber-200 bg-amber-50 text-amber-700";
-	return "border-slate-200 bg-slate-100 text-slate-500";
+	if (ratio >= 0.85)
+		return "border-m3-tertiary/40 bg-m3-tertiary-container text-m3-on-tertiary-container";
+	if (ratio >= 0.65)
+		return "border-m3-secondary/40 bg-m3-secondary-container text-m3-on-secondary-container";
+	if (ratio > 0)
+		return "border-m3-primary/40 bg-m3-primary-container text-m3-on-primary-container";
+	return "border-m3-outline-variant/60 bg-m3-surface-container-high text-m3-on-surface-variant";
 };
 
 const getPercentagePillClass = (percentage: number): string => {
 	if (percentage >= 75)
-		return "border-emerald-200 bg-emerald-50 text-emerald-700";
-	if (percentage >= 50) return "border-blue-200 bg-blue-50 text-blue-700";
-	if (percentage > 0) return "border-amber-200 bg-amber-50 text-amber-700";
-	return "border-slate-200 bg-slate-100 text-slate-500";
+		return "border-m3-tertiary/40 bg-m3-tertiary-container text-m3-on-tertiary-container";
+	if (percentage >= 50)
+		return "border-m3-secondary/40 bg-m3-secondary-container text-m3-on-secondary-container";
+	if (percentage > 0)
+		return "border-m3-primary/40 bg-m3-primary-container text-m3-on-primary-container";
+	return "border-m3-outline-variant/60 bg-m3-surface-container-high text-m3-on-surface-variant";
 };
 
 const normalizeClassification = (value?: string): CompetencyLevel => {
@@ -123,10 +128,10 @@ const isStudentTakingExam = (student?: Student): boolean =>
 	Boolean(student?.takesExam ?? student?.thi);
 
 const classificationClassMap: Record<"A" | "B" | "C" | "D", string> = {
-	A: "bg-emerald-100 text-emerald-700 border-emerald-200",
-	B: "bg-blue-100 text-blue-700 border-blue-200",
-	C: "bg-amber-100 text-amber-700 border-amber-200",
-	D: "bg-rose-100 text-rose-700 border-rose-200",
+	A: "bg-m3-tertiary-container text-m3-on-tertiary-container border-m3-tertiary/40",
+	B: "bg-m3-secondary-container text-m3-on-secondary-container border-m3-secondary/40",
+	C: "bg-m3-primary-container text-m3-on-primary-container border-m3-primary/40",
+	D: "bg-m3-error-container text-m3-on-error-container border-m3-error/40",
 };
 const classificationLevels: Array<Exclude<CompetencyLevel, "">> = [
 	"A",
@@ -206,28 +211,30 @@ const PRACTICE_COLUMN_THEME: Record<
 	}
 > = {
 	practice01: {
-		completionHeader: "bg-emerald-100 text-emerald-900",
-		completionCell: "bg-emerald-50 text-emerald-900",
-		scoreHeader: "bg-emerald-200 text-emerald-900",
-		scoreCell: "bg-emerald-100/70 text-emerald-900",
+		completionHeader: "bg-m3-tertiary-container text-m3-on-tertiary-container",
+		completionCell: "bg-m3-tertiary-container/20 text-m3-on-tertiary-container",
+		scoreHeader: "bg-m3-tertiary-container/80 text-m3-on-tertiary-container",
+		scoreCell: "bg-m3-tertiary-container/30 text-m3-on-tertiary-container",
 	},
 	practice02: {
-		completionHeader: "bg-sky-100 text-sky-900",
-		completionCell: "bg-sky-50 text-sky-900",
-		scoreHeader: "bg-sky-200 text-sky-900",
-		scoreCell: "bg-sky-100/70 text-sky-900",
+		completionHeader:
+			"bg-m3-secondary-container text-m3-on-secondary-container",
+		completionCell:
+			"bg-m3-secondary-container/20 text-m3-on-secondary-container",
+		scoreHeader: "bg-m3-secondary-container/80 text-m3-on-secondary-container",
+		scoreCell: "bg-m3-secondary-container/30 text-m3-on-secondary-container",
 	},
 	practice03: {
-		completionHeader: "bg-teal-100 text-teal-900",
-		completionCell: "bg-teal-50 text-teal-900",
-		scoreHeader: "bg-teal-200 text-teal-900",
-		scoreCell: "bg-teal-100/70 text-teal-900",
+		completionHeader: "bg-m3-primary-container text-m3-on-primary-container",
+		completionCell: "bg-m3-primary-container/20 text-m3-on-primary-container",
+		scoreHeader: "bg-m3-primary-container/80 text-m3-on-primary-container",
+		scoreCell: "bg-m3-primary-container/30 text-m3-on-primary-container",
 	},
 	exam_review: {
-		completionHeader: "bg-amber-100 text-amber-900",
-		completionCell: "bg-amber-50 text-amber-900",
-		scoreHeader: "bg-amber-200 text-amber-900",
-		scoreCell: "bg-amber-100/70 text-amber-900",
+		completionHeader: "bg-m3-error-container text-m3-on-error-container",
+		completionCell: "bg-m3-error-container/20 text-m3-on-error-container",
+		scoreHeader: "bg-m3-error-container/80 text-m3-on-error-container",
+		scoreCell: "bg-m3-error-container/30 text-m3-on-error-container",
 	},
 };
 
@@ -335,10 +342,8 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 	const [savingNotesStudentId, setSavingNotesStudentId] = useState<
 		string | null
 	>(null);
-	const [columnDisplayByAssignmentId, setColumnDisplayByAssignmentId] =
-		useState<Record<string, AssignmentColumnDisplayMode>>({});
-	const [summaryColumnDisplayByKey, setSummaryColumnDisplayByKey] = useState<
-		Record<string, AssignmentColumnDisplayMode>
+	const [columnVisibility, setColumnVisibility] = useState<
+		Record<string, boolean>
 	>({});
 	const [isTotalScoreColumnVisible, setIsTotalScoreColumnVisible] =
 		useState(true);
@@ -351,6 +356,16 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 		useState<ScoreTableSortDirection>("asc");
 	const [searchTerm, setSearchTerm] = useState<string>("");
 	const [showOnlyExamStudents, setShowOnlyExamStudents] = useState(false);
+
+	const isAssignmentVisible = useCallback(
+		(id: string) => columnVisibility[`assignment:${id}`] ?? true,
+		[columnVisibility],
+	);
+
+	const isSummaryColumnVisible = useCallback(
+		(key: string) => columnVisibility[`summary:${key}`] ?? true,
+		[columnVisibility],
+	);
 
 	useEffect(() => {
 		if (!isOpen) return;
@@ -369,30 +384,23 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 
 	useEffect(() => {
 		if (!isOpen) return;
-		setColumnDisplayByAssignmentId((prev) => {
-			const next: Record<string, AssignmentColumnDisplayMode> = {};
+		setColumnVisibility((prev) => {
+			const next = { ...prev };
 			for (const assignment of assignments) {
-				next[assignment.id] =
-					prev[assignment.id] === "hidden" ? "hidden" : "full";
+				const key = `assignment:${assignment.id}`;
+				if (next[key] === undefined) {
+					next[key] = true;
+				}
+			}
+			for (const practice of PRACTICE_COLUMNS) {
+				const completionKey = `summary:${getSummaryColumnKey(practice.code, "completion")}`;
+				const scoreKey = `summary:${getSummaryColumnKey(practice.code, "score")}`;
+				if (next[completionKey] === undefined) next[completionKey] = true;
+				if (next[scoreKey] === undefined) next[scoreKey] = true;
 			}
 			return next;
 		});
 	}, [isOpen, assignments]);
-
-	useEffect(() => {
-		if (!isOpen) return;
-		setSummaryColumnDisplayByKey((prev) => {
-			const next: Record<string, AssignmentColumnDisplayMode> = {};
-			for (const practice of PRACTICE_COLUMNS) {
-				const completionKey = getSummaryColumnKey(practice.code, "completion");
-				const scoreKey = getSummaryColumnKey(practice.code, "score");
-				next[completionKey] =
-					prev[completionKey] === "hidden" ? "hidden" : "full";
-				next[scoreKey] = prev[scoreKey] === "hidden" ? "hidden" : "full";
-			}
-			return next;
-		});
-	}, [isOpen]);
 
 	useEffect(() => {
 		if (!isOpen) return;
@@ -491,11 +499,8 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 
 	const displayedAssignments = useMemo(
 		() =>
-			assignments.filter(
-				(assignment) =>
-					(columnDisplayByAssignmentId[assignment.id] ?? "full") !== "hidden",
-			),
-		[assignments, columnDisplayByAssignmentId],
+			assignments.filter((assignment) => isAssignmentVisible(assignment.id)),
+		[assignments, isAssignmentVisible],
 	);
 
 	const assignmentIdsByPractice = useMemo(() => {
@@ -518,17 +523,15 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 	const visibleSummaryColumnCount = useMemo(
 		() =>
 			PRACTICE_COLUMNS.reduce((count, practice) => {
-				const completionVisible =
-					(summaryColumnDisplayByKey[
-						getSummaryColumnKey(practice.code, "completion")
-					] ?? "full") === "full";
-				const scoreVisible =
-					(summaryColumnDisplayByKey[
-						getSummaryColumnKey(practice.code, "score")
-					] ?? "full") === "full";
+				const completionVisible = isSummaryColumnVisible(
+					getSummaryColumnKey(practice.code, "completion"),
+				);
+				const scoreVisible = isSummaryColumnVisible(
+					getSummaryColumnKey(practice.code, "score"),
+				);
 				return count + (completionVisible ? 1 : 0) + (scoreVisible ? 1 : 0);
 			}, 0),
-		[summaryColumnDisplayByKey],
+		[isSummaryColumnVisible],
 	);
 
 	const staticColumnCount =
@@ -544,18 +547,15 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 		return PRACTICE_COLUMNS.reduce(
 			(acc, practice) => {
 				const assignmentIds = assignmentIdsByPractice[practice.code];
-				const visibleAssignmentCount = assignmentIds.filter(
-					(assignmentId) =>
-						(columnDisplayByAssignmentId[assignmentId] ?? "full") === "full",
+				const visibleAssignmentCount = assignmentIds.filter((assignmentId) =>
+					isAssignmentVisible(assignmentId),
 				).length;
-				const completionVisible =
-					(summaryColumnDisplayByKey[
-						getSummaryColumnKey(practice.code, "completion")
-					] ?? "full") === "full";
-				const scoreVisible =
-					(summaryColumnDisplayByKey[
-						getSummaryColumnKey(practice.code, "score")
-					] ?? "full") === "full";
+				const completionVisible = isSummaryColumnVisible(
+					getSummaryColumnKey(practice.code, "completion"),
+				);
+				const scoreVisible = isSummaryColumnVisible(
+					getSummaryColumnKey(practice.code, "score"),
+				);
 
 				acc[practice.code] = {
 					totalAssignments: assignmentIds.length,
@@ -577,11 +577,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 				}
 			>,
 		);
-	}, [
-		assignmentIdsByPractice,
-		columnDisplayByAssignmentId,
-		summaryColumnDisplayByKey,
-	]);
+	}, [assignmentIdsByPractice, isAssignmentVisible, isSummaryColumnVisible]);
 
 	const areAllPracticeGroupsVisible = useMemo(
 		() =>
@@ -1043,23 +1039,20 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 		practiceCode: PracticeCode,
 		mode: AssignmentColumnDisplayMode,
 	) => {
+		const visible = mode !== "hidden";
 		const assignmentIds = assignmentIdsByPractice[practiceCode];
-		const completionKey = getSummaryColumnKey(practiceCode, "completion");
-		const scoreKey = getSummaryColumnKey(practiceCode, "score");
+		const completionKey = `summary:${getSummaryColumnKey(practiceCode, "completion")}`;
+		const scoreKey = `summary:${getSummaryColumnKey(practiceCode, "score")}`;
 
-		setColumnDisplayByAssignmentId((prev) => {
+		setColumnVisibility((prev) => {
 			const next = { ...prev };
 			for (const assignmentId of assignmentIds) {
-				next[assignmentId] = mode;
+				next[`assignment:${assignmentId}`] = visible;
 			}
+			next[completionKey] = visible;
+			next[scoreKey] = visible;
 			return next;
 		});
-
-		setSummaryColumnDisplayByKey((prev) => ({
-			...prev,
-			[completionKey]: mode,
-			[scoreKey]: mode,
-		}));
 	};
 
 	const handleTogglePracticeGroupDisplay = (practiceCode: PracticeCode) => {
@@ -1469,32 +1462,32 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 
 				<div
 					id="score-table"
-					className="relative overflow-hidden rounded-2xl border border-slate-200 shadow-lg shadow-slate-900/5"
+					className="relative overflow-hidden rounded-2xl border border-m3-outline-variant/60 bg-m3-surface shadow-xs"
 				>
-					<div className="flex items-center justify-between border-b border-slate-700 bg-linear-to-r from-slate-800 to-slate-700 px-4 py-2.5 text-sm font-semibold text-white">
+					<div className="flex items-center justify-between border-b border-m3-outline-variant/40 bg-m3-surface-container-high px-4 py-2.5 text-sm font-semibold text-m3-on-surface">
 						<span>Bảng điểm lớp {titleClassName}</span>
-						<span className="text-xs font-medium text-slate-200">
+						<span className="text-xs font-medium text-m3-on-surface-variant">
 							Nhấn badge lỗi để xem chi tiết
 						</span>
 					</div>
 					<div className="min-h-72 max-h-[calc(100vh-20rem)] overflow-auto">
-						<table className="w-full min-w-485 border-separate border-spacing-0 text-sm text-slate-700">
+						<table className="w-full min-w-485 border-separate border-spacing-0 text-sm text-m3-on-surface">
 							<thead className="z-20">
-								<tr className="border-b border-slate-700 bg-slate-800">
+								<tr className="border-b border-m3-outline-variant/60 bg-m3-surface-container-high">
 									<th
-										className="sticky top-0 z-50 border-r border-slate-700 bg-slate-800 px-3 py-3 text-center text-xs font-bold uppercase tracking-wide text-slate-100 shadow-[1px_0_0_0_rgba(100,116,139,0.45)]"
+										className="sticky top-0 z-50 border-r border-m3-outline-variant/60 bg-m3-surface-container-high px-3 py-3 text-center text-xs font-bold uppercase tracking-wide text-m3-on-surface shadow-[1px_0_0_0_rgba(100,116,139,0.45)]"
 										style={{ left: 0, width: 70, minWidth: 70 }}
 									>
 										STT
 									</th>
 									<th
-										className="sticky top-0 z-50 border-r border-slate-700 bg-slate-800 px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-100 shadow-[1px_0_0_0_rgba(100,116,139,0.45)]"
+										className="sticky top-0 z-50 border-r border-m3-outline-variant/60 bg-m3-surface-container-high px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-m3-on-surface shadow-[1px_0_0_0_rgba(100,116,139,0.45)]"
 										style={{ left: 70, width: 220, minWidth: 220 }}
 									>
 										Họ và tên đệm
 									</th>
 									<th
-										className="sticky top-0 z-50 border-r border-slate-700 bg-slate-800 px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-100 shadow-[1px_0_0_0_rgba(100,116,139,0.45)]"
+										className="sticky top-0 z-50 border-r border-m3-outline-variant/60 bg-m3-surface-container-high px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-m3-on-surface shadow-[1px_0_0_0_rgba(100,116,139,0.45)]"
 										style={{ left: 290, width: 120, minWidth: 120 }}
 									>
 										Tên
@@ -1503,35 +1496,33 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 										return (
 											<th
 												key={assignment.id}
-												className="sticky top-0 z-40 min-w-35 border-r border-slate-700 bg-slate-800 px-3 py-3 text-center text-xs font-bold text-slate-100"
+												className="sticky top-0 z-40 min-w-35 border-r border-m3-outline-variant/60 bg-m3-surface-container-high px-3 py-3 text-center text-xs font-bold text-m3-on-surface"
 											>
 												<div title={assignment.name}>{assignment.name}</div>
-												<div className="text-[11px] font-normal text-slate-300">
+												<div className="text-[11px] font-normal text-m3-on-surface-variant">
 													(tối đa {assignment.maxScore})
 												</div>
 											</th>
 										);
 									})}
 									{isClassificationColumnVisible && (
-										<th className="sticky top-0 z-40 min-w-32.5 border-r border-slate-700 bg-slate-800 px-3 py-3 text-center text-xs font-bold uppercase tracking-wide text-slate-100">
+										<th className="sticky top-0 z-40 min-w-32.5 border-r border-m3-outline-variant/60 bg-m3-surface-container-high px-3 py-3 text-center text-xs font-bold uppercase tracking-wide text-m3-on-surface">
 											Xếp loại
 										</th>
 									)}
 									{PRACTICE_COLUMNS.flatMap((practice) => {
 										const theme = PRACTICE_COLUMN_THEME[practice.code];
-										const completionVisible =
-											(summaryColumnDisplayByKey[
-												getSummaryColumnKey(practice.code, "completion")
-											] ?? "full") === "full";
-										const scoreVisible =
-											(summaryColumnDisplayByKey[
-												getSummaryColumnKey(practice.code, "score")
-											] ?? "full") === "full";
+										const completionVisible = isSummaryColumnVisible(
+											getSummaryColumnKey(practice.code, "completion"),
+										);
+										const scoreVisible = isSummaryColumnVisible(
+											getSummaryColumnKey(practice.code, "score"),
+										);
 										return [
 											completionVisible ? (
 												<th
 													key={`${practice.code}-completion-sub`}
-													className={`sticky top-0 z-40 min-w-28 border-l border-slate-700 px-3 py-3 text-center text-xs font-bold uppercase tracking-wide ${theme.completionHeader}`}
+													className={`sticky top-0 z-40 min-w-28 border-l border-m3-outline-variant/60 px-3 py-3 text-center text-xs font-bold uppercase tracking-wide ${theme.completionHeader}`}
 												>
 													{getPracticeCompletionHeaderLabel(practice)}
 												</th>
@@ -1539,7 +1530,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 											scoreVisible ? (
 												<th
 													key={`${practice.code}-score-sub`}
-													className={`sticky top-0 z-40 min-w-33 border-r border-slate-700 px-3 py-3 text-right text-xs font-bold uppercase tracking-wide ${theme.scoreHeader}`}
+													className={`sticky top-0 z-40 min-w-33 border-r border-m3-outline-variant/60 px-3 py-3 text-right text-xs font-bold uppercase tracking-wide ${theme.scoreHeader}`}
 												>
 													{getPracticeScoreHeaderLabel(practice)}
 												</th>
@@ -1547,19 +1538,19 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 										];
 									})}
 									{isTotalScoreColumnVisible && (
-										<th className="sticky top-0 z-40 min-w-35 border-l border-slate-700 bg-blue-200 px-4 py-3 text-right text-xs font-bold uppercase tracking-wide text-blue-900">
+										<th className="sticky top-0 z-40 min-w-35 border-l border-m3-outline-variant/60 bg-m3-secondary-container px-4 py-3 text-right text-xs font-bold uppercase tracking-wide text-m3-on-secondary-container">
 											Tổng điểm 3 Practice
 										</th>
 									)}
 									{isOtthPercentageColumnVisible && (
-										<th className="sticky top-0 z-40 min-w-32.5 border-l border-slate-700 bg-cyan-200 px-4 py-3 text-center text-xs font-bold uppercase tracking-wide text-cyan-900">
+										<th className="sticky top-0 z-40 min-w-32.5 border-l border-m3-outline-variant/60 bg-m3-primary-container px-4 py-3 text-center text-xs font-bold uppercase tracking-wide text-m3-on-primary-container">
 											Tỷ lệ đạt OTTH
 										</th>
 									)}
-									<th className="sticky top-0 z-40 min-w-32.5 border-l border-slate-700 bg-emerald-200 px-4 py-3 text-center text-xs font-bold uppercase tracking-wide text-emerald-900">
+									<th className="sticky top-0 z-40 min-w-32.5 border-l border-m3-outline-variant/60 bg-m3-tertiary-container px-4 py-3 text-center text-xs font-bold uppercase tracking-wide text-m3-on-tertiary-container">
 										Tỷ lệ đạt ôn thi
 									</th>
-									<th className="sticky top-0 z-40 min-w-55 border-l border-slate-700 bg-slate-800 px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-100">
+									<th className="sticky top-0 z-40 min-w-55 border-l border-m3-outline-variant/60 bg-m3-surface-container-high px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-m3-on-surface">
 										Ghi chú
 									</th>
 								</tr>
@@ -1568,30 +1559,32 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 							<tbody>
 								{sortedDisplayRows.map((row, index) => {
 									const stickyBgClass =
-										index % 2 === 0 ? "bg-white" : "bg-slate-50";
+										index % 2 === 0
+											? "bg-m3-surface"
+											: "bg-m3-surface-container-low";
 									return (
 										<tr
 											key={row.id}
-											className={
+											className={`${
 												index % 2 === 0
-													? "bg-white transition-colors hover:bg-blue-50"
-													: "bg-slate-50 transition-colors hover:bg-blue-50"
-											}
+													? "bg-m3-surface"
+													: "bg-m3-surface-container-low"
+											} transition-colors hover:bg-m3-surface-container-high/60`}
 										>
 											<td
-												className={`sticky z-30 border-r border-slate-200 px-3 py-3 text-center font-medium text-slate-500 shadow-[1px_0_0_0_rgba(148,163,184,0.35)] ${stickyBgClass}`}
+												className={`sticky z-30 border-r border-m3-outline-variant/40 px-3 py-3 text-center font-medium text-m3-on-surface-variant shadow-[1px_0_0_0_rgba(148,163,184,0.35)] ${stickyBgClass}`}
 												style={{ left: 0, width: 70, minWidth: 70 }}
 											>
 												{index + 1}
 											</td>
 											<td
-												className={`sticky z-30 border-r border-slate-200 px-4 py-3 font-medium text-slate-900 shadow-[1px_0_0_0_rgba(148,163,184,0.35)] ${stickyBgClass}`}
+												className={`sticky z-30 border-r border-m3-outline-variant/40 px-4 py-3 font-medium text-m3-on-surface shadow-[1px_0_0_0_rgba(148,163,184,0.35)] ${stickyBgClass}`}
 												style={{ left: 70, width: 220, minWidth: 220 }}
 											>
 												{row.middleName || "--"}
 											</td>
 											<td
-												className={`sticky z-30 border-r border-slate-200 px-4 py-3 font-semibold text-slate-900 shadow-[1px_0_0_0_rgba(148,163,184,0.35)] ${stickyBgClass}`}
+												className={`sticky z-30 border-r border-m3-outline-variant/40 px-4 py-3 font-semibold text-m3-on-surface shadow-[1px_0_0_0_rgba(148,163,184,0.35)] ${stickyBgClass}`}
 												style={{ left: 290, width: 120, minWidth: 120 }}
 											>
 												{row.firstName || "--"}
@@ -1608,7 +1601,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 												return (
 													<td
 														key={`${row.id}-${assignment.id}`}
-														className="border-r border-slate-100 px-3 py-3 text-center align-top"
+														className="border-r border-m3-outline-variant/30 px-3 py-3 text-center align-top"
 													>
 														<div
 															className={`mx-auto inline-flex min-w-15.5 items-center justify-center rounded-full border px-2.5 py-1 text-xs font-bold ${getScorePillClass(score, maxScore)}`}
@@ -1617,7 +1610,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 														</div>
 														{assignmentErrors.length > 0 && (
 															<details
-																className="mt-1 text-left text-xs text-amber-800"
+																className="mt-1 text-left text-xs text-m3-error"
 																onToggle={(e) => {
 																	if (
 																		(e.currentTarget as HTMLDetailsElement).open
@@ -1635,10 +1628,10 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 																	}
 																}}
 															>
-																<summary className="inline-flex cursor-pointer items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 font-semibold text-amber-700 hover:bg-amber-100">
+																<summary className="inline-flex cursor-pointer items-center gap-1 rounded-full bg-m3-error-container px-2 py-0.5 font-semibold text-m3-on-error-container hover:bg-m3-error-container/80">
 																	{assignmentErrors.length} lỗi
 																</summary>
-																<ul className="mt-1 max-h-24 list-inside list-disc overflow-auto rounded border border-amber-200 bg-amber-50 p-2 text-[11px]">
+																<ul className="mt-1 max-h-24 list-inside list-disc overflow-auto rounded border border-m3-error/30 bg-m3-error-container/30 p-2 text-[11px] text-m3-on-error-container">
 																	{Array.from(new Set(assignmentErrors)).map(
 																		(errorItem) => (
 																			<li
@@ -1656,7 +1649,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 											})}
 
 											{isClassificationColumnVisible && (
-												<td className="border-r border-slate-300 px-3 py-3 text-center">
+												<td className="border-r border-m3-outline-variant/40 px-3 py-3 text-center">
 													<div className="inline-flex flex-col items-center gap-1">
 														<select
 															value={row.classification}
@@ -1687,7 +1680,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 															<option value="D">D</option>
 														</select>
 														{savingClassificationStudentId === row.id && (
-															<span className="text-[11px] text-slate-500">
+															<span className="text-[11px] text-m3-on-surface-variant">
 																Đang lưu...
 															</span>
 														)}
@@ -1697,19 +1690,17 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 
 											{PRACTICE_COLUMNS.flatMap((practice) => {
 												const theme = PRACTICE_COLUMN_THEME[practice.code];
-												const completionVisible =
-													(summaryColumnDisplayByKey[
-														getSummaryColumnKey(practice.code, "completion")
-													] ?? "full") === "full";
-												const scoreVisible =
-													(summaryColumnDisplayByKey[
-														getSummaryColumnKey(practice.code, "score")
-													] ?? "full") === "full";
+												const completionVisible = isSummaryColumnVisible(
+													getSummaryColumnKey(practice.code, "completion"),
+												);
+												const scoreVisible = isSummaryColumnVisible(
+													getSummaryColumnKey(practice.code, "score"),
+												);
 												return [
 													completionVisible ? (
 														<td
 															key={`${row.id}-${practice.code}-completion`}
-															className={`border-l border-slate-300 px-4 py-3 text-center font-semibold ${theme.completionCell}`}
+															className={`border-l border-m3-outline-variant/40 px-4 py-3 text-center font-semibold ${theme.completionCell}`}
 															title={`${practice.title}: ${formatScore(row.practiceSummaries[practice.code].totalScore)}/${formatScore(practiceMaxScoreByCode[practice.code] || 0)} điểm`}
 														>
 															{
@@ -1721,7 +1712,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 													scoreVisible ? (
 														<td
 															key={`${row.id}-${practice.code}-total-score`}
-															className={`border-r border-slate-300 px-4 py-3 text-right font-semibold ${theme.scoreCell}`}
+															className={`border-r border-m3-outline-variant/40 px-4 py-3 text-right font-semibold ${theme.scoreCell}`}
 															title={`${practice.title}: tổng điểm chuẩn hóa theo thang ${formatScore(practiceMaxScoreByCode[practice.code] || 0)}`}
 														>
 															{formatScore(
@@ -1737,8 +1728,8 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 											})}
 
 											{isTotalScoreColumnVisible && (
-												<td className="border-l border-slate-300 bg-blue-50 px-4 py-3 text-right">
-													<span className="inline-flex rounded-full border border-blue-200 bg-blue-100 px-2.5 py-1 text-xs font-bold text-blue-800">
+												<td className="border-l border-m3-outline-variant/40 bg-m3-secondary-container/20 px-4 py-3 text-right">
+													<span className="inline-flex rounded-full border border-m3-secondary/30 bg-m3-secondary-container px-2.5 py-1 text-xs font-bold text-m3-on-secondary-container">
 														{formatScore(row.totalScore)}/
 														{formatScore(maxScoreTotal)}
 													</span>
@@ -1746,7 +1737,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 											)}
 
 											{isOtthPercentageColumnVisible && (
-												<td className="border-l border-slate-300 bg-cyan-50 px-4 py-3 text-center">
+												<td className="border-l border-m3-outline-variant/40 bg-m3-primary-container/20 px-4 py-3 text-center">
 													<span
 														className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-bold ${getPercentagePillClass(
 															row.otthPercentage,
@@ -1757,7 +1748,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 												</td>
 											)}
 
-											<td className="border-l border-slate-300 bg-emerald-50 px-4 py-3 text-center">
+											<td className="border-l border-m3-outline-variant/40 bg-m3-tertiary-container/20 px-4 py-3 text-center">
 												<span
 													className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-bold ${getPercentagePillClass(
 														row.examReviewPercentage,
@@ -1767,7 +1758,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 												</span>
 											</td>
 
-											<td className="border-l border-slate-300 px-4 py-3 text-left text-slate-600">
+											<td className="border-l border-m3-outline-variant/40 px-4 py-3 text-left text-m3-on-surface-variant">
 												<div className="max-w-65 space-y-1">
 													<textarea
 														value={row.notes}
@@ -1786,7 +1777,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 														}`}
 													/>
 													{savingNotesStudentId === row.id && (
-														<span className="text-[11px] text-slate-500">
+														<span className="text-[11px] text-m3-on-surface-variant">
 															Đang lưu...
 														</span>
 													)}
@@ -1800,7 +1791,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 									<tr>
 										<td
 											colSpan={displayedAssignments.length + staticColumnCount}
-											className="px-4 py-8 text-center text-slate-500"
+											className="px-4 py-8 text-center text-m3-on-surface-variant"
 										>
 											Chưa có dữ liệu điểm để hiển thị.
 										</td>
@@ -1817,15 +1808,15 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 					type="button"
 					colorStyle="filled"
 					onClick={handleExportExcel}
-					className="w-full bg-emerald-600 hover:bg-emerald-700 text-white sm:w-auto"
+					className="w-full sm:w-auto"
 				>
 					<Icon name="download" className="text-lg mr-1.5" /> Xuất Excel
 				</Button>
 				<Button
 					type="button"
-					colorStyle="filled"
+					colorStyle="tonal"
 					onClick={handleExportPdf}
-					className="w-full bg-rose-600 hover:bg-rose-700 text-white sm:w-auto"
+					className="w-full sm:w-auto"
 				>
 					<Icon name="download" className="text-lg mr-1.5" /> Xuất PDF
 				</Button>

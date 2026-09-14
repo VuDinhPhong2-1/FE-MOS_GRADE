@@ -55,9 +55,12 @@ export const isStudentActive = (student: Student): boolean => {
 };
 
 export const competencyBadgeClass = (level?: string): string => {
-	if (level === "A") return "bg-emerald-100 text-emerald-700";
-	if (level === "B") return "bg-blue-100 text-blue-700";
-	if (level === "C") return "bg-amber-100 text-amber-700";
-	if (level === "D") return "bg-rose-100 text-rose-700";
-	return "bg-gray-100 text-gray-600";
+	if (level === "A")
+		return "bg-m3-tertiary-container text-m3-on-tertiary-container";
+	if (level === "B")
+		return "bg-m3-secondary-container text-m3-on-secondary-container";
+	if (level === "C")
+		return "bg-m3-primary-container text-m3-on-primary-container";
+	if (level === "D") return "bg-m3-error-container text-m3-on-error-container";
+	return "bg-m3-surface-container-high text-m3-on-surface-variant";
 };
