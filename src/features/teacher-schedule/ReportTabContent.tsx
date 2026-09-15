@@ -307,6 +307,57 @@ const buildClassSummaryFromClassItems = (items: unknown[]): string => {
 	return summaries.join(", ");
 };
 
+const buildSharedClassSummaryFromClassItems = (items: unknown[]): string => {
+	const summaries = items
+		.map((item) => {
+			if (!isRecord(item)) {
+				return null;
+			}
+
+			const className = readClassName(item);
+			const presentStudents = readNumber(item, [
+				"presentStudents",
+				"presentStudentCount",
+				"presentCount",
+			]);
+			const totalStudents = readNumber(item, [
+				"totalStudents",
+				"totalStudentCount",
+				"studentCount",
+			]);
+			const currentStudents = readNumber(item, [
+				"currentStudents",
+				"currentStudentCount",
+			]);
+			const maxStudents = readNumber(item, [
+				"maxStudents",
+				"maxStudentCount",
+				"capacity",
+			]);
+
+			if (!className) {
+				return null;
+			}
+
+			if (presentStudents !== null && totalStudents !== null) {
+				return `${className} (${presentStudents}/${totalStudents})`;
+			}
+
+			if (currentStudents !== null && maxStudents !== null) {
+				return `${className} (${currentStudents}/${maxStudents})`;
+			}
+
+			if (currentStudents !== null) {
+				return `${className} (${currentStudents})`;
+			}
+
+			return null;
+		})
+		.filter((summary): summary is string => Boolean(summary));
+
+	return summaries.join(" ");
+};
+
 const buildClassStudentCountSummary = (
 	attendanceData: ScheduleAttendanceResponse,
 	attendanceDraft: Record<string, AttendanceDraftState>,
@@ -323,6 +374,35 @@ const buildClassStudentCountSummary = (
 			"classLabel",
 			"classTitle",
 		]) ?? "";
+
+	const roomSessionContext = attendanceRecord.roomSessionContext;
+	if (isRecord(roomSessionContext)) {
+		const isSharedRoomSession = roomSessionContext.isSharedRoomSession === true;
+		const sharedClasses = getArrayFromPossibleKeys(roomSessionContext, [
+			"sharedClasses",
+			"classes",
+			"roomClasses",
+			"scheduleClasses",
+		]);
+		const sharedClassSummary = sharedClasses?.length
+			? buildSharedClassSummaryFromClassItems(sharedClasses)
+			: "";
+
+		if (isSharedRoomSession && sharedClassSummary) {
+			return sharedClassSummary;
+		}
+
+		if (isSharedRoomSession) {
+			const sharedSummary = readString(roomSessionContext, [
+				"sharedClassStudentSummary",
+				"classStudentCountSummary",
+			]);
+
+			if (sharedSummary) {
+				return sharedSummary;
+			}
+		}
+	}
 
 	const possibleStudents = getArrayFromPossibleKeys(attendanceRecord, [
 		"students",
@@ -360,7 +440,6 @@ const buildClassStudentCountSummary = (
 		}
 	}
 
-	const roomSessionContext = attendanceRecord.roomSessionContext;
 	if (isRecord(roomSessionContext)) {
 		const sharedClasses = getArrayFromPossibleKeys(roomSessionContext, [
 			"sharedClasses",

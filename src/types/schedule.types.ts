@@ -160,6 +160,9 @@ export interface ScheduleRoomClassSummary {
 	className: string;
 	currentStudents: number;
 	maxStudents?: number;
+	totalStudents?: number;
+	presentStudents?: number;
+	absentStudents?: number;
 }
 
 export interface ScheduleRoomSessionContext {
