@@ -15,7 +15,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { showAlert } from "../../components/common";
 import { useAuth } from "../../context/AuthContext";
 import studentService from "../../services/student.service";
-import type { Assignment } from "../../types/assignment.types";
 import type { AutoGradingTaskResultRequest } from "../../types/score.types";
 import type { Student } from "../../types/student.types";
 import type { ExcelCellComment } from "../../utils/exportUtils";
@@ -26,296 +25,38 @@ import {
 } from "../../utils/gradingIssues";
 import { type NotifyIssue, notify } from "../../utils/notify";
 
-type CompetencyLevel = "" | "A" | "B" | "C" | "D";
-type AssignmentColumnDisplayMode = "full" | "hidden";
-type ScoreTableSortKey = "none" | "name" | "classification" | "totalScore";
-type ScoreTableSortDirection = "asc" | "desc";
-type PracticeCode = "practice01" | "practice02" | "practice03" | "exam_review";
-type SummaryColumnKind = "completion" | "score";
-
-const SCORE_SORT_KEY_OPTIONS = [
-	{ value: "none", label: "Mặc định" },
-	{ value: "name", label: "Theo tên (A → Z)" },
-	{ value: "classification", label: "Theo xếp loại" },
-	{ value: "totalScore", label: "Theo tổng điểm" },
-];
-
-interface PracticeSummary {
-	completionText: string;
-	totalScore: number;
-}
-
-interface DisplayStudentRow {
-	id: string;
-	middleName: string;
-	firstName: string;
-	notes: string;
-	calculatedScores: Record<string, number>;
-	errorsByAssignment: Record<string, string[]>;
-	issuesByAssignment: Record<string, NotifyIssue[]>;
-	totalScore: number;
-	otthPercentage: number;
-	examReviewPercentage: number;
-	classification: CompetencyLevel;
-	practiceSummaries: Record<PracticeCode, PracticeSummary>;
-}
-
-interface ViewAllScoresModalProps {
-	isOpen: boolean;
-	onClose: () => void;
-	assignments: Assignment[];
-	students: Student[];
-	classDisplayName?: string;
-	displayMode?: "modal" | "page";
-	title?: string;
-	onStudentClassificationUpdated?: (
-		studentId: string,
-		classification: CompetencyLevel,
-	) => void;
-	onStudentNotesUpdated?: (studentId: string, notes: string) => void;
-	scores: {
-		studentId: string;
-		assignmentId: string;
-		assignmentName?: string;
-		scoreValue: number | null;
-		autoGradingErrors?: string[];
-		autoGradingTaskResults?: AutoGradingTaskResultRequest[];
-	}[];
-}
-
-const formatScore = (value: number): string => {
-	if (!Number.isFinite(value)) return "0";
-	return Number.isInteger(value)
-		? String(value)
-		: value.toFixed(2).replace(/\.00$/, "");
-};
-
-const getScorePillClass = (score: number, maxScore: number): string => {
-	if (!Number.isFinite(maxScore) || maxScore <= 0) {
-		return "border-m3-outline-variant/60 bg-m3-surface-container-high text-m3-on-surface-variant";
-	}
-	const ratio = score / maxScore;
-	if (ratio >= 0.85)
-		return "border-m3-tertiary/40 bg-m3-tertiary-container text-m3-on-tertiary-container";
-	if (ratio >= 0.65)
-		return "border-m3-secondary/40 bg-m3-secondary-container text-m3-on-secondary-container";
-	if (ratio > 0)
-		return "border-m3-primary/40 bg-m3-primary-container text-m3-on-primary-container";
-	return "border-m3-outline-variant/60 bg-m3-surface-container-high text-m3-on-surface-variant";
-};
-
-const getPercentagePillClass = (percentage: number): string => {
-	if (percentage >= 75)
-		return "border-m3-tertiary/40 bg-m3-tertiary-container text-m3-on-tertiary-container";
-	if (percentage >= 50)
-		return "border-m3-secondary/40 bg-m3-secondary-container text-m3-on-secondary-container";
-	if (percentage > 0)
-		return "border-m3-primary/40 bg-m3-primary-container text-m3-on-primary-container";
-	return "border-m3-outline-variant/60 bg-m3-surface-container-high text-m3-on-surface-variant";
-};
-
-const normalizeClassification = (value?: string): CompetencyLevel => {
-	const normalized = (value || "").trim().toUpperCase();
-	return normalized === "A" ||
-		normalized === "B" ||
-		normalized === "C" ||
-		normalized === "D"
-		? normalized
-		: "";
-};
-
-const isStudentTakingExam = (student?: Student): boolean =>
-	Boolean(student?.takesExam ?? student?.thi);
-
-const classificationClassMap: Record<"A" | "B" | "C" | "D", string> = {
-	A: "bg-m3-tertiary-container text-m3-on-tertiary-container border-m3-tertiary/40",
-	B: "bg-m3-secondary-container text-m3-on-secondary-container border-m3-secondary/40",
-	C: "bg-m3-primary-container text-m3-on-primary-container border-m3-primary/40",
-	D: "bg-m3-error-container text-m3-on-error-container border-m3-error/40",
-};
-const classificationLevels: Array<Exclude<CompetencyLevel, "">> = [
-	"A",
-	"B",
-	"C",
-	"D",
-];
-
-const sanitizeFileNamePart = (value: string): string =>
-	value
-		.replace(/[\\/:*?"<>|]/g, "")
-		.replace(/\s+/g, " ")
-		.trim();
-
-const vietnameseCollator = new Intl.Collator("vi", {
-	sensitivity: "base",
-	numeric: true,
-});
-
-const classificationSortOrder: Record<CompetencyLevel, number> = {
-	A: 0,
-	B: 1,
-	C: 2,
-	D: 3,
-	"": 4,
-};
-
-const PRACTICE_MAX_SCORE = 1000;
-const EXAM_REVIEW_PROJECT_NUMBERS = [
-	2, 4, 5, 6, 8, 9, 10, 12, 14, 16, 18, 20, 22,
-];
-const PRACTICE_COMPLETION_TARGETS: Record<PracticeCode, number> = {
-	practice01: 8,
-	practice02: 8,
-	practice03: 8,
-	exam_review: EXAM_REVIEW_PROJECT_NUMBERS.length,
-};
-const PRACTICE_COLUMNS: Array<{
-	code: PracticeCode;
-	shortLabel: string;
-	title: string;
-}> = [
-	{ code: "practice01", shortLabel: "P01", title: "Practice 01" },
-	{ code: "practice02", shortLabel: "P02", title: "Practice 02" },
-	{ code: "practice03", shortLabel: "P03", title: "Practice 03" },
-	{ code: "exam_review", shortLabel: "Ôn thi", title: "Bài ôn thi" },
-];
-
-const getPracticeCompletionHeaderLabel = (
-	practice: Pick<(typeof PRACTICE_COLUMNS)[number], "code" | "shortLabel">,
-): string =>
-	practice.code === "exam_review"
-		? "Ôn thi số bài"
-		: `${practice.shortLabel} số bài`;
-
-const getPracticeScoreHeaderLabel = (
-	practice: Pick<(typeof PRACTICE_COLUMNS)[number], "code" | "shortLabel">,
-): string =>
-	practice.code === "exam_review"
-		? "Tổng điểm ôn thi"
-		: `${practice.shortLabel} tổng điểm`;
-
-const getPracticeExcelScoreHeaderLabel = (
-	practice: Pick<(typeof PRACTICE_COLUMNS)[number], "code" | "title">,
-): string =>
-	practice.code === "exam_review"
-		? "Tổng điểm ôn thi"
-		: `${practice.title} - Tổng điểm`;
-
-const PRACTICE_COLUMN_THEME: Record<
-	PracticeCode,
-	{
-		completionHeader: string;
-		completionCell: string;
-		scoreHeader: string;
-		scoreCell: string;
-	}
-> = {
-	practice01: {
-		completionHeader: "bg-m3-tertiary-container text-m3-on-tertiary-container",
-		completionCell: "bg-m3-tertiary-container/20 text-m3-on-tertiary-container",
-		scoreHeader: "bg-m3-tertiary-container/80 text-m3-on-tertiary-container",
-		scoreCell: "bg-m3-tertiary-container/30 text-m3-on-tertiary-container",
-	},
-	practice02: {
-		completionHeader:
-			"bg-m3-secondary-container text-m3-on-secondary-container",
-		completionCell:
-			"bg-m3-secondary-container/20 text-m3-on-secondary-container",
-		scoreHeader: "bg-m3-secondary-container/80 text-m3-on-secondary-container",
-		scoreCell: "bg-m3-secondary-container/30 text-m3-on-secondary-container",
-	},
-	practice03: {
-		completionHeader: "bg-m3-primary-container text-m3-on-primary-container",
-		completionCell: "bg-m3-primary-container/20 text-m3-on-primary-container",
-		scoreHeader: "bg-m3-primary-container/80 text-m3-on-primary-container",
-		scoreCell: "bg-m3-primary-container/30 text-m3-on-primary-container",
-	},
-	exam_review: {
-		completionHeader: "bg-m3-error-container text-m3-on-error-container",
-		completionCell: "bg-m3-error-container/20 text-m3-on-error-container",
-		scoreHeader: "bg-m3-error-container/80 text-m3-on-error-container",
-		scoreCell: "bg-m3-error-container/30 text-m3-on-error-container",
-	},
-};
-
-const getSummaryColumnKey = (
-	practiceCode: PracticeCode,
-	kind: SummaryColumnKind,
-): string => `${practiceCode}:${kind}`;
-
-const normalizeVietnameseText = (value: string): string =>
-	value
-		.normalize("NFD")
-		.replace(/[\u0300-\u036f]/g, "")
-		.toLowerCase()
-		.trim();
-
-const isExamReviewAssignment = (
-	assignment: Pick<Assignment, "name" | "description" | "gradingApiEndpoint">,
-): boolean => {
-	const candidates = [
-		assignment.name || "",
-		assignment.description || "",
-		assignment.gradingApiEndpoint || "",
-	].map(normalizeVietnameseText);
-
-	return candidates.some(
-		(text) =>
-			text.includes("on thi") ||
-			text.includes("exam review") ||
-			text.includes("exam_review") ||
-			text.includes("review exam"),
-	);
-};
-
-const extractProjectNumberFromEndpoint = (endpoint?: string): number | null => {
-	if (!endpoint) return null;
-
-	let normalized = endpoint.trim().replace(/\\/g, "/").replace(/^\/+/, "");
-	normalized = normalized
-		.replace(/^api\/grading\//i, "")
-		.replace(/^grading\//i, "");
-
-	const directProjectMatch = normalized.match(/^project(\d{1,2})$/i);
-	if (directProjectMatch) {
-		return Number.parseInt(directProjectMatch[1], 10);
-	}
-
-	const subjectProjectMatch = normalized.match(
-		/^(excel|word|ppt|powerpoint)\/project(\d{1,2})$/i,
-	);
-	if (subjectProjectMatch) {
-		return Number.parseInt(subjectProjectMatch[2], 10);
-	}
-
-	return null;
-};
-
-const resolvePracticeByProjectNumber = (
-	projectNumber: number,
-): Exclude<PracticeCode, "exam_review"> | null => {
-	if (projectNumber >= 1 && projectNumber <= 8) return "practice01";
-	if (projectNumber >= 9 && projectNumber <= 16) return "practice02";
-	if (projectNumber >= 17 && projectNumber <= 24) return "practice03";
-	return null;
-};
-
-const resolveAssignmentPracticeCode = (
-	assignment: Pick<Assignment, "name" | "description" | "gradingApiEndpoint">,
-): PracticeCode | null => {
-	if (isExamReviewAssignment(assignment)) {
-		return "exam_review";
-	}
-
-	const projectNumber = extractProjectNumberFromEndpoint(
-		assignment.gradingApiEndpoint,
-	);
-	if (!projectNumber) {
-		return null;
-	}
-
-	return resolvePracticeByProjectNumber(projectNumber);
-};
+import {
+	type AssignmentColumnDisplayMode,
+	type CompetencyLevel,
+	classificationClassMap,
+	classificationLevels,
+	classificationSortOrder,
+	type DisplayStudentRow,
+	extractProjectNumberFromEndpoint,
+	formatScore,
+	getPercentagePillClass,
+	getPracticeCompletionHeaderLabel,
+	getPracticeExcelScoreHeaderLabel,
+	getPracticeScoreHeaderLabel,
+	getScorePillClass,
+	getSummaryColumnKey,
+	isStudentTakingExam,
+	normalizeClassification,
+	PRACTICE_COLUMN_THEME,
+	PRACTICE_COLUMNS,
+	PRACTICE_COMPLETION_TARGETS,
+	PRACTICE_MAX_SCORE,
+	type PracticeCode,
+	type PracticeSummary,
+	resolveAssignmentPracticeCode,
+	resolvePracticeByProjectNumber,
+	SCORE_SORT_KEY_OPTIONS,
+	type ScoreTableSortDirection,
+	type ScoreTableSortKey,
+	sanitizeFileNamePart,
+	type ViewAllScoresModalProps,
+	vietnameseCollator,
+} from "./utils/scoreboardUtils";
 
 const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 	isOpen,

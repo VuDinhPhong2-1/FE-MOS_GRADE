@@ -110,7 +110,7 @@ const PasteStudentModalComponent = ({
 					className="flex max-h-[90vh] w-[calc(100%-2rem)] max-w-2xl flex-col overflow-hidden rounded-4xl bg-m3-surface-container-high p-0 text-m3-on-surface shadow-2xl transform-gpu will-change-transform"
 				>
 					{/* Header */}
-					<div className="flex items-center justify-between border-b border-m3-outline-variant/40 px-6 pt-5 pb-3">
+					<div className="flex items-center justify-between px-6 pt-5 pb-3">
 						<DialogHeader className="mb-0 flex-row items-center gap-3 space-y-0 text-left">
 							<DialogHeaderIcon icon="content_paste" />
 							<div>

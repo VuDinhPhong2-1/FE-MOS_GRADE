@@ -22,12 +22,12 @@ const Header = ({ onOpenProfile }: HeaderProps) => {
 
 				{/* Page Title & Subtitle */}
 				{config.title && (
-					<div className="flex min-w-0 flex-col justify-center">
-						<h1 className="truncate text-base font-bold tracking-tight text-m3-on-surface sm:text-lg lg:text-xl">
+					<div className="flex min-w-0 gap-1 flex-col justify-center">
+						<h1 className="flex min-w-0 flex-wrap items-center gap-2 text-base font-bold tracking-tight text-m3-on-surface sm:text-lg lg:text-xl">
 							{config.title}
 						</h1>
 						{config.subtitle && (
-							<p className="hidden truncate text-xs text-m3-on-surface-variant sm:block">
+							<p className="truncate text-xs text-m3-on-surface-variant">
 								{config.subtitle}
 							</p>
 						)}
@@ -46,7 +46,7 @@ const Header = ({ onOpenProfile }: HeaderProps) => {
 					aria-label="Cài đặt tài khoản"
 					title="Cài đặt tài khoản"
 				>
-					<Icon name="settings" size={24} variant="rounded" />
+					<Icon name="settings" size={24} />
 				</IconButton>
 			</div>
 		</header>

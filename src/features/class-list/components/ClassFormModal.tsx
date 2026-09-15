@@ -14,7 +14,11 @@ import {
 	Select,
 	TextField,
 } from "@bug-on/m3-expressive";
-import { DialogHeaderIcon } from "../../../components/common";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+	DialogHeaderIcon,
+	useUnsavedChangesGuard,
+} from "../../../components/common";
 import type { Class, CreateClassRequest } from "../../../types/class.types";
 import { GRADE_OPTIONS } from "../utils/classlist.utils";
 
@@ -49,8 +53,41 @@ export const ClassFormModal: React.FC<ClassFormModalProps> = ({
 	attendanceSpreadsheetId,
 	isSubmitDisabled,
 }) => {
+	const [initialState, setInitialState] = useState<{
+		formData: CreateClassRequest;
+		isActive: boolean;
+	}>({ formData, isActive });
+	const prevOpenRef = useRef(open);
+
+	useEffect(() => {
+		if (open && !prevOpenRef.current) {
+			setInitialState({ formData, isActive });
+		}
+		prevOpenRef.current = open;
+	}, [open, formData, isActive]);
+
+	const isDirty = useMemo(() => {
+		return (
+			formData.name !== initialState.formData.name ||
+			formData.grade !== initialState.formData.grade ||
+			formData.maxStudents !== initialState.formData.maxStudents ||
+			formData.academicYear !== initialState.formData.academicYear ||
+			formData.description !== initialState.formData.description ||
+			isActive !== initialState.isActive
+		);
+	}, [formData, isActive, initialState]);
+
+	const { handleSafeClose } = useUnsavedChangesGuard({
+		isDirty,
+		isOpen: open,
+		isSubmitting,
+	});
+
 	return (
-		<Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
+		<Dialog
+			open={open}
+			onOpenChange={(isOpen) => !isOpen && handleSafeClose(onClose)}
+		>
 			<DialogPortal open={open}>
 				<DialogOverlay />
 				<DialogContent
@@ -113,7 +150,9 @@ export const ClassFormModal: React.FC<ClassFormModalProps> = ({
 									disabled={isSubmitting}
 									fullWidth
 									className="pt-4"
+									menuVariant="expressive"
 									showDividers={false}
+									colorVariant="standard"
 								/>
 
 								<TextField
@@ -200,7 +239,7 @@ export const ClassFormModal: React.FC<ClassFormModalProps> = ({
 							<Button
 								type="button"
 								colorStyle="text"
-								onClick={onClose}
+								onClick={() => handleSafeClose(onClose)}
 								disabled={isSubmitting}
 							>
 								Hủy

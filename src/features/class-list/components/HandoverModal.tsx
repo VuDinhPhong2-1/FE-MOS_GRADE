@@ -173,7 +173,7 @@ export const HandoverModal: React.FC<HandoverModalProps> = ({
 																<Chip
 																	variant="assist"
 																	label="Giáo viên chính"
-																	className="pointer-events-none h-6 border-none bg-emerald-500/10 px-2.5 text-xs font-bold text-emerald-700 dark:text-emerald-300"
+																	className="pointer-events-none h-6 border-none bg-m3-tertiary-container px-2.5 text-xs font-bold text-m3-on-tertiary-container"
 																/>
 															) : (
 																<Button

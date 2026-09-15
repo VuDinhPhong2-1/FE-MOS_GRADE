@@ -14,7 +14,10 @@ import {
 	ProgressIndicator,
 } from "@bug-on/m3-expressive";
 import type { ComponentProps } from "react";
-import { DialogHeaderIcon } from "../../components/common";
+import {
+	DialogHeaderIcon,
+	useUnsavedChangesGuard,
+} from "../../components/common";
 import type {
 	AttendanceStatus,
 	ScheduleAttendanceResponse,
@@ -136,8 +139,19 @@ export const AttendanceModal = ({
 	const activeReportTab: ReportStepTab | null =
 		attendanceTab === "attendance" ? null : attendanceTab;
 
+	const { handleSafeClose } = useUnsavedChangesGuard({
+		isDirty: hasUnsavedAttendanceChanges,
+		isOpen: open,
+		isSubmitting: attendanceSaving,
+		message:
+			"Bạn có dữ liệu điểm danh/báo cáo chưa lưu. Bạn có chắc muốn đóng?",
+	});
+
 	return (
-		<Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
+		<Dialog
+			open={open}
+			onOpenChange={(isOpen) => !isOpen && handleSafeClose(onClose)}
+		>
 			<DialogPortal open={open}>
 				<DialogOverlay />
 				<DialogContent
@@ -337,7 +351,7 @@ export const AttendanceModal = ({
 						<Button
 							type="button"
 							colorStyle="text"
-							onClick={onClose}
+							onClick={() => handleSafeClose(onClose)}
 							disabled={attendanceSaving}
 						>
 							Hủy

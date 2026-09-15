@@ -95,6 +95,34 @@ export const useStudentQueries = ({
 				payload,
 				getAccessTokenRef.current,
 			),
+		onMutate: async ({ studentId, payload }) => {
+			await queryClient.cancelQueries({
+				queryKey: queryKeys.students.byClass(classId),
+			});
+
+			const previousStudents = queryClient.getQueryData<Student[]>(
+				queryKeys.students.byClass(classId),
+			);
+
+			if (previousStudents) {
+				queryClient.setQueryData<Student[]>(
+					queryKeys.students.byClass(classId),
+					previousStudents.map((st) =>
+						st.id === studentId ? { ...st, ...payload } : st,
+					),
+				);
+			}
+
+			return { previousStudents };
+		},
+		onError: (_err, _vars, context) => {
+			if (context?.previousStudents) {
+				queryClient.setQueryData(
+					queryKeys.students.byClass(classId),
+					context.previousStudents,
+				);
+			}
+		},
 		onSettled: invalidateStudentData,
 	});
 

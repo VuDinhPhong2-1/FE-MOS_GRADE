@@ -1,6 +1,16 @@
+import type {
+	ToolbarIconButtonProps,
+	ToolbarIconButtonVariant,
+} from "@bug-on/m3-expressive";
 import type { ReactNode } from "react";
 
-export interface SearchConfig {
+export interface SearchConfig
+	extends Partial<
+		Omit<
+			ToolbarIconButtonProps,
+			"children" | "id" | "onClick" | "aria-label" | "emphasis"
+		>
+	> {
 	/** ID duy nhất cho ô input <Search>, phục vụ querySelector và accessibility */
 	id: string;
 	/** Placeholder hiển thị trong input */
@@ -17,6 +27,29 @@ export interface SearchConfig {
 	showLeadingIcon?: boolean;
 	/** Tự động xóa query khi đóng tìm kiếm (mặc định: false) */
 	clearQueryOnClose?: boolean;
+	/** Tự động focus vào ô input khi mở tìm kiếm (mặc định: true) */
+	autoFocus?: boolean;
+
+	/**
+	 * Visual emphasis cho ToolbarIconButton ("standard" | "tonal" | "filled").
+	 * Hỗ trợ string mở rộng để không bắt buộc 'as const' khi khai báo object literal.
+	 */
+	emphasis?: ToolbarIconButtonVariant | (string & {});
+
+	/**
+	 * Alias cho `emphasis` ("standard" | "tonal" | "filled") để thuận tiện tuỳ biến theo tên variant.
+	 * Nếu truyền cả `emphasis` và `variant`, `emphasis` sẽ được ưu tiên.
+	 */
+	variant?: ToolbarIconButtonVariant | (string & {});
+
+	/** Variant hình học cho Material Symbol Icon ("outlined" | "rounded" | "sharp") */
+	iconVariant?: "outlined" | "rounded" | "sharp" | (string & {});
+
+	/** Tên icon Material Symbol tùy biến (mặc định: "search") */
+	iconName?: string;
+
+	/** Kích thước icon (mặc định: 24) */
+	iconSize?: number;
 }
 
 export interface FloatingActionToolbarProps {

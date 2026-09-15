@@ -1,5 +1,5 @@
 import {
-	FAB,
+	FABMenu,
 	Icon,
 	PlainTooltip,
 	ToolbarDivider,
@@ -8,13 +8,17 @@ import {
 } from "@bug-on/m3-expressive";
 import {
 	type ChangeEvent,
-	type MouseEvent,
 	memo,
 	useCallback,
+	useEffect,
 	useMemo,
 	useRef,
+	useState,
 } from "react";
-import { FloatingActionToolbar } from "../../components/common/FloatingActionToolbar";
+import {
+	FloatingActionToolbar,
+	type SearchConfig,
+} from "../../components/common/FloatingActionToolbar";
 
 export interface StudentActionToolbarProps {
 	readOnly: boolean;
@@ -22,6 +26,12 @@ export interface StudentActionToolbarProps {
 	isStudentMetadataSyncing: boolean;
 	activeCount: number;
 	newCount: number;
+	searchQuery: string;
+	onSearchQueryChange: (query: string) => void;
+	isSearchActive?: boolean;
+	onOpenSearch?: () => void;
+	onCloseSearch?: () => void;
+	onSearchActiveChange?: (isActive: boolean) => void;
 	onBack?: () => void;
 	onOpenAddModal: () => void;
 	onGrade: () => void;
@@ -38,6 +48,12 @@ const StudentActionToolbarComponent = ({
 	isStudentMetadataSyncing,
 	activeCount,
 	newCount,
+	searchQuery,
+	onSearchQueryChange,
+	isSearchActive,
+	onOpenSearch,
+	onCloseSearch,
+	onSearchActiveChange,
 	onBack,
 	onOpenAddModal,
 	onGrade,
@@ -48,22 +64,33 @@ const StudentActionToolbarComponent = ({
 	onSaveStudents,
 }: StudentActionToolbarProps) => {
 	const fileInputRef = useRef<HTMLInputElement>(null);
+	const [isFabMenuExpanded, setIsFabMenuExpanded] = useState(false);
+
+	// Đóng FABMenu khi ô tìm kiếm được kích hoạt
+	useEffect(() => {
+		if (isSearchActive) {
+			setIsFabMenuExpanded(false);
+		}
+	}, [isSearchActive]);
 
 	const handleTriggerFileInput = useCallback(() => {
 		if (readOnly) return;
 		fileInputRef.current?.click();
 	}, [readOnly]);
 
-	// Giải phóng tap gesture của Motion trước khi mở modal thêm học sinh
-	const handleOpenAddModal = useCallback(
-		(e: MouseEvent<HTMLButtonElement>) => {
-			e.currentTarget.dispatchEvent(
-				new PointerEvent("pointercancel", { bubbles: true }),
-			);
-			e.currentTarget.blur();
-			onOpenAddModal();
-		},
-		[onOpenAddModal],
+	// Cấu hình tìm kiếm cho FloatingActionToolbar
+	const searchConfig: SearchConfig = useMemo(
+		() => ({
+			id: "student-floating-search",
+			placeholder: "Tìm kiếm theo tên học sinh...",
+			ariaLabel: "Tìm kiếm học sinh",
+			query: searchQuery,
+			onQueryChange: onSearchQueryChange,
+			widthClassName: "w-56 sm:w-72 md:w-80",
+			clearQueryOnClose: true,
+			variant: "filled",
+		}),
+		[searchQuery, onSearchQueryChange],
 	);
 
 	// Action buttons dành riêng cho Student List
@@ -155,38 +182,6 @@ const StudentActionToolbarComponent = ({
 					</TooltipBox>
 				)}
 
-				{/* Nhập file Excel */}
-				{!readOnly && (
-					<TooltipBox
-						tooltip={<PlainTooltip>Nhập từ file Excel</PlainTooltip>}
-						placement="top"
-					>
-						<ToolbarIconButton
-							aria-label="Nhập từ file Excel"
-							onClick={handleTriggerFileInput}
-							emphasis="standard"
-						>
-							<Icon name="upload" variant="rounded" size={24} />
-						</ToolbarIconButton>
-					</TooltipBox>
-				)}
-
-				{/* Dán từ Excel / Clipboard */}
-				{!readOnly && (
-					<TooltipBox
-						tooltip={<PlainTooltip>Dán từ Excel</PlainTooltip>}
-						placement="top"
-					>
-						<ToolbarIconButton
-							aria-label="Dán từ Excel"
-							onClick={onOpenPasteModal}
-							emphasis="standard"
-						>
-							<Icon name="content_paste" variant="rounded" size={24} />
-						</ToolbarIconButton>
-					</TooltipBox>
-				)}
-
 				{/* Lưu danh sách học sinh mới (chỉ hiện khi có học sinh chưa lưu) */}
 				{!readOnly && newCount > 0 && (
 					<TooltipBox
@@ -224,31 +219,52 @@ const StudentActionToolbarComponent = ({
 			isStudentMetadataSyncing,
 			isLoading,
 			onSyncMetadata,
-			onOpenPasteModal,
 			newCount,
 			onSaveStudents,
-			handleTriggerFileInput,
 		],
 	);
 
-	// End FAB cho phép thêm học sinh mới (chỉ hiện khi !readOnly)
+	// Danh sách thao tác trong FAB Menu
+	const fabMenuItems = useMemo(
+		() => [
+			{
+				id: "add-student",
+				label: "Thêm học sinh",
+				icon: <Icon name="person_add" size={20} />,
+				onClick: onOpenAddModal,
+			},
+			{
+				id: "import-excel",
+				label: "Nhập từ Excel",
+				icon: <Icon name="upload" variant="rounded" size={20} />,
+				onClick: handleTriggerFileInput,
+			},
+			{
+				id: "paste-excel",
+				label: "Dán từ Excel",
+				icon: <Icon name="content_paste" variant="rounded" size={20} />,
+				onClick: onOpenPasteModal,
+			},
+		],
+		[onOpenAddModal, handleTriggerFileInput, onOpenPasteModal],
+	);
+
+	// End FAB Menu cho phép thêm học sinh, nhập/dán từ excel (chỉ hiện khi !readOnly)
 	const endFab = useMemo(() => {
 		if (readOnly) return undefined;
 
 		return (
-			<TooltipBox
-				tooltip={<PlainTooltip>Thêm học sinh</PlainTooltip>}
-				placement="top"
-			>
-				<FAB
-					colorStyle="tertiary"
-					aria-label="Thêm học sinh"
-					onClick={handleOpenAddModal}
-					icon={<Icon name="person_add" size={24} />}
-				/>
-			</TooltipBox>
+			<FABMenu
+				className="relative! w-14! h-14! bottom-auto! right-auto! left-auto! translate-x-0! sm:bottom-auto! sm:right-auto! **:[[role=menu]]:absolute **:[[role=menu]]:bottom-full **:[[role=menu]]:mb-2 **:[[role=menu]]:right-0"
+				expanded={isFabMenuExpanded}
+				onToggle={setIsFabMenuExpanded}
+				alignment="end"
+				colorVariant="tertiary"
+				aria-label="Thao tác thêm học sinh"
+				items={fabMenuItems}
+			/>
 		);
-	}, [readOnly, handleOpenAddModal]);
+	}, [readOnly, isFabMenuExpanded, fabMenuItems]);
 
 	return (
 		<>
@@ -270,6 +286,11 @@ const StudentActionToolbarComponent = ({
 				ariaLabel="Thanh công cụ tác vụ học sinh"
 				actions={actions}
 				endFab={endFab}
+				search={searchConfig}
+				isSearchActive={isSearchActive}
+				onOpenSearch={onOpenSearch}
+				onCloseSearch={onCloseSearch}
+				onSearchActiveChange={onSearchActiveChange}
 			/>
 		</>
 	);

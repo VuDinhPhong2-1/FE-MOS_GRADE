@@ -52,7 +52,7 @@ export const SchoolTable = memo(function SchoolTable({
 						<Chip
 							variant="assist"
 							label={getValue() || "---"}
-							className="pointer-events-none h-6 border-none bg-m3-surface-container-high px-2.5 text-xs font-bold text-m3-primary shadow-xs"
+							className="pointer-events-none h-6 px-2.5 text-xs font-bold"
 						/>
 					),
 				}),

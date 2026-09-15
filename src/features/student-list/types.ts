@@ -3,29 +3,37 @@ import type { Student } from "../../types/student.types";
 
 export interface StudentListProps {
 	selectedClass: Class;
+	schoolName?: string;
 	readOnly?: boolean;
 	onBack?: () => void;
 }
 
 export type CompetencyLevel = "" | "A" | "B" | "C" | "D";
 
-export interface EditStudentForm {
+export interface StudentFormData {
 	middleName: string;
 	firstName: string;
 	status: string;
 	competencyLevel: CompetencyLevel;
 	notes: string;
 	thi: boolean;
-	classId: string;
+	classId?: string;
 }
 
-export interface AddStudentForm {
-	middleName: string;
-	firstName: string;
-	status: string;
-	competencyLevel: CompetencyLevel;
-	notes: string;
-	thi: boolean;
+export type AddStudentForm = StudentFormData;
+export type EditStudentForm = StudentFormData;
+
+export type StudentModalMode = "add" | "edit";
+
+export interface StudentModalProps {
+	isOpen: boolean;
+	mode?: StudentModalMode;
+	student?: Student | null;
+	classId: string;
+	readOnly: boolean;
+	getAccessToken: (forceRefresh?: boolean) => Promise<string | null>;
+	onClose: () => void;
+	onSuccess: (message: string) => void;
 }
 
 export type NameSortDirection = "none" | "asc" | "desc";

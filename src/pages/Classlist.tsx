@@ -93,12 +93,12 @@ const ClassList: React.FC<ClassListProps> = ({
 	}, [onBackToSchools, setSearchParams]);
 
 	usePageHeader(
-		{
-			title: selectedClass ? `Lớp ${selectedClass.name}` : selectedSchool.name,
-			subtitle: selectedClass
-				? "Danh sách học sinh"
-				: "Danh sách lớp học trực thuộc",
-		},
+		selectedClass
+			? null
+			: {
+					title: selectedSchool.name,
+					subtitle: "Danh sách lớp học trực thuộc",
+				},
 		[selectedClass, selectedSchool.name],
 	);
 
@@ -107,6 +107,7 @@ const ClassList: React.FC<ClassListProps> = ({
 		return (
 			<StudentList
 				selectedClass={selectedClass}
+				schoolName={selectedSchool.name}
 				readOnly={selectedClassReadOnly}
 				onBack={handleBackToClassList}
 			/>

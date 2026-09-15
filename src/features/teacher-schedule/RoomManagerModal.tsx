@@ -16,7 +16,10 @@ import {
 	TextField,
 } from "@bug-on/m3-expressive";
 import { type FormEvent, useMemo } from "react";
-import { DialogHeaderIcon } from "../../components/common";
+import {
+	DialogHeaderIcon,
+	useUnsavedChangesGuard,
+} from "../../components/common";
 import type { ComputerRoom } from "../../types/computer-room.types";
 import type { School } from "../../types/school.types";
 import type { ComputerRoomFormState } from "./types";
@@ -81,8 +84,19 @@ export const RoomManagerModal = ({
 		}));
 	}, [schools]);
 
+	const isDirty = Boolean(editingRoomId || roomForm.name.trim());
+
+	const { handleSafeClose } = useUnsavedChangesGuard({
+		isDirty,
+		isOpen: open,
+		message: "Bạn đang có thông tin phòng máy chưa lưu. Bạn có chắc muốn đóng?",
+	});
+
 	return (
-		<Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
+		<Dialog
+			open={open}
+			onOpenChange={(isOpen) => !isOpen && handleSafeClose(onClose)}
+		>
 			<DialogPortal open={open}>
 				<DialogOverlay />
 				<DialogContent
@@ -106,7 +120,7 @@ export const RoomManagerModal = ({
 					</div>
 
 					{/* Sub-header badges */}
-					<div className="flex flex-wrap items-center gap-2 border-b border-m3-outline-variant/40 px-6 pb-3 text-xs font-medium">
+					<div className="flex flex-wrap items-center gap-2 px-6 pb-3 text-xs font-medium">
 						<span className="inline-flex items-center gap-1 rounded-full border border-m3-primary/30 bg-m3-primary/10 px-3 py-1 text-m3-primary">
 							<Icon name="domain" className="text-xs" />
 							{selectedRoomManagerSchool?.name || "Chưa chọn trường"}
@@ -609,7 +623,11 @@ export const RoomManagerModal = ({
 
 					{/* Modal Footer */}
 					<DialogFooter className="mt-0 flex shrink-0 items-center justify-end border-t border-m3-outline-variant/60 bg-m3-surface-container-high px-6 py-3">
-						<Button type="button" colorStyle="text" onClick={onClose}>
+						<Button
+							type="button"
+							colorStyle="text"
+							onClick={() => handleSafeClose(onClose)}
+						>
 							Đóng
 						</Button>
 					</DialogFooter>

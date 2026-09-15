@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 import { queryKeys } from "../../../lib/queryKeys";
 import { authService } from "../../../services/auth.service";
 import { classService } from "../../../services/class.service";
+import studentService from "../../../services/student.service";
 import type {
 	Class,
 	CreateClassRequest,
@@ -27,7 +28,7 @@ export const useClassQueries = ({
 		getAccessTokenRef.current = getAccessToken;
 	});
 
-	// Query classes (đã fix N+1: không gọi getStudentsByClassId N lần)
+	// Query classes và đồng bộ số học sinh thực tế cho từng lớp
 	const classesQuery = useQuery({
 		queryKey: queryKeys.classes.bySchool(schoolId),
 		queryFn: async (): Promise<Class[]> => {
@@ -36,11 +37,32 @@ export const useClassQueries = ({
 				getAccessTokenRef.current,
 				true,
 			);
-			// Ánh xạ số học sinh trực tiếp từ class object, loại bỏ hoàn toàn N+1 requests
-			return data.map((cls) => ({
-				...cls,
-				currentStudents: cls.studentIds?.length ?? cls.currentStudents ?? 0,
-			}));
+			return Promise.all(
+				data.map(async (cls) => {
+					try {
+						const students = await studentService.getStudentsByClassId(
+							cls.id,
+							getAccessTokenRef.current,
+						);
+						// Pre-populate query cache cho màn hình danh sách học sinh của lớp
+						queryClient.setQueryData(
+							queryKeys.students.byClass(cls.id),
+							students,
+						);
+						return {
+							...cls,
+							currentStudents: students.length,
+							studentIds: students.map((s) => s.id),
+						};
+					} catch {
+						return {
+							...cls,
+							currentStudents:
+								cls.studentIds?.length ?? cls.currentStudents ?? 0,
+						};
+					}
+				}),
+			);
 		},
 		enabled: Boolean(schoolId),
 	});

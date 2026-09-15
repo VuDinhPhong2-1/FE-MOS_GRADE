@@ -6,6 +6,7 @@ import {
 	PlainTooltip,
 	Search,
 	ToolbarIconButton,
+	type ToolbarIconButtonVariant,
 	TooltipBox,
 } from "@bug-on/m3-expressive";
 import { AnimatePresence, motion } from "motion/react";
@@ -89,25 +90,37 @@ const FloatingActionToolbarComponent = ({
 		[isControlled, controlledCloseSearch, search],
 	);
 
-	// Tự động focus vào ô tìm kiếm qua double RAF sau khi layout/transition bắt đầu settle
-	useEffect(() => {
-		if (isSearchActive && search) {
-			let frameId: number;
-			const outerFrameId = requestAnimationFrame(() => {
-				frameId = requestAnimationFrame(() => {
-					const input =
-						searchContainerRef.current?.querySelector<HTMLInputElement>(
-							"input",
-						);
-					input?.focus({ preventScroll: true });
-				});
-			});
-			return () => {
-				cancelAnimationFrame(outerFrameId);
-				cancelAnimationFrame(frameId);
-			};
+	// Tự động focus vào ô input khi search-view mount vào DOM
+	const focusSearchInput = useCallback(() => {
+		if (search?.autoFocus === false) return;
+
+		const input =
+			searchContainerRef.current?.querySelector<HTMLInputElement>("input") ||
+			(search?.id
+				? (document.getElementById(search.id) as HTMLInputElement | null)
+				: null);
+
+		if (input) {
+			input.focus({ preventScroll: true });
+			const len = input.value.length;
+			if (len > 0) {
+				input.setSelectionRange(len, len);
+			}
 		}
-	}, [isSearchActive, search]);
+	}, [search?.autoFocus, search?.id]);
+
+	// Ref callback kích hoạt focus ngay khi node tìm kiếm xuất hiện trong DOM
+	const setSearchContainerRef = useCallback(
+		(node: HTMLDivElement | null) => {
+			searchContainerRef.current = node;
+			if (node && search?.autoFocus !== false) {
+				requestAnimationFrame(() => {
+					focusSearchInput();
+				});
+			}
+		},
+		[focusSearchInput, search?.autoFocus],
+	);
 
 	// Hỗ trợ bấm phím Escape để nhanh chóng đóng tìm kiếm
 	useEffect(() => {
@@ -133,7 +146,7 @@ const FloatingActionToolbarComponent = ({
 	return (
 		<div
 			className={cn(
-				"fixed bottom-18 lg:bottom-4 left-1/2 -translate-x-1/2 z-40 flex items-center justify-center gap-2 max-w-[calc(100vw-2rem)]",
+				"fixed bottom-18 lg:bottom-4 left-1/2 -translate-x-1/2 z-40 flex items-center justify-center gap-2 max-w-[calc(100vw-2rem)] m-0!",
 				className,
 			)}
 		>
@@ -186,7 +199,7 @@ const FloatingActionToolbarComponent = ({
 						{isSearchActive && search ? (
 							<motion.div
 								key="search-view"
-								ref={searchContainerRef}
+								ref={setSearchContainerRef}
 								initial={{ opacity: 0, scale: 0.96 }}
 								animate={{ opacity: 1, scale: 1 }}
 								exit={{
@@ -195,6 +208,7 @@ const FloatingActionToolbarComponent = ({
 									transition: { duration: 0.12, ease: "easeOut" },
 								}}
 								transition={{ duration: 0.16, ease: "easeOut" }}
+								onAnimationComplete={focusSearchInput}
 								className="flex items-center justify-center h-full my-auto"
 							>
 								<Search
@@ -228,19 +242,56 @@ const FloatingActionToolbarComponent = ({
 								{actions}
 
 								{/* Search Toggle Icon Button (nếu có Search config) */}
-								{search && (
-									<TooltipBox
-										tooltip={<PlainTooltip>{search.ariaLabel}</PlainTooltip>}
-										placement="top"
-									>
-										<ToolbarIconButton
-											aria-label={search.ariaLabel}
-											onClick={handleOpenSearch}
-										>
-											<Icon name="search" size={24} />
-										</ToolbarIconButton>
-									</TooltipBox>
-								)}
+								{search &&
+									(() => {
+										const {
+											id,
+											placeholder,
+											ariaLabel,
+											query,
+											onQueryChange,
+											widthClassName,
+											showLeadingIcon,
+											clearQueryOnClose,
+											variant,
+											iconVariant,
+											iconName = "search",
+											iconSize = 24,
+											emphasis,
+											className: triggerClassName,
+											...buttonProps
+										} = search;
+
+										return (
+											<TooltipBox
+												tooltip={<PlainTooltip>{ariaLabel}</PlainTooltip>}
+												placement="top"
+											>
+												<ToolbarIconButton
+													aria-label={ariaLabel}
+													onClick={handleOpenSearch}
+													emphasis={
+														(emphasis ??
+															variant ??
+															"standard") as ToolbarIconButtonVariant
+													}
+													className={triggerClassName}
+													{...buttonProps}
+												>
+													<Icon
+														name={iconName}
+														variant={
+															(iconVariant ?? "rounded") as
+																| "outlined"
+																| "rounded"
+																| "sharp"
+														}
+														size={iconSize}
+													/>
+												</ToolbarIconButton>
+											</TooltipBox>
+										);
+									})()}
 							</motion.div>
 						)}
 					</AnimatePresence>
@@ -270,7 +321,7 @@ const FloatingActionToolbarComponent = ({
 							width: 0,
 							transition: { duration: 0.14, ease: "easeInOut" },
 						}}
-						className="flex shrink-0 items-center justify-center p-2 -m-2 overflow-hidden"
+						className="flex shrink-0 items-center justify-center p-2 -m-2 overflow-visible"
 					>
 						{endFab}
 					</motion.div>

@@ -1,4 +1,4 @@
-import { Icon, useSnackbar } from "@bug-on/m3-expressive";
+import { Chip, Icon, useSnackbar } from "@bug-on/m3-expressive";
 import {
 	type ChangeEvent,
 	useCallback,
@@ -9,25 +9,24 @@ import {
 import { useLocation, useNavigate } from "react-router-dom";
 import * as XLSX from "xlsx-js-style";
 import { useAuth } from "../context/AuthContext";
+import { usePageHeader } from "../context/PageActionsContext";
 import {
-	AddStudentModal,
 	ClassAnalyticsPanel,
 	DeleteStudentDialog,
-	EditStudentModal,
 	mapRowsToTempStudents,
 	normalizeText,
 	PasteStudentModal,
 	StudentActionToolbar,
-	StudentHeader,
 	type StudentListProps,
+	StudentModal,
 	StudentTable,
-	StudentToolbar,
 	useStudentData,
 } from "../features/student-list";
 import type { Student } from "../types/student.types";
 
 const StudentList = ({
 	selectedClass,
+	schoolName,
 	readOnly = false,
 	onBack,
 }: StudentListProps) => {
@@ -37,10 +36,17 @@ const StudentList = ({
 	const location = useLocation();
 
 	const [searchKeyword, setSearchKeyword] = useState("");
+	const [isSearchActive, setIsSearchActive] = useState(false);
 
-	const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-	const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-	const [editingStudent, setEditingStudent] = useState<Student | null>(null);
+	const handleOpenSearch = useCallback(() => setIsSearchActive(true), []);
+	const handleCloseSearch = useCallback(() => {
+		setIsSearchActive(false);
+		setSearchKeyword("");
+	}, []);
+
+	const [studentModalOpen, setStudentModalOpen] = useState(false);
+	const [selectedStudentForEdit, setSelectedStudentForEdit] =
+		useState<Student | null>(null);
 	const [isPasteModalOpen, setIsPasteModalOpen] = useState(false);
 	const [studentToDelete, setStudentToDelete] = useState<Student | null>(null);
 	const [isDeletingStudent, setIsDeletingStudent] = useState(false);
@@ -64,6 +70,63 @@ const StudentList = ({
 		handleInlineExamToggle,
 		handleSyncStudentMetadataToGoogleSheet,
 	} = useStudentData({ selectedClass, readOnly, getAccessToken });
+
+	usePageHeader(
+		{
+			title: (
+				<div className="flex flex-wrap items-center gap-2">
+					<span className="shrink-0">Lớp {selectedClass.name}</span>
+					<div className="flex flex-wrap items-center gap-1.5 text-xs font-normal">
+						<Chip
+							variant="assist"
+							leadingIcon={<Icon name="group" size={16} />}
+							label={`Tổng ${students.length} học sinh`}
+							className="h-6! p-2! rounded-full pointer-events-none"
+						/>
+						<Chip
+							variant="assist"
+							leadingIcon={
+								<Icon
+									name="how_to_reg"
+									size={16}
+									className="text-m3-secondary"
+								/>
+							}
+							label={`Hoạt động ${activeStudents.length}`}
+							className="h-6! p-2! rounded-full pointer-events-none"
+						/>
+						<Chip
+							variant="assist"
+							leadingIcon={
+								<Icon name="person_off" size={16} className="text-m3-error" />
+							}
+							label={`Ngừng ${inactiveStudentsCount}`}
+							className="h-6! p-2! rounded-full pointer-events-none"
+						/>
+						{studentNewList.length > 0 && (
+							<Chip
+								variant="assist"
+								leadingIcon={
+									<Icon name="save" size={16} className="text-m3-tertiary" />
+								}
+								label={`Chưa lưu ${studentNewList.length}`}
+								className="h-6! p-2! rounded-full pointer-events-none"
+							/>
+						)}
+					</div>
+				</div>
+			),
+			subtitle: schoolName || "Danh sách học sinh",
+		},
+		[
+			selectedClass.name,
+			schoolName,
+			students.length,
+			activeStudents.length,
+			inactiveStudentsCount,
+			studentNewList.length,
+		],
+	);
 
 	const displayedStudents = useMemo(() => {
 		const keyword = normalizeText(searchKeyword);
@@ -179,26 +242,23 @@ const StudentList = ({
 				return;
 			}
 
-			setEditingStudent(student);
-			setIsEditModalOpen(true);
+			setSelectedStudentForEdit(student);
+			setStudentModalOpen(true);
 		},
 		[readOnly, showSnackbar],
 	);
 
-	const handleCloseEditModal = useCallback(() => {
-		setIsEditModalOpen(false);
-		setEditingStudent(null);
+	const handleOpenAddModal = useCallback(() => {
+		setSelectedStudentForEdit(null);
+		setStudentModalOpen(true);
 	}, []);
 
-	const handleEditSuccess = useCallback(
-		async (message: string) => {
-			await loadStudents();
-			setFlashMessage(message);
-		},
-		[loadStudents, setFlashMessage],
-	);
+	const handleCloseStudentModal = useCallback(() => {
+		setStudentModalOpen(false);
+		setSelectedStudentForEdit(null);
+	}, []);
 
-	const handleAddSuccess = useCallback(
+	const handleStudentModalSuccess = useCallback(
 		async (message: string) => {
 			await loadStudents();
 			setFlashMessage(message);
@@ -215,14 +275,6 @@ const StudentList = ({
 		},
 		[appendImportedStudents, setFlashMessage],
 	);
-
-	const handleOpenAddModal = useCallback(() => {
-		setIsAddModalOpen(true);
-	}, []);
-
-	const handleCloseAddModal = useCallback(() => {
-		setIsAddModalOpen(false);
-	}, []);
 
 	const handleOpenPasteModal = useCallback(() => {
 		setIsPasteModalOpen(true);
@@ -266,7 +318,7 @@ const StudentList = ({
 	}, [flashMessage, showSnackbar]);
 
 	return (
-		<div className="mx-auto w-full space-y-4 pb-28">
+		<div className="mx-auto w-full space-y-4 pb-16">
 			{readOnly && (
 				<div className="flex items-center gap-2 rounded-2xl border border-m3-outline-variant/60 bg-m3-surface-container px-4 py-3 text-sm text-m3-on-surface shadow-xs">
 					<Icon
@@ -281,44 +333,10 @@ const StudentList = ({
 				</div>
 			)}
 
-			{/* Hero Header without action buttons */}
-			<StudentHeader
-				className={selectedClass.name}
-				totalCount={students.length}
-				activeCount={activeStudents.length}
-				inactiveCount={inactiveStudentsCount}
-				newCount={studentNewList.length}
-			/>
-
 			{/* Class Analytics Panel */}
 			<ClassAnalyticsPanel
 				classId={selectedClass.id}
 				assignments={assignments}
-			/>
-
-			{/* Search & Filter Toolbar */}
-			<StudentToolbar
-				searchKeyword={searchKeyword}
-				onSearchChange={setSearchKeyword}
-				displayedCount={displayedStudents.length}
-				totalCount={students.length}
-			/>
-
-			{/* Floating Action Toolbar (Thêm học sinh, Chấm điểm, Xem điểm, Tải lại, Nhập/Dán Excel, Đồng bộ GG Sheet) */}
-			<StudentActionToolbar
-				readOnly={readOnly}
-				isLoading={isLoading}
-				isStudentMetadataSyncing={isStudentMetadataSyncing}
-				activeCount={activeStudents.length}
-				newCount={studentNewList.length}
-				onBack={handleBack}
-				onOpenAddModal={handleOpenAddModal}
-				onGrade={handleGrade}
-				onOpenViewScores={handleOpenViewScoresModal}
-				onFileUpload={handleFileUpload}
-				onOpenPasteModal={handleOpenPasteModal}
-				onSyncMetadata={handleSyncStudentMetadataToGoogleSheet}
-				onSaveStudents={handleSaveStudents}
 			/>
 
 			{/* Main Students Data Table */}
@@ -334,25 +352,38 @@ const StudentList = ({
 				onDelete={setStudentToDelete}
 			/>
 
-			{/* Add Student Modal */}
-			<AddStudentModal
-				isOpen={isAddModalOpen}
-				classId={selectedClass.id}
+			{/* Floating Action Toolbar (Thêm học sinh, Chấm điểm, Xem điểm, Tải lại, Nhập/Dán Excel, Đồng bộ GG Sheet) */}
+			<StudentActionToolbar
 				readOnly={readOnly}
-				getAccessToken={getAccessToken}
-				onClose={handleCloseAddModal}
-				onSuccess={handleAddSuccess}
+				isLoading={isLoading}
+				isStudentMetadataSyncing={isStudentMetadataSyncing}
+				activeCount={activeStudents.length}
+				newCount={studentNewList.length}
+				searchQuery={searchKeyword}
+				onSearchQueryChange={setSearchKeyword}
+				isSearchActive={isSearchActive}
+				onOpenSearch={handleOpenSearch}
+				onCloseSearch={handleCloseSearch}
+				onSearchActiveChange={setIsSearchActive}
+				onBack={handleBack}
+				onOpenAddModal={handleOpenAddModal}
+				onGrade={handleGrade}
+				onOpenViewScores={handleOpenViewScoresModal}
+				onFileUpload={handleFileUpload}
+				onOpenPasteModal={handleOpenPasteModal}
+				onSyncMetadata={handleSyncStudentMetadataToGoogleSheet}
+				onSaveStudents={handleSaveStudents}
 			/>
 
-			{/* Edit Student Modal */}
-			<EditStudentModal
-				student={editingStudent}
-				isOpen={isEditModalOpen}
+			{/* Student Form Modal (Add / Edit) */}
+			<StudentModal
+				isOpen={studentModalOpen}
+				student={selectedStudentForEdit}
 				classId={selectedClass.id}
 				readOnly={readOnly}
 				getAccessToken={getAccessToken}
-				onClose={handleCloseEditModal}
-				onSuccess={handleEditSuccess}
+				onClose={handleCloseStudentModal}
+				onSuccess={handleStudentModalSuccess}
 			/>
 
 			{/* Paste From Clipboard / Excel Modal */}

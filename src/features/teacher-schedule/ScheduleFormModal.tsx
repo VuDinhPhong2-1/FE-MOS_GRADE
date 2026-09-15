@@ -18,10 +18,18 @@ import {
 	TextField,
 	useDatePickerState,
 } from "@bug-on/m3-expressive";
-import { type FormEvent, useCallback, useMemo, useState } from "react";
+import {
+	type FormEvent,
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import {
 	DialogHeaderIcon,
 	TimePickerDialogModal,
+	useUnsavedChangesGuard,
 } from "../../components/common";
 import type { Class } from "../../types/class.types";
 import type { ComputerRoom } from "../../types/computer-room.types";
@@ -120,8 +128,41 @@ export const ScheduleFormModal = ({
 		];
 	}, [computerRooms]);
 
+	const [initialForm, setInitialForm] = useState<ScheduleFormState>(form);
+	const prevOpenRef = useRef(open);
+
+	useEffect(() => {
+		if (open && !prevOpenRef.current) {
+			setInitialForm(form);
+		}
+		prevOpenRef.current = open;
+	}, [open, form]);
+
+	const isDirty = useMemo(() => {
+		return (
+			form.schoolId !== initialForm.schoolId ||
+			form.classId !== initialForm.classId ||
+			form.className !== initialForm.className ||
+			form.subject !== initialForm.subject ||
+			form.date !== initialForm.date ||
+			form.startTime !== initialForm.startTime ||
+			form.endTime !== initialForm.endTime ||
+			form.roomId !== initialForm.roomId ||
+			form.roomName !== initialForm.roomName ||
+			form.isActive !== initialForm.isActive
+		);
+	}, [form, initialForm]);
+
+	const { handleSafeClose } = useUnsavedChangesGuard({
+		isDirty,
+		isOpen: open,
+	});
+
 	return (
-		<Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
+		<Dialog
+			open={open}
+			onOpenChange={(isOpen) => !isOpen && handleSafeClose(onClose)}
+		>
 			<DialogPortal open={open}>
 				<DialogOverlay />
 				<DialogContent
@@ -427,7 +468,11 @@ export const ScheduleFormModal = ({
 
 						{/* Modal Footer */}
 						<DialogFooter className="gap-2 border-t border-m3-outline-variant/60 px-6 py-3 mt-0">
-							<Button type="button" colorStyle="text" onClick={onClose}>
+							<Button
+								type="button"
+								colorStyle="text"
+								onClick={() => handleSafeClose(onClose)}
+							>
 								Hủy
 							</Button>
 							<Button type="submit" colorStyle="filled">

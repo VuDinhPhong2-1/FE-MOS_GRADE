@@ -15,24 +15,17 @@ import {
 	type SelectOption,
 	TextField,
 } from "@bug-on/m3-expressive";
-import { type FormEvent, memo, useEffect, useState } from "react";
+import { type FormEvent, memo, useEffect, useMemo, useState } from "react";
 import { DialogHeaderIcon, showConfirm } from "../../components/common";
 import studentService from "../../services/student.service";
-import type { Student } from "../../types/student.types";
-import type { CompetencyLevel, EditStudentForm } from "./types";
+import type {
+	CompetencyLevel,
+	StudentFormData,
+	StudentModalProps,
+} from "./types";
 import { VALID_COMPETENCY_LEVELS, VALID_STATUSES } from "./types";
 
-interface EditStudentModalProps {
-	student: Student | null;
-	isOpen: boolean;
-	classId: string;
-	readOnly: boolean;
-	getAccessToken: (forceRefresh?: boolean) => Promise<string | null>;
-	onClose: () => void;
-	onSuccess: (message: string) => void;
-}
-
-const defaultForm: EditStudentForm = {
+const defaultForm: StudentFormData = {
 	middleName: "",
 	firstName: "",
 	status: "Active",
@@ -52,23 +45,28 @@ const COMPETENCY_OPTIONS: SelectOption[] = [
 	...VALID_COMPETENCY_LEVELS.map((level) => ({ value: level, label: level })),
 ];
 
-const EditStudentModalComponent = ({
-	student,
+const StudentModalComponent = ({
 	isOpen,
+	mode,
+	student,
 	classId,
 	readOnly,
 	getAccessToken,
 	onClose,
 	onSuccess,
-}: EditStudentModalProps) => {
-	const [form, setForm] = useState<EditStudentForm>(defaultForm);
-	const [initialForm, setInitialForm] = useState<EditStudentForm>(defaultForm);
+}: StudentModalProps) => {
+	const isEdit = mode ? mode === "edit" : Boolean(student);
+
+	const [form, setForm] = useState<StudentFormData>(defaultForm);
+	const [initialForm, setInitialForm] = useState<StudentFormData>(defaultForm);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [error, setError] = useState("");
 
 	useEffect(() => {
-		if (isOpen && student) {
-			const preset: EditStudentForm = {
+		if (!isOpen) return;
+
+		if (isEdit && student) {
+			const preset: StudentFormData = {
 				middleName: student.middleName || "",
 				firstName: student.firstName || "",
 				status: VALID_STATUSES.includes(
@@ -86,17 +84,28 @@ const EditStudentModalComponent = ({
 			setForm(preset);
 			setInitialForm(preset);
 			setError("");
+		} else {
+			const preset: StudentFormData = {
+				...defaultForm,
+				classId,
+			};
+			setForm(preset);
+			setInitialForm(preset);
+			setError("");
 		}
-	}, [isOpen, student, classId]);
+	}, [isOpen, isEdit, student, classId]);
 
-	const hasUnsavedChanges =
-		form.middleName !== initialForm.middleName ||
-		form.firstName !== initialForm.firstName ||
-		form.status !== initialForm.status ||
-		form.competencyLevel !== initialForm.competencyLevel ||
-		form.notes !== initialForm.notes ||
-		form.thi !== initialForm.thi ||
-		form.classId !== initialForm.classId;
+	const hasUnsavedChanges = useMemo(() => {
+		return (
+			form.middleName !== initialForm.middleName ||
+			form.firstName !== initialForm.firstName ||
+			form.status !== initialForm.status ||
+			form.competencyLevel !== initialForm.competencyLevel ||
+			form.notes !== initialForm.notes ||
+			form.thi !== initialForm.thi ||
+			(isEdit && form.classId !== initialForm.classId)
+		);
+	}, [form, initialForm, isEdit]);
 
 	useEffect(() => {
 		if (!isOpen || !hasUnsavedChanges) return;
@@ -128,7 +137,8 @@ const EditStudentModalComponent = ({
 
 	const handleSubmit = async (event: FormEvent) => {
 		event.preventDefault();
-		if (!student) return;
+		if (isEdit && !student) return;
+
 		if (readOnly) {
 			setError("Bạn chỉ có quyền xem lớp này.");
 			return;
@@ -160,58 +170,83 @@ const EditStudentModalComponent = ({
 		setError("");
 		try {
 			const notes = form.notes.trim();
-			await studentService.updateStudent(
-				student.id,
-				{
-					middleName,
-					firstName,
-					status,
-					competencyLevel: form.competencyLevel,
-					notes,
-					thi: form.thi,
-					classId: form.classId || classId,
-				},
-				getAccessToken,
-			);
-			onSuccess("Cập nhật học sinh thành công.");
+			if (isEdit && student) {
+				await studentService.updateStudent(
+					student.id,
+					{
+						middleName,
+						firstName,
+						status,
+						competencyLevel: form.competencyLevel,
+						notes,
+						thi: form.thi,
+						classId: form.classId || classId,
+					},
+					getAccessToken,
+				);
+				onSuccess("Cập nhật học sinh thành công.");
+			} else {
+				await studentService.createStudent(
+					{
+						middleName,
+						firstName,
+						status,
+						competencyLevel: form.competencyLevel,
+						notes,
+						thi: form.thi,
+						classId,
+					},
+					getAccessToken,
+				);
+				onSuccess("Thêm học sinh thành công.");
+			}
 			onClose();
 		} catch (err) {
 			setError(
-				err instanceof Error ? err.message : "Cập nhật học sinh thất bại.",
+				err instanceof Error
+					? err.message
+					: isEdit
+						? "Cập nhật học sinh thất bại."
+						: "Không thể thêm học sinh.",
 			);
 		} finally {
 			setIsSubmitting(false);
 		}
 	};
 
+	const isDialogOpen = isOpen && (!isEdit || Boolean(student));
+
 	return (
-		<Dialog
-			open={isOpen && Boolean(student)}
-			onOpenChange={(open) => !open && handleClose()}
-		>
-			<DialogPortal open={isOpen && Boolean(student)}>
+		<Dialog open={isDialogOpen} onOpenChange={(open) => !open && handleClose()}>
+			<DialogPortal open={isDialogOpen}>
 				<DialogOverlay />
 				<DialogContent
 					hideCloseButton
 					className="flex max-h-[90vh] w-[calc(100%-2rem)] max-w-lg flex-col overflow-hidden rounded-4xl bg-m3-surface-container-high p-0 text-m3-on-surface shadow-2xl transform-gpu will-change-transform"
 				>
-					<div className="flex items-center justify-between border-b border-m3-outline-variant/40 px-6 pt-5 pb-3">
+					{/* Header */}
+					<div className="flex items-center justify-between px-6 pt-5 pb-3">
 						<DialogHeader className="mb-0 flex-row items-center gap-3 space-y-0 text-left">
 							<DialogHeaderIcon
-								icon="edit"
-								className="bg-m3-secondary text-m3-on-secondary"
+								icon={isEdit ? "edit" : "person_add"}
+								className={
+									isEdit ? "bg-m3-secondary text-m3-on-secondary" : undefined
+								}
 							/>
 							<div>
 								<DialogTitle className="text-lg font-bold text-m3-on-surface">
-									Sửa học sinh
+									{isEdit ? "Sửa học sinh" : "Thêm học sinh"}
 								</DialogTitle>
 								<DialogDescription className="text-xs text-m3-on-surface-variant">
-									Cập nhật thông tin chi tiết học sinh
+									{isEdit
+										? "Cập nhật thông tin chi tiết học sinh"
+										: "Nhập thông tin học sinh mới vào lớp học"}
 								</DialogDescription>
 							</div>
 						</DialogHeader>
 					</div>
 
+					{/* Form */}
 					<form
 						onSubmit={handleSubmit}
 						className="flex min-h-0 flex-1 flex-col"
@@ -265,14 +300,15 @@ const EditStudentModalComponent = ({
 									}}
 									disabled={isSubmitting}
 									fullWidth
-									menuVariant="baseline"
+									menuVariant="expressive"
+									showDividers={false}
 									colorVariant="standard"
 									className="pt-4"
 								/>
 
 								<Select
 									variant="outlined"
-									label="Đánh giá năng lực"
+									label="Xếp loại"
 									options={COMPETENCY_OPTIONS}
 									value={form.competencyLevel}
 									onChange={(val) => {
@@ -284,8 +320,9 @@ const EditStudentModalComponent = ({
 									}}
 									disabled={isSubmitting}
 									fullWidth
-									menuVariant="baseline"
-									colorVariant="standard"
+									menuVariant="expressive"
+									showDividers={false}
+									colorVariant="vibrant"
 									className="pt-4"
 								/>
 							</div>
@@ -332,11 +369,14 @@ const EditStudentModalComponent = ({
 								colorStyle="filled"
 								disabled={isSubmitting}
 								loading={isSubmitting}
-								icon={
-									!isSubmitting ? <Icon name="save" size={18} /> : undefined
-								}
 							>
-								{isSubmitting ? "Đang lưu..." : "Lưu"}
+								{isSubmitting
+									? isEdit
+										? "Đang lưu..."
+										: "Đang thêm..."
+									: isEdit
+										? "Lưu"
+										: "Thêm học sinh"}
 							</Button>
 						</DialogFooter>
 					</form>
@@ -346,4 +386,4 @@ const EditStudentModalComponent = ({
 	);
 };
 
-export const EditStudentModal = memo(EditStudentModalComponent);
+export const StudentModal = memo(StudentModalComponent);

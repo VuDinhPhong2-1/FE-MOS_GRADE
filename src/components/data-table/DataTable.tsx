@@ -184,7 +184,7 @@ export function DataTable<
 								: "";
 							const bandedClass = banded
 								? index % 2 === 1
-									? "bg-m3-surface-container-high/30"
+									? "bg-m3-surface-container-high"
 									: "bg-transparent"
 								: "";
 
