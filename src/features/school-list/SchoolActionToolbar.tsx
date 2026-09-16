@@ -52,7 +52,7 @@ const SchoolActionToolbarComponent = ({
 
 	// Action buttons dành riêng cho School List: Bộ lọc trạng thái
 	const actions = (
-		<Menu variant="expressive" colorVariant="vibrant">
+		<Menu variant="expressive" colorVariant="vibrant" density={-2}>
 			<MenuTrigger asChild>
 				<div>
 					<TooltipBox

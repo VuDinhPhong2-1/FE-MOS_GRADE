@@ -216,7 +216,7 @@ export const getRoomConditionTone = (value: string): string => {
 	const normalized = value.trim().toLowerCase();
 
 	if (!normalized) {
-		return "border-m3-outline-variant/60 bg-m3-surface-container text-m3-on-surface-variant";
+		return "bg-m3-surface-container-highest text-m3-on-surface-variant";
 	}
 
 	const positiveSignals = [
@@ -257,18 +257,18 @@ export const getRoomConditionTone = (value: string): string => {
 	];
 
 	if (negativeSignals.some((signal) => normalized.includes(signal))) {
-		return "border-m3-error/40 bg-m3-error-container/20 text-m3-error";
+		return "bg-m3-error-container text-m3-on-error-container";
 	}
 
 	if (warningSignals.some((signal) => normalized.includes(signal))) {
-		return "border-m3-tertiary/40 bg-m3-tertiary-container/20 text-m3-tertiary";
+		return "bg-m3-tertiary-container text-m3-on-tertiary-container";
 	}
 
 	if (positiveSignals.some((signal) => normalized.includes(signal))) {
-		return "border-m3-primary/30 bg-m3-primary-container/20 text-m3-primary";
+		return "bg-m3-primary-container text-m3-on-primary-container";
 	}
 
-	return "border-m3-secondary/30 bg-m3-secondary-container/20 text-m3-secondary";
+	return "bg-m3-secondary-container text-m3-on-secondary-container";
 };
 
 export const resolveSnapshotValue = (

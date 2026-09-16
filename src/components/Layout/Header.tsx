@@ -1,4 +1,5 @@
 import { Icon, IconButton } from "@bug-on/m3-expressive";
+import { useLocation, useNavigate } from "react-router-dom";
 import { usePageActionsContext } from "../../context/PageActionsContext";
 import { ThemeToggle } from "../common";
 
@@ -8,6 +9,9 @@ interface HeaderProps {
 
 const Header = ({ onOpenProfile }: HeaderProps) => {
 	const { config } = usePageActionsContext();
+	const navigate = useNavigate();
+	const location = useLocation();
+	const isSettingsPage = location.pathname === "/settings";
 
 	return (
 		<header className="sticky top-0 z-20 flex items-center justify-between gap-3 bg-transparent p-4 transition-colors sm:px-5 min-h-20">
@@ -40,9 +44,12 @@ const Header = ({ onOpenProfile }: HeaderProps) => {
 				<ThemeToggle />
 
 				<IconButton
-					colorStyle="filled"
+					colorStyle={isSettingsPage ? "tonal" : "filled"}
 					size="md"
-					onClick={onOpenProfile}
+					onClick={() => {
+						onOpenProfile?.();
+						navigate("/settings");
+					}}
 					aria-label="Cài đặt tài khoản"
 					title="Cài đặt tài khoản"
 				>
