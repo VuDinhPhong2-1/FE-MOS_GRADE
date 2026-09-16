@@ -1,11 +1,7 @@
-import {
-	Card,
-	CardContent,
-	Icon,
-	ProgressIndicator,
-} from "@bug-on/m3-expressive";
+import { Card, CardContent, Icon } from "@bug-on/m3-expressive";
 import { useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
+import { RouteLoadingFallback } from "../components/common";
 import { usePageHeader } from "../context/PageActionsContext";
 import {
 	ClassActionToolbar,
@@ -115,19 +111,7 @@ const ClassList: React.FC<ClassListProps> = ({
 	}
 
 	if (isLoading) {
-		return (
-			<div className="flex h-64 flex-col items-center justify-center gap-3">
-				<ProgressIndicator
-					variant="circular"
-					shape="wavy"
-					size={64}
-					aria-label="Đang tải danh sách lớp..."
-				/>
-				<span className="text-sm font-medium text-m3-on-surface-variant">
-					Đang tải danh sách lớp...
-				</span>
-			</div>
-		);
+		return <RouteLoadingFallback message="Đang tải danh sách lớp..." />;
 	}
 
 	return (

@@ -15,6 +15,7 @@ const AccountStatusPage = lazy(() => import("./pages/AccountStatusPage"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const SchoolList = lazy(() => import("./pages/SchoolList"));
 const TeacherSchedule = lazy(() => import("./pages/TeacherSchedule"));
+const ComputerRoomsPage = lazy(() => import("./pages/ComputerRoomsPage"));
 const AssignmentManagementPage = lazy(
 	() => import("./pages/AssignmentManagementPage"),
 );
@@ -23,6 +24,7 @@ const PermissionManagement = lazy(() => import("./pages/PermissionManagement"));
 const GradingView = lazy(() => import("./pages/GradingView"));
 const ClassGradingPage = lazy(() => import("./pages/ClassGradingPage"));
 const ClassScoreboardPage = lazy(() => import("./pages/ClassScoreboardPage"));
+const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 
 const isPendingOrRejectedTeacher = (user: ReturnType<typeof useAuth>["user"]) =>
 	user?.role === "PendingTeacher" ||
@@ -161,6 +163,10 @@ function App() {
 									<Route path="/schools" element={<SchoolList />} />
 									<Route path="/schedule" element={<TeacherSchedule />} />
 									<Route
+										path="/computer-rooms"
+										element={<ComputerRoomsPage />}
+									/>
+									<Route
 										path="/assignments"
 										element={<Navigate to="/assignments/exam" replace />}
 									/>
@@ -206,6 +212,7 @@ function App() {
 										path="/scores/class/:classId"
 										element={<ClassScoreboardPage />}
 									/>
+									<Route path="/settings" element={<SettingsPage />} />
 								</Route>
 							</Route>
 						</Route>

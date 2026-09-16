@@ -1,8 +1,7 @@
 import { Icon, NavigationBar, NavigationBarItem } from "@bug-on/m3-expressive";
-import { type ReactNode, useState } from "react";
+import type { ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Header from "./Header";
-import ProfileModal from "./ProfileModal";
 import Sidebar, { type SidebarNavItem } from "./Sidebar";
 
 interface LayoutProps {
@@ -13,7 +12,6 @@ interface LayoutProps {
 const Layout = ({ children, navItems }: LayoutProps) => {
 	const location = useLocation();
 	const navigate = useNavigate();
-	const [isProfileOpen, setIsProfileOpen] = useState(false);
 
 	const isPathActive = (path: string) => {
 		if (path === "/dashboard") {
@@ -48,7 +46,7 @@ const Layout = ({ children, navItems }: LayoutProps) => {
 
 			{/* Main Content Area */}
 			<main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden relative">
-				<Header onOpenProfile={() => setIsProfileOpen(true)} />
+				<Header />
 
 				{/* Khung hiển thị nội dung chính - Bo tròn rounded-3xl, scroll bên trong */}
 				<div className="min-h-0 flex-1 px-0 lg:pr-4 pb-0 overflow-hidden flex flex-col">
@@ -78,12 +76,6 @@ const Layout = ({ children, navItems }: LayoutProps) => {
 					))}
 				</NavigationBar>
 			</main>
-
-			{/* Profile Modal dùng chung cho cả Sidebar và Header */}
-			<ProfileModal
-				isOpen={isProfileOpen}
-				onClose={() => setIsProfileOpen(false)}
-			/>
 		</div>
 	);
 };

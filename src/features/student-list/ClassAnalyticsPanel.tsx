@@ -147,7 +147,7 @@ const ClassAnalyticsPanelComponent = ({
 					</div>
 				</div>
 
-				<div className="mb-4 rounded-full bg-m3-primary-container px-3.5 py-2.5 text-xs text-m3-on-primary-container">
+				<div className="mb-4 rounded-full bg-m3-primary-container sm:px-4 px-3.5 py-2.5 text-xs text-m3-on-primary-container">
 					Các chỉ số bên dưới được tính theo <strong>lượt chấm</strong> (mỗi lần
 					nộp/chấm lại được tính là 1 lượt).
 				</div>
@@ -164,7 +164,7 @@ const ClassAnalyticsPanelComponent = ({
 						<ProgressIndicator
 							variant="circular"
 							shape="wavy"
-							size={32}
+							size={64}
 							aria-label="Đang tải dữ liệu phân tích..."
 						/>
 						<span>Đang tải dữ liệu phân tích...</span>
@@ -272,7 +272,7 @@ const ClassAnalyticsPanelComponent = ({
 						</Card>
 
 						{gaugeData.length > 0 && (
-							<div className="mt-4 rounded-full bg-m3-surface-container-low px-3.5 py-2.5 text-xs text-m3-on-surface-variant">
+							<div className="mt-4 rounded-full bg-m3-surface-container-low sm:px-4 px-3.5 py-2.5 text-xs text-m3-on-surface-variant">
 								Chỉ số quy đổi (theo lượt chấm):{" "}
 								{gaugeData
 									.map((g) => `${g.label}: ${pct(g.value)}`)

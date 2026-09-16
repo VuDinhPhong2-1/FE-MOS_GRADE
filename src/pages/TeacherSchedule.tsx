@@ -11,25 +11,23 @@ import {
 	useMemo,
 	useState,
 } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { usePageHeader } from "../context/PageActionsContext";
 import {
 	AttendanceModal,
-	type ComputerRoomFormState,
 	createDefaultForm,
 	formatDateViFromYmd,
 	getWeekStart,
 	isDateInWeek,
 	normalizeTimeValue,
 	parseApiDateToLocalYmd,
-	RoomManagerModal,
 	ScheduleActionToolbar,
 	ScheduleFormModal,
 	type ScheduleFormState,
 	ScheduleTable,
 	toYmd,
 	useAttendancePanel,
-	useRoomManager,
 	useScheduleData,
 	utcMsToYmd,
 	ymdToUtcMs,
@@ -42,6 +40,7 @@ import type {
 import { notify } from "../utils/notify";
 
 const TeacherSchedule = () => {
+	const navigate = useNavigate();
 	const { getAccessToken, user } = useAuth();
 	const teacherDisplayName = user?.fullName || user?.username || "";
 
@@ -160,41 +159,6 @@ const TeacherSchedule = () => {
 		createDefaultForm(weekStart),
 	);
 
-	// Hook: Computer Room Manager
-	const handleRoomsUpdated = useCallback(
-		async (schoolId: string) => {
-			if (form.schoolId === schoolId) {
-				await loadComputerRoomsForForm(schoolId);
-			}
-		},
-		[form.schoolId, loadComputerRoomsForForm],
-	);
-
-	const {
-		roomManagerOpen,
-		roomManagerSchoolId,
-		setRoomManagerSchoolId,
-		roomManagerRows,
-		roomManagerLoading,
-		editingRoomId,
-		roomSubmitting,
-		roomForm,
-		setRoomForm,
-		openRoomManager,
-		closeRoomManager,
-		resetRoomForm,
-		handleEditRoom,
-		handleDeleteRoom,
-		handleSaveRoom,
-		selectedRoomManagerSchool,
-		roomManagerSummary,
-		roomFormMachinePreview,
-	} = useRoomManager({
-		getAccessToken,
-		schools,
-		onRoomsChanged: handleRoomsUpdated,
-	});
-
 	// Keep single school auto-selected in create form
 	useEffect(() => {
 		if (!formOpen || editing || form.schoolId || schools.length !== 1) return;
@@ -206,13 +170,6 @@ const TeacherSchedule = () => {
 	useEffect(() => {
 		void loadComputerRoomsForForm(form.schoolId);
 	}, [form.schoolId, loadComputerRoomsForForm]);
-
-	// Keep default room manager school synced
-	useEffect(() => {
-		if (!roomManagerSchoolId && schools.length > 0) {
-			setRoomManagerSchoolId(schools[0].id);
-		}
-	}, [roomManagerSchoolId, schools, setRoomManagerSchoolId]);
 
 	// Keep form roomName synced with selected roomId
 	useEffect(() => {
@@ -408,19 +365,6 @@ const TeacherSchedule = () => {
 		[],
 	);
 
-	const handleRoomFormFieldChange = useCallback(
-		<K extends keyof ComputerRoomFormState>(
-			field: K,
-			value: ComputerRoomFormState[K],
-		) => {
-			setRoomForm?.((prev: ComputerRoomFormState) => ({
-				...prev,
-				[field]: value,
-			}));
-		},
-		[setRoomForm],
-	);
-
 	// Top header info
 	usePageHeader(
 		{
@@ -508,34 +452,6 @@ const TeacherSchedule = () => {
 				}}
 			/>
 
-			{/* Modal quản lý phòng máy */}
-			<RoomManagerModal
-				open={roomManagerOpen}
-				roomManagerSchoolId={roomManagerSchoolId}
-				roomManagerRows={roomManagerRows}
-				roomManagerLoading={roomManagerLoading}
-				editingRoomId={editingRoomId}
-				roomSubmitting={roomSubmitting}
-				roomForm={roomForm}
-				schools={schools}
-				selectedRoomManagerSchool={selectedRoomManagerSchool}
-				roomManagerSummary={roomManagerSummary}
-				roomFormMachinePreview={roomFormMachinePreview}
-				onClose={closeRoomManager}
-				onSchoolChange={setRoomManagerSchoolId}
-				onResetForm={resetRoomForm}
-				onEditRoom={handleEditRoom}
-				onDeleteRoom={(room) => {
-					void handleDeleteRoom(room, form.roomId, () =>
-						setForm((prev) => ({ ...prev, roomId: "", roomName: "" })),
-					);
-				}}
-				onSaveRoom={(e) => {
-					void handleSaveRoom(e);
-				}}
-				onRoomFormFieldChange={handleRoomFormFieldChange}
-			/>
-
 			{/* Modal thêm/chỉnh sửa lịch dạy */}
 			<ScheduleFormModal
 				open={formOpen}
@@ -565,9 +481,14 @@ const TeacherSchedule = () => {
 				copying={copying}
 				loading={loading}
 				onOpenCreate={openCreate}
-				onOpenRoomManager={() =>
-					openRoomManager(form.schoolId || schools[0]?.id)
-				}
+				onOpenRoomManager={() => {
+					const targetSchoolId = form.schoolId || schools[0]?.id;
+					navigate(
+						targetSchoolId
+							? `/computer-rooms?schoolId=${targetSchoolId}`
+							: "/computer-rooms",
+					);
+				}}
 				onCopyToNextWeek={() => {
 					void handleCopyToNextWeek();
 				}}

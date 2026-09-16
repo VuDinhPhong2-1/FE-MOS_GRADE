@@ -427,3 +427,62 @@ export const exportToPdf = async (elementId: string, fileName: string) => {
 		}
 	}
 };
+
+export const exportToJson = (fileName: string, data: unknown) => {
+	const jsonString = JSON.stringify(data, null, 2);
+	const blob = new Blob([jsonString], {
+		type: "application/json;charset=utf-8;",
+	});
+	const link = document.createElement("a");
+	const url = URL.createObjectURL(blob);
+	link.href = url;
+	link.setAttribute(
+		"download",
+		fileName.toLowerCase().endsWith(".json") ? fileName : `${fileName}.json`,
+	);
+	document.body.appendChild(link);
+	link.click();
+	document.body.removeChild(link);
+	URL.revokeObjectURL(url);
+};
+
+export const exportToCsv = (
+	fileName: string,
+	headers: string[],
+	rows: (string | number | boolean | null | undefined)[][],
+) => {
+	const escapeField = (field: unknown): string => {
+		if (field == null) return "";
+		const str = String(field);
+		if (
+			str.includes('"') ||
+			str.includes(",") ||
+			str.includes("\n") ||
+			str.includes("\r")
+		) {
+			return `"${str.replace(/"/g, '""')}"`;
+		}
+		return str;
+	};
+
+	const csvContent = [
+		headers.map(escapeField).join(","),
+		...rows.map((row) => row.map(escapeField).join(",")),
+	].join("\r\n");
+
+	// Prepend UTF-8 BOM (\uFEFF) to make Excel parse UTF-8 characters correctly
+	const blob = new Blob([`\uFEFF${csvContent}`], {
+		type: "text/csv;charset=utf-8;",
+	});
+	const link = document.createElement("a");
+	const url = URL.createObjectURL(blob);
+	link.href = url;
+	link.setAttribute(
+		"download",
+		fileName.toLowerCase().endsWith(".csv") ? fileName : `${fileName}.csv`,
+	);
+	document.body.appendChild(link);
+	link.click();
+	document.body.removeChild(link);
+	URL.revokeObjectURL(url);
+};
