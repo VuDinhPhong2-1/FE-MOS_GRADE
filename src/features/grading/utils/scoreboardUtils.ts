@@ -15,7 +15,8 @@ export type PracticeCode =
 	| "practice01"
 	| "practice02"
 	| "practice03"
-	| "exam_review";
+	| "exam_review"
+	| (string & {});
 export type SummaryColumnKind = "completion" | "score";
 
 export const SCORE_SORT_KEY_OPTIONS = [
@@ -156,40 +157,108 @@ export const PRACTICE_COMPLETION_TARGETS: Record<PracticeCode, number> = {
 	exam_review: EXAM_REVIEW_PROJECT_NUMBERS.length,
 };
 
-export const PRACTICE_COLUMNS: Array<{
+export interface PracticeColumnDef {
 	code: PracticeCode;
 	shortLabel: string;
 	title: string;
-}> = [
+}
+
+export const PRACTICE_COLUMNS: PracticeColumnDef[] = [
 	{ code: "practice01", shortLabel: "P01", title: "Practice 01" },
 	{ code: "practice02", shortLabel: "P02", title: "Practice 02" },
 	{ code: "practice03", shortLabel: "P03", title: "Practice 03" },
 	{ code: "exam_review", shortLabel: "Ôn thi", title: "Bài ôn thi" },
 ];
 
+export const resolvePracticeColumnDef = (
+	code: PracticeCode,
+): PracticeColumnDef => {
+	const found = PRACTICE_COLUMNS.find((col) => col.code === code);
+	if (found) return found;
+
+	const examMatch = code.match(/^exam0?(\d+)$/i);
+	if (examMatch) {
+		const num = Number.parseInt(examMatch[1], 10);
+		return {
+			code,
+			shortLabel: `Exam ${num}`,
+			title: `Exam ${String(num).padStart(2, "0")}`,
+		};
+	}
+
+	const practiceMatch = code.match(/^practice0?(\d+)$/i);
+	if (practiceMatch) {
+		const num = Number.parseInt(practiceMatch[1], 10);
+		return {
+			code,
+			shortLabel: `P${String(num).padStart(2, "0")}`,
+			title: `Practice ${String(num).padStart(2, "0")}`,
+		};
+	}
+
+	return {
+		code,
+		shortLabel: code,
+		title: code,
+	};
+};
+
+export const buildDiscoveredPracticeColumns = (
+	assignmentIdsByPractice: Record<string, string[]>,
+): PracticeColumnDef[] => {
+	const codes = Object.keys(assignmentIdsByPractice).filter(
+		(code) => (assignmentIdsByPractice[code]?.length ?? 0) > 0,
+	);
+
+	// Sort codes: Practice (practice01, practice02...), then Exam (exam01, exam02...), then exam_review, then others
+	codes.sort((a, b) => {
+		const getWeight = (code: string): number => {
+			if (code.startsWith("practice")) {
+				const num = Number.parseInt(code.replace(/\D/g, ""), 10) || 0;
+				return 100 + num;
+			}
+			if (code.startsWith("exam") && code !== "exam_review") {
+				const num = Number.parseInt(code.replace(/\D/g, ""), 10) || 0;
+				return 200 + num;
+			}
+			if (code === "exam_review") {
+				return 300;
+			}
+			return 400;
+		};
+
+		const weightA = getWeight(a);
+		const weightB = getWeight(b);
+		if (weightA !== weightB) return weightA - weightB;
+		return a.localeCompare(b);
+	});
+
+	return codes.map((code) => resolvePracticeColumnDef(code));
+};
+
 export const getPracticeCompletionHeaderLabel = (
-	practice: Pick<(typeof PRACTICE_COLUMNS)[number], "code" | "shortLabel">,
+	practice: Pick<PracticeColumnDef, "code" | "shortLabel">,
 ): string =>
 	practice.code === "exam_review"
 		? "Ôn thi số bài"
 		: `${practice.shortLabel} số bài`;
 
 export const getPracticeScoreHeaderLabel = (
-	practice: Pick<(typeof PRACTICE_COLUMNS)[number], "code" | "shortLabel">,
+	practice: Pick<PracticeColumnDef, "code" | "shortLabel">,
 ): string =>
 	practice.code === "exam_review"
 		? "Tổng điểm ôn thi"
 		: `${practice.shortLabel} tổng điểm`;
 
 export const getPracticeExcelScoreHeaderLabel = (
-	practice: Pick<(typeof PRACTICE_COLUMNS)[number], "code" | "title">,
+	practice: Pick<PracticeColumnDef, "code" | "title">,
 ): string =>
 	practice.code === "exam_review"
 		? "Tổng điểm ôn thi"
 		: `${practice.title} - Tổng điểm`;
 
 export const PRACTICE_COLUMN_THEME: Record<
-	PracticeCode,
+	string,
 	{
 		completionHeader: string;
 		completionCell: string;
@@ -223,6 +292,45 @@ export const PRACTICE_COLUMN_THEME: Record<
 		scoreHeader: "bg-m3-error-container/80 text-m3-on-error-container",
 		scoreCell: "bg-m3-error-container/30 text-m3-on-error-container",
 	},
+	exam01: {
+		completionHeader: "bg-m3-tertiary-container text-m3-on-tertiary-container",
+		completionCell: "bg-m3-tertiary-container/20 text-m3-on-tertiary-container",
+		scoreHeader: "bg-m3-tertiary-container/80 text-m3-on-tertiary-container",
+		scoreCell: "bg-m3-tertiary-container/30 text-m3-on-tertiary-container",
+	},
+	exam02: {
+		completionHeader:
+			"bg-m3-secondary-container text-m3-on-secondary-container",
+		completionCell:
+			"bg-m3-secondary-container/20 text-m3-on-secondary-container",
+		scoreHeader: "bg-m3-secondary-container/80 text-m3-on-secondary-container",
+		scoreCell: "bg-m3-secondary-container/30 text-m3-on-secondary-container",
+	},
+	exam03: {
+		completionHeader: "bg-m3-primary-container text-m3-on-primary-container",
+		completionCell: "bg-m3-primary-container/20 text-m3-on-primary-container",
+		scoreHeader: "bg-m3-primary-container/80 text-m3-on-primary-container",
+		scoreCell: "bg-m3-primary-container/30 text-m3-on-primary-container",
+	},
+};
+
+export const getPracticeColumnTheme = (
+	code: PracticeCode,
+): {
+	completionHeader: string;
+	completionCell: string;
+	scoreHeader: string;
+	scoreCell: string;
+} => {
+	if (PRACTICE_COLUMN_THEME[code]) {
+		return PRACTICE_COLUMN_THEME[code];
+	}
+	return {
+		completionHeader: "bg-m3-surface-container-highest text-m3-on-surface",
+		completionCell: "bg-m3-surface-container/40 text-m3-on-surface",
+		scoreHeader: "bg-m3-surface-container-highest/80 text-m3-on-surface",
+		scoreCell: "bg-m3-surface-container/50 text-m3-on-surface",
+	};
 };
 
 export const getSummaryColumnKey = (
@@ -255,6 +363,22 @@ export const isExamReviewAssignment = (
 	);
 };
 
+export const extractGroupCodeFromEndpoint = (
+	endpoint?: string,
+): string | null => {
+	if (!endpoint) return null;
+
+	let normalized = endpoint.trim().replace(/\\/g, "/").replace(/^\/+/, "");
+	normalized = normalized
+		.replace(/^api\/grading\//i, "")
+		.replace(/^grading\//i, "");
+
+	const match = normalized.match(
+		/^(?:excel|word|ppt|powerpoint)\/([a-zA-Z0-9_-]+)\/project\d{1,2}$/i,
+	);
+	return match ? match[1].toLowerCase() : null;
+};
+
 export const extractProjectNumberFromEndpoint = (
 	endpoint?: string,
 ): number | null => {
@@ -271,10 +395,10 @@ export const extractProjectNumberFromEndpoint = (
 	}
 
 	const subjectProjectMatch = normalized.match(
-		/^(excel|word|ppt|powerpoint)\/project(\d{1,2})$/i,
+		/^(?:excel|word|ppt|powerpoint)\/(?:[a-zA-Z0-9_-]+\/)?project(\d{1,2})$/i,
 	);
 	if (subjectProjectMatch) {
-		return Number.parseInt(subjectProjectMatch[2], 10);
+		return Number.parseInt(subjectProjectMatch[1], 10);
 	}
 
 	return null;
@@ -294,6 +418,16 @@ export const resolveAssignmentPracticeCode = (
 ): PracticeCode | null => {
 	if (isExamReviewAssignment(assignment)) {
 		return "exam_review";
+	}
+
+	const groupCode = extractGroupCodeFromEndpoint(assignment.gradingApiEndpoint);
+	if (groupCode) {
+		if (groupCode.startsWith("exam")) {
+			return groupCode;
+		}
+		if (groupCode.startsWith("practice")) {
+			return groupCode;
+		}
 	}
 
 	const projectNumber = extractProjectNumberFromEndpoint(

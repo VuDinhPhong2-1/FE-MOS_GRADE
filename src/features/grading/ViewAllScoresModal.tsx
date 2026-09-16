@@ -42,8 +42,8 @@ import {
 	getSummaryColumnKey,
 	isStudentTakingExam,
 	normalizeClassification,
-	PRACTICE_COLUMN_THEME,
-	PRACTICE_COLUMNS,
+	getPracticeColumnTheme,
+	buildDiscoveredPracticeColumns,
 	type PracticeCode,
 	type PracticeSummary,
 	resolveAssignmentPracticeCode,
@@ -121,6 +121,34 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 		setNotesByStudentId(nextNotesMap);
 	}, [isOpen, students]);
 
+	const assignmentIdsByPractice = useMemo(() => {
+		const next: Record<string, string[]> = {};
+
+		for (const assignment of assignments) {
+			const practiceCode = resolveAssignmentPracticeCode(assignment);
+			if (!practiceCode) continue;
+			if (!next[practiceCode]) {
+				next[practiceCode] = [];
+			}
+			next[practiceCode].push(assignment.id);
+		}
+
+		return next;
+	}, [assignments]);
+
+	const assignmentsById = useMemo(() => {
+		const map = new Map<string, (typeof assignments)[number]>();
+		for (const assignment of assignments) {
+			map.set(assignment.id, assignment);
+		}
+		return map;
+	}, [assignments]);
+
+	const availablePracticeColumns = useMemo(
+		() => buildDiscoveredPracticeColumns(assignmentIdsByPractice),
+		[assignmentIdsByPractice],
+	);
+
 	useEffect(() => {
 		if (!isOpen) return;
 		setColumnVisibility((prev) => {
@@ -131,7 +159,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 					next[key] = true;
 				}
 			}
-			for (const practice of PRACTICE_COLUMNS) {
+			for (const practice of availablePracticeColumns) {
 				const completionKey = `summary:${getSummaryColumnKey(practice.code, "completion")}`;
 				const scoreKey = `summary:${getSummaryColumnKey(practice.code, "score")}`;
 				if (next[completionKey] === undefined) next[completionKey] = true;
@@ -139,7 +167,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 			}
 			return next;
 		});
-	}, [isOpen, assignments]);
+	}, [isOpen, assignments, availablePracticeColumns]);
 
 	useEffect(() => {
 		if (!isOpen) return;
@@ -192,57 +220,14 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 		[assignments, isAssignmentVisible],
 	);
 
-	const assignmentIdsByPractice = useMemo(() => {
-		const next: Record<PracticeCode, string[]> = {
-			practice01: [],
-			practice02: [],
-			practice03: [],
-			exam_review: [],
-		};
-
-		for (const assignment of assignments) {
-			const practiceCode = resolveAssignmentPracticeCode(assignment);
-			if (!practiceCode) continue;
-			next[practiceCode].push(assignment.id);
-		}
-
-		return next;
-	}, [assignments]);
-
-	const assignmentsById = useMemo(() => {
-		const map = new Map<string, (typeof assignments)[number]>();
-		for (const assignment of assignments) {
-			map.set(assignment.id, assignment);
-		}
-		return map;
-	}, [assignments]);
-
-	const availablePracticeColumns = useMemo(
-		() =>
-			PRACTICE_COLUMNS.filter(
-				(practice) => assignmentIdsByPractice[practice.code].length > 0,
-			),
-		[assignmentIdsByPractice],
-	);
-
 	const practiceMetricsByCode = useMemo(() => {
-		const completionTargetByCode: Record<PracticeCode, number> = {
-			practice01: 0,
-			practice02: 0,
-			practice03: 0,
-			exam_review: 0,
-		};
-		const maxScoreByCode: Record<PracticeCode, number> = {
-			practice01: 0,
-			practice02: 0,
-			practice03: 0,
-			exam_review: 0,
-		};
+		const completionTargetByCode: Record<string, number> = {};
+		const maxScoreByCode: Record<string, number> = {};
 
-		for (const practice of PRACTICE_COLUMNS) {
+		for (const practice of availablePracticeColumns) {
 			const maxScoreByProjectKey = new Map<string, number>();
 
-			for (const assignmentId of assignmentIdsByPractice[practice.code]) {
+			for (const assignmentId of assignmentIdsByPractice[practice.code] || []) {
 				const assignment = assignmentsById.get(assignmentId);
 				if (!assignment) continue;
 
@@ -267,16 +252,16 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 		}
 
 		return { completionTargetByCode, maxScoreByCode };
-	}, [assignmentIdsByPractice, assignmentsById]);
+	}, [availablePracticeColumns, assignmentIdsByPractice, assignmentsById]);
 
 	const practiceMaxScoreByCode = practiceMetricsByCode.maxScoreByCode;
 	const practiceCompletionTargetByCode =
 		practiceMetricsByCode.completionTargetByCode;
 	const maxScoreTotal =
-		practiceMaxScoreByCode.practice01 +
-		practiceMaxScoreByCode.practice02 +
-		practiceMaxScoreByCode.practice03;
-	const examReviewMaxScore = practiceMaxScoreByCode.exam_review;
+		(practiceMaxScoreByCode.practice01 || 0) +
+		(practiceMaxScoreByCode.practice02 || 0) +
+		(practiceMaxScoreByCode.practice03 || 0);
+	const examReviewMaxScore = practiceMaxScoreByCode.exam_review || 0;
 	const hasPracticeScoreColumns = maxScoreTotal > 0;
 	const hasExamReviewScoreColumns = examReviewMaxScore > 0;
 	const showTotalScoreColumn =
@@ -311,7 +296,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 	const practiceGroupVisibility = useMemo(() => {
 		return availablePracticeColumns.reduce(
 			(acc, practice) => {
-				const assignmentIds = assignmentIdsByPractice[practice.code];
+				const assignmentIds = assignmentIdsByPractice[practice.code] || [];
 				const visibleAssignmentCount = assignmentIds.filter((assignmentId) =>
 					isAssignmentVisible(assignmentId),
 				).length;
@@ -334,7 +319,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 				return acc;
 			},
 			{} as Record<
-				PracticeCode,
+				string,
 				{
 					totalAssignments: number;
 					visibleAssignments: number;
@@ -354,7 +339,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 		() =>
 			availablePracticeColumns.length > 0 &&
 			availablePracticeColumns.every(
-				(practice) => practiceGroupVisibility[practice.code].isVisible,
+				(practice) => practiceGroupVisibility[practice.code]?.isVisible,
 			),
 		[availablePracticeColumns, practiceGroupVisibility],
 	);
@@ -363,7 +348,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 		() =>
 			availablePracticeColumns.length > 0 &&
 			availablePracticeColumns.every(
-				(practice) => !practiceGroupVisibility[practice.code].isVisible,
+				(practice) => !practiceGroupVisibility[practice.code]?.isVisible,
 			),
 		[availablePracticeColumns, practiceGroupVisibility],
 	);
@@ -381,14 +366,12 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 					: (student.notes || "").trim();
 
 			const practiceProjectScores: Record<
-				PracticeCode,
+				string,
 				Map<string, { hasScore: boolean; score: number }>
-			> = {
-				practice01: new Map(),
-				practice02: new Map(),
-				practice03: new Map(),
-				exam_review: new Map(),
-			};
+			> = {};
+			for (const practice of availablePracticeColumns) {
+				practiceProjectScores[practice.code] = new Map();
+			}
 			const calculatedScores: Record<string, number> = {};
 			const errorsByAssignment: Record<string, string[]> = {};
 			const issuesByAssignment: Record<string, NotifyIssue[]> = {};
@@ -408,6 +391,9 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 				const isExamReview = assignmentPracticeCode === "exam_review";
 
 				if (isExamReview) {
+					if (!practiceProjectScores.exam_review) {
+						practiceProjectScores.exam_review = new Map();
+					}
 					const reviewKey = projectNumber
 						? `project-${projectNumber}`
 						: `assignment-${assignment.id}`;
@@ -429,6 +415,9 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 							? resolvePracticeByProjectNumber(projectNumber)
 							: null);
 					if (practiceCode) {
+						if (!practiceProjectScores[practiceCode]) {
+							practiceProjectScores[practiceCode] = new Map();
+						}
 						const practiceKey = projectNumber
 							? `project-${projectNumber}`
 							: `assignment-${assignment.id}`;
@@ -464,10 +453,10 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 				mapValue !== undefined
 					? mapValue
 					: normalizeClassification(student.competencyLevel);
-			const practiceSummaries = PRACTICE_COLUMNS.reduce(
+			const practiceSummaries = availablePracticeColumns.reduce(
 				(acc, practice) => {
 					const items = Array.from(
-						practiceProjectScores[practice.code].values(),
+						(practiceProjectScores[practice.code] ?? new Map()).values(),
 					);
 					const completionTarget =
 						practiceCompletionTargetByCode[practice.code] || 0;
@@ -495,14 +484,14 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 				{} as Record<PracticeCode, PracticeSummary>,
 			);
 			const totalScore =
-				practiceSummaries.practice01.totalScore +
-				practiceSummaries.practice02.totalScore +
-				practiceSummaries.practice03.totalScore;
+				(practiceSummaries.practice01?.totalScore ?? 0) +
+				(practiceSummaries.practice02?.totalScore ?? 0) +
+				(practiceSummaries.practice03?.totalScore ?? 0);
 			const otthPercentage =
 				maxScoreTotal > 0
 					? Math.round((totalScore / maxScoreTotal) * 10000) / 100
 					: 0;
-			const examReviewScore = practiceSummaries.exam_review.totalScore;
+			const examReviewScore = practiceSummaries.exam_review?.totalScore ?? 0;
 			const examReviewPercentage =
 				examReviewMaxScore > 0
 					? Math.round((examReviewScore / examReviewMaxScore) * 10000) / 100
@@ -530,6 +519,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 		scoreLookup,
 		classificationByStudentId,
 		notesByStudentId,
+		availablePracticeColumns,
 		maxScoreTotal,
 		practiceMaxScoreByCode,
 		practiceCompletionTargetByCode,
@@ -661,8 +651,8 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 				),
 				row.classification,
 				...availablePracticeColumns.flatMap((practice) => [
-					row.practiceSummaries[practice.code].completionText,
-					`${formatScore(row.practiceSummaries[practice.code].totalScore)}/${formatScore(
+					row.practiceSummaries[practice.code]?.completionText ?? "0/0",
+					`${formatScore(row.practiceSummaries[practice.code]?.totalScore ?? 0)}/${formatScore(
 						practiceMaxScoreByCode[practice.code] || 0,
 					)}`,
 				]),
@@ -836,7 +826,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 		mode: AssignmentColumnDisplayMode,
 	) => {
 		const visible = mode !== "hidden";
-		const assignmentIds = assignmentIdsByPractice[practiceCode];
+		const assignmentIds = assignmentIdsByPractice[practiceCode] || [];
 		const completionKey = `summary:${getSummaryColumnKey(practiceCode, "completion")}`;
 		const scoreKey = `summary:${getSummaryColumnKey(practiceCode, "score")}`;
 
@@ -852,7 +842,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 	};
 
 	const handleTogglePracticeGroupDisplay = (practiceCode: PracticeCode) => {
-		const nextMode = practiceGroupVisibility[practiceCode].isVisible
+		const nextMode = practiceGroupVisibility[practiceCode]?.isVisible
 			? "hidden"
 			: "full";
 		setPracticeGroupDisplayMode(practiceCode, nextMode);
@@ -1312,7 +1302,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 										</th>
 									)}
 									{availablePracticeColumns.flatMap((practice) => {
-										const theme = PRACTICE_COLUMN_THEME[practice.code];
+										const theme = getPracticeColumnTheme(practice.code);
 										const completionVisible = isSummaryColumnVisible(
 											getSummaryColumnKey(practice.code, "completion"),
 										);
@@ -1492,39 +1482,37 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 											)}
 
 											{availablePracticeColumns.flatMap((practice) => {
-												const theme = PRACTICE_COLUMN_THEME[practice.code];
+												const theme = getPracticeColumnTheme(practice.code);
 												const completionVisible = isSummaryColumnVisible(
 													getSummaryColumnKey(practice.code, "completion"),
 												);
 												const scoreVisible = isSummaryColumnVisible(
 													getSummaryColumnKey(practice.code, "score"),
 												);
+												const summary = row.practiceSummaries[practice.code];
+												const completionText = summary?.completionText ?? "0/0";
+												const totalScore = summary?.totalScore ?? 0;
+												const maxScore = practiceMaxScoreByCode[practice.code] || 0;
+
 												return [
 													completionVisible ? (
 														<td
 															key={`${row.id}-${practice.code}-completion`}
 															className={`border-l border-m3-outline-variant/40 px-4 py-3 text-center font-semibold ${theme.completionCell}`}
-															title={`${practice.title}: ${formatScore(row.practiceSummaries[practice.code].totalScore)}/${formatScore(practiceMaxScoreByCode[practice.code] || 0)} điểm`}
+															title={`${practice.title}: ${formatScore(totalScore)}/${formatScore(maxScore)} điểm`}
 														>
-															{
-																row.practiceSummaries[practice.code]
-																	.completionText
-															}
+															{completionText}
 														</td>
 													) : null,
 													scoreVisible ? (
 														<td
 															key={`${row.id}-${practice.code}-total-score`}
 															className={`border-r border-m3-outline-variant/40 px-4 py-3 text-right font-semibold ${theme.scoreCell}`}
-															title={`${practice.title}: tổng điểm chuẩn hóa theo thang ${formatScore(practiceMaxScoreByCode[practice.code] || 0)}`}
+															title={`${practice.title}: tổng điểm chuẩn hóa theo thang ${formatScore(maxScore)}`}
 														>
-															{formatScore(
-																row.practiceSummaries[practice.code].totalScore,
-															)}
+															{formatScore(totalScore)}
 															/
-															{formatScore(
-																practiceMaxScoreByCode[practice.code] || 0,
-															)}
+															{formatScore(maxScore)}
 														</td>
 													) : null,
 												];
