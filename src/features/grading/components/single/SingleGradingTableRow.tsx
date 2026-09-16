@@ -24,6 +24,7 @@ interface SingleGradingTableRowProps {
 	canUndoSingle: boolean;
 	isDragOver: boolean;
 	isUndoing: boolean;
+	isHighlighted: boolean;
 	onRowRef: (node: HTMLTableRowElement | null) => void;
 	onFileChange: (
 		studentId: string,
@@ -52,6 +53,7 @@ const SingleGradingTableRowComponent: React.FC<SingleGradingTableRowProps> = ({
 	canUndoSingle,
 	isDragOver,
 	isUndoing,
+	isHighlighted,
 	onRowRef,
 	onFileChange,
 	onDragOver,
@@ -119,7 +121,11 @@ const SingleGradingTableRowComponent: React.FC<SingleGradingTableRowProps> = ({
 		<tr
 			ref={onRowRef}
 			className={`transition-colors ${
-				isBanded ? "bg-m3-surface-container-high/25" : "bg-transparent"
+				isHighlighted
+					? "bg-yellow-100 ring-2 ring-yellow-400 dark:bg-yellow-900/30"
+					: isBanded
+						? "bg-m3-surface-container-high/25"
+						: "bg-transparent"
 			} hover:bg-m3-surface-container-high/40`}
 		>
 			<td className="px-4 py-3 text-sm text-m3-on-surface-variant">
@@ -136,10 +142,22 @@ const SingleGradingTableRowComponent: React.FC<SingleGradingTableRowProps> = ({
 							? "border-m3-primary bg-m3-primary/10"
 							: "border-m3-outline-variant bg-m3-surface-container-low"
 					} ${state?.isGrading ? "opacity-60 cursor-not-allowed" : ""}`}
+					onDragEnter={(e) =>
+						onDragOver(student.id, Boolean(state?.isGrading), e)
+					}
 					onDragOver={(e) =>
 						onDragOver(student.id, Boolean(state?.isGrading), e)
 					}
-					onDragLeave={() => onDragLeave(student.id)}
+					onDragLeave={(e) => {
+						const nextTarget = e.relatedTarget;
+						if (
+							nextTarget instanceof Node &&
+							e.currentTarget.contains(nextTarget)
+						) {
+							return;
+						}
+						onDragLeave(student.id);
+					}}
 					onDrop={(e) => onDrop(student.id, Boolean(state?.isGrading), e)}
 				>
 					<input

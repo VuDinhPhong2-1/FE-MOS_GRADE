@@ -17,6 +17,7 @@ import { MultiAssignmentSelector } from "./components/multi/MultiAssignmentSelec
 import { MultiGradingTable } from "./components/multi/MultiGradingTable";
 import { SingleGradingTable } from "./components/single/SingleGradingTable";
 import { SingleGradingToolbar } from "./components/single/SingleGradingToolbar";
+import { StudentTableSearchBar } from "./components/StudentTableSearchBar";
 import { useAssignmentManager } from "./hooks/useAssignmentManager";
 import { useGradingData } from "./hooks/useGradingData";
 import { useMultiGrading } from "./hooks/useMultiGrading";
@@ -89,6 +90,7 @@ export const GradingWorkspace: React.FC<GradingWorkspaceProps> = ({
 		studentSearchHint,
 		studentSearchMatchedIds,
 		studentSearchMatchIndex,
+		highlightedStudentId,
 		scrollToStudentByKeyword,
 		moveToMatchedStudent,
 		resetSearchState,
@@ -441,37 +443,43 @@ export const GradingWorkspace: React.FC<GradingWorkspaceProps> = ({
 							assignments={assignments}
 							selectedAssignment={selectedAssignment}
 							selectedAssignmentData={selectedAssignmentData}
-							studentSearchQuery={studentSearchQuery}
-							studentSearchHint={studentSearchHint}
-							studentSearchMatchedIds={studentSearchMatchedIds}
-							studentSearchMatchIndex={studentSearchMatchIndex}
 							isBulkUploading={isBulkUploading}
 							loading={singleLoading}
 							onSelectAssignment={setSelectedAssignment}
-							onSearchQueryChange={setStudentSearchQuery}
-							onSearchSubmit={scrollToStudentByKeyword}
-							onSearchNavigate={moveToMatchedStudent}
 							onBulkFilesChange={handleBulkStudentFilesChange}
 							onSaveAllScores={handleSaveAllScores}
 							onBack={handleBackToModes}
 						/>
 
 						{selectedAssignment ? (
-							<SingleGradingTable
-								gradingStudents={gradingStudents}
-								studentGradingStates={studentGradingStates}
-								singlePersistedScores={singlePersistedScores}
-								singleUndoSnapshots={singleUndoSnapshots}
-								selectedAssignmentData={selectedAssignmentData}
-								singleDragOverStudentId={singleDragOverStudentId}
-								undoingSingleStudentId={undoingSingleStudentId}
-								rowRefs={rowRefs}
-								onFileChange={handleStudentFileChange}
-								onDragOver={handleStudentFileDragOver}
-								onDragLeave={handleStudentFileDragLeave}
-								onDrop={handleStudentFileDrop}
-								onUndo={handleUndoSingleStudentFile}
-							/>
+							<>
+								<StudentTableSearchBar
+									query={studentSearchQuery}
+									hint={studentSearchHint}
+									matchedCount={studentSearchMatchedIds.length}
+									matchIndex={studentSearchMatchIndex}
+									onQueryChange={setStudentSearchQuery}
+									onSubmit={scrollToStudentByKeyword}
+									onNavigate={moveToMatchedStudent}
+									onReset={resetSearchState}
+								/>
+								<SingleGradingTable
+									gradingStudents={gradingStudents}
+									studentGradingStates={studentGradingStates}
+									singlePersistedScores={singlePersistedScores}
+									singleUndoSnapshots={singleUndoSnapshots}
+									selectedAssignmentData={selectedAssignmentData}
+									singleDragOverStudentId={singleDragOverStudentId}
+									undoingSingleStudentId={undoingSingleStudentId}
+									highlightedStudentId={highlightedStudentId}
+									rowRefs={rowRefs}
+									onFileChange={handleStudentFileChange}
+									onDragOver={handleStudentFileDragOver}
+									onDragLeave={handleStudentFileDragLeave}
+									onDrop={handleStudentFileDrop}
+									onUndo={handleUndoSingleStudentFile}
+								/>
+							</>
 						) : (
 							<div className="p-8 text-center text-sm text-m3-on-surface-variant rounded-2xl bg-m3-surface border border-m3-outline-variant/30">
 								Vui lòng chọn bài tập ở thanh trên để bắt đầu chấm điểm học
@@ -534,6 +542,19 @@ export const GradingWorkspace: React.FC<GradingWorkspaceProps> = ({
 							</div>
 						)}
 
+						{selectedMultiAssignments.length > 0 && (
+							<StudentTableSearchBar
+								query={studentSearchQuery}
+								hint={studentSearchHint}
+								matchedCount={studentSearchMatchedIds.length}
+								matchIndex={studentSearchMatchIndex}
+								onQueryChange={setStudentSearchQuery}
+								onSubmit={scrollToStudentByKeyword}
+								onNavigate={moveToMatchedStudent}
+								onReset={resetSearchState}
+							/>
+						)}
+
 						<MultiGradingTable
 							selectedAssignments={selectedMultiAssignments}
 							gradingStudents={gradingStudents}
@@ -541,6 +562,7 @@ export const GradingWorkspace: React.FC<GradingWorkspaceProps> = ({
 							multiAutoStates={multiAutoStates}
 							multiUndoSnapshots={multiUndoSnapshots}
 							multiDragOverCellKey={multiDragOverCellKey}
+							highlightedStudentId={highlightedStudentId}
 							rowRefs={rowRefs}
 							onScoreChange={handleMultiScoreChange}
 							onFileChange={(assignId, studentId, e) =>

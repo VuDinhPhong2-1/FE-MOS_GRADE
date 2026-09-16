@@ -1,10 +1,8 @@
 import {
 	Button,
 	Icon,
-	IconButton,
 	ProgressIndicator,
 	Select,
-	TextField,
 } from "@bug-on/m3-expressive";
 import type React from "react";
 import { useMemo } from "react";
@@ -15,16 +13,9 @@ interface SingleGradingToolbarProps {
 	assignments: Assignment[];
 	selectedAssignment: string;
 	selectedAssignmentData: Assignment | undefined;
-	studentSearchQuery: string;
-	studentSearchHint: string;
-	studentSearchMatchedIds: string[];
-	studentSearchMatchIndex: number;
 	isBulkUploading: boolean;
 	loading: boolean;
 	onSelectAssignment: (assignmentId: string) => void;
-	onSearchQueryChange: (query: string) => void;
-	onSearchSubmit: () => void;
-	onSearchNavigate: (direction: -1 | 1) => void;
 	onBulkFilesChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 	onSaveAllScores: () => void;
 	onBack: () => void;
@@ -34,16 +25,9 @@ export const SingleGradingToolbar: React.FC<SingleGradingToolbarProps> = ({
 	assignments,
 	selectedAssignment,
 	selectedAssignmentData,
-	studentSearchQuery,
-	studentSearchHint,
-	studentSearchMatchedIds,
-	studentSearchMatchIndex,
 	isBulkUploading,
 	loading,
 	onSelectAssignment,
-	onSearchQueryChange,
-	onSearchSubmit,
-	onSearchNavigate,
 	onBulkFilesChange,
 	onSaveAllScores,
 	onBack,
@@ -142,73 +126,6 @@ export const SingleGradingToolbar: React.FC<SingleGradingToolbarProps> = ({
 					fullWidth
 				/>
 			</div>
-
-			{/* Search box */}
-			{selectedAssignment && (
-				<div className="rounded-2xl bg-m3-surface-container-high p-4 shadow-xs border border-m3-outline-variant/20">
-					<p className="block text-sm font-semibold text-m3-on-surface mb-2">
-						Tìm học sinh và cuộn tới vị trí trong bảng
-					</p>
-					<div className="flex flex-col sm:flex-row gap-2">
-						<div className="relative flex-1">
-							<TextField
-								variant="outlined"
-								placeholder="Nhập tên học sinh (ví dụ: An, Linh, Nam...)"
-								value={studentSearchQuery}
-								onChange={(val) => onSearchQueryChange(val)}
-								onKeyDown={(e) => {
-									if (e.key === "Enter") {
-										e.preventDefault();
-										onSearchSubmit();
-									}
-								}}
-								leadingIcon={<Icon name="search" />}
-								fullWidth
-							/>
-						</div>
-						<div className="flex items-center gap-2">
-							<Button
-								type="button"
-								colorStyle="filled"
-								onClick={onSearchSubmit}
-								className="text-xs"
-							>
-								Tìm & Cuộn
-							</Button>
-							<IconButton
-								type="button"
-								size="sm"
-								colorStyle="outlined"
-								onClick={() => onSearchNavigate(-1)}
-								disabled={studentSearchMatchedIds.length === 0}
-								aria-label="Kết quả trước"
-							>
-								<Icon name="arrow_upward" />
-							</IconButton>
-							<IconButton
-								type="button"
-								size="sm"
-								colorStyle="outlined"
-								onClick={() => onSearchNavigate(1)}
-								disabled={studentSearchMatchedIds.length === 0}
-								aria-label="Kết quả kế tiếp"
-							>
-								<Icon name="arrow_downward" />
-							</IconButton>
-							{studentSearchMatchedIds.length > 0 && (
-								<span className="text-xs font-semibold text-m3-primary px-2">
-									{studentSearchMatchIndex + 1}/{studentSearchMatchedIds.length}
-								</span>
-							)}
-						</div>
-					</div>
-					{studentSearchHint && (
-						<p className="mt-2 text-xs text-m3-on-surface-variant font-medium">
-							{studentSearchHint}
-						</p>
-					)}
-				</div>
-			)}
 		</div>
 	);
 };

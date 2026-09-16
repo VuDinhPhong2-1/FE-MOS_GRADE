@@ -58,6 +58,7 @@ const PictureStyleEditor = ({
 	const [fileName, setFileName] = useState("");
 	const [error, setError] = useState("");
 	const [uploading, setUploading] = useState(false);
+	const [previewLoading, setPreviewLoading] = useState(false);
 
 	useEffect(() => {
 		return () => {
@@ -71,12 +72,26 @@ const PictureStyleEditor = ({
 	useEffect(() => {
 		const assetId = config?.assetId;
 
-		if (!assetId || loadedAssetIdRef.current === assetId) {
+		if (!assetId) {
+			loadedAssetIdRef.current = null;
+			setPreviewUrl((previous) => {
+				if (previous) {
+					URL.revokeObjectURL(previous);
+				}
+
+				return null;
+			});
+			return;
+		}
+
+		if (loadedAssetIdRef.current === assetId && previewUrl) {
 			return;
 		}
 
 		let cancelled = false;
 		loadedAssetIdRef.current = assetId;
+		setPreviewLoading(true);
+		setError("");
 
 		insertedImageAssetsService
 			.fetchPreviewUrl(assetId, getAccessToken)
@@ -98,20 +113,34 @@ const PictureStyleEditor = ({
 				if (!cancelled) {
 					setError("Khong tai duoc anh da luu truoc do.");
 				}
+			})
+			.finally(() => {
+				if (!cancelled) {
+					setPreviewLoading(false);
+				}
 			});
 
 		return () => {
 			cancelled = true;
 		};
-	}, [config?.assetId]);
+	}, [config?.assetId, previewUrl]);
 
 	const patchConfig = (patch: Partial<PictureStyleConfig>) => {
+		const nextStylePreset =
+			patch.stylePreset ?? config?.stylePreset ?? "simpleFrameBlack";
+		const presetDefaults =
+			nextStylePreset === "simpleFrameBlack"
+				? {
+						requiredLineColor: "000000",
+						presetGeometry: "rect",
+					}
+				: {};
+
 		onChange({
 			sourceFile: "word/document.xml",
 			relsFile: "word/_rels/document.xml.rels",
 			targetImageIndex: 1,
-			requiredLineColor: "000000",
-			presetGeometry: "rect",
+			...presetDefaults,
 			...config,
 			...patch,
 		});
@@ -128,9 +157,16 @@ const PictureStyleEditor = ({
 						requiredLineColor: "000000",
 						presetGeometry: "rect",
 					}
-				: {}),
+				: {
+						requiredLineColor: "",
+						minLineWidth: undefined,
+						presetGeometry: "",
+					}),
 		});
 	};
+
+	const selectedStylePreset = config?.stylePreset ?? "simpleFrameBlack";
+	const isCustomStylePreset = selectedStylePreset === "custom";
 
 	const handleFileChange = async (
 		event: React.ChangeEvent<HTMLInputElement>,
@@ -287,7 +323,7 @@ const PictureStyleEditor = ({
 						</p>
 					)}
 
-					{!error && !uploading && hasSavedImage && (
+					{!error && !uploading && !previewLoading && hasSavedImage && (
 						<p className="mt-2 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-[11px] text-emerald-700">
 							Da luu anh va hash tren server.
 						</p>
@@ -313,6 +349,17 @@ const PictureStyleEditor = ({
 								<Icon name="close" variant="rounded" size={12} />
 							</button>
 						</div>
+					) : previewLoading ? (
+						<div className="flex h-36 items-center justify-center gap-2 rounded-xl border border-dashed border-slate-200 bg-white text-center text-[11px] text-slate-500">
+							<ProgressIndicator
+								variant="circular"
+								shape="wavy"
+								showTrack
+								size={15}
+								aria-label="Dang tai anh xem truoc..."
+							/>
+							Dang tai anh xem truoc...
+						</div>
 					) : (
 						<div className="flex h-36 items-center justify-center rounded-xl border border-dashed border-slate-200 bg-white text-center text-[11px] text-slate-400">
 							Chua chon anh chuan
@@ -325,7 +372,7 @@ const PictureStyleEditor = ({
 				<label className="text-xs font-semibold text-slate-600">
 					Kieu Picture Style can cham
 					<select
-						value={config?.stylePreset ?? "simpleFrameBlack"}
+						value={selectedStylePreset}
 						onChange={handleStylePresetChange}
 						className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition hover:border-slate-300 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
 					>
@@ -379,7 +426,10 @@ const PictureStyleEditor = ({
 				<label className="text-xs font-semibold text-slate-600">
 					Mau vien can co
 					<select
-						value={config?.requiredLineColor ?? "000000"}
+						value={
+							config?.requiredLineColor ??
+							(isCustomStylePreset ? "" : "000000")
+						}
 						onChange={(e) => patchConfig({ requiredLineColor: e.target.value })}
 						className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition hover:border-slate-300 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
 					>
@@ -411,7 +461,7 @@ const PictureStyleEditor = ({
 				<label className="text-xs font-semibold text-slate-600">
 					Dang khung/hinh anh
 					<select
-						value={config?.presetGeometry ?? "rect"}
+						value={config?.presetGeometry ?? (isCustomStylePreset ? "" : "rect")}
 						onChange={(e) => patchConfig({ presetGeometry: e.target.value })}
 						className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition hover:border-slate-300 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
 					>

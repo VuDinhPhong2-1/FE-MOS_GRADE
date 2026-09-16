@@ -91,7 +91,7 @@ const MultiGradingCellComponent: React.FC<MultiGradingCellProps> = ({
 	};
 
 	return (
-		<td className="px-3 py-3 align-top border-r border-m3-outline-variant/10 last:border-r-0 min-w-42.5">
+		<div className="px-3 py-3 align-top min-w-42.5">
 			<div className="flex flex-col items-center">
 				<input
 					type="number"
@@ -116,8 +116,18 @@ const MultiGradingCellComponent: React.FC<MultiGradingCellProps> = ({
 								? "border-m3-primary bg-m3-primary/10"
 								: "border-m3-outline-variant bg-m3-surface-container-low"
 						} ${autoState?.isGrading ? "opacity-60 cursor-not-allowed" : ""}`}
+						onDragEnter={(e) => onDragOver(Boolean(autoState?.isGrading), e)}
 						onDragOver={(e) => onDragOver(Boolean(autoState?.isGrading), e)}
-						onDragLeave={onDragLeave}
+						onDragLeave={(e) => {
+							const nextTarget = e.relatedTarget;
+							if (
+								nextTarget instanceof Node &&
+								e.currentTarget.contains(nextTarget)
+							) {
+								return;
+							}
+							onDragLeave();
+						}}
 						onDrop={(e) => onDrop(Boolean(autoState?.isGrading), e)}
 					>
 						<input
@@ -196,7 +206,7 @@ const MultiGradingCellComponent: React.FC<MultiGradingCellProps> = ({
 					</section>
 				)}
 			</div>
-		</td>
+		</div>
 	);
 };
 

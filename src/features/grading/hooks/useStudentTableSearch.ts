@@ -17,6 +17,9 @@ export const useStudentTableSearch = ({
 		string[]
 	>([]);
 	const [studentSearchMatchIndex, setStudentSearchMatchIndex] = useState(-1);
+	const [highlightedStudentId, setHighlightedStudentId] = useState<string | null>(
+		null,
+	);
 	const [lastStudentSearchKeyword, setLastStudentSearchKeyword] = useState("");
 
 	const scrollRowIntoStudentTable = (row: HTMLTableRowElement) => {
@@ -64,13 +67,10 @@ export const useStudentTableSearch = ({
 		const studentId = matchedIds[index];
 		const student = gradingStudents.find((item) => item.id === studentId);
 		const row = rowRefs.current?.get(studentId);
+		setHighlightedStudentId(studentId);
+
 		if (row) {
 			scrollRowIntoStudentTable(row);
-			row.classList.add("ring-2", "ring-blue-300");
-			window.setTimeout(
-				() => row.classList.remove("ring-2", "ring-blue-300"),
-				1200,
-			);
 		}
 
 		if (student) {
@@ -86,12 +86,7 @@ export const useStudentTableSearch = ({
 				const fullName = normalizeVietnameseText(
 					`${student.middleName} ${student.firstName}`,
 				);
-				const escapedKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-				const keywordPattern = new RegExp(
-					`(^|\\s)${escapedKeyword}(\\s|$)`,
-					"i",
-				);
-				return keywordPattern.test(fullName);
+				return fullName.includes(keyword);
 			})
 			.map((student) => student.id);
 
@@ -101,6 +96,7 @@ export const useStudentTableSearch = ({
 			setStudentSearchHint("Vui lòng nhập tên học sinh cần tìm.");
 			setStudentSearchMatchedIds([]);
 			setStudentSearchMatchIndex(-1);
+			setHighlightedStudentId(null);
 			setLastStudentSearchKeyword("");
 			return;
 		}
@@ -123,6 +119,7 @@ export const useStudentTableSearch = ({
 			);
 			setStudentSearchMatchedIds([]);
 			setStudentSearchMatchIndex(-1);
+			setHighlightedStudentId(null);
 			setLastStudentSearchKeyword(keyword);
 			return;
 		}
@@ -151,6 +148,7 @@ export const useStudentTableSearch = ({
 		setStudentSearchHint("");
 		setStudentSearchMatchedIds([]);
 		setStudentSearchMatchIndex(-1);
+		setHighlightedStudentId(null);
 		setLastStudentSearchKeyword("");
 	};
 
@@ -160,6 +158,7 @@ export const useStudentTableSearch = ({
 		studentSearchHint,
 		studentSearchMatchedIds,
 		studentSearchMatchIndex,
+		highlightedStudentId,
 		scrollToStudentByKeyword,
 		moveToMatchedStudent,
 		resetSearchState,

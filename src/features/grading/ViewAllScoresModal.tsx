@@ -44,8 +44,6 @@ import {
 	normalizeClassification,
 	PRACTICE_COLUMN_THEME,
 	PRACTICE_COLUMNS,
-	PRACTICE_COMPLETION_TARGETS,
-	PRACTICE_MAX_SCORE,
 	type PracticeCode,
 	type PracticeSummary,
 	resolveAssignmentPracticeCode,
@@ -153,56 +151,6 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 		setIsOtthPercentageColumnVisible(true);
 	}, [isOpen]);
 
-	const maxScoreTotal = useMemo(
-		() =>
-			assignments.reduce((sum, assignment) => {
-				const practiceCode = resolveAssignmentPracticeCode(assignment);
-				if (!practiceCode || practiceCode === "exam_review") {
-					return sum;
-				}
-				return sum + (assignment.maxScore || 0);
-			}, 0),
-		[assignments],
-	);
-
-	const examReviewMaxScore = useMemo(() => {
-		const maxScoreByReviewKey = new Map<string, number>();
-
-		for (const assignment of assignments) {
-			if (resolveAssignmentPracticeCode(assignment) !== "exam_review") {
-				continue;
-			}
-
-			const projectNumber = extractProjectNumberFromEndpoint(
-				assignment.gradingApiEndpoint,
-			);
-			const reviewKey = projectNumber
-				? `project-${projectNumber}`
-				: `assignment-${assignment.id}`;
-			const currentMax = maxScoreByReviewKey.get(reviewKey) ?? 0;
-			const assignmentMaxScore = assignment.maxScore || 0;
-			maxScoreByReviewKey.set(
-				reviewKey,
-				Math.max(currentMax, assignmentMaxScore),
-			);
-		}
-
-		return Array.from(maxScoreByReviewKey.values()).reduce(
-			(sum, value) => sum + value,
-			0,
-		);
-	}, [assignments]);
-
-	const practiceMaxScoreByCode = useMemo<Record<PracticeCode, number>>(
-		() => ({
-			practice01: PRACTICE_MAX_SCORE,
-			practice02: PRACTICE_MAX_SCORE,
-			practice03: PRACTICE_MAX_SCORE,
-			exam_review: examReviewMaxScore,
-		}),
-		[examReviewMaxScore],
-	);
-
 	const studentsById = useMemo(() => {
 		const map = new Map<string, Student>();
 		for (const student of students) {
@@ -261,9 +209,85 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 		return next;
 	}, [assignments]);
 
+	const assignmentsById = useMemo(() => {
+		const map = new Map<string, (typeof assignments)[number]>();
+		for (const assignment of assignments) {
+			map.set(assignment.id, assignment);
+		}
+		return map;
+	}, [assignments]);
+
+	const availablePracticeColumns = useMemo(
+		() =>
+			PRACTICE_COLUMNS.filter(
+				(practice) => assignmentIdsByPractice[practice.code].length > 0,
+			),
+		[assignmentIdsByPractice],
+	);
+
+	const practiceMetricsByCode = useMemo(() => {
+		const completionTargetByCode: Record<PracticeCode, number> = {
+			practice01: 0,
+			practice02: 0,
+			practice03: 0,
+			exam_review: 0,
+		};
+		const maxScoreByCode: Record<PracticeCode, number> = {
+			practice01: 0,
+			practice02: 0,
+			practice03: 0,
+			exam_review: 0,
+		};
+
+		for (const practice of PRACTICE_COLUMNS) {
+			const maxScoreByProjectKey = new Map<string, number>();
+
+			for (const assignmentId of assignmentIdsByPractice[practice.code]) {
+				const assignment = assignmentsById.get(assignmentId);
+				if (!assignment) continue;
+
+				const projectNumber = extractProjectNumberFromEndpoint(
+					assignment.gradingApiEndpoint,
+				);
+				const projectKey = projectNumber
+					? `project-${projectNumber}`
+					: `assignment-${assignment.id}`;
+				const currentMaxScore = maxScoreByProjectKey.get(projectKey) ?? 0;
+				const assignmentMaxScore = assignment.maxScore || 0;
+				maxScoreByProjectKey.set(
+					projectKey,
+					Math.max(currentMaxScore, assignmentMaxScore),
+				);
+			}
+
+			completionTargetByCode[practice.code] = maxScoreByProjectKey.size;
+			maxScoreByCode[practice.code] = Array.from(
+				maxScoreByProjectKey.values(),
+			).reduce((sum, value) => sum + value, 0);
+		}
+
+		return { completionTargetByCode, maxScoreByCode };
+	}, [assignmentIdsByPractice, assignmentsById]);
+
+	const practiceMaxScoreByCode = practiceMetricsByCode.maxScoreByCode;
+	const practiceCompletionTargetByCode =
+		practiceMetricsByCode.completionTargetByCode;
+	const maxScoreTotal =
+		practiceMaxScoreByCode.practice01 +
+		practiceMaxScoreByCode.practice02 +
+		practiceMaxScoreByCode.practice03;
+	const examReviewMaxScore = practiceMaxScoreByCode.exam_review;
+	const hasPracticeScoreColumns = maxScoreTotal > 0;
+	const hasExamReviewScoreColumns = examReviewMaxScore > 0;
+	const showTotalScoreColumn =
+		isTotalScoreColumnVisible && hasPracticeScoreColumns;
+	const showOtthPercentageColumn =
+		isOtthPercentageColumnVisible && hasPracticeScoreColumns;
+	const showExamReviewPercentageColumn = hasExamReviewScoreColumns;
+
 	const visibleSummaryColumnCount = useMemo(
 		() =>
-			PRACTICE_COLUMNS.reduce((count, practice) => {
+			availablePracticeColumns.reduce((count, practice) => {
 				const completionVisible = isSummaryColumnVisible(
 					getSummaryColumnKey(practice.code, "completion"),
 				);
@@ -272,20 +296,20 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 				);
 				return count + (completionVisible ? 1 : 0) + (scoreVisible ? 1 : 0);
 			}, 0),
-		[isSummaryColumnVisible],
+		[availablePracticeColumns, isSummaryColumnVisible],
 	);
 
 	const staticColumnCount =
 		3 +
 		(isClassificationColumnVisible ? 1 : 0) +
 		visibleSummaryColumnCount +
-		(isTotalScoreColumnVisible ? 1 : 0) +
-		(isOtthPercentageColumnVisible ? 1 : 0) +
-		1 +
+		(showTotalScoreColumn ? 1 : 0) +
+		(showOtthPercentageColumn ? 1 : 0) +
+		(showExamReviewPercentageColumn ? 1 : 0) +
 		1;
 
 	const practiceGroupVisibility = useMemo(() => {
-		return PRACTICE_COLUMNS.reduce(
+		return availablePracticeColumns.reduce(
 			(acc, practice) => {
 				const assignmentIds = assignmentIdsByPractice[practice.code];
 				const visibleAssignmentCount = assignmentIds.filter((assignmentId) =>
@@ -303,7 +327,8 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 					visibleAssignments: visibleAssignmentCount,
 					summaryVisible: completionVisible && scoreVisible,
 					isVisible:
-						visibleAssignmentCount > 0 || completionVisible || scoreVisible,
+						assignmentIds.length > 0 &&
+						(visibleAssignmentCount > 0 || completionVisible || scoreVisible),
 				};
 
 				return acc;
@@ -318,22 +343,29 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 				}
 			>,
 		);
-	}, [assignmentIdsByPractice, isAssignmentVisible, isSummaryColumnVisible]);
+	}, [
+		availablePracticeColumns,
+		assignmentIdsByPractice,
+		isAssignmentVisible,
+		isSummaryColumnVisible,
+	]);
 
 	const areAllPracticeGroupsVisible = useMemo(
 		() =>
-			PRACTICE_COLUMNS.every(
+			availablePracticeColumns.length > 0 &&
+			availablePracticeColumns.every(
 				(practice) => practiceGroupVisibility[practice.code].isVisible,
 			),
-		[practiceGroupVisibility],
+		[availablePracticeColumns, practiceGroupVisibility],
 	);
 
 	const areAllPracticeGroupsHidden = useMemo(
 		() =>
-			PRACTICE_COLUMNS.every(
+			availablePracticeColumns.length > 0 &&
+			availablePracticeColumns.every(
 				(practice) => !practiceGroupVisibility[practice.code].isVisible,
 			),
-		[practiceGroupVisibility],
+		[availablePracticeColumns, practiceGroupVisibility],
 	);
 
 	const displayRows = useMemo<DisplayStudentRow[]>(() => {
@@ -348,7 +380,6 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 					? notesMapValue
 					: (student.notes || "").trim();
 
-			let totalScore = 0;
 			const practiceProjectScores: Record<
 				PracticeCode,
 				Map<string, { hasScore: boolean; score: number }>
@@ -370,12 +401,6 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 				calculatedScores[assignment.id] = score;
 				const assignmentPracticeCode =
 					resolveAssignmentPracticeCode(assignment);
-				if (
-					assignmentPracticeCode &&
-					assignmentPracticeCode !== "exam_review"
-				) {
-					totalScore += score;
-				}
 
 				const projectNumber = extractProjectNumberFromEndpoint(
 					assignment.gradingApiEndpoint,
@@ -398,11 +423,15 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 
 					practiceProjectScores.exam_review.set(reviewKey, current);
 				} else {
-					const practiceCode = projectNumber
-						? resolvePracticeByProjectNumber(projectNumber)
-						: null;
-					if (projectNumber && practiceCode) {
-						const practiceKey = `project-${projectNumber}`;
+					const practiceCode =
+						assignmentPracticeCode ??
+						(projectNumber
+							? resolvePracticeByProjectNumber(projectNumber)
+							: null);
+					if (practiceCode) {
+						const practiceKey = projectNumber
+							? `project-${projectNumber}`
+							: `assignment-${assignment.id}`;
 						const current = practiceProjectScores[practiceCode].get(
 							practiceKey,
 						) ?? {
@@ -441,7 +470,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 						practiceProjectScores[practice.code].values(),
 					);
 					const completionTarget =
-						PRACTICE_COMPLETION_TARGETS[practice.code] || 0;
+						practiceCompletionTargetByCode[practice.code] || 0;
 					const completed = Math.min(
 						completionTarget,
 						items.filter((item) => item.hasScore).length,
@@ -465,6 +494,10 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 				},
 				{} as Record<PracticeCode, PracticeSummary>,
 			);
+			const totalScore =
+				practiceSummaries.practice01.totalScore +
+				practiceSummaries.practice02.totalScore +
+				practiceSummaries.practice03.totalScore;
 			const otthPercentage =
 				maxScoreTotal > 0
 					? Math.round((totalScore / maxScoreTotal) * 10000) / 100
@@ -499,6 +532,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 		notesByStudentId,
 		maxScoreTotal,
 		practiceMaxScoreByCode,
+		practiceCompletionTargetByCode,
 		examReviewMaxScore,
 	]);
 
@@ -598,16 +632,22 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 				(assignment) => `${assignment.name} (tối đa ${assignment.maxScore})`,
 			),
 			"Xếp loại",
-			...PRACTICE_COLUMNS.flatMap((practice) => [
+			...availablePracticeColumns.flatMap((practice) => [
 				`${practice.title} - Số bài`,
 				getPracticeExcelScoreHeaderLabel(practice),
 			]),
-			"Tổng điểm 3 Practice",
-			"Tỷ lệ đạt OTTH",
-			"Tỷ lệ đạt ôn thi",
+			...(hasPracticeScoreColumns
+				? ["Tổng điểm 3 Practice", "Tỷ lệ đạt OTTH"]
+				: []),
+			...(hasExamReviewScoreColumns ? ["Tỷ lệ đạt ôn thi"] : []),
 			"Ghi chú",
 		],
-		[assignments],
+		[
+			assignments,
+			availablePracticeColumns,
+			hasPracticeScoreColumns,
+			hasExamReviewScoreColumns,
+		],
 	);
 
 	const excelBody = useMemo(
@@ -620,18 +660,32 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 					formatScore(row.calculatedScores[assignment.id] ?? 0),
 				),
 				row.classification,
-				...PRACTICE_COLUMNS.flatMap((practice) => [
+				...availablePracticeColumns.flatMap((practice) => [
 					row.practiceSummaries[practice.code].completionText,
 					`${formatScore(row.practiceSummaries[practice.code].totalScore)}/${formatScore(
 						practiceMaxScoreByCode[practice.code] || 0,
 					)}`,
 				]),
-				`${formatScore(row.totalScore)}/${formatScore(maxScoreTotal)}`,
-				`${formatScore(row.otthPercentage)}%`,
-				`${formatScore(row.examReviewPercentage)}%`,
+				...(hasPracticeScoreColumns
+					? [
+							`${formatScore(row.totalScore)}/${formatScore(maxScoreTotal)}`,
+							`${formatScore(row.otthPercentage)}%`,
+						]
+					: []),
+				...(hasExamReviewScoreColumns
+					? [`${formatScore(row.examReviewPercentage)}%`]
+					: []),
 				row.notes,
 			]),
-		[sortedDisplayRows, assignments, maxScoreTotal, practiceMaxScoreByCode],
+		[
+			sortedDisplayRows,
+			assignments,
+			availablePracticeColumns,
+			maxScoreTotal,
+			practiceMaxScoreByCode,
+			hasPracticeScoreColumns,
+			hasExamReviewScoreColumns,
+		],
 	);
 
 	const excelScoreComments = useMemo<ExcelCellComment[]>(() => {
@@ -728,8 +782,10 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 
 	const handleExportExcel = () => {
 		const assignmentColumnWidths = assignments.map(() => 18);
-		const practiceCompletionColumnWidths = PRACTICE_COLUMNS.map(() => 14);
-		const practiceScoreColumnWidths = PRACTICE_COLUMNS.map(() => 16);
+		const practiceCompletionColumnWidths = availablePracticeColumns.map(
+			() => 14,
+		);
+		const practiceScoreColumnWidths = availablePracticeColumns.map(() => 16);
 		const colWidths = [
 			6,
 			24,
@@ -738,9 +794,8 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 			12,
 			...practiceCompletionColumnWidths,
 			...practiceScoreColumnWidths,
-			16,
-			12,
-			12,
+			...(hasPracticeScoreColumns ? [16, 12] : []),
+			...(hasExamReviewScoreColumns ? [12] : []),
 			34,
 		];
 		const extraSheets = [
@@ -806,7 +861,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 	const handleApplyPracticeGroupDisplayForAll = (
 		mode: AssignmentColumnDisplayMode,
 	) => {
-		for (const practice of PRACTICE_COLUMNS) {
+		for (const practice of availablePracticeColumns) {
 			setPracticeGroupDisplayMode(practice.code, mode);
 		}
 	};
@@ -931,12 +986,17 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 	if (!isOpen) return null;
 	const isPageMode = displayMode === "page";
 	const totalScoreColumnCount =
-		assignments.length + PRACTICE_COLUMNS.length * 2 + 2;
+		assignments.length +
+		availablePracticeColumns.length * 2 +
+		(hasPracticeScoreColumns ? 2 : 0) +
+		(hasExamReviewScoreColumns ? 1 : 0);
 	const visibleScoreColumnCount =
 		displayedAssignments.length +
 		visibleSummaryColumnCount +
-		(isTotalScoreColumnVisible ? 1 : 0) +
-		(isOtthPercentageColumnVisible ? 1 : 0);
+		(showTotalScoreColumn ? 1 : 0) +
+		(showOtthPercentageColumn ? 1 : 0) +
+		(showExamReviewPercentageColumn ? 1 : 0);
+	const availablePracticeGroupCount = availablePracticeColumns.length;
 	const containerClassName = isPageMode
 		? "flex w-full flex-col overflow-hidden rounded-4xl bg-m3-surface-container shadow-sm text-m3-on-surface"
 		: "flex h-full w-full flex-col overflow-hidden bg-m3-surface-container-high text-m3-on-surface";
@@ -988,7 +1048,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 									}
 									onClick={() => handleApplyPracticeGroupDisplayForAll("full")}
 								>
-									Hiện 4 phần chính
+									Hiện {availablePracticeGroupCount} phần chính
 								</Button>
 								<Button
 									type="button"
@@ -998,7 +1058,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 										handleApplyPracticeGroupDisplayForAll("hidden")
 									}
 								>
-									Ẩn 4 phần chính
+									Ẩn {availablePracticeGroupCount} phần chính
 								</Button>
 							</div>
 
@@ -1160,7 +1220,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 					</div>
 
 					<div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-						{PRACTICE_COLUMNS.map((practice) => {
+						{availablePracticeColumns.map((practice) => {
 							const visibility = practiceGroupVisibility[practice.code];
 							const isVisible = visibility.isVisible;
 
@@ -1251,7 +1311,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 											Xếp loại
 										</th>
 									)}
-									{PRACTICE_COLUMNS.flatMap((practice) => {
+									{availablePracticeColumns.flatMap((practice) => {
 										const theme = PRACTICE_COLUMN_THEME[practice.code];
 										const completionVisible = isSummaryColumnVisible(
 											getSummaryColumnKey(practice.code, "completion"),
@@ -1278,19 +1338,21 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 											) : null,
 										];
 									})}
-									{isTotalScoreColumnVisible && (
+									{showTotalScoreColumn && (
 										<th className="sticky top-0 z-40 min-w-35 border-l border-m3-outline-variant/60 bg-m3-secondary-container px-4 py-3 text-right text-xs font-bold uppercase tracking-wide text-m3-on-secondary-container">
 											Tổng điểm 3 Practice
 										</th>
 									)}
-									{isOtthPercentageColumnVisible && (
+									{showOtthPercentageColumn && (
 										<th className="sticky top-0 z-40 min-w-32.5 border-l border-m3-outline-variant/60 bg-m3-primary-container px-4 py-3 text-center text-xs font-bold uppercase tracking-wide text-m3-on-primary-container">
 											Tỷ lệ đạt OTTH
 										</th>
 									)}
-									<th className="sticky top-0 z-40 min-w-32.5 border-l border-m3-outline-variant/60 bg-m3-tertiary-container px-4 py-3 text-center text-xs font-bold uppercase tracking-wide text-m3-on-tertiary-container">
-										Tỷ lệ đạt ôn thi
-									</th>
+									{showExamReviewPercentageColumn && (
+										<th className="sticky top-0 z-40 min-w-32.5 border-l border-m3-outline-variant/60 bg-m3-tertiary-container px-4 py-3 text-center text-xs font-bold uppercase tracking-wide text-m3-on-tertiary-container">
+											Tỷ lệ đạt ôn thi
+										</th>
+									)}
 									<th className="sticky top-0 z-40 min-w-55 border-l border-m3-outline-variant/60 bg-m3-surface-container-high px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-m3-on-surface">
 										Ghi chú
 									</th>
@@ -1429,7 +1491,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 												</td>
 											)}
 
-											{PRACTICE_COLUMNS.flatMap((practice) => {
+											{availablePracticeColumns.flatMap((practice) => {
 												const theme = PRACTICE_COLUMN_THEME[practice.code];
 												const completionVisible = isSummaryColumnVisible(
 													getSummaryColumnKey(practice.code, "completion"),
@@ -1468,7 +1530,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 												];
 											})}
 
-											{isTotalScoreColumnVisible && (
+											{showTotalScoreColumn && (
 												<td className="border-l border-m3-outline-variant/40 bg-m3-secondary-container/20 px-4 py-3 text-right">
 													<span className="inline-flex rounded-full border border-m3-secondary/30 bg-m3-secondary-container px-2.5 py-1 text-xs font-bold text-m3-on-secondary-container">
 														{formatScore(row.totalScore)}/
@@ -1477,7 +1539,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 												</td>
 											)}
 
-											{isOtthPercentageColumnVisible && (
+											{showOtthPercentageColumn && (
 												<td className="border-l border-m3-outline-variant/40 bg-m3-primary-container/20 px-4 py-3 text-center">
 													<span
 														className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-bold ${getPercentagePillClass(
@@ -1489,15 +1551,17 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 												</td>
 											)}
 
-											<td className="border-l border-m3-outline-variant/40 bg-m3-tertiary-container/20 px-4 py-3 text-center">
-												<span
-													className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-bold ${getPercentagePillClass(
-														row.examReviewPercentage,
-													)}`}
-												>
-													{formatScore(row.examReviewPercentage)}%
-												</span>
-											</td>
+											{showExamReviewPercentageColumn && (
+												<td className="border-l border-m3-outline-variant/40 bg-m3-tertiary-container/20 px-4 py-3 text-center">
+													<span
+														className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-bold ${getPercentagePillClass(
+															row.examReviewPercentage,
+														)}`}
+													>
+														{formatScore(row.examReviewPercentage)}%
+													</span>
+												</td>
+											)}
 
 											<td className="border-l border-m3-outline-variant/40 px-4 py-3 text-left text-m3-on-surface-variant">
 												<div className="max-w-65 space-y-1">

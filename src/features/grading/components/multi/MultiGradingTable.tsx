@@ -21,6 +21,7 @@ interface MultiGradingTableProps {
 	multiAutoStates: Map<string, Map<string, MultiAutoCellState>>;
 	multiUndoSnapshots: Map<string, MultiUndoSnapshot>;
 	multiDragOverCellKey: string | null;
+	highlightedStudentId: string | null;
 	rowRefs: React.RefObject<Map<string, HTMLTableRowElement>>;
 	onScoreChange: (
 		assignmentId: string,
@@ -58,6 +59,7 @@ export const MultiGradingTable: React.FC<MultiGradingTableProps> = ({
 	multiAutoStates,
 	multiUndoSnapshots,
 	multiDragOverCellKey,
+	highlightedStudentId,
 	rowRefs,
 	onScoreChange,
 	onFileChange,
@@ -183,9 +185,17 @@ export const MultiGradingTable: React.FC<MultiGradingTableProps> = ({
 	}
 
 	return (
-		<div
+		<section
 			data-student-scroll-container="true"
+			aria-label="Bang cham diem nhieu bai"
 			className="max-h-[62vh] overflow-auto rounded-2xl border border-m3-outline-variant/30 bg-m3-surface shadow-xs"
+			onDragOver={(event) => {
+				event.preventDefault();
+				event.dataTransfer.dropEffect = "copy";
+			}}
+			onDrop={(event) => {
+				event.preventDefault();
+			}}
 		>
 			<table className="min-w-full border-collapse divide-y divide-m3-outline-variant/30">
 				<thead className="sticky top-0 z-20 bg-m3-surface-container-high shadow-xs">
@@ -219,15 +229,25 @@ export const MultiGradingTable: React.FC<MultiGradingTableProps> = ({
 								else rowRefs.current?.delete(row.original.id);
 							}}
 							className={`transition-colors ${
-								index % 2 === 1
-									? "bg-m3-surface-container-high/25"
-									: "bg-transparent"
+								highlightedStudentId === row.original.id
+									? "bg-yellow-100 ring-2 ring-yellow-400 dark:bg-yellow-900/30"
+									: index % 2 === 1
+										? "bg-m3-surface-container-high/25"
+										: "bg-transparent"
 							} hover:bg-m3-surface-container-high/40`}
 						>
 							{row.getAllCells().map((cell) => {
 								const meta = cell.column.columnDef.meta;
+								const isHighlighted = highlightedStudentId === row.original.id;
 								return (
-									<td key={cell.id} className={meta?.cellClassName || ""}>
+									<td
+										key={cell.id}
+										className={`${meta?.cellClassName || ""} ${
+											isHighlighted
+												? "!bg-yellow-100 dark:!bg-yellow-900/30"
+												: ""
+										}`}
+									>
 										<table.FlexRender cell={cell} />
 									</td>
 								);
@@ -236,6 +256,6 @@ export const MultiGradingTable: React.FC<MultiGradingTableProps> = ({
 					))}
 				</tbody>
 			</table>
-		</div>
+		</section>
 	);
 };

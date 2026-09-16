@@ -482,6 +482,7 @@ export const useSingleGrading = ({
 			e: React.DragEvent<HTMLElement>,
 		) => {
 			e.preventDefault();
+			e.stopPropagation();
 			if (isDisabled) return;
 			e.dataTransfer.dropEffect = "copy";
 			if (singleDragOverStudentId !== studentId) {
@@ -507,6 +508,7 @@ export const useSingleGrading = ({
 			e: React.DragEvent<HTMLElement>,
 		) => {
 			e.preventDefault();
+			e.stopPropagation();
 			setSingleDragOverStudentId(null);
 			if (isDisabled) return;
 
@@ -731,7 +733,14 @@ export const useSingleGrading = ({
 				)
 				.map((s) => ({
 					studentId: s.studentId,
-					scoreValue: s.manualScore ?? 0,
+					scoreValue: Number(
+						Math.min(
+							Math.max(s.manualScore ?? 0, 0),
+							selectedAssignmentData?.maxScore && selectedAssignmentData.maxScore > 0
+								? selectedAssignmentData.maxScore
+								: 1000,
+						).toFixed(2),
+					),
 					feedback: s.manualComment,
 					autoGradingErrors:
 						s.autoGradingErrors || extractAutoGradingErrors(s.gradingResult),
@@ -775,6 +784,7 @@ export const useSingleGrading = ({
 		getAccessToken,
 		onSuccess,
 		onClose,
+		selectedAssignmentData?.maxScore,
 	]);
 
 	const resetSingleGradingState = () => {

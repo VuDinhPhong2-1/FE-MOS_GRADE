@@ -22,6 +22,7 @@ interface SingleGradingTableProps {
 	selectedAssignmentData: Assignment | undefined;
 	singleDragOverStudentId: string | null;
 	undoingSingleStudentId: string | null;
+	highlightedStudentId: string | null;
 	rowRefs: React.RefObject<Map<string, HTMLTableRowElement>>;
 	onFileChange: (
 		studentId: string,
@@ -52,6 +53,7 @@ export const SingleGradingTable: React.FC<SingleGradingTableProps> = ({
 	selectedAssignmentData,
 	singleDragOverStudentId,
 	undoingSingleStudentId,
+	highlightedStudentId,
 	rowRefs,
 	onFileChange,
 	onDragOver,
@@ -114,9 +116,17 @@ export const SingleGradingTable: React.FC<SingleGradingTableProps> = ({
 	});
 
 	return (
-		<div
+		<section
 			data-student-scroll-container="true"
+			aria-label="Bang cham diem hoc sinh"
 			className="max-h-[60vh] overflow-auto rounded-2xl bg-m3-surface shadow-xs border border-m3-outline-variant/30"
+			onDragOver={(event) => {
+				event.preventDefault();
+				event.dataTransfer.dropEffect = "copy";
+			}}
+			onDrop={(event) => {
+				event.preventDefault();
+			}}
 		>
 			<table className="min-w-full divide-y divide-m3-outline-variant/30">
 				<caption className="caption-top px-4 py-3 text-left text-sm font-semibold text-m3-on-surface border-b border-m3-outline-variant/20">
@@ -169,6 +179,7 @@ export const SingleGradingTable: React.FC<SingleGradingTableProps> = ({
 								canUndoSingle={canUndoSingle}
 								isDragOver={singleDragOverStudentId === student.id}
 								isUndoing={undoingSingleStudentId === student.id}
+								isHighlighted={highlightedStudentId === student.id}
 								onRowRef={(node) => {
 									if (node) rowRefs.current?.set(student.id, node);
 									else rowRefs.current?.delete(student.id);
@@ -183,6 +194,6 @@ export const SingleGradingTable: React.FC<SingleGradingTableProps> = ({
 					})}
 				</tbody>
 			</table>
-		</div>
+		</section>
 	);
 };
