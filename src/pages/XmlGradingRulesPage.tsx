@@ -3338,11 +3338,8 @@ const XmlGradingRulesPage = () => {
 										const projectExpanded = expandedProjects[pi] ?? false;
 										return (
 											<div
-												key={
-													project.projectCode
-														? `project-${project.projectCode}`
-														: `project-${project.projectName || pi}`
-												}
+												// biome-ignore lint/suspicious/noArrayIndexKey: Projects are not reorderable in this editor, and editable projectCode cannot be used as a stable key.
+												key={`project-${pi}`}
 												className="group overflow-hidden rounded-3xl bg-m3-surface-container-low shadow-xs transition hover:shadow-md p-4 text-m3-on-surface"
 											>
 												{/* Project header */}
