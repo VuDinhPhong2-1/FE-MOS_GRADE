@@ -555,7 +555,6 @@ export const useMultiGrading = ({
 				assignmentIdsByProjectNumber.set(projectNumber, existing);
 			}
 
-			const invalidFiles: string[] = [];
 			const unresolvedFiles: Array<{
 				file: File;
 				reason: string;
@@ -721,33 +720,25 @@ export const useMultiGrading = ({
 				});
 			}
 
-			if (
-				smartMatchedUploads.length > 0 ||
-				invalidFiles.length > 0 ||
-				unresolvedFiles.length > 0
-			) {
-				const notes: string[] = [];
-				if (smartMatchedUploads.length > 0) {
-					notes.push(
-						`Đã tự động nhận diện và gán ${smartMatchedUploads.length} file theo mã project.`,
-					);
-				}
-				if (invalidFiles.length > 0) {
-					notes.push(`Bỏ qua file sai định dạng: ${invalidFiles.join(", ")}`);
-				}
-				if (unresolvedFiles.length > 0) {
-					notes.push(
-						`Có ${unresolvedFiles.length} file cần chọn tay. Xử lý nhanh trong khung "File cần chọn tay" phía trên bảng.`,
-					);
-				}
-				if (notes.length > 0) {
-					void showAlert({
-						title: "Thông báo gán file",
-						message: notes.join("\n\n"),
-						variant: "info",
-					});
-				}
-			}
+			// Tắt popup "Thông báo gán file" để không che bảng chấm sau khi kéo thả.
+			// const notes: string[] = [];
+			// if (smartMatchedUploads.length > 0) {
+			// 	notes.push(
+			// 		`Đã tự động nhận diện và gán ${smartMatchedUploads.length} file theo mã project.`,
+			// 	);
+			// }
+			// if (unresolvedFiles.length > 0) {
+			// 	notes.push(
+			// 		`Có ${unresolvedFiles.length} file cần chọn tay. Xử lý nhanh trong khung "File cần chọn tay" phía trên bảng.`,
+			// 	);
+			// }
+			// if (notes.length > 0) {
+			// 	void showAlert({
+			// 		title: "Thông báo gán file",
+			// 		message: notes.join("\n\n"),
+			// 		variant: "info",
+			// 	});
+			// }
 		},
 		[multiAssignmentIds, assignments, uploadMultiStudentFile],
 	);

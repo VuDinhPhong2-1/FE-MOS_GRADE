@@ -127,6 +127,18 @@ const specialConditionOptions: Array<{
 			"Kiểm tra Page Border của Word: 4 cạnh Box, kiểu nét, màu và độ dày viền.",
 	},
 	{
+		value: "wordTableSort",
+		label: "Sắp xếp bảng Word",
+		description:
+			"Kiểm tra bảng Word đã được sắp xếp đúng theo một cột, ví dụ Flavor A-Z trong Project 03.",
+	},
+	{
+		value: "wordParagraphList",
+		label: "Danh sách Word",
+		description:
+			"Kiểm tra các đoạn văn đã được chuyển thành bullet/number list đúng item, level và numbering.",
+	},
+	{
 		value: "excelTableName",
 		label: "Tên bảng Excel",
 		description:
@@ -310,6 +322,8 @@ const specialConditionGroups: Array<{
 				"pageMargins",
 				"documentStyleSet",
 				"pageBorder",
+				"wordTableSort",
+				"wordParagraphList",
 			].includes(option.value),
 	},
 	{
@@ -3930,6 +3944,96 @@ const XmlGradingRulesPage = () => {
 																													}
 																													if (
 																														value ===
+																														"wordTableSort"
+																													) {
+																														updateTaskSpecialCondition(
+																															pi,
+																															ti,
+																															{
+																																type: "wordTableSort",
+																																score:
+																																	task
+																																		.specialCondition
+																																		?.score ??
+																																	0,
+																																feedback:
+																																	task
+																																		.specialCondition
+																																		?.feedback ??
+																																	defaultSpecialConditionFeedback(
+																																		value as SpecialConditionType,
+																																	),
+																																wordTableSortConfig:
+																																	task
+																																		.specialCondition
+																																		?.wordTableSortConfig ?? {
+																																		sourceFile:
+																																			"word/document.xml",
+																																		anchorText:
+																																			"Our Most Popular Flavors!",
+																																		tableIndexAfterAnchor: 1,
+																																		sortColumnIndex: 1,
+																																		hasHeaderRow: true,
+																																		descending: false,
+																																		expectedFirstColumnValues:
+																																			[
+																																				"Chocolate Heaven Splurge",
+																																				"Fruit Heaven Splurge",
+																																				"Jawbreaker Mint",
+																																				"Pecan and Peanut Truffle",
+																																				"Whole Vanilla Bean Chunk",
+																																			],
+																																		requireExactOrder: true,
+																																	},
+																															},
+																														);
+																													}
+																													if (
+																														value ===
+																														"wordParagraphList"
+																													) {
+																														updateTaskSpecialCondition(
+																															pi,
+																															ti,
+																															{
+																																type: "wordParagraphList",
+																																score:
+																																	task
+																																		.specialCondition
+																																		?.score ??
+																																	0,
+																																feedback:
+																																	task
+																																		.specialCondition
+																																		?.feedback ??
+																																	defaultSpecialConditionFeedback(
+																																		value as SpecialConditionType,
+																																	),
+																																wordParagraphListConfig:
+																																	task
+																																		.specialCondition
+																																		?.wordParagraphListConfig ?? {
+																																		sourceFile:
+																																			"word/document.xml",
+																																		anchorText:
+																																			"Below is a list of our biggest clients.",
+																																		expectedItems:
+																																			[
+																																				"The Party People",
+																																				"Birthdays R Us",
+																																				"Did You Say Party?",
+																																				"I Scream, U Scream",
+																																			],
+																																		listType:
+																																			"bullet",
+																																		level: 0,
+																																		requireSameNumbering: true,
+																																	},
+																															},
+																														);
+																													}
+																													if (
+																														value ===
 																														"pageMargins"
 																													) {
 																														updateTaskSpecialCondition(
@@ -6172,6 +6276,459 @@ const XmlGradingRulesPage = () => {
 																										}
 																										className={inputClass}
 																									/>
+																								</label>
+																							</div>
+																						)}
+																						{task.specialCondition?.type ===
+																							"wordTableSort" && (
+																							<div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
+																								<div className="grid gap-3 md:grid-cols-3">
+																									<label className="text-xs font-semibold text-slate-600">
+																										File nguồn
+																										<input
+																											value={
+																												task.specialCondition
+																													.wordTableSortConfig
+																													?.sourceFile ??
+																												"word/document.xml"
+																											}
+																											onChange={(e) => {
+																												const currentConfig =
+																													task.specialCondition
+																														?.wordTableSortConfig ??
+																													{};
+																												updateTaskSpecialCondition(
+																													pi,
+																													ti,
+																													{
+																														...task.specialCondition!,
+																														type: "wordTableSort",
+																														wordTableSortConfig:
+																															{
+																																...currentConfig,
+																																sourceFile:
+																																	e.target
+																																		.value,
+																															},
+																													},
+																												);
+																											}}
+																											placeholder="word/document.xml"
+																											className={inputClass}
+																										/>
+																									</label>
+																									<label className="text-xs font-semibold text-slate-600">
+																										Anchor trước bảng
+																										<input
+																											value={
+																												task.specialCondition
+																													.wordTableSortConfig
+																													?.anchorText ?? ""
+																											}
+																											onChange={(e) => {
+																												const currentConfig =
+																													task.specialCondition
+																														?.wordTableSortConfig ??
+																													{};
+																												updateTaskSpecialCondition(
+																													pi,
+																													ti,
+																													{
+																														...task.specialCondition!,
+																														type: "wordTableSort",
+																														wordTableSortConfig:
+																															{
+																																...currentConfig,
+																																anchorText:
+																																	e.target
+																																		.value,
+																															},
+																													},
+																												);
+																											}}
+																											placeholder="Our Most Popular Flavors!"
+																											className={inputClass}
+																										/>
+																									</label>
+																									<label className="text-xs font-semibold text-slate-600">
+																										Cột sort
+																										<input
+																											type="number"
+																											min={1}
+																											value={
+																												task.specialCondition
+																													.wordTableSortConfig
+																													?.sortColumnIndex ??
+																												1
+																											}
+																											onChange={(e) => {
+																												const currentConfig =
+																													task.specialCondition
+																														?.wordTableSortConfig ??
+																													{};
+																												updateTaskSpecialCondition(
+																													pi,
+																													ti,
+																													{
+																														...task.specialCondition!,
+																														type: "wordTableSort",
+																														wordTableSortConfig:
+																															{
+																																...currentConfig,
+																																sortColumnIndex:
+																																	Number(
+																																		e.target
+																																			.value,
+																																	),
+																															},
+																													},
+																												);
+																											}}
+																											className={inputClass}
+																										/>
+																									</label>
+																								</div>
+																								<label className="mt-3 block text-xs font-semibold text-slate-600">
+																									Thứ tự giá trị mong đợi
+																									<textarea
+																										value={(
+																											task.specialCondition
+																												.wordTableSortConfig
+																												?.expectedFirstColumnValues ??
+																											[]
+																										).join("\n")}
+																										onChange={(e) => {
+																											const currentConfig =
+																												task.specialCondition
+																													?.wordTableSortConfig ??
+																												{};
+																											updateTaskSpecialCondition(
+																												pi,
+																												ti,
+																												{
+																													...task.specialCondition!,
+																													type: "wordTableSort",
+																													wordTableSortConfig:
+																														{
+																															...currentConfig,
+																															expectedFirstColumnValues:
+																																e.target.value
+																																	.split(
+																																		/\r?\n/,
+																																	)
+																																	.map((line) =>
+																																		line.trim(),
+																																	)
+																																	.filter(
+																																		Boolean,
+																																	),
+																														},
+																												},
+																											);
+																										}}
+																										rows={5}
+																										className={inputClass}
+																									/>
+																								</label>
+																								<div className="mt-3 grid gap-3 md:grid-cols-3">
+																									<label className="flex items-center gap-2 text-xs font-medium text-slate-600">
+																										<input
+																											type="checkbox"
+																											checked={
+																												task.specialCondition
+																													.wordTableSortConfig
+																													?.hasHeaderRow !==
+																												false
+																											}
+																											onChange={(e) => {
+																												const currentConfig =
+																													task.specialCondition
+																														?.wordTableSortConfig ??
+																													{};
+																												updateTaskSpecialCondition(
+																													pi,
+																													ti,
+																													{
+																														...task.specialCondition!,
+																														type: "wordTableSort",
+																														wordTableSortConfig:
+																															{
+																																...currentConfig,
+																																hasHeaderRow:
+																																	e.target
+																																		.checked,
+																															},
+																													},
+																												);
+																											}}
+																											className="h-4 w-4 accent-blue-600"
+																										/>
+																										Có hàng tiêu đề
+																									</label>
+																									<label className="flex items-center gap-2 text-xs font-medium text-slate-600">
+																										<input
+																											type="checkbox"
+																											checked={
+																												task.specialCondition
+																													.wordTableSortConfig
+																													?.descending ??
+																												false
+																											}
+																											onChange={(e) => {
+																												const currentConfig =
+																													task.specialCondition
+																														?.wordTableSortConfig ??
+																													{};
+																												updateTaskSpecialCondition(
+																													pi,
+																													ti,
+																													{
+																														...task.specialCondition!,
+																														type: "wordTableSort",
+																														wordTableSortConfig:
+																															{
+																																...currentConfig,
+																																descending:
+																																	e.target
+																																		.checked,
+																															},
+																													},
+																												);
+																											}}
+																											className="h-4 w-4 accent-blue-600"
+																										/>
+																										Z-A
+																									</label>
+																									<label className="flex items-center gap-2 text-xs font-medium text-slate-600">
+																										<input
+																											type="checkbox"
+																											checked={
+																												task.specialCondition
+																													.wordTableSortConfig
+																													?.requireExactOrder !==
+																												false
+																											}
+																											onChange={(e) => {
+																												const currentConfig =
+																													task.specialCondition
+																														?.wordTableSortConfig ??
+																													{};
+																												updateTaskSpecialCondition(
+																													pi,
+																													ti,
+																													{
+																														...task.specialCondition!,
+																														type: "wordTableSort",
+																														wordTableSortConfig:
+																															{
+																																...currentConfig,
+																																requireExactOrder:
+																																	e.target
+																																		.checked,
+																															},
+																													},
+																												);
+																											}}
+																											className="h-4 w-4 accent-blue-600"
+																										/>
+																										Bắt đúng thứ tự cấu hình
+																									</label>
+																								</div>
+																							</div>
+																						)}
+																						{task.specialCondition?.type ===
+																							"wordParagraphList" && (
+																							<div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
+																								<div className="grid gap-3 md:grid-cols-3">
+																									<label className="text-xs font-semibold text-slate-600">
+																										File nguồn
+																										<input
+																											value={
+																												task.specialCondition
+																													.wordParagraphListConfig
+																													?.sourceFile ??
+																												"word/document.xml"
+																											}
+																											onChange={(e) => {
+																												const currentConfig =
+																													task.specialCondition
+																														?.wordParagraphListConfig ??
+																													{};
+																												updateTaskSpecialCondition(
+																													pi,
+																													ti,
+																													{
+																														...task.specialCondition!,
+																														type: "wordParagraphList",
+																														wordParagraphListConfig:
+																															{
+																																...currentConfig,
+																																sourceFile:
+																																	e.target
+																																		.value,
+																															},
+																													},
+																												);
+																											}}
+																											placeholder="word/document.xml"
+																											className={inputClass}
+																										/>
+																									</label>
+																									<label className="text-xs font-semibold text-slate-600">
+																										Anchor trước danh sách
+																										<input
+																											value={
+																												task.specialCondition
+																													.wordParagraphListConfig
+																													?.anchorText ?? ""
+																											}
+																											onChange={(e) => {
+																												const currentConfig =
+																													task.specialCondition
+																														?.wordParagraphListConfig ??
+																													{};
+																												updateTaskSpecialCondition(
+																													pi,
+																													ti,
+																													{
+																														...task.specialCondition!,
+																														type: "wordParagraphList",
+																														wordParagraphListConfig:
+																															{
+																																...currentConfig,
+																																anchorText:
+																																	e.target
+																																		.value,
+																															},
+																													},
+																												);
+																											}}
+																											placeholder="Below is a list..."
+																											className={inputClass}
+																										/>
+																									</label>
+																									<label className="text-xs font-semibold text-slate-600">
+																										Loại list
+																										<select
+																											value={
+																												task.specialCondition
+																													.wordParagraphListConfig
+																													?.listType ??
+																												"bullet"
+																											}
+																											onChange={(e) => {
+																												const currentConfig =
+																													task.specialCondition
+																														?.wordParagraphListConfig ??
+																													{};
+																												updateTaskSpecialCondition(
+																													pi,
+																													ti,
+																													{
+																														...task.specialCondition!,
+																														type: "wordParagraphList",
+																														wordParagraphListConfig:
+																															{
+																																...currentConfig,
+																																listType: e
+																																	.target
+																																	.value as
+																																	| "any"
+																																	| "bullet"
+																																	| "number",
+																															},
+																													},
+																												);
+																											}}
+																											className={inputClass}
+																										>
+																											<option value="bullet">
+																												Bullet
+																											</option>
+																											<option value="number">
+																												Number
+																											</option>
+																											<option value="any">
+																												Bất kỳ
+																											</option>
+																										</select>
+																									</label>
+																								</div>
+																								<label className="mt-3 block text-xs font-semibold text-slate-600">
+																									Các item mong đợi
+																									<textarea
+																										value={(
+																											task.specialCondition
+																												.wordParagraphListConfig
+																												?.expectedItems ??
+																											[]
+																										).join("\n")}
+																										onChange={(e) => {
+																											const currentConfig =
+																												task.specialCondition
+																													?.wordParagraphListConfig ??
+																												{};
+																											updateTaskSpecialCondition(
+																												pi,
+																												ti,
+																												{
+																													...task.specialCondition!,
+																													type: "wordParagraphList",
+																													wordParagraphListConfig:
+																														{
+																															...currentConfig,
+																															expectedItems:
+																																e.target.value
+																																	.split(
+																																		/\r?\n/,
+																																	)
+																																	.map((line) =>
+																																		line.trim(),
+																																	)
+																																	.filter(
+																																		Boolean,
+																																	),
+																														},
+																												},
+																											);
+																										}}
+																										rows={5}
+																										className={inputClass}
+																									/>
+																								</label>
+																								<label className="mt-3 flex items-center gap-2 text-xs font-medium text-slate-600">
+																									<input
+																										type="checkbox"
+																										checked={
+																											task.specialCondition
+																												.wordParagraphListConfig
+																												?.requireSameNumbering !==
+																											false
+																										}
+																										onChange={(e) => {
+																											const currentConfig =
+																												task.specialCondition
+																													?.wordParagraphListConfig ??
+																												{};
+																											updateTaskSpecialCondition(
+																												pi,
+																												ti,
+																												{
+																													...task.specialCondition!,
+																													type: "wordParagraphList",
+																													wordParagraphListConfig:
+																														{
+																															...currentConfig,
+																															requireSameNumbering:
+																																e.target
+																																	.checked,
+																														},
+																												},
+																											);
+																										}}
+																										className="h-4 w-4 accent-blue-600"
+																									/>
+																									Các item dùng cùng numbering
 																								</label>
 																							</div>
 																						)}

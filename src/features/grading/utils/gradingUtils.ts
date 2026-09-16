@@ -64,7 +64,7 @@ export const extractProjectNumberFromEndpoint = (
 		/^(excel|word|ppt|powerpoint)\/(?:(?:exam0[1-3]|practice0[1-3])\/)?project(\d{1,2})$/i,
 	);
 	if (subjectProjectMatch) {
-		return Number.parseInt(subjectProjectMatch[1], 10);
+		return Number.parseInt(subjectProjectMatch[2], 10);
 	}
 
 	return null;

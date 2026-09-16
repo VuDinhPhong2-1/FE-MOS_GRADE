@@ -47,6 +47,8 @@ export type SpecialConditionType =
 	| "pageMargins"
 	| "documentStyleSet"
 	| "pageBorder"
+	| "wordTableSort"
+	| "wordParagraphList"
 	| "excelTableName"
 	| "excelWorksheetPageSetup"
 	| "excelClearCellFormatting"
@@ -142,6 +144,8 @@ export interface PictureStyleConfig {
 	requiredLineColor?: string;
 	minLineWidth?: number;
 	presetGeometry?: string;
+	requiredArtisticEffect?: string;
+	requiredCameraPreset?: string;
 }
 
 export interface TextBoxContainsTextConfig {
@@ -183,6 +187,26 @@ export interface PageBorderConfig {
 	allowedColors?: string[];
 	requireBox?: boolean;
 	requireAllSections?: boolean;
+}
+
+export interface WordTableSortConfig {
+	sourceFile?: string;
+	anchorText?: string;
+	tableIndexAfterAnchor?: number;
+	sortColumnIndex?: number;
+	hasHeaderRow?: boolean;
+	descending?: boolean;
+	expectedFirstColumnValues?: string[];
+	requireExactOrder?: boolean;
+}
+
+export interface WordParagraphListConfig {
+	sourceFile?: string;
+	anchorText?: string;
+	expectedItems?: string[];
+	listType?: "any" | "bullet" | "number";
+	level?: number;
+	requireSameNumbering?: boolean;
 }
 
 export interface ExcelTableNameConfig {
@@ -411,6 +435,8 @@ export interface SpecialCondition {
 	pageMarginsConfig?: PageMarginsConfig;
 	documentStyleSetConfig?: DocumentStyleSetConfig;
 	pageBorderConfig?: PageBorderConfig;
+	wordTableSortConfig?: WordTableSortConfig;
+	wordParagraphListConfig?: WordParagraphListConfig;
 	excelTableNameConfig?: ExcelTableNameConfig;
 	excelWorksheetPageSetupConfig?: ExcelWorksheetPageSetupConfig;
 	excelClearCellFormattingConfig?: ExcelClearCellFormattingConfig;

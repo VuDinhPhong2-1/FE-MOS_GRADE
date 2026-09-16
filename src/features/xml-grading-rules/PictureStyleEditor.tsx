@@ -422,6 +422,28 @@ const PictureStyleEditor = ({
 						))}
 					</select>
 				</label>
+				<label className="text-xs font-semibold text-slate-600">
+					Artistic effect
+					<input
+						value={config?.requiredArtisticEffect ?? ""}
+						onChange={(e) =>
+							patchConfig({ requiredArtisticEffect: e.target.value })
+						}
+						placeholder="artisticPaintBrush"
+						className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition hover:border-slate-300 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
+					/>
+				</label>
+				<label className="text-xs font-semibold text-slate-600">
+					3-D rotation camera
+					<input
+						value={config?.requiredCameraPreset ?? ""}
+						onChange={(e) =>
+							patchConfig({ requiredCameraPreset: e.target.value })
+						}
+						placeholder="isometricOffAxis1Right"
+						className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition hover:border-slate-300 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
+					/>
+				</label>
 			</div>
 		</div>
 	);
