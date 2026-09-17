@@ -192,7 +192,7 @@ const ClassAnalyticsPanelComponent = ({
 				)}
 
 				{loading ? (
-					<div className="flex flex-col items-center justify-center gap-3 rounded-2xl bg-m3-surface-container-low px-4 py-8 text-sm text-m3-on-surface-variant">
+					<div className="flex flex-col items-center justify-center gap-3 rounded-xl bg-m3-surface-container-low px-4 py-8 text-sm text-m3-on-surface-variant">
 						<ProgressIndicator
 							variant="circular"
 							shape="wavy"

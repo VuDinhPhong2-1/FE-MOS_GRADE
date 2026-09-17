@@ -151,7 +151,7 @@ const ClassGradingPage = () => {
 
 	usePageHeader(
 		{
-			title: `Chấm điểm: ${classDisplayName}`,
+			title: `Chấm điểm ${classDisplayName}`,
 			subtitle: `Tổng ${students.length} học sinh · Hoạt động ${activeStudents.length}`,
 			actions: [
 				{

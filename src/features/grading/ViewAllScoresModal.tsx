@@ -27,6 +27,7 @@ import { type NotifyIssue, notify } from "../../utils/notify";
 
 import {
 	type AssignmentColumnDisplayMode,
+	buildDiscoveredPracticeColumns,
 	type CompetencyLevel,
 	classificationClassMap,
 	classificationLevels,
@@ -35,6 +36,7 @@ import {
 	extractProjectNumberFromEndpoint,
 	formatScore,
 	getPercentagePillClass,
+	getPracticeColumnTheme,
 	getPracticeCompletionHeaderLabel,
 	getPracticeExcelScoreHeaderLabel,
 	getPracticeScoreHeaderLabel,
@@ -42,8 +44,6 @@ import {
 	getSummaryColumnKey,
 	isStudentTakingExam,
 	normalizeClassification,
-	getPracticeColumnTheme,
-	buildDiscoveredPracticeColumns,
 	type PracticeCode,
 	type PracticeSummary,
 	resolveAssignmentPracticeCode,
@@ -1492,7 +1492,8 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 												const summary = row.practiceSummaries[practice.code];
 												const completionText = summary?.completionText ?? "0/0";
 												const totalScore = summary?.totalScore ?? 0;
-												const maxScore = practiceMaxScoreByCode[practice.code] || 0;
+												const maxScore =
+													practiceMaxScoreByCode[practice.code] || 0;
 
 												return [
 													completionVisible ? (
@@ -1510,9 +1511,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 															className={`border-r border-m3-outline-variant/40 px-4 py-3 text-right font-semibold ${theme.scoreCell}`}
 															title={`${practice.title}: tổng điểm chuẩn hóa theo thang ${formatScore(maxScore)}`}
 														>
-															{formatScore(totalScore)}
-															/
-															{formatScore(maxScore)}
+															{formatScore(totalScore)}/{formatScore(maxScore)}
 														</td>
 													) : null,
 												];

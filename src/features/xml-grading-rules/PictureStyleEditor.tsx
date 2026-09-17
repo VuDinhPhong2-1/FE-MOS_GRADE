@@ -427,8 +427,7 @@ const PictureStyleEditor = ({
 					Mau vien can co
 					<select
 						value={
-							config?.requiredLineColor ??
-							(isCustomStylePreset ? "" : "000000")
+							config?.requiredLineColor ?? (isCustomStylePreset ? "" : "000000")
 						}
 						onChange={(e) => patchConfig({ requiredLineColor: e.target.value })}
 						className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition hover:border-slate-300 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
@@ -461,7 +460,9 @@ const PictureStyleEditor = ({
 				<label className="text-xs font-semibold text-slate-600">
 					Dang khung/hinh anh
 					<select
-						value={config?.presetGeometry ?? (isCustomStylePreset ? "" : "rect")}
+						value={
+							config?.presetGeometry ?? (isCustomStylePreset ? "" : "rect")
+						}
 						onChange={(e) => patchConfig({ presetGeometry: e.target.value })}
 						className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition hover:border-slate-300 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
 					>

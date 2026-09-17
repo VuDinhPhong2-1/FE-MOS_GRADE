@@ -736,7 +736,8 @@ export const useSingleGrading = ({
 					scoreValue: Number(
 						Math.min(
 							Math.max(s.manualScore ?? 0, 0),
-							selectedAssignmentData?.maxScore && selectedAssignmentData.maxScore > 0
+							selectedAssignmentData?.maxScore &&
+								selectedAssignmentData.maxScore > 0
 								? selectedAssignmentData.maxScore
 								: 1000,
 						).toFixed(2),

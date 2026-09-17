@@ -100,7 +100,8 @@ export const AccountSection = () => {
 							Thông Tin Tài Khoản
 						</Text>
 						<Text variant="body-sm" className="text-m3-on-surface-variant">
-							Quản lý danh tính hồ sơ cá nhân và phiên đăng nhập hiện tại của bạn.
+							Quản lý danh tính hồ sơ cá nhân và phiên đăng nhập hiện tại của
+							bạn.
 						</Text>
 					</div>
 				</div>

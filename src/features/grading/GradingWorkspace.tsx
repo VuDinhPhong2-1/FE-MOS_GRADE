@@ -1,10 +1,4 @@
-import {
-	Button,
-	Icon,
-	IconButton,
-	ProgressIndicator,
-	Select,
-} from "@bug-on/m3-expressive";
+import { Button, Icon, ProgressIndicator } from "@bug-on/m3-expressive";
 import type React from "react";
 import { useMemo, useRef, useState } from "react";
 import type { Student } from "../../types/student.types";
@@ -15,9 +9,10 @@ import { EditAssignmentModal } from "./components/manage/EditAssignmentModal";
 import { ManageAssignmentsPanel } from "./components/manage/ManageAssignmentsPanel";
 import { MultiAssignmentSelector } from "./components/multi/MultiAssignmentSelector";
 import { MultiGradingTable } from "./components/multi/MultiGradingTable";
+import { MultiGradingToolbar } from "./components/multi/MultiGradingToolbar";
+import { StudentTableSearchBar } from "./components/StudentTableSearchBar";
 import { SingleGradingTable } from "./components/single/SingleGradingTable";
 import { SingleGradingToolbar } from "./components/single/SingleGradingToolbar";
-import { StudentTableSearchBar } from "./components/StudentTableSearchBar";
 import { useAssignmentManager } from "./hooks/useAssignmentManager";
 import { useGradingData } from "./hooks/useGradingData";
 import { useMultiGrading } from "./hooks/useMultiGrading";
@@ -48,7 +43,6 @@ export const GradingWorkspace: React.FC<GradingWorkspaceProps> = ({
 	students,
 	onClose,
 	onSuccess,
-	title = "Chấm điểm",
 	initialMode = null,
 }) => {
 	const [chooseMode, setChooseMode] = useState<GradingMode>(initialMode);
@@ -239,87 +233,8 @@ export const GradingWorkspace: React.FC<GradingWorkspaceProps> = ({
 
 	return (
 		<div className="w-full min-h-[calc(100vh-140px)] flex flex-col">
-			{/* Top Bar Header */}
-			<div className="flex flex-wrap items-center justify-between gap-4 pb-5 border-b border-m3-outline-variant/20">
-				<div>
-					<div className="flex items-center gap-2">
-						{chooseMode !== null && (
-							<IconButton
-								type="button"
-								size="sm"
-								colorStyle="standard"
-								onClick={handleBackToModes}
-								aria-label="Quay lại danh mục"
-							>
-								<Icon name="arrow_back" />
-							</IconButton>
-						)}
-						<h2 className="text-2xl font-bold text-m3-on-surface font-md3-expressive">
-							{title}
-						</h2>
-					</div>
-					<p className="text-xs text-m3-on-surface-variant mt-1">
-						Lớp học:{" "}
-						<span className="font-semibold text-m3-on-surface">{classId}</span>{" "}
-						• Tổng số học sinh:{" "}
-						<span className="font-semibold text-m3-on-surface">
-							{gradingStudents.length}
-						</span>
-					</p>
-				</div>
-
-				<div className="flex items-center gap-3">
-					{chooseMode === "existing-multi" && multiAssignmentIds.length > 0 && (
-						<Button
-							type="button"
-							colorStyle="filled"
-							onClick={handleSaveMultipleAssignments}
-							disabled={
-								multiLoading ||
-								isSelectingAssignments ||
-								hasPendingMultiAssignmentSelectionChanges
-							}
-							title={
-								hasPendingMultiAssignmentSelectionChanges
-									? "Vui lòng chốt lại danh sách bài tập trước khi lưu."
-									: undefined
-							}
-						>
-							{multiLoading ? (
-								<>
-									<ProgressIndicator
-										variant="circular"
-										shape="wavy"
-										size={16}
-										aria-label="Đang lưu..."
-									/>
-									Đang lưu...
-								</>
-							) : (
-								<>
-									<Icon name="save" className="text-base mr-1.5" />
-									Lưu điểm nhiều bài
-								</>
-							)}
-						</Button>
-					)}
-
-					{onClose && (
-						<IconButton
-							type="button"
-							size="sm"
-							colorStyle="standard"
-							onClick={onClose}
-							aria-label="Đóng bảng chấm điểm"
-						>
-							<Icon name="close" />
-						</IconButton>
-					)}
-				</div>
-			</div>
-
 			{/* Main Content Area */}
-			<div className="flex-1 pt-4">
+			<div className="flex-1">
 				{isLoadingAssignments && (
 					<div className="flex items-center justify-center py-12 gap-3 text-sm text-m3-on-surface-variant">
 						<ProgressIndicator
@@ -333,55 +248,22 @@ export const GradingWorkspace: React.FC<GradingWorkspaceProps> = ({
 				)}
 
 				{!isLoadingAssignments && chooseMode === null && (
-					<div className="space-y-6">
-						{/* Quick select dropdown for single assignment right from home */}
-						{activeAutoAssignments.length > 0 && (
-							<div className="max-w-2xl mx-auto p-4 rounded-3xl bg-m3-surface border border-m3-outline-variant/30 shadow-xs flex flex-col sm:flex-row items-center gap-3">
-								<div className="flex-1 w-full">
-									<Select
-										variant="outlined"
-										label="Chấm nhanh 1 bài tập cụ thể"
-										options={[
-											{ value: "", label: "Chọn bài tập để chấm lẻ" },
-											...activeAutoAssignments.map((a) => ({
-												value: a.id,
-												label: `${a.name} (Điểm tối đa: ${a.maxScore})`,
-											})),
-										]}
-										value={selectedAssignment}
-										onChange={(val) => {
-											if (val) {
-												setSelectedAssignment(val);
-												setChooseMode("existing");
-											}
-										}}
-										fullWidth
-									/>
-								</div>
-								{selectedAssignment && (
-									<Button
-										type="button"
-										colorStyle="filled"
-										onClick={() => setChooseMode("existing")}
-										className="w-full sm:w-auto"
-									>
-										Mở chấm điểm
-									</Button>
-								)}
-							</div>
-						)}
-
-						<GradingModeSelector
-							onSelectMode={(mode) => {
-								if (mode === "existing-multi") {
-									setMultiAssignmentIds([]);
-									setMultiAssignmentDraftIds([]);
-								}
-								setChooseMode(mode);
-							}}
-							activeAutoAssignmentCount={activeAutoAssignments.length}
-						/>
-					</div>
+					<GradingModeSelector
+						onSelectMode={(mode) => {
+							if (mode === "existing-multi") {
+								setMultiAssignmentIds([]);
+								setMultiAssignmentDraftIds([]);
+							}
+							setChooseMode(mode);
+						}}
+						activeAutoAssignmentCount={activeAutoAssignments.length}
+						activeAutoAssignments={activeAutoAssignments}
+						onSelectAssignment={(id) => {
+							setSelectedAssignment(id);
+							setChooseMode("existing");
+						}}
+						onBack={onClose}
+					/>
 				)}
 
 				{!isLoadingAssignments && chooseMode === "new" && (
@@ -490,16 +372,7 @@ export const GradingWorkspace: React.FC<GradingWorkspaceProps> = ({
 				)}
 
 				{!isLoadingAssignments && chooseMode === "existing-multi" && (
-					<div>
-						<Button
-							type="button"
-							colorStyle="text"
-							onClick={handleBackToModes}
-							className="mb-4 text-sm"
-						>
-							<Icon name="arrow_back" className="text-base mr-1.5" /> Quay lại
-						</Button>
-
+					<div className="pb-32">
 						<MultiAssignmentSelector
 							autoAssignments={activeAutoAssignments}
 							filteredAutoAssignments={filteredAutoAssignments}
@@ -606,6 +479,17 @@ export const GradingWorkspace: React.FC<GradingWorkspaceProps> = ({
 								);
 							}}
 							onClose={() => setPendingManualMultiFileMatches([])}
+						/>
+
+						<MultiGradingToolbar
+							onBack={handleBackToModes}
+							selectedCount={multiAssignmentIds.length}
+							totalAssignmentsCount={activeAutoAssignments.length}
+							isLoading={multiLoading}
+							hasPendingChanges={hasPendingMultiAssignmentSelectionChanges}
+							onSaveAll={handleSaveMultipleAssignments}
+							onSelectAll={handleSelectAllAutoAssignments}
+							onClear={handleClearAutoAssignments}
 						/>
 					</div>
 				)}

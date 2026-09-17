@@ -88,7 +88,7 @@ const variantStyles: Record<
 	success: {
 		icon: "check_circle",
 		iconContainerClass:
-			"bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
+			"bg-emerald-100 rounded-full text-emerald-700 dark:bg-m3-primary-container dark:text-m3-on-primary",
 		titleClass: "text-emerald-800 dark:text-emerald-300",
 		defaultTitle: "Thành công",
 	},

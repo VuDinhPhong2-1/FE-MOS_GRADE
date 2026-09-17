@@ -17,9 +17,9 @@ export const useStudentTableSearch = ({
 		string[]
 	>([]);
 	const [studentSearchMatchIndex, setStudentSearchMatchIndex] = useState(-1);
-	const [highlightedStudentId, setHighlightedStudentId] = useState<string | null>(
-		null,
-	);
+	const [highlightedStudentId, setHighlightedStudentId] = useState<
+		string | null
+	>(null);
 	const [lastStudentSearchKeyword, setLastStudentSearchKeyword] = useState("");
 
 	const scrollRowIntoStudentTable = (row: HTMLTableRowElement) => {

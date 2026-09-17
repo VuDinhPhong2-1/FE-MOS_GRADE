@@ -225,7 +225,7 @@ const ScheduleActionToolbarComponent = ({
 									onClick={onCopySelectedToNextWeek}
 									disabled={copying || loading}
 								>
-									<Icon name="content_copy" className="text-sm" />
+									<Icon name="content_copy" size={20} />
 								</IconButton>
 							</TooltipBox>
 
@@ -244,7 +244,7 @@ const ScheduleActionToolbarComponent = ({
 									onClick={onDeleteSelected}
 									disabled={loading}
 								>
-									<Icon name="delete" className="text-sm" />
+									<Icon name="delete" size={20} />
 								</IconButton>
 							</TooltipBox>
 
@@ -259,7 +259,7 @@ const ScheduleActionToolbarComponent = ({
 									size="sm"
 									onClick={onClearSelection}
 								>
-									<Icon name="close" className="text-sm" />
+									<Icon name="close" size={20} />
 								</IconButton>
 							</TooltipBox>
 						</div>

@@ -79,46 +79,56 @@ export const SchoolTable = memo(function SchoolTable({
 						align: "center",
 					},
 					cell: ({ row }) => (
-						<ButtonDistribute
-							mode="dynamic"
-							size="sm"
-							weights={[2, 1]}
-							gap={4}
-							expandRatio={0.1}
+						<div
+							role="toolbar"
+							aria-label="Thao tác"
+							className="inline-flex items-center justify-center"
+							onClick={(e) => e.stopPropagation()}
+							onKeyDown={(e) => e.stopPropagation()}
 						>
-							<IconButton
-								type="button"
+							<ButtonDistribute
+								mode="dynamic"
 								size="sm"
-								colorStyle="standard"
-								disabled={isDeleting}
-								onClick={(e) => {
-									e.stopPropagation();
-									onEditSchool(row.original);
-								}}
-								title="Chỉnh sửa trường"
-								aria-label={`Chỉnh sửa trường ${row.original.name}`}
+								weights={[2, 1]}
+								gap={4}
+								expandRatio={0.1}
 							>
-								<Icon name="edit" className="text-base" />
-							</IconButton>
-							{canDeleteSchool && (
 								<IconButton
 									type="button"
 									size="sm"
 									colorStyle="standard"
 									disabled={isDeleting}
-									loading={isDeleting && schoolToDelete?.id === row.original.id}
 									onClick={(e) => {
 										e.stopPropagation();
-										onDeleteSchool(row.original);
+										onEditSchool(row.original);
 									}}
-									className="text-m3-error hover:bg-m3-error-container hover:text-m3-on-error-container"
-									title="Xóa trường"
-									aria-label={`Xóa trường ${row.original.name}`}
+									title="Chỉnh sửa trường"
+									aria-label={`Chỉnh sửa trường ${row.original.name}`}
 								>
-									<Icon name="delete" className="text-base" />
+									<Icon name="edit" className="text-base" />
 								</IconButton>
-							)}
-						</ButtonDistribute>
+								{canDeleteSchool && (
+									<IconButton
+										type="button"
+										size="sm"
+										colorStyle="standard"
+										disabled={isDeleting}
+										loading={
+											isDeleting && schoolToDelete?.id === row.original.id
+										}
+										onClick={(e) => {
+											e.stopPropagation();
+											onDeleteSchool(row.original);
+										}}
+										className="text-m3-error hover:bg-m3-error-container hover:text-m3-on-error-container"
+										title="Xóa trường"
+										aria-label={`Xóa trường ${row.original.name}`}
+									>
+										<Icon name="delete" className="text-base" />
+									</IconButton>
+								)}
+							</ButtonDistribute>
+						</div>
 					),
 				}),
 			]),
