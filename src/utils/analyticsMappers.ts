@@ -17,6 +17,8 @@ export function mapWeakTasksToBarChart(rows: WeakTaskResponse[]) {
 		x: r.taskId,
 		y: r.failedRate,
 		label: r.taskName,
+		projectEndpoint: r.projectEndpoint || "",
+		projectId: r.projectId || "",
 		attempts: r.attemptCount,
 		failed: r.failedCount,
 	}));

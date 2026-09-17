@@ -10,6 +10,8 @@ export interface ClassAnalyticsOverviewResponse {
 export interface WeakTaskResponse {
 	taskId: string;
 	taskName: string;
+	projectEndpoint?: string;
+	projectId?: string;
 	attemptCount: number;
 	failedCount: number;
 	failedRate: number;

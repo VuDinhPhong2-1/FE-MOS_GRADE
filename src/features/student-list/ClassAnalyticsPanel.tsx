@@ -25,6 +25,35 @@ interface ClassAnalyticsPanelProps {
 
 const pct = (v: number) => `${Number.isFinite(v) ? v.toFixed(2) : "0.00"}%`;
 
+const getProjectDisplayName = (
+	projectEndpoint?: string,
+	projectId?: string,
+	assignmentsList: Assignment[] = [],
+) => {
+	const cleanEp = (projectEndpoint || "").replace(/^\/?grading\/?/i, "").trim();
+	if (cleanEp) {
+		const matched = assignmentsList.find(
+			(a) =>
+				(a.gradingApiEndpoint || "")
+					.replace(/^\/?grading\/?/i, "")
+					.trim()
+					.toLowerCase() === cleanEp.toLowerCase(),
+		);
+		if (matched?.name) return matched.name;
+
+		const parts = cleanEp.split("/");
+		if (parts.length === 2) {
+			const subject = parts[0].toUpperCase();
+			const proj = parts[1].replace(/project/i, "Project ");
+			return `${subject} - ${proj.charAt(0).toUpperCase() + proj.slice(1)}`;
+		}
+		return cleanEp;
+	}
+
+	if (projectId) return projectId;
+	return "Dự án chung";
+};
+
 const TOP_OPTIONS: SelectOption[] = [
 	{ value: "5", label: "Top 5 câu sai nhiều" },
 	{ value: "10", label: "Top 10 câu sai nhiều" },
@@ -57,9 +86,12 @@ const ClassAnalyticsPanelComponent = ({
 	const endpointSelectOptions: SelectOption[] = useMemo(
 		() => [
 			{ value: "", label: "Tất cả dự án" },
-			...endpointOptions.map((ep) => ({ value: ep, label: ep })),
+			...endpointOptions.map((ep) => ({
+				value: ep,
+				label: getProjectDisplayName(ep, undefined, assignments),
+			})),
 		],
-		[endpointOptions],
+		[endpointOptions, assignments],
 	);
 
 	useEffect(() => {
@@ -239,9 +271,9 @@ const ClassAnalyticsPanelComponent = ({
 								<Icon name="warning" className="text-m3-error text-lg" />
 								Các câu yếu nhất (lần chấm mới nhất mỗi học sinh)
 							</div>
-							<div className="mb-2 text-[11px] text-m3-on-surface-variant">
+							<div className="mb-3 text-[11px] text-m3-on-surface-variant">
 								Chỉ tính lỗi từ lần chấm gần nhất của từng học sinh trong bộ lọc
-								hiện tại.
+								hiện tại. Phân tích chi tiết câu sai theo từng dự án.
 							</div>
 							<div className="space-y-2.5">
 								{weakTaskChartRows.length === 0 && (
@@ -249,25 +281,56 @@ const ClassAnalyticsPanelComponent = ({
 										Không có dữ liệu câu yếu.
 									</div>
 								)}
-								{weakTaskChartRows.map((row) => (
-									<div key={row.x} className="space-y-1.5">
-										<div className="flex justify-between text-xs">
-											<span className="font-semibold text-m3-on-surface">
-												{row.x}
-											</span>
-											<span className="font-medium text-m3-error">
-												{pct(row.y)} ({row.failed}/{row.attempts})
-											</span>
+								{weakTaskChartRows.map((row) => {
+									const projectName = getProjectDisplayName(
+										row.projectEndpoint,
+										row.projectId,
+										assignments,
+									);
+									const hasDifferentLabel =
+										row.label &&
+										row.label.trim().toLowerCase() !==
+											row.x.trim().toLowerCase();
+
+									return (
+										<div
+											key={`${row.projectEndpoint || ""}_${row.projectId || ""}_${row.x}`}
+											className="rounded-xl border border-m3-outline-variant/60 bg-m3-surface-container-low/50 p-3 space-y-2 hover:bg-m3-surface-container-low transition-colors"
+										>
+											<div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between">
+												<div className="flex flex-wrap items-center gap-2">
+													<span className="inline-flex items-center gap-1 rounded-md bg-m3-secondary-container/80 px-2 py-0.5 text-[11px] font-semibold text-m3-on-secondary-container">
+														<Icon name="folder_open" size={13} />
+														{projectName}
+													</span>
+													<span className="font-semibold text-sm text-m3-on-surface">
+														{row.x}
+													</span>
+													{hasDifferentLabel && (
+														<span className="text-xs text-m3-on-surface-variant line-clamp-1">
+															- {row.label}
+														</span>
+													)}
+												</div>
+												<div className="flex items-center gap-2 text-xs">
+													<span className="text-m3-on-surface-variant font-medium">
+														Sai {row.failed}/{row.attempts} học sinh
+													</span>
+													<span className="font-bold text-m3-error bg-m3-error-container/40 px-2 py-0.5 rounded-full">
+														{pct(row.y)}
+													</span>
+												</div>
+											</div>
+											<ProgressIndicator
+												variant="linear"
+												shape="flat"
+												value={Math.max(0, Math.min(100, row.y))}
+												aria-label={`Tỉ lệ sai ${projectName} câu ${row.x}: ${pct(row.y)}`}
+												className="h-2 w-full rounded-full bg-m3-error-container/30 [&>div]:bg-m3-error"
+											/>
 										</div>
-										<ProgressIndicator
-											variant="linear"
-											shape="flat"
-											value={Math.max(0, Math.min(100, row.y))}
-											aria-label={`Tỉ lệ sai câu ${row.x}: ${pct(row.y)}`}
-											className="h-2 w-full rounded-full bg-m3-error-container/30 [&>div]:bg-m3-error"
-										/>
-									</div>
-								))}
+									);
+								})}
 							</div>
 						</Card>
 
