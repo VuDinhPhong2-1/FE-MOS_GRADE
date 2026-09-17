@@ -27,7 +27,7 @@ import {
 const FIXED_PROFESSIONAL_REPORT_FIELDS = {
 	plannedLessons: "60",
 	ongoingPracticeCompletions: "0",
-	gmetrixResultRate: "0%",
+	gmetrixResultRate: "GM1 (0%), GM2 (0%)",
 } as const;
 
 const mergeComputerRoomDetail = (

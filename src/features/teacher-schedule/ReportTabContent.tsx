@@ -41,7 +41,7 @@ type ClassCount = {
 
 const FIXED_PLANNED_LESSONS = "60";
 const FIXED_PRACTICE_COMPLETIONS = "0";
-const FIXED_GMETRIX_RESULT_RATE = "0%";
+const FIXED_GMETRIX_RESULT_RATE = "GM1 (0%), GM2 (0%)";
 
 const isRecord = (value: unknown): value is AnyRecord =>
 	typeof value === "object" && value !== null && !Array.isArray(value);
@@ -506,7 +506,7 @@ const buildProfessionalZaloReport = (
 		`- Tên Giáo Viên: ${fallbackText(report.teacherName)}`,
 		`- Lớp: ${fallbackText(report.className)}`,
 		`- Môn: ${fallbackText(report.subjectName)}`,
-		`- Tài liệu dạy: ${fallbackText(report.teachingMaterials)}`,
+		`- Tài liệu dạy: ${fallbackText(report.teachingMaterials || "THDD")}`,
 		`- Nội dung dạy: ${fallbackText(report.teachingContent)}`,
 		`- Số tiết dự kiến: ${FIXED_PLANNED_LESSONS}`,
 		`- Số tiết đã dạy: ${fallbackText(report.taughtLessons)}`,
@@ -1059,7 +1059,7 @@ export const ReportTabContent = ({
 							<TextField
 								dense
 								variant="filled"
-								label="Tỷ lệ kết quả Gmetrix"
+								label="Tỷ lệ kết quả điểm GMetrix"
 								value={FIXED_GMETRIX_RESULT_RATE}
 								readOnly
 								className="w-full"

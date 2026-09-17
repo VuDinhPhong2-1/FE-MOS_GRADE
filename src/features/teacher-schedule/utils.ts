@@ -374,12 +374,12 @@ export const emptyProfessionalReport = (): ScheduleProfessionalReport => ({
 	teacherName: "",
 	className: "",
 	subjectName: "",
-	teachingMaterials: "",
+	teachingMaterials: "THDD",
 	teachingContent: "",
 	plannedLessons: "",
 	taughtLessons: "",
 	ongoingPracticeCompletions: "",
-	gmetrixResultRate: "",
+	gmetrixResultRate: "GM1 (0%), GM2 (0%)",
 });
 
 export const emptyEndLessonReport = (): ScheduleEndLessonReport => ({
@@ -473,6 +473,10 @@ export const buildReportsDraft = (
 			teacherName: source.professional?.teacherName || teacherName || "",
 			className: source.professional?.className || data.className || "",
 			subjectName: source.professional?.subjectName || data.subject || "",
+			teachingMaterials:
+				source.professional?.teachingMaterials || "THDD",
+			gmetrixResultRate:
+				source.professional?.gmetrixResultRate || "GM1 (0%), GM2 (0%)",
 		},
 		endLesson: {
 			...emptyEndLessonReport(),
