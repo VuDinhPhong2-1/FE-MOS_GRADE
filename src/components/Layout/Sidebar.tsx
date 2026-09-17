@@ -32,10 +32,7 @@ export const Sidebar = ({ navItems, onNavigate }: SidebarProps) => {
 			return location.pathname.startsWith("/assignments");
 		}
 		if (path === "/grading") {
-			return (
-				location.pathname.startsWith("/grading") ||
-				location.pathname.startsWith("/scores")
-			);
+			return location.pathname === "/grading";
 		}
 		return location.pathname.startsWith(path);
 	};

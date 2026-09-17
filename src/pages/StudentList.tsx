@@ -171,7 +171,7 @@ const StudentList = ({
 
 		if (!selectedClassId) return;
 
-		navigate(`/grading/class/${selectedClassId}`, {
+		navigate(`/classes/${selectedClassId}/grading`, {
 			state: {
 				className: selectedClassName,
 				returnPath,

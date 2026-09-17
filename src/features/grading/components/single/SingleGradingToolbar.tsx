@@ -1,9 +1,4 @@
-import {
-	Button,
-	Icon,
-	ProgressIndicator,
-	Select,
-} from "@bug-on/m3-expressive";
+import { Button, Icon, ProgressIndicator, Select } from "@bug-on/m3-expressive";
 import type React from "react";
 import { useMemo } from "react";
 import type { Assignment } from "../../../../types/assignment.types";

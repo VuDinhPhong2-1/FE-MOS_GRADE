@@ -6358,8 +6358,7 @@ const XmlGradingRulesPage = () => {
 																											value={
 																												task.specialCondition
 																													.wordTableSortConfig
-																													?.sortColumnIndex ??
-																												1
+																													?.sortColumnIndex ?? 1
 																											}
 																											onChange={(e) => {
 																												const currentConfig =
@@ -6408,21 +6407,18 @@ const XmlGradingRulesPage = () => {
 																												{
 																													...task.specialCondition!,
 																													type: "wordTableSort",
-																													wordTableSortConfig:
-																														{
-																															...currentConfig,
-																															expectedFirstColumnValues:
-																																e.target.value
-																																	.split(
-																																		/\r?\n/,
-																																	)
-																																	.map((line) =>
-																																		line.trim(),
-																																	)
-																																	.filter(
-																																		Boolean,
-																																	),
-																														},
+																													wordTableSortConfig: {
+																														...currentConfig,
+																														expectedFirstColumnValues:
+																															e.target.value
+																																.split(/\r?\n/)
+																																.map((line) =>
+																																	line.trim(),
+																																)
+																																.filter(
+																																	Boolean,
+																																),
+																													},
 																												},
 																											);
 																										}}
@@ -6471,8 +6467,7 @@ const XmlGradingRulesPage = () => {
 																											checked={
 																												task.specialCondition
 																													.wordTableSortConfig
-																													?.descending ??
-																												false
+																													?.descending ?? false
 																											}
 																											onChange={(e) => {
 																												const currentConfig =
@@ -6613,8 +6608,7 @@ const XmlGradingRulesPage = () => {
 																											value={
 																												task.specialCondition
 																													.wordParagraphListConfig
-																													?.listType ??
-																												"bullet"
+																													?.listType ?? "bullet"
 																											}
 																											onChange={(e) => {
 																												const currentConfig =
@@ -6660,8 +6654,7 @@ const XmlGradingRulesPage = () => {
 																										value={(
 																											task.specialCondition
 																												.wordParagraphListConfig
-																												?.expectedItems ??
-																											[]
+																												?.expectedItems ?? []
 																										).join("\n")}
 																										onChange={(e) => {
 																											const currentConfig =

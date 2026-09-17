@@ -1,9 +1,10 @@
 import {
-	Button,
+	Card,
 	Checkbox,
+	Chip,
 	Icon,
-	ProgressIndicator,
 	Select,
+	ShapeIcon,
 	TextField,
 } from "@bug-on/m3-expressive";
 import type React from "react";
@@ -16,6 +17,7 @@ import {
 	type SubjectCode,
 } from "../../types/gradingFeature.types";
 import { resolveEndpointsBySubjectAndPractice } from "../../utils/gradingUtils";
+import { CreateAssignmentToolbar } from "./CreateAssignmentToolbar";
 
 interface CreateAssignmentPanelProps {
 	newAssignmentSubject: SubjectCode;
@@ -68,56 +70,122 @@ export const CreateAssignmentPanel: React.FC<CreateAssignmentPanelProps> = ({
 	onQuickCreatePractice,
 	onBack,
 }) => {
+	const currentSubjectLabel =
+		SUBJECT_OPTIONS.find((s) => s.code === newAssignmentSubject)?.label ||
+		newAssignmentSubject.toUpperCase();
+
+	const currentPracticeLabel =
+		ASSIGNMENT_PRESET_OPTIONS.find((p) => p.code === newAssignmentPracticeCode)
+			?.label || newAssignmentPracticeCode;
+
 	return (
-		<div className="flex-1 overflow-y-auto p-6 bg-m3-surface">
-			<Button
-				type="button"
-				colorStyle="text"
-				onClick={onBack}
-				className="mb-6 text-sm"
+		<div className="w-full max-w-7xl mx-auto space-y-4 pb-18">
+			{/* Page Header */}
+			<Card
+				variant="filled"
+				className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6"
 			>
-				<Icon name="arrow_back" className="mr-1.5 text-base" /> Quay lại
-			</Button>
+				<div className="space-y-1.5">
+					<div className="flex items-center gap-2.5">
+						<ShapeIcon
+							shape="burst"
+							morphTo="circle"
+							className="h-10 w-10 bg-m3-secondary-container text-m3-on-secondary-container flex items-center justify-center"
+						>
+							<Icon name="library_add" size={24} />
+						</ShapeIcon>
+						<h3 className="text-2xl font-bold text-m3-on-surface font-md3-expressive">
+							Tạo bài tập mới
+						</h3>
+					</div>
+					<p className="text-xs sm:text-sm text-m3-on-surface-variant max-w-2xl">
+						Tạo nhanh danh sách bài tập theo mẫu MOS Practice và Ôn thi có sẵn.
+						Các bài tập được chọn sẽ xuất hiện trong lớp học ngay sau khi lưu.
+					</p>
+				</div>
 
-			<div className="p-6 bg-m3-surface-container-high rounded-3xl shadow-xs max-w-4xl border border-m3-outline-variant/30">
-				<h3 className="font-bold mb-4 text-xl text-m3-on-surface font-md3-expressive">
-					Tạo nhanh bài tập theo môn và phần
-				</h3>
+				<div className="flex flex-wrap items-center gap-2">
+					<Chip
+						variant="assist"
+						leadingIcon={<Icon name="menu_book" size={16} />}
+						label={currentSubjectLabel}
+						className="h-7! px-3! rounded-full pointer-events-none text-xs font-semibold"
+					/>
+					<Chip
+						variant="assist"
+						leadingIcon={<Icon name="assignment" size={16} />}
+						label={currentPracticeLabel}
+						className="h-7! px-3! rounded-full pointer-events-none text-xs font-semibold text-m3-secondary"
+					/>
+				</div>
+			</Card>
 
-				<div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+			{/* Section 1: Cấu hình cơ bản & Tạo nhanh */}
+			<Card variant="outlined" className="p-6 space-y-5">
+				<div>
+					<h4 className="text-base font-bold text-m3-on-surface font-md3-expressive flex items-center gap-2">
+						<Icon name="tune" className="text-lg text-m3-primary" />
+						Cấu hình môn thi & phần bài tập
+					</h4>
+					<p className="text-xs text-m3-on-surface-variant mt-0.5">
+						Chọn môn học và phần đề thi để hệ thống tải danh sách project tương
+						ứng.
+					</p>
+				</div>
+
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 					<Select
 						variant="outlined"
-						label="Chọn môn"
+						label="Chọn môn học"
 						options={subjectSelectOptions}
 						value={newAssignmentSubject}
 						onChange={(val) => onSubjectChange(val as SubjectCode)}
 						fullWidth
 						required
+						showDividers={false}
+						colorVariant="vibrant"
+						menuVariant="expressive"
+						dense
 					/>
 
 					<Select
 						variant="outlined"
-						label="Chọn phần"
+						label="Chọn phần bài tập"
 						options={practiceSelectOptions}
 						value={newAssignmentPracticeCode}
 						onChange={(val) => onPracticeChange(val as AssignmentPresetCode)}
 						fullWidth
 						required
+						showDividers={false}
+						colorVariant="vibrant"
+						menuVariant="expressive"
+						dense
 					/>
 				</div>
 
 				{newAssignmentPracticeCode.startsWith("otth") && (
-					<div className="mb-4 p-3 rounded-2xl bg-m3-primary/10 border border-m3-primary/20 text-xs text-m3-primary font-medium">
-						OTTH dùng lại rule Practice hiện có và chỉ lọc project theo số
-						lẻ/chẵn.
+					<div className="p-3.5 rounded-2xl bg-m3-primary/10 text-xs text-m3-primary font-medium flex items-center gap-2">
+						<Icon name="info" className="text-base shrink-0" />
+						<span>
+							OTTH dùng lại cấu hình Practice hiện có và tự động lọc project
+							theo số lẻ/chẵn.
+						</span>
 					</div>
 				)}
 
-				<div className="mb-5 rounded-2xl border border-m3-primary/20 bg-m3-primary/5 p-4">
-					<p className="text-xs font-bold text-m3-primary uppercase tracking-wider">
-						Tạo nhanh 1 chạm ({newAssignmentSubject.toUpperCase()})
-					</p>
-					<div className="mt-2.5 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
+				{/* Quick create 1-touch */}
+				<div className="rounded-xl bg-m3-surface-container p-4 space-y-3">
+					<div className="flex items-center justify-between">
+						<p className="text-xs font-bold text-m3-primary uppercase tracking-wider flex items-center gap-1.5">
+							<Icon name="bolt" className="text-sm" />
+							Tạo nhanh 1 chạm ({newAssignmentSubject.toUpperCase()})
+						</p>
+						<span className="text-[11px] text-m3-on-surface-variant">
+							Bấm để nạp sẵn danh sách project tương ứng
+						</span>
+					</div>
+
+					<div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
 						{ASSIGNMENT_PRESET_OPTIONS.map((practice) => {
 							const practiceEndpoints = resolveEndpointsBySubjectAndPractice(
 								gradingEndpoints,
@@ -125,6 +193,7 @@ export const CreateAssignmentPanel: React.FC<CreateAssignmentPanelProps> = ({
 								practice.code,
 							);
 							const hasProjects = practiceEndpoints.length > 0;
+							const isSelected = newAssignmentPracticeCode === practice.code;
 
 							return (
 								<button
@@ -132,10 +201,17 @@ export const CreateAssignmentPanel: React.FC<CreateAssignmentPanelProps> = ({
 									type="button"
 									onClick={() => onQuickCreatePractice(practice.code)}
 									disabled={isCreatingAssignment || !hasProjects}
-									className="rounded-xl border border-m3-outline-variant bg-m3-surface px-3.5 py-2.5 text-left text-xs font-semibold text-m3-on-surface hover:bg-m3-surface-container-highest transition disabled:cursor-not-allowed disabled:opacity-50 shadow-xs cursor-pointer"
+									className={`rounded-2xl border p-3 text-left transition-all duration-200 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 ${
+										isSelected
+											? "border-m3-primary bg-m3-primary-container/40 shadow-xs"
+											: "border-m3-outline-variant/60 bg-m3-surface hover:bg-m3-surface-container-high hover:border-m3-primary/40"
+									}`}
 								>
-									<div>{practice.label}</div>
-									<div className="mt-1 text-[11px] text-m3-primary font-normal">
+									<div className="text-xs font-bold text-m3-on-surface">
+										{practice.label}
+									</div>
+									<div className="mt-1 text-[11px] text-m3-primary font-medium flex items-center gap-1">
+										<Icon name="folder_open" className="text-xs" />
 										{hasProjects
 											? `${practiceEndpoints.length} project khả dụng`
 											: "Chưa có project"}
@@ -146,10 +222,10 @@ export const CreateAssignmentPanel: React.FC<CreateAssignmentPanelProps> = ({
 					</div>
 				</div>
 
-				<div className="mb-5">
+				<div>
 					<TextField
 						variant="outlined"
-						label="Mô tả dùng chung (tuỳ chọn)"
+						label="Mô tả (tuỳ chọn)"
 						placeholder="Nội dung mô tả này sẽ áp dụng cho tất cả bài được tạo trong đợt này."
 						fullWidth
 						type="textarea"
@@ -158,155 +234,118 @@ export const CreateAssignmentPanel: React.FC<CreateAssignmentPanelProps> = ({
 						onChange={(val) => onDescriptionChange(val)}
 					/>
 				</div>
+			</Card>
 
-				<div className="rounded-2xl border border-m3-outline-variant/30 bg-m3-surface-container p-4">
-					<div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-						<div>
-							<h4 className="text-sm font-bold text-m3-on-surface">
-								Danh sách project sẽ tạo
-							</h4>
-							<p className="text-xs text-m3-on-surface-variant mt-0.5">
-								Chọn các project cần tạo và chỉnh sửa tên từng bài trước khi
-								lưu.
-							</p>
-						</div>
-						<div className="flex flex-wrap gap-2">
-							<Button
-								type="button"
-								colorStyle="tonal"
-								onClick={onSelectAllDrafts}
-								disabled={
-									isCreatingAssignment || bulkAssignmentDrafts.length === 0
-								}
-								className="text-xs"
-							>
-								Chọn tất cả
-							</Button>
-							<Button
-								type="button"
-								colorStyle="tonal"
-								onClick={onClearDrafts}
-								disabled={
-									isCreatingAssignment || bulkAssignmentDrafts.length === 0
-								}
-								className="text-xs"
-							>
-								Bỏ chọn
-							</Button>
-							<Button
-								type="button"
-								colorStyle="tonal"
-								onClick={onResetDraftNames}
-								disabled={
-									isCreatingAssignment || bulkAssignmentDrafts.length === 0
-								}
-								className="text-xs"
-							>
-								Đặt lại tên mặc định
-							</Button>
-						</div>
+			{/* Section 2: Danh sách project sẽ tạo */}
+			<Card variant="outlined" className="p-6 space-y-4">
+				<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+					<div>
+						<h4 className="text-base font-bold text-m3-on-surface font-md3-expressive flex items-center gap-2">
+							<Icon name="list_alt" className="text-lg text-m3-secondary" />
+							Danh sách project sẽ tạo
+						</h4>
+						<p className="text-xs text-m3-on-surface-variant mt-0.5">
+							Tích chọn các project cần tạo và chỉnh sửa tên từng bài trước khi
+							lưu. Thao tác chọn và tạo bài được thực hiện trên thanh công cụ
+							bên dưới.
+						</p>
 					</div>
 
-					{bulkAssignmentDrafts.length === 0 ? (
-						<p className="mt-4 text-xs text-amber-700 dark:text-amber-300">
-							Phần này chưa có project khả dụng trong hệ thống.
-						</p>
-					) : (
-						<div className="mt-4 overflow-x-auto rounded-2xl border border-m3-outline-variant/30 bg-m3-surface-container overflow-hidden">
-							<table className="min-w-full divide-y divide-m3-outline-variant/20">
-								<thead className="bg-m3-surface-container-high">
-									<tr className="h-12 border-b border-m3-outline-variant/60 bg-m3-surface-container-high">
-										<th className="h-12 px-3 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-m3-on-surface-variant w-14 align-middle">
-											Chọn
-										</th>
-										<th className="h-12 px-3 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-m3-on-surface-variant min-w-36 align-middle">
-											Project gốc
-										</th>
-										<th className="h-12 px-3 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-m3-on-surface-variant min-w-56 align-middle">
-											Tên bài tập hiển thị
-										</th>
-										<th className="h-12 px-3 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-m3-on-surface-variant w-24 align-middle">
-											Điểm tối đa
-										</th>
-									</tr>
-								</thead>
-								<tbody className="divide-y divide-m3-outline-variant/20 bg-m3-surface-container">
-									{bulkAssignmentDrafts.map((draft, index) => (
-										<tr
-											key={draft.endpoint}
-											className={`transition-colors ${
-												index % 2 === 1
-													? "bg-m3-surface-container-high/25"
-													: "bg-transparent"
-											} hover:bg-m3-surface-container-high/40`}
-										>
-											<td className="px-3 py-2">
-												<Checkbox
-													checked={draft.selected}
-													onCheckedChange={() =>
-														onToggleDraftSelection(draft.endpoint)
-													}
-													disabled={isCreatingAssignment}
-													aria-label={`Chọn project ${draft.displayName}`}
-												/>
-											</td>
-											<td className="px-3 py-2 text-xs text-m3-on-surface font-medium">
-												{draft.displayName}
-											</td>
-											<td className="px-3 py-2">
-												<TextField
-													variant="outlined"
-													value={draft.name}
-													onChange={(val) =>
-														onDraftNameChange(draft.endpoint, val)
-													}
-													disabled={isCreatingAssignment}
-													fullWidth
-													placeholder="Nhập tên bài tập"
-													aria-label={`Tên bài tập cho ${draft.displayName}`}
-												/>
-											</td>
-											<td className="px-3 py-2 text-center text-sm font-semibold text-m3-on-surface">
-												{draft.maxScore}
-											</td>
-										</tr>
-									))}
-								</tbody>
-							</table>
-						</div>
-					)}
-
-					<div className="mt-5">
-						<Button
-							type="button"
-							colorStyle="filled"
-							onClick={onCreateBulkAssignments}
-							disabled={
-								isCreatingAssignment || selectedBulkAssignmentCount === 0
-							}
-							fullWidth
-							className="py-3"
-						>
-							{isCreatingAssignment ? (
-								<>
-									<ProgressIndicator
-										variant="circular"
-										shape="wavy"
-										size={18}
-										aria-label="Đang tạo nhiều bài..."
-									/>
-									Đang tạo các bài tập...
-								</>
-							) : (
-								<>
-									<Icon name="add" className="text-base mr-1.5" />
-									Tạo ngay {selectedBulkAssignmentCount} bài đã chọn
-								</>
-							)}
-						</Button>
+					<div className="text-xs font-semibold text-m3-on-surface-variant bg-m3-surface-container px-3 py-1.5 rounded-full min-w-fit">
+						Tổng cộng {bulkAssignmentDrafts.length} project
 					</div>
 				</div>
-			</div>
+
+				{bulkAssignmentDrafts.length === 0 ? (
+					<div className="p-8 text-center rounded-2xl bg-m3-surface border border-m3-outline-variant/30">
+						<Icon
+							name="folder_off"
+							className="text-3xl text-m3-on-surface-variant/60 mb-2"
+						/>
+						<p className="text-sm font-semibold text-m3-on-surface">
+							Phần này chưa có project khả dụng trong hệ thống
+						</p>
+						<p className="text-xs text-m3-on-surface-variant mt-1">
+							Vui lòng chọn môn học hoặc phần thi khác để tiếp tục.
+						</p>
+					</div>
+				) : (
+					<div className="overflow-x-auto rounded-xl bg-m3-surface-container overflow-hidden">
+						<table className="min-w-full divide-y divide-m3-outline-variant/20">
+							<thead className="bg-m3-surface-container-high">
+								<tr className="h-12 border-b border-m3-outline-variant/60">
+									<th className="h-12 px-4 py-3 text-center text-xs font-bold uppercase tracking-wider text-m3-on-surface-variant w-14 align-middle">
+										Chọn
+									</th>
+									<th className="h-12 px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-m3-on-surface-variant min-w-36 align-middle">
+										Project gốc
+									</th>
+									<th className="h-12 px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-m3-on-surface-variant min-w-56 align-middle">
+										Tên bài tập hiển thị
+									</th>
+									<th className="h-12 px-4 py-3 text-center text-xs font-bold uppercase tracking-wider text-m3-on-surface-variant w-28 align-middle">
+										Điểm tối đa
+									</th>
+								</tr>
+							</thead>
+							<tbody className="divide-y divide-m3-outline-variant/20 bg-m3-surface-container">
+								{bulkAssignmentDrafts.map((draft, index) => (
+									<tr
+										key={draft.endpoint}
+										className={`transition-colors ${
+											index % 2 === 1
+												? "bg-m3-surface-container-high/25"
+												: "bg-transparent"
+										} hover:bg-m3-surface-container-high/50`}
+									>
+										<td className="px-4 py-3 text-center align-middle">
+											<Checkbox
+												checked={draft.selected}
+												onCheckedChange={() =>
+													onToggleDraftSelection(draft.endpoint)
+												}
+												disabled={isCreatingAssignment}
+												aria-label={`Chọn project ${draft.displayName}`}
+											/>
+										</td>
+										<td className="px-4 py-3 text-xs text-m3-on-surface font-semibold align-middle">
+											{draft.displayName}
+										</td>
+										<td className="px-4 py-3 align-middle">
+											<TextField
+												variant="outlined"
+												value={draft.name}
+												onChange={(val) =>
+													onDraftNameChange(draft.endpoint, val)
+												}
+												disabled={isCreatingAssignment}
+												fullWidth
+												placeholder="Nhập tên bài tập"
+												aria-label={`Tên bài tập cho ${draft.displayName}`}
+											/>
+										</td>
+										<td className="px-4 py-3 text-center text-sm font-bold text-m3-on-surface align-middle">
+											{draft.maxScore}
+										</td>
+									</tr>
+								))}
+							</tbody>
+						</table>
+					</div>
+				)}
+			</Card>
+
+			{/* Floating Action Toolbar */}
+			<CreateAssignmentToolbar
+				onBack={onBack}
+				selectedCount={selectedBulkAssignmentCount}
+				totalDraftsCount={bulkAssignmentDrafts.length}
+				isCreating={isCreatingAssignment}
+				onSelectAll={onSelectAllDrafts}
+				onClear={onClearDrafts}
+				onResetNames={onResetDraftNames}
+				onCreate={onCreateBulkAssignments}
+			/>
 		</div>
 	);
 };

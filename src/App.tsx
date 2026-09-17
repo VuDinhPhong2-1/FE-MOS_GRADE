@@ -205,7 +205,7 @@ function App() {
 
 									<Route path="/grading" element={<GradingView />} />
 									<Route
-										path="/grading/class/:classId"
+										path="/classes/:classId/grading"
 										element={<ClassGradingPage />}
 									/>
 									<Route

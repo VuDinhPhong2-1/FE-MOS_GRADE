@@ -92,13 +92,23 @@ export const SchoolFormModal = ({
 		[],
 	);
 
-	const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+	const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
-		const payload: CreateSchoolRequest = { ...formData };
+		const payload: CreateSchoolRequest = {
+			...formData,
+			name: formData.name.trim(),
+			code: formData.code.trim(),
+			address: formData.address?.trim() || "",
+			phoneNumber: formData.phoneNumber?.trim() || "",
+			email: formData.email?.trim() || "",
+			website: formData.website?.trim() || "",
+			description: formData.description?.trim() || "",
+			attendanceSpreadsheetId: formData.attendanceSpreadsheetId?.trim() || "",
+		};
 		if (!isAdmin) {
 			delete payload.attendanceSpreadsheetId;
 		}
-		void onSubmit(payload);
+		await onSubmit(payload);
 	};
 
 	return (
