@@ -18,7 +18,7 @@ export default function SettingsPage() {
 	}, [setConfig]);
 
 	return (
-		<div className="max-w-2xl mx-auto space-y-6">
+		<div className="max-w-2xl mx-auto space-y-5">
 			<SettingsForm userEmail={user?.email ?? ""} />
 		</div>
 	);

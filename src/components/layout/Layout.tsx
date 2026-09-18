@@ -49,9 +49,9 @@ const Layout = ({ children, navItems }: LayoutProps) => {
 				<Header />
 
 				{/* Khung hiển thị nội dung chính - Bo tròn rounded-3xl, scroll bên trong */}
-				<div className="min-h-0 flex-1 px-0 lg:pr-4 pb-0 overflow-hidden flex flex-col">
-					<div className="flex-1 min-h-0 rounded-t-m3-xl-inc bg-m3-surface-container-lowest dark:bg-m3-surface text-m3-on-surface overflow-hidden flex flex-col">
-						<div className="flex-1 min-h-0 overflow-y-auto p-5 pb-24 sm:pb-39 lg:pb-4">
+				<div className="min-h-0 flex-1 px-0 lg:pr-4 pb-4 overflow-hidden flex flex-col">
+					<div className="flex-1 min-h-0 rounded-m3-xl-inc bg-m3-surface-container-lowest dark:bg-m3-surface text-m3-on-surface overflow-hidden flex flex-col">
+						<div className="flex-1 min-h-0 overflow-y-auto p-5 sm:pb-24 lg:pb-20">
 							{children}
 						</div>
 					</div>
@@ -61,7 +61,7 @@ const Layout = ({ children, navItems }: LayoutProps) => {
 				<NavigationBar
 					variant="flexible"
 					elevated
-					className="lg:hidden bg-m3-surface-container-low shadow-lg z-30"
+					className="lg:hidden bg-m3-surface-container-low z-30"
 					style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
 				>
 					{mobileNavItems.map((item) => (

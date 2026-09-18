@@ -11,7 +11,7 @@ import {
 	TooltipBox,
 } from "@bug-on/m3-expressive";
 import type React from "react";
-import { FloatingActionToolbar } from "../../../components/common/FloatingActionToolbar";
+import { FloatingActionToolbar } from "../../../components/common/floating-action-toolbar";
 import type { GradingMode } from "../types/gradingFeature.types";
 
 interface AssignmentItem {
@@ -39,7 +39,7 @@ export const GradingModeSelector: React.FC<GradingModeSelectorProps> = ({
 	const isMultiDisabled = activeAutoAssignmentCount === 0;
 
 	return (
-		<div className="w-full max-w-7xl mx-auto space-y-8 pb-18">
+		<div className="w-full max-w-7xl mx-auto space-y-4">
 			{/* Khi đã có bài tập: Hiển thị danh sách dạng List Expressive Segmented */}
 			{hasAssignments && (
 				<div className="space-y-4">

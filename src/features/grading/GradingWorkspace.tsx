@@ -60,7 +60,6 @@ export const GradingWorkspace: React.FC<GradingWorkspaceProps> = ({
 		assignments,
 		setAssignments,
 		gradingEndpoints,
-		loadAssignments,
 		isLoadingAssignments,
 	} = useGradingData({
 		classId,
@@ -126,6 +125,7 @@ export const GradingWorkspace: React.FC<GradingWorkspaceProps> = ({
 		handleOpenEditAssignment,
 		handleSaveAssignmentEdit,
 		handleDeleteAssignment,
+		handleDeleteSelectedAssignments,
 		resetAssignmentManagerState,
 	} = useAssignmentManager({
 		classId,
@@ -136,7 +136,7 @@ export const GradingWorkspace: React.FC<GradingWorkspaceProps> = ({
 		chooseMode,
 		setChooseMode,
 		onAssignmentsUpdated: () => {
-			void loadAssignments();
+			// Optimistic state updates already performed locally in useAssignmentManager
 		},
 	});
 
@@ -236,14 +236,16 @@ export const GradingWorkspace: React.FC<GradingWorkspaceProps> = ({
 			{/* Main Content Area */}
 			<div className="flex-1">
 				{isLoadingAssignments && (
-					<div className="flex items-center justify-center py-12 gap-3 text-sm text-m3-on-surface-variant">
+					<div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
 						<ProgressIndicator
 							variant="circular"
 							shape="wavy"
-							size={24}
+							size={64}
 							aria-label="Đang tải dữ liệu..."
 						/>
-						Đang tải dữ liệu bài tập của lớp...
+						<p className="text-sm font-medium text-m3-on-surface-variant">
+							Đang tải dữ liệu bài tập của lớp...
+						</p>
 					</div>
 				)}
 
@@ -305,6 +307,7 @@ export const GradingWorkspace: React.FC<GradingWorkspaceProps> = ({
 							onDeactivateSelected={handleDeactivateSelectedAssignments}
 							onOpenEdit={handleOpenEditAssignment}
 							onDelete={handleDeleteAssignment}
+							onDeleteSelected={handleDeleteSelectedAssignments}
 							onBack={handleBackToModes}
 						/>
 						<EditAssignmentModal

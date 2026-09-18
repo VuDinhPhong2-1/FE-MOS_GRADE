@@ -40,7 +40,7 @@ export function ThemeToggle({ className }: { className?: string }) {
 			size="md"
 			className={className}
 		>
-			<Icon name={getIconName()} size={24} variant="rounded" />
+			<Icon name={getIconName()} size={24} />
 		</IconButton>
 	);
 }

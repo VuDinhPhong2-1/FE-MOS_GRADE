@@ -1,7 +1,26 @@
-import { Button, Checkbox, Chip, Icon, Switch } from "@bug-on/m3-expressive";
+import {
+	ButtonDistribute,
+	Card,
+	Checkbox,
+	Chip,
+	FAST_SPATIAL_SPRING,
+	Icon,
+	IconButton,
+	PlainTooltip,
+	Switch,
+	TooltipBox,
+} from "@bug-on/m3-expressive";
+import {
+	createColumnHelper,
+	tableFeatures,
+	useTable,
+} from "@tanstack/react-table";
+import { AnimatePresence, motion } from "motion/react";
 import type React from "react";
 import { useCallback, useMemo, useState } from "react";
+import { DataTable, TableEmptyState } from "../../../../components/data-table";
 import type { Assignment } from "../../../../types/assignment.types";
+import { cn } from "../../../../utils/utils";
 import { ManageAssignmentToolbar } from "./ManageAssignmentToolbar";
 
 interface ManageAssignmentsPanelProps {
@@ -16,10 +35,14 @@ interface ManageAssignmentsPanelProps {
 	onSelectAllManage: () => void;
 	onClearManage: () => void;
 	onDeactivateSelected: () => void;
+	onDeleteSelected: () => void;
 	onOpenEdit: (assignment: Assignment) => void;
 	onDelete: (assignment: Assignment) => void;
 	onBack: () => void;
 }
+
+const features = tableFeatures({});
+const helper = createColumnHelper<typeof features, Assignment>();
 
 export const ManageAssignmentsPanel: React.FC<ManageAssignmentsPanelProps> = ({
 	assignments,
@@ -33,6 +56,7 @@ export const ManageAssignmentsPanel: React.FC<ManageAssignmentsPanelProps> = ({
 	onSelectAllManage,
 	onClearManage,
 	onDeactivateSelected,
+	onDeleteSelected,
 	onOpenEdit,
 	onDelete,
 	onBack,
@@ -74,13 +98,266 @@ export const ManageAssignmentsPanel: React.FC<ManageAssignmentsPanelProps> = ({
 		});
 	}, [assignments, searchQuery]);
 
+	const columns = useMemo(
+		() =>
+			helper.columns([
+				helper.display({
+					id: "select",
+					header: () => (
+						<div className="flex items-center justify-center">
+							<Checkbox
+								aria-label={
+									showInactiveAssignments
+										? "Chọn tất cả bài tập"
+										: "Chọn tất cả bài tập đang dùng"
+								}
+								checked={isAllManageActiveSelected}
+								onCheckedChange={(checked) =>
+									checked ? onSelectAllManage() : onClearManage()
+								}
+								disabled={
+									assignmentSubmitLoading ||
+									manageableActiveAssignments.length === 0
+								}
+							/>
+						</div>
+					),
+					meta: {
+						className: "w-14 text-center",
+						align: "center",
+					},
+					cell: ({ row }) => {
+						const assignment = row.original;
+						return (
+							<div
+								className="flex items-center justify-center"
+								title={!assignment.isActive ? "Bài tập đã ẩn" : undefined}
+							>
+								<Checkbox
+									aria-label={`Chọn bài tập ${assignment.name}`}
+									checked={manageSelectedAssignmentIds.includes(assignment.id)}
+									onCheckedChange={() => onToggleSelectAssignment(assignment)}
+									disabled={
+										assignmentSubmitLoading ||
+										(!showInactiveAssignments && !assignment.isActive)
+									}
+								/>
+							</div>
+						);
+					},
+				}),
+				helper.accessor("name", {
+					header: "Tên bài tập",
+					cell: ({ row }) => {
+						const assignment = row.original;
+						return (
+							<div className="flex flex-col">
+								<span className="font-semibold text-m3-on-surface">
+									{assignment.name}
+								</span>
+								{assignment.description && (
+									<span className="text-xs text-m3-on-surface-variant mt-0.5 line-clamp-2 max-w-md">
+										{assignment.description}
+									</span>
+								)}
+								<div className="text-[11px] text-m3-on-surface-variant/70 mt-1 flex flex-wrap items-center gap-1.5">
+									<span className="font-semibold text-m3-primary">
+										{assignment.examType.toUpperCase()}
+									</span>
+									<span>•</span>
+									<span>{assignment.subject.toUpperCase()}</span>
+									{assignment.isLockedForPublication && (
+										<>
+											<span>•</span>
+											<span className="text-amber-700 dark:text-amber-300">
+												Đã dùng tạo lịch thi
+											</span>
+										</>
+									)}
+								</div>
+								{assignment.isPublishable === false && (
+									<div className="text-[11px] text-amber-700 dark:text-amber-300 mt-1 font-medium">
+										{assignment.publishBlockReason ||
+											"Chưa đủ điều kiện để tạo lịch thi."}
+									</div>
+								)}
+							</div>
+						);
+					},
+				}),
+				helper.accessor("gradingType", {
+					header: "Loại chấm",
+					meta: {
+						className: "w-32",
+						align: "left",
+					},
+					cell: ({ getValue }) => {
+						const type = getValue();
+						const isAuto = type === "auto";
+						return (
+							<Chip
+								variant="assist"
+								label={isAuto ? "Tự động" : "Thủ công"}
+								leadingIcon={
+									<Icon
+										name={isAuto ? "smart_toy" : "draw"}
+										size={16}
+										className={isAuto ? "text-m3-primary" : "text-m3-secondary"}
+									/>
+								}
+								className="pointer-events-none h-6 px-2.5 text-xs font-medium"
+							/>
+						);
+					},
+				}),
+				helper.accessor("gradingApiEndpoint", {
+					header: "Endpoint",
+					meta: {
+						className: "w-44 text-xs font-mono",
+						align: "left",
+					},
+					cell: ({ getValue }) => (
+						<span className="font-mono text-xs text-m3-on-surface-variant/80">
+							{getValue() || "-"}
+						</span>
+					),
+				}),
+				helper.accessor("maxScore", {
+					header: "Điểm tối đa",
+					meta: {
+						className: "w-28 text-center",
+						align: "center",
+					},
+					cell: ({ getValue }) => (
+						<span className="text-sm font-bold text-m3-on-surface">
+							{getValue()}
+						</span>
+					),
+				}),
+				helper.display({
+					id: "status",
+					header: "Trạng thái",
+					meta: {
+						className: "w-36 text-center",
+						align: "center",
+					},
+					cell: ({ row }) => {
+						const assignment = row.original;
+						return (
+							<div className="flex flex-col items-center gap-1">
+								<Chip
+									variant="assist"
+									label={assignment.isActive ? "Đang dùng" : "Đã ẩn"}
+									leadingIcon={
+										<Icon
+											name={assignment.isActive ? "check_circle" : "cancel"}
+											size={16}
+											className={
+												assignment.isActive
+													? "text-m3-primary"
+													: "text-m3-error"
+											}
+										/>
+									}
+									className={cn(
+										"pointer-events-none h-6 px-2.5 text-xs font-semibold",
+										!assignment.isActive && "text-m3-error",
+									)}
+								/>
+								{assignment.isPublishable === false && (
+									<span className="inline-flex rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] font-semibold text-amber-800 dark:text-amber-200">
+										Chưa publish
+									</span>
+								)}
+							</div>
+						);
+					},
+				}),
+				helper.display({
+					id: "actions",
+					header: "Hành động",
+					meta: {
+						className: "w-32 text-center",
+						align: "center",
+					},
+					cell: ({ row }) => {
+						const assignment = row.original;
+						return (
+							<div
+								role="toolbar"
+								aria-label="Thao tác"
+								className="inline-flex items-center justify-center"
+							>
+								<ButtonDistribute
+									mode="dynamic"
+									size="sm"
+									weights={[1, 1]}
+									gap={4}
+									expandRatio={0.1}
+								>
+									<TooltipBox
+										tooltip={<PlainTooltip>Sửa bài tập</PlainTooltip>}
+										placement="top"
+									>
+										<IconButton
+											size="sm"
+											onClick={() => onOpenEdit(assignment)}
+											aria-label="Sửa bài tập"
+										>
+											<Icon name="edit" size={20} />
+										</IconButton>
+									</TooltipBox>
+									<TooltipBox
+										tooltip={<PlainTooltip>Xóa bài tập</PlainTooltip>}
+										placement="top"
+									>
+										<IconButton
+											size="sm"
+											onClick={() => onDelete(assignment)}
+											disabled={assignmentSubmitLoading}
+											className="text-m3-error hover:bg-m3-error/10"
+											aria-label="Xóa bài tập"
+										>
+											<Icon name="delete" size={20} className="text-m3-error" />
+										</IconButton>
+									</TooltipBox>
+								</ButtonDistribute>
+							</div>
+						);
+					},
+				}),
+			]),
+		[
+			isAllManageActiveSelected,
+			onSelectAllManage,
+			onClearManage,
+			assignmentSubmitLoading,
+			manageableActiveAssignments.length,
+			manageSelectedAssignmentIds,
+			onToggleSelectAssignment,
+			onOpenEdit,
+			onDelete,
+			showInactiveAssignments,
+		],
+	);
+
+	const table = useTable({
+		features,
+		columns,
+		data: filteredAssignments,
+		getRowId: (row) => row.id,
+	});
+
 	return (
-		<div className="w-full max-w-7xl mx-auto space-y-6 pb-28">
+		<div className="space-y-5">
 			{/* Page Header */}
-			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-3xl bg-m3-surface-container-low border border-m3-outline-variant/30 shadow-xs">
+			<Card
+				variant="filled"
+				className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-3xl bg-m3-surface-container-low border-none shadow-none"
+			>
 				<div className="space-y-1.5">
 					<div className="flex items-center gap-2.5">
-						<div className="h-10 w-10 rounded-2xl bg-m3-tertiary-container text-m3-on-tertiary-container flex items-center justify-center shadow-2xs">
+						<div className="h-10 w-10 rounded-2xl bg-m3-tertiary-container text-m3-on-tertiary-container flex items-center justify-center">
 							<Icon name="tune" className="text-xl" />
 						</div>
 						<h3 className="text-2xl font-bold text-m3-on-surface font-md3-expressive">
@@ -124,212 +401,96 @@ export const ManageAssignmentsPanel: React.FC<ManageAssignmentsPanelProps> = ({
 						/>
 					)}
 				</div>
-			</div>
+			</Card>
 
-			{/* Filter Options Bar */}
-			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-m3-surface-container-low border border-m3-outline-variant/20 shadow-xs">
-				<div className="flex items-center gap-3">
-					<Switch
-						checked={showInactiveAssignments}
-						onCheckedChange={onToggleShowInactive}
-						label="Hiển thị bài tập đã ẩn"
-					/>
-					<span className="text-xs text-m3-on-surface-variant hidden md:inline">
-						(Khi tắt, chỉ hiển thị bài tập đang hoạt động)
-					</span>
-				</div>
+			{/* Filter Options Bar with smooth spring animation */}
+			<AnimatePresence initial={false}>
+				{!isSearchActive && (
+					<motion.div
+						key="manage-assignment-filter-bar"
+						initial={{ opacity: 0, height: 0, scale: 0.98 }}
+						animate={{ opacity: 1, height: "auto", scale: 1 }}
+						exit={{ opacity: 0, height: 0, scale: 0.98 }}
+						transition={FAST_SPATIAL_SPRING}
+						className="overflow-hidden"
+					>
+						<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-m3-surface-container-low border-none shadow-none">
+							<div className="flex items-center gap-3">
+								<Switch
+									checked={showInactiveAssignments}
+									onCheckedChange={onToggleShowInactive}
+									label="Hiển thị bài tập đã ẩn"
+								/>
+								<span className="text-xs text-m3-on-surface-variant hidden md:inline">
+									(Khi tắt, chỉ hiển thị bài tập đang hoạt động)
+								</span>
+							</div>
 
-				{searchQuery && (
-					<div className="flex items-center gap-2 text-xs text-m3-on-surface-variant">
-						<span>
-							Tìm thấy <strong>{filteredAssignments.length}</strong> bài phù hợp
-						</span>
-						<Button
-							type="button"
-							colorStyle="text"
-							onClick={handleCloseSearch}
-							className="h-7 text-xs px-2"
-						>
-							Xóa tìm kiếm
-						</Button>
-					</div>
-				)}
-			</div>
-
-			{/* Table Content Card */}
-			<div className="rounded-3xl bg-m3-surface-container-low overflow-hidden shadow-xs border border-m3-outline-variant/30">
-				<div className="overflow-x-auto">
-					<table className="min-w-full divide-y divide-m3-outline-variant/30">
-						<thead className="bg-m3-surface-container-high">
-							<tr className="h-12 border-b border-m3-outline-variant/60 bg-m3-surface-container-high">
-								<th className="h-12 px-4 py-3.5 text-center text-xs font-bold text-m3-on-surface-variant uppercase tracking-wider w-14 align-middle">
-									<Checkbox
-										aria-label="Chọn tất cả bài tập đang dùng"
-										checked={isAllManageActiveSelected}
-										onCheckedChange={(checked) =>
-											checked ? onSelectAllManage() : onClearManage()
-										}
-										disabled={
-											assignmentSubmitLoading ||
-											manageableActiveAssignments.length === 0
-										}
-									/>
-								</th>
-								<th className="h-12 px-4 py-3.5 text-left text-xs font-bold text-m3-on-surface-variant uppercase tracking-wider align-middle">
-									Tên bài tập
-								</th>
-								<th className="h-12 px-4 py-3.5 text-left text-xs font-bold text-m3-on-surface-variant uppercase tracking-wider align-middle">
-									Loại chấm
-								</th>
-								<th className="h-12 px-4 py-3.5 text-left text-xs font-bold text-m3-on-surface-variant uppercase tracking-wider align-middle">
-									Endpoint
-								</th>
-								<th className="h-12 px-4 py-3.5 text-center text-xs font-bold text-m3-on-surface-variant uppercase tracking-wider align-middle">
-									Điểm tối đa
-								</th>
-								<th className="h-12 px-4 py-3.5 text-center text-xs font-bold text-m3-on-surface-variant uppercase tracking-wider align-middle">
-									Trạng thái
-								</th>
-								<th className="h-12 px-4 py-3.5 text-center text-xs font-bold text-m3-on-surface-variant uppercase tracking-wider align-middle">
-									Hành động
-								</th>
-							</tr>
-						</thead>
-						<tbody className="divide-y divide-m3-outline-variant/20 bg-m3-surface-container">
-							{filteredAssignments.map((assignment, index) => (
-								<tr
-									key={assignment.id}
-									className={`transition-colors ${
-										index % 2 === 1
-											? "bg-m3-surface-container-high/25"
-											: "bg-transparent"
-									} hover:bg-m3-surface-container-high/40`}
-								>
-									<td
-										className="px-4 py-3.5 text-center align-middle"
-										title={!assignment.isActive ? "Bài tập đã ẩn" : undefined}
+							{searchQuery && (
+								<div className="flex items-center gap-2 text-xs text-m3-on-surface-variant">
+									<span>
+										Tìm thấy <strong>{filteredAssignments.length}</strong> bài
+										phù hợp
+									</span>
+									<IconButton
+										size="sm"
+										colorStyle="standard"
+										onClick={handleCloseSearch}
+										aria-label="Xóa tìm kiếm"
 									>
-										<Checkbox
-											aria-label={`Chọn bài tập ${assignment.name}`}
-											checked={manageSelectedAssignmentIds.includes(
-												assignment.id,
-											)}
-											onCheckedChange={() =>
-												onToggleSelectAssignment(assignment)
-											}
-											disabled={assignmentSubmitLoading || !assignment.isActive}
-										/>
-									</td>
-									<td className="px-4 py-3.5 text-sm text-m3-on-surface align-middle">
-										<div className="font-semibold">{assignment.name}</div>
-										{assignment.description && (
-											<div className="text-xs text-m3-on-surface-variant mt-0.5 max-w-md">
-												{assignment.description}
-											</div>
-										)}
-										<div className="text-[11px] text-m3-on-surface-variant/70 mt-1 flex flex-wrap items-center gap-1.5">
-											<span className="font-semibold text-m3-primary">
-												{assignment.examType.toUpperCase()}
-											</span>
-											<span>•</span>
-											<span>{assignment.subject.toUpperCase()}</span>
-											{assignment.isLockedForPublication && (
-												<>
-													<span>•</span>
-													<span className="text-amber-700 dark:text-amber-300">
-														Đã dùng tạo lịch thi
-													</span>
-												</>
-											)}
-										</div>
-										{assignment.isPublishable === false && (
-											<div className="text-[11px] text-amber-700 dark:text-amber-300 mt-1 font-medium">
-												{assignment.publishBlockReason ||
-													"Chưa đủ điều kiện để tạo lịch thi."}
-											</div>
-										)}
-									</td>
-									<td className="px-4 py-3.5 text-xs text-m3-on-surface-variant align-middle">
-										<span
-											className={`inline-flex items-center px-2 py-0.5 rounded-md font-medium ${
-												assignment.gradingType === "auto"
-													? "bg-m3-primary/10 text-m3-primary"
-													: "bg-m3-secondary/10 text-m3-secondary"
-											}`}
-										>
-											{assignment.gradingType === "auto"
-												? "Tự động"
-												: "Thủ công"}
-										</span>
-									</td>
-									<td className="px-4 py-3.5 text-xs text-m3-on-surface-variant/70 font-mono align-middle">
-										{assignment.gradingApiEndpoint || "-"}
-									</td>
-									<td className="px-4 py-3.5 text-sm text-center text-m3-on-surface font-bold align-middle">
-										{assignment.maxScore}
-									</td>
-									<td className="px-4 py-3.5 text-center align-middle">
-										<div className="flex flex-col items-center gap-1">
-											<span
-												className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-													assignment.isActive
-														? "bg-m3-primary/10 text-m3-primary"
-														: "bg-m3-error/15 text-m3-error"
-												}`}
-											>
-												{assignment.isActive ? "Đang dùng" : "Đã ẩn"}
-											</span>
-											{assignment.isPublishable === false && (
-												<span className="inline-flex rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] font-semibold text-amber-800 dark:text-amber-200">
-													Chưa publish
-												</span>
-											)}
-										</div>
-									</td>
-									<td className="px-4 py-3.5 text-center align-middle">
-										<div className="inline-flex gap-1.5">
-											<Button
-												type="button"
-												colorStyle="tonal"
-												onClick={() => onOpenEdit(assignment)}
-												className="h-8 px-2.5 text-xs"
-											>
-												<Icon name="edit" className="text-xs mr-1" />
-												Sửa
-											</Button>
-											<Button
-												type="button"
-												colorStyle="tonal"
-												onClick={() => onDelete(assignment)}
-												disabled={assignmentSubmitLoading}
-												className="h-8 px-2.5 text-xs text-m3-error hover:bg-m3-error/10"
-											>
-												<Icon
-													name="delete"
-													className="text-xs mr-1 text-m3-error"
-												/>
-												Xóa
-											</Button>
-										</div>
-									</td>
-								</tr>
-							))}
-							{filteredAssignments.length === 0 && (
-								<tr>
-									<td
-										colSpan={7}
-										className="px-4 py-12 text-center text-sm text-m3-on-surface-variant"
-									>
-										{searchQuery
-											? "Không tìm thấy bài tập phù hợp với từ khóa."
-											: "Chưa có bài tập nào trong lớp này."}
-									</td>
-								</tr>
+										<Icon name="close" size={18} />
+									</IconButton>
+								</div>
 							)}
-						</tbody>
-					</table>
-				</div>
-			</div>
+						</div>
+					</motion.div>
+				)}
+			</AnimatePresence>
+
+			{/* Data Table Content */}
+			<DataTable
+				table={table}
+				className="shadow-none border-none"
+				minWidthClassName="min-w-220 w-full"
+				headerSlot={
+					<div className="flex items-center justify-between px-6 py-4 bg-m3-surface-container-high border-b border-m3-outline-variant/30">
+						<div className="flex items-center gap-2">
+							<Icon name="assignment" className="text-m3-primary" size={20} />
+							<span className="text-sm font-bold text-m3-on-surface">
+								Danh sách bài tập
+							</span>
+							<Chip
+								variant="assist"
+								label={`${filteredAssignments.length} bài`}
+								className="h-6! px-2! rounded-full pointer-events-none text-xs font-semibold"
+							/>
+						</div>
+						<span className="text-xs text-m3-on-surface-variant hidden sm:inline">
+							Cấu hình điểm số và trạng thái hoạt động
+						</span>
+					</div>
+				}
+				getRowClassName={(row) =>
+					!row.original.isActive
+						? "opacity-65 bg-m3-surface-container-high/15"
+						: ""
+				}
+				emptyState={
+					<TableEmptyState
+						icon={searchQuery ? "search_off" : "folder_open"}
+						title={
+							searchQuery
+								? "Không tìm thấy bài tập phù hợp"
+								: "Chưa có bài tập nào"
+						}
+						description={
+							searchQuery
+								? `Không tìm thấy bài tập nào khớp với từ khóa "${searchQuery}".`
+								: "Chưa có bài tập nào trong lớp này."
+						}
+					/>
+				}
+			/>
 
 			{/* Floating Action Toolbar */}
 			<ManageAssignmentToolbar
@@ -341,11 +502,13 @@ export const ManageAssignmentsPanel: React.FC<ManageAssignmentsPanelProps> = ({
 				onSelectAll={onSelectAllManage}
 				onClear={onClearManage}
 				onDeactivateSelected={onDeactivateSelected}
+				onDeleteSelected={onDeleteSelected}
 				searchQuery={searchQuery}
 				onSearchQueryChange={setSearchQuery}
 				isSearchActive={isSearchActive}
 				onOpenSearch={handleOpenSearch}
 				onCloseSearch={handleCloseSearch}
+				onSearchActiveChange={setIsSearchActive}
 			/>
 		</div>
 	);

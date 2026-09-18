@@ -68,15 +68,15 @@ const variantStyles: Record<
 > = {
 	info: {
 		icon: "info",
-		iconContainerClass: "bg-m3-primary-container text-m3-primary",
+		iconContainerClass: "bg-m3-primary-container text-m3-on-primary-container",
 		titleClass: "text-m3-on-surface",
 		defaultTitle: "Thông báo",
 	},
 	warning: {
 		icon: "warning",
 		iconContainerClass:
-			"bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
-		titleClass: "text-amber-800 dark:text-amber-300",
+			"bg-m3-secondary-container text-m3-on-secondary-container",
+		titleClass: "text-m3-on-surface",
 		defaultTitle: "Cảnh báo",
 	},
 	error: {
@@ -88,8 +88,8 @@ const variantStyles: Record<
 	success: {
 		icon: "check_circle",
 		iconContainerClass:
-			"bg-emerald-100 rounded-full text-emerald-700 dark:bg-m3-primary-container dark:text-m3-on-primary",
-		titleClass: "text-emerald-800 dark:text-emerald-300",
+			"bg-m3-tertiary-container text-m3-on-tertiary-container",
+		titleClass: "text-m3-on-surface",
 		defaultTitle: "Thành công",
 	},
 };

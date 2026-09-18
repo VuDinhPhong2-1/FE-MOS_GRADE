@@ -2,7 +2,7 @@ export * from "./AlertDialog";
 export * from "./ConfirmDialog";
 export * from "./DialogHeaderIcon";
 export { default as ErrorModal } from "./ErrorModal";
-export * from "./FloatingActionToolbar";
+export * from "./floating-action-toolbar";
 export {
 	default as RouteLoadingFallback,
 	PageLoadingState,

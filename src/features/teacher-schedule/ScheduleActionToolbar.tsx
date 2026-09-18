@@ -11,7 +11,7 @@ import {
 } from "@bug-on/m3-expressive";
 import { AnimatePresence, motion } from "motion/react";
 import { type MouseEvent, memo, useCallback, useMemo } from "react";
-import { FloatingActionToolbar } from "../../components/common/FloatingActionToolbar";
+import { FloatingActionToolbar } from "../../components/common/floating-action-toolbar";
 import { formatDateViFromYmd } from "./utils";
 
 export interface ScheduleActionToolbarProps {

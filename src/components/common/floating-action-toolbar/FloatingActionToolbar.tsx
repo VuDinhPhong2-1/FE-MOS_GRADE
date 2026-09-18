@@ -146,7 +146,7 @@ const FloatingActionToolbarComponent = ({
 	return (
 		<div
 			className={cn(
-				"fixed bottom-18 lg:bottom-4 left-1/2 -translate-x-1/2 z-40 flex items-center justify-center gap-2 max-w-[calc(100vw-2rem)] m-0!",
+				"fixed bottom-22 lg:bottom-8 left-1/2 -translate-x-1/2 z-40 flex items-center justify-center gap-2 max-w-[calc(100vw-2rem)] m-0!",
 				className,
 			)}
 		>

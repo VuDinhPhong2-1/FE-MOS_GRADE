@@ -3,8 +3,6 @@ import {
 	Icon,
 	IconButton,
 	PlainTooltip,
-	ProgressIndicator,
-	ToolbarDivider,
 	ToolbarIconButton,
 	TooltipBox,
 } from "@bug-on/m3-expressive";
@@ -13,7 +11,7 @@ import { memo, useMemo } from "react";
 import {
 	FloatingActionToolbar,
 	type SearchConfig,
-} from "../../../../components/common/FloatingActionToolbar";
+} from "../../../../components/common/floating-action-toolbar";
 
 export interface ManageAssignmentToolbarProps {
 	onBack: () => void;
@@ -24,6 +22,7 @@ export interface ManageAssignmentToolbarProps {
 	onSelectAll: () => void;
 	onClear: () => void;
 	onDeactivateSelected: () => void;
+	onDeleteSelected: () => void;
 	searchQuery: string;
 	onSearchQueryChange: (query: string) => void;
 	isSearchActive?: boolean;
@@ -41,6 +40,7 @@ const ManageAssignmentToolbarComponent = ({
 	onSelectAll,
 	onClear,
 	onDeactivateSelected,
+	onDeleteSelected,
 	searchQuery,
 	onSearchQueryChange,
 	isSearchActive,
@@ -84,8 +84,6 @@ const ManageAssignmentToolbarComponent = ({
 					</ToolbarIconButton>
 				</TooltipBox>
 
-				<ToolbarDivider />
-
 				{/* Chọn tất cả bài tập đang dùng */}
 				<TooltipBox
 					tooltip={<PlainTooltip>Chọn tất cả bài đang dùng</PlainTooltip>}
@@ -105,7 +103,7 @@ const ManageAssignmentToolbarComponent = ({
 		[onBack, isLoading, onSelectAll, activeCount, isAllSelected],
 	);
 
-	// Info slot hiển thị trạng thái chọn bài dạng Spring Pill kèm các hành động ngữ cảnh (Ẩn bài & Bỏ chọn)
+	// Info slot hiển thị trạng thái chọn bài dạng Spring Pill kèm các hành động ngữ cảnh (Ẩn bài, Xóa bài & Bỏ chọn)
 	const infoSlot = useMemo(
 		() => (
 			<AnimatePresence>
@@ -145,17 +143,33 @@ const ManageAssignmentToolbarComponent = ({
 									size="sm"
 									onClick={onDeactivateSelected}
 									disabled={isLoading}
+									loading={isLoading}
 								>
-									{isLoading ? (
-										<ProgressIndicator
-											variant="circular"
-											shape="wavy"
-											size={16}
-											aria-label="Đang xử lý..."
-										/>
-									) : (
-										<Icon name="visibility_off" size={20} />
-									)}
+									<Icon name="visibility_off" size={20} />
+								</IconButton>
+							</TooltipBox>
+
+							{/* Xóa các bài tập đã chọn */}
+							<TooltipBox
+								tooltip={
+									<PlainTooltip>
+										{isLoading
+											? "Đang xử lý..."
+											: `Xóa ${selectedCount} bài tập đã chọn`}
+									</PlainTooltip>
+								}
+								placement="top"
+							>
+								<IconButton
+									aria-label={`Xóa ${selectedCount} bài tập đã chọn`}
+									colorStyle="tonal"
+									size="sm"
+									onClick={onDeleteSelected}
+									disabled={isLoading}
+									className="text-m3-error hover:bg-m3-error/10"
+									loading={isLoading}
+								>
+									<Icon name="delete" size={20} className="text-m3-error" />
 								</IconButton>
 							</TooltipBox>
 
@@ -185,6 +199,7 @@ const ManageAssignmentToolbarComponent = ({
 			activeCount,
 			isLoading,
 			onDeactivateSelected,
+			onDeleteSelected,
 			onClear,
 		],
 	);

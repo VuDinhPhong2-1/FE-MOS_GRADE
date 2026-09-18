@@ -16,4 +16,17 @@ export const queryKeys = {
 		assignments: (classId: string) =>
 			[...queryKeys.students.all, "assignments", classId] as const,
 	},
+	analytics: {
+		all: ["analytics"] as const,
+		classOverview: (classId: string) =>
+			[...queryKeys.analytics.all, "class-overview", classId] as const,
+		weakTasks: (classId: string, projectEndpoint?: string, top?: number) =>
+			[
+				...queryKeys.analytics.all,
+				"weak-tasks",
+				classId,
+				projectEndpoint || "all",
+				top ?? 10,
+			] as const,
+	},
 };
