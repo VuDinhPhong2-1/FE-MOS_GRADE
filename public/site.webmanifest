@@ -1,0 +1,27 @@
+{
+	"name": "MOS Grader | Hệ thống chấm điểm MOS",
+	"short_name": "MOS Grader",
+	"description": "Hệ thống chấm điểm tự động, quản lý lớp học, bài tập, điểm số và tổ chức thi chứng chỉ Tin học văn phòng MOS.",
+	"lang": "vi-VN",
+	"start_url": "/",
+	"scope": "/",
+	"display": "standalone",
+	"orientation": "portrait-primary",
+	"background_color": "#F8FAFC",
+	"theme_color": "#1B6EF3",
+	"categories": ["education", "productivity", "utilities"],
+	"icons": [
+		{
+			"src": "/android-chrome-192x192.png",
+			"sizes": "192x192",
+			"type": "image/png",
+			"purpose": "any maskable"
+		},
+		{
+			"src": "/android-chrome-512x512.png",
+			"sizes": "512x512",
+			"type": "image/png",
+			"purpose": "any maskable"
+		}
+	]
+}
