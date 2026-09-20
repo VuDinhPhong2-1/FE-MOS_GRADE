@@ -5068,6 +5068,7 @@ const XmlGradingRulesPage = () => {
 																								sourceFile: "word/document.xml",
 																								numberingFile: "word/numbering.xml",
 																								anchorText: "SKI RESORTS",
+																								endAnchorText: "",
 																								expectedBulletChar: "■",
 																								level: 0,
 																								minItems: 1,
@@ -6075,7 +6076,7 @@ const XmlGradingRulesPage = () => {
 																						)}
 																						{task.specialCondition?.type === "wordBulletStyle" && (
 																							<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-2">
-																								{[["sourceFile", "File nguồn", "word/document.xml"], ["numberingFile", "Numbering file", "word/numbering.xml"], ["anchorText", "Văn bản neo", "SKI RESORTS"]].map(([field, label, placeholder]) => (<label key={field} className="text-xs font-semibold text-slate-600">{label}<input value={(task.specialCondition?.wordBulletStyleConfig as Record<string, string | undefined> | undefined)?.[field] ?? ""} onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, type: "wordBulletStyle", wordBulletStyleConfig: { ...(task.specialCondition?.wordBulletStyleConfig ?? {}), [field]: e.target.value } })} placeholder={placeholder} className={inputClass} /></label>))}
+																								{[["sourceFile", "File nguồn", "word/document.xml"], ["numberingFile", "Numbering file", "word/numbering.xml"], ["anchorText", "Văn bản neo bắt đầu", "SKI RESORTS"], ["endAnchorText", "Văn bản neo kết thúc", ""]].map(([field, label, placeholder]) => (<label key={field} className="text-xs font-semibold text-slate-600">{label}<input value={(task.specialCondition?.wordBulletStyleConfig as Record<string, string | undefined> | undefined)?.[field] ?? ""} onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, type: "wordBulletStyle", wordBulletStyleConfig: { ...(task.specialCondition?.wordBulletStyleConfig ?? {}), [field]: e.target.value } })} placeholder={placeholder} className={inputClass} /></label>))}
 																								<label className="text-xs font-semibold text-slate-600">
 																									Ký tự bullet
 																									<select value={task.specialCondition.wordBulletStyleConfig?.expectedBulletChar ?? "■"} onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, type: "wordBulletStyle", wordBulletStyleConfig: { ...(task.specialCondition?.wordBulletStyleConfig ?? {}), expectedBulletChar: e.target.value } })} className={inputClass}>

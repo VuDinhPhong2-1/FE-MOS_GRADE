@@ -246,6 +246,7 @@ export interface WordBulletStyleConfig {
 	sourceFile?: string;
 	numberingFile?: string;
 	anchorText?: string;
+	endAnchorText?: string;
 	expectedBulletChar?: string;
 	level?: number;
 	minItems?: number;
