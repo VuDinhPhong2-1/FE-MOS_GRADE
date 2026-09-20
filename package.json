@@ -15,6 +15,8 @@
 		"build:be-local": "tsc -b && vite build --mode be-local",
 		"build:be-deploy": "tsc -b && vite build --mode be-deploy",
 		"lint": "biome lint .",
+		"encoding:check": "node scripts/fix-vietnamese-mojibake.cjs",
+		"encoding:fix": "node scripts/fix-vietnamese-mojibake.cjs --write",
 		"format": "biome format --write .",
 		"check": "biome check --write .",
 		"ci": "biome ci .",
