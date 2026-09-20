@@ -74,17 +74,22 @@ export const useAssignmentManager = ({
 			isActive: true,
 		});
 
-	const manageableActiveAssignments = useMemo(
-		() => assignments.filter((assignment) => assignment.isActive),
-		[assignments],
+	const selectableAssignments = useMemo(
+		() =>
+			showInactiveAssignments
+				? assignments
+				: assignments.filter((assignment) => assignment.isActive),
+		[assignments, showInactiveAssignments],
 	);
 
+	const manageableActiveAssignments = selectableAssignments;
+
 	const isAllManageActiveSelected = useMemo(() => {
-		if (manageableActiveAssignments.length === 0) return false;
-		return manageableActiveAssignments.every((assignment) =>
+		if (selectableAssignments.length === 0) return false;
+		return selectableAssignments.every((assignment) =>
 			manageSelectedAssignmentIds.includes(assignment.id),
 		);
-	}, [manageableActiveAssignments, manageSelectedAssignmentIds]);
+	}, [selectableAssignments, manageSelectedAssignmentIds]);
 
 	const newAssignmentPracticeEndpoints = useMemo(
 		() =>
@@ -125,15 +130,13 @@ export const useAssignmentManager = ({
 	}, [chooseMode]);
 
 	useEffect(() => {
-		const activeAssignmentIds = new Set(
-			assignments
-				.filter((assignment) => assignment.isActive)
-				.map((assignment) => assignment.id),
+		const validAssignmentIds = new Set(
+			selectableAssignments.map((assignment) => assignment.id),
 		);
 		setManageSelectedAssignmentIds((prev) =>
-			prev.filter((id) => activeAssignmentIds.has(id)),
+			prev.filter((id) => validAssignmentIds.has(id)),
 		);
-	}, [assignments]);
+	}, [selectableAssignments]);
 
 	const handleToggleBulkAssignmentSelection = (endpoint: string) => {
 		setBulkAssignmentDrafts((previousDrafts) =>
@@ -319,7 +322,12 @@ export const useAssignmentManager = ({
 	};
 
 	const handleToggleManageAssignmentSelection = (assignment: Assignment) => {
-		if (assignmentSubmitLoading || !assignment.isActive) return;
+		if (
+			assignmentSubmitLoading ||
+			(!showInactiveAssignments && !assignment.isActive)
+		) {
+			return;
+		}
 		setManageSelectedAssignmentIds((prev) =>
 			prev.includes(assignment.id)
 				? prev.filter((id) => id !== assignment.id)
@@ -330,7 +338,7 @@ export const useAssignmentManager = ({
 	const handleSelectAllManageAssignments = () => {
 		if (assignmentSubmitLoading) return;
 		setManageSelectedAssignmentIds(
-			manageableActiveAssignments.map((assignment) => assignment.id),
+			selectableAssignments.map((assignment) => assignment.id),
 		);
 	};
 
@@ -342,14 +350,16 @@ export const useAssignmentManager = ({
 	const handleDeactivateSelectedAssignments = async () => {
 		if (assignmentSubmitLoading) return;
 
-		const selectedActiveAssignments = manageableActiveAssignments.filter(
-			(assignment) => manageSelectedAssignmentIds.includes(assignment.id),
-		);
+		const selectedActiveAssignments = assignments
+			.filter((assignment) => assignment.isActive)
+			.filter((assignment) =>
+				manageSelectedAssignmentIds.includes(assignment.id),
+			);
 
 		if (selectedActiveAssignments.length === 0) {
 			void showAlert({
 				title: "Chưa chọn bài tập",
-				message: "Vui lòng chọn ít nhất 1 bài tập đang dùng.",
+				message: "Vui lòng chọn ít nhất 1 bài tập đang dùng để bỏ hoạt động.",
 				variant: "warning",
 			});
 			return;
@@ -550,21 +560,25 @@ export const useAssignmentManager = ({
 		try {
 			await assignmentService.delete(assignment.id, getAccessToken);
 			setAssignments((prev) => {
-				if (!showInactiveAssignments) {
+				if (!showInactiveAssignments || !assignment.isActive) {
 					return prev.filter((item) => item.id !== assignment.id);
 				}
 				return prev.map((item) =>
 					item.id === assignment.id ? { ...item, isActive: false } : item,
 				);
 			});
+			setManageSelectedAssignmentIds((prev) =>
+				prev.filter((id) => id !== assignment.id),
+			);
 			if (onAssignmentsUpdated) {
 				onAssignmentsUpdated([assignment.id]);
 			}
 			void showAlert({
 				title: "Thành công",
-				message: showInactiveAssignments
-					? "Bài tập đã được ẩn."
-					: "Đã xóa bài tập.",
+				message:
+					showInactiveAssignments && assignment.isActive
+						? "Bài tập đã được ẩn."
+						: "Đã xóa bài tập.",
 				variant: "success",
 			});
 		} catch (error) {
@@ -573,6 +587,116 @@ export const useAssignmentManager = ({
 				title: "Lỗi",
 				message:
 					error instanceof Error ? error.message : "Không thể xóa bài tập.",
+				variant: "error",
+			});
+		} finally {
+			setAssignmentSubmitLoading(false);
+		}
+	};
+
+	const handleDeleteSelectedAssignments = async () => {
+		if (assignmentSubmitLoading) return;
+
+		const selectedAssignments = assignments.filter((assignment) =>
+			manageSelectedAssignmentIds.includes(assignment.id),
+		);
+
+		if (selectedAssignments.length === 0) {
+			void showAlert({
+				title: "Chưa chọn bài tập",
+				message: "Vui lòng chọn ít nhất 1 bài tập để xóa.",
+				variant: "warning",
+			});
+			return;
+		}
+
+		const confirmed = await showConfirm({
+			title: "Xác nhận xóa bài tập",
+			message: `Bạn có chắc muốn xóa ${selectedAssignments.length} bài tập đã chọn? Hành động này sẽ xóa dữ liệu và không thể hoàn tác.`,
+			confirmLabel: "Xác nhận xóa",
+			variant: "destructive",
+		});
+		if (!confirmed) return;
+
+		setAssignmentSubmitLoading(true);
+		try {
+			const results = await Promise.allSettled(
+				selectedAssignments.map((assignment) =>
+					assignmentService.delete(assignment.id, getAccessToken),
+				),
+			);
+
+			const deletedIds: string[] = [];
+			const failedAssignments: string[] = [];
+
+			results.forEach((result, index) => {
+				const sourceAssignment = selectedAssignments[index];
+				if (result.status === "fulfilled") {
+					deletedIds.push(sourceAssignment.id);
+					return;
+				}
+
+				failedAssignments.push(
+					`${sourceAssignment.name}: ${getReadableErrorMessage(result.reason, "Không thể xóa bài tập này.")}`,
+				);
+			});
+
+			if (deletedIds.length > 0) {
+				const deletedSet = new Set(deletedIds);
+				setAssignments((prev) => {
+					if (!showInactiveAssignments) {
+						return prev.filter((item) => !deletedSet.has(item.id));
+					}
+					return prev
+						.map((item) => {
+							if (deletedSet.has(item.id)) {
+								return item.isActive ? { ...item, isActive: false } : null;
+							}
+							return item;
+						})
+						.filter((item): item is Assignment => item !== null);
+				});
+
+				setManageSelectedAssignmentIds((prev) =>
+					prev.filter((id) => !deletedSet.has(id)),
+				);
+
+				if (onAssignmentsUpdated) {
+					onAssignmentsUpdated(deletedIds);
+				}
+			}
+
+			if (failedAssignments.length === 0) {
+				void showAlert({
+					title: "Thành công",
+					message: `Đã xóa thành công ${deletedIds.length} bài tập.`,
+					variant: "success",
+				});
+				return;
+			}
+
+			if (deletedIds.length > 0) {
+				void showAlert({
+					title: "Xóa bài tập có lỗi",
+					message: `Đã xóa ${deletedIds.length}/${selectedAssignments.length} bài tập.\n\nLỗi:\n${failedAssignments.join("\n")}`,
+					variant: "warning",
+				});
+				return;
+			}
+
+			void showAlert({
+				title: "Lỗi xóa bài tập",
+				message: `Không thể xóa các bài tập đã chọn.\n\n${failedAssignments.join("\n")}`,
+				variant: "error",
+			});
+		} catch (error) {
+			console.error("Lỗi khi xóa nhiều bài tập:", error);
+			void showAlert({
+				title: "Lỗi",
+				message: getReadableErrorMessage(
+					error,
+					"Không thể xóa các bài tập đã chọn.",
+				),
 				variant: "error",
 			});
 		} finally {
@@ -634,6 +758,7 @@ export const useAssignmentManager = ({
 		handleOpenEditAssignment,
 		handleSaveAssignmentEdit,
 		handleDeleteAssignment,
+		handleDeleteSelectedAssignments,
 		resetAssignmentManagerState,
 	};
 };

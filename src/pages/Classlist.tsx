@@ -115,7 +115,7 @@ const ClassList: React.FC<ClassListProps> = ({
 	}
 
 	return (
-		<div className="space-y-6 pb-28">
+		<div className="space-y-5">
 			{/* Thông báo lỗi nếu có */}
 			{error && (
 				<Card

@@ -14,7 +14,7 @@ const Header = ({ onOpenProfile }: HeaderProps) => {
 	const isSettingsPage = location.pathname === "/settings";
 
 	return (
-		<header className="sticky top-0 z-20 flex items-center justify-between gap-3 bg-transparent p-4 transition-colors sm:px-5 min-h-20">
+		<header className="sticky top-0 z-20 flex items-center justify-between gap-3 bg-transparent p-4 transition-colors min-h-20">
 			{/* Left side: Mobile Brand Icon M + Page Title & Subtitle */}
 			<div className="flex min-w-0 items-center gap-3">
 				{/* Mobile: Chỉ hiển thị icon M thương hiệu */}
@@ -44,7 +44,7 @@ const Header = ({ onOpenProfile }: HeaderProps) => {
 				<ThemeToggle />
 
 				<IconButton
-					colorStyle={isSettingsPage ? "tonal" : "filled"}
+					colorStyle={isSettingsPage ? "tonal" : "standard"}
 					size="md"
 					onClick={() => {
 						onOpenProfile?.();
@@ -53,7 +53,12 @@ const Header = ({ onOpenProfile }: HeaderProps) => {
 					aria-label="Cài đặt tài khoản"
 					title="Cài đặt tài khoản"
 				>
-					<Icon name="settings" size={24} />
+					<Icon
+						name="settings"
+						size={24}
+						animateFill
+						fill={isSettingsPage ? 1 : 0}
+					/>
 				</IconButton>
 			</div>
 		</header>

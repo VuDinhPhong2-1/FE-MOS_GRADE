@@ -1,15 +1,17 @@
 import {
-	Chip,
 	FAB,
+	FAST_SPATIAL_SPRING,
 	Icon,
+	IconButton,
 	PlainTooltip,
 	ProgressIndicator,
-	ToolbarDivider,
 	ToolbarIconButton,
 	TooltipBox,
 } from "@bug-on/m3-expressive";
+import { AnimatePresence, motion } from "motion/react";
 import { memo, useMemo } from "react";
-import { FloatingActionToolbar } from "../../../../components/common/FloatingActionToolbar";
+import { FloatingActionToolbar } from "../../../../components/common/floating-action-toolbar";
+import { cn } from "../../../../utils/utils";
 
 export interface MultiGradingToolbarProps {
 	onBack: () => void;
@@ -51,8 +53,6 @@ const MultiGradingToolbarComponent = ({
 					</ToolbarIconButton>
 				</TooltipBox>
 
-				{(onSelectAll || onClear) && <ToolbarDivider />}
-
 				{/* Chọn tất cả bài tập */}
 				{onSelectAll && (
 					<TooltipBox
@@ -69,46 +69,73 @@ const MultiGradingToolbarComponent = ({
 						</ToolbarIconButton>
 					</TooltipBox>
 				)}
-
-				{/* Bỏ chọn */}
-				{onClear && (
-					<TooltipBox
-						tooltip={<PlainTooltip>Bỏ chọn tất cả</PlainTooltip>}
-						placement="top"
-					>
-						<ToolbarIconButton
-							aria-label="Bỏ chọn tất cả"
-							onClick={onClear}
-							disabled={isLoading || selectedCount === 0}
-							emphasis="standard"
-						>
-							<Icon name="deselect" size={24} />
-						</ToolbarIconButton>
-					</TooltipBox>
-				)}
 			</>
 		),
-		[
-			onBack,
-			isLoading,
-			onSelectAll,
-			onClear,
-			totalAssignmentsCount,
-			selectedCount,
-		],
+		[onBack, isLoading, onSelectAll, totalAssignmentsCount],
 	);
 
-	// Chip đếm số bài tập đã chọn
+	// Info slot hiển thị trạng thái chọn bài dạng Spring Pill kèm nút bỏ chọn (không border, không shadow)
 	const infoSlot = useMemo(
 		() => (
-			<Chip
-				variant="assist"
-				leadingIcon={<Icon name="fact_check" size={16} />}
-				label={`${selectedCount}/${totalAssignmentsCount} bài`}
-				className="h-8! px-3! rounded-full pointer-events-none text-xs font-semibold"
-			/>
+			<AnimatePresence>
+				{totalAssignmentsCount > 0 && (
+					<motion.div
+						key="multi-grading-selection-slot"
+						initial={{ opacity: 0, scale: 0.8, width: 0 }}
+						animate={{ opacity: 1, scale: 1, width: "auto" }}
+						exit={{ opacity: 0, scale: 0.8, width: 0 }}
+						transition={FAST_SPATIAL_SPRING}
+						className="overflow-hidden flex shrink-0"
+					>
+						<div
+							className={cn(
+								"flex items-center gap-1.5 rounded-full bg-m3-surface-container-high pl-3 py-1.5 text-xs text-m3-on-surface",
+								onClear && selectedCount > 0 ? "pr-1.5" : "pr-3",
+							)}
+						>
+							<Icon
+								name="fact_check"
+								size={16}
+								className="text-m3-primary shrink-0"
+							/>
+							<span className="font-semibold text-m3-primary px-1 whitespace-nowrap">
+								{selectedCount}/{totalAssignmentsCount} bài
+							</span>
+
+							{/* Nút bỏ chọn tất cả khi có bài tập đang được chọn */}
+							<AnimatePresence>
+								{onClear && selectedCount > 0 && (
+									<motion.div
+										key="multi-clear-btn"
+										initial={{ opacity: 0, scale: 0.6, width: 0 }}
+										animate={{ opacity: 1, scale: 1, width: "auto" }}
+										exit={{ opacity: 0, scale: 0.6, width: 0 }}
+										transition={FAST_SPATIAL_SPRING}
+										className="overflow-hidden flex shrink-0"
+									>
+										<TooltipBox
+											tooltip={<PlainTooltip>Bỏ chọn tất cả</PlainTooltip>}
+											placement="top"
+										>
+											<IconButton
+												aria-label="Bỏ chọn tất cả"
+												colorStyle="tonal"
+												size="sm"
+												onClick={onClear}
+												disabled={isLoading}
+											>
+												<Icon name="close" size={20} />
+											</IconButton>
+										</TooltipBox>
+									</motion.div>
+								)}
+							</AnimatePresence>
+						</div>
+					</motion.div>
+				)}
+			</AnimatePresence>
 		),
-		[selectedCount, totalAssignmentsCount],
+		[totalAssignmentsCount, onClear, selectedCount, isLoading],
 	);
 
 	// FAB lưu điểm nhiều bài

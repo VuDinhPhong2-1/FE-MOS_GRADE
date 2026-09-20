@@ -5,13 +5,12 @@ import {
 	IconButton,
 	PlainTooltip,
 	ProgressIndicator,
-	ToolbarDivider,
 	ToolbarIconButton,
 	TooltipBox,
 } from "@bug-on/m3-expressive";
 import { AnimatePresence, motion } from "motion/react";
 import { memo, useMemo } from "react";
-import { FloatingActionToolbar } from "../../../../components/common/FloatingActionToolbar";
+import { FloatingActionToolbar } from "../../../../components/common/floating-action-toolbar";
 
 export interface CreateAssignmentToolbarProps {
 	onBack: () => void;
@@ -54,8 +53,6 @@ const CreateAssignmentToolbarComponent = ({
 						<Icon name="arrow_back" size={24} />
 					</ToolbarIconButton>
 				</TooltipBox>
-
-				<ToolbarDivider />
 
 				{/* Chọn tất cả project */}
 				<TooltipBox

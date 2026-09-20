@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { showAlert } from "../../../components/common";
 import { useAuth } from "../../../context/AuthContext";
 import { assignmentService } from "../../../services/assignment.service";
@@ -19,32 +19,48 @@ export const useGradingData = ({
 	showInactiveAssignments,
 }: UseGradingDataProps) => {
 	const { getAccessToken } = useAuth();
-	const [assignments, setAssignments] = useState<Assignment[]>([]);
+	const [allAssignments, setAllAssignments] = useState<Assignment[]>([]);
 	const [gradingEndpoints, setGradingEndpoints] = useState<
 		GradingEndpointInfo[]
 	>([]);
 	const [isLoadingEndpoints, setIsLoadingEndpoints] = useState(false);
 	const [isLoadingAssignments, setIsLoadingAssignments] = useState(false);
 
-	const loadAssignments = useCallback(async () => {
-		if (!classId) return;
-		setIsLoadingAssignments(true);
-		try {
-			const data = await assignmentService.getByClass(classId, getAccessToken, {
-				includeInactive: showInactiveAssignments,
-			});
-			setAssignments(data);
-		} catch (error) {
-			console.error("Lỗi khi tải danh sách bài tập:", error);
-			void showAlert({
-				title: "Lỗi tải dữ liệu",
-				message: "Không thể tải danh sách bài tập!",
-				variant: "error",
-			});
-		} finally {
-			setIsLoadingAssignments(false);
-		}
-	}, [classId, getAccessToken, showInactiveAssignments]);
+	const showInactiveRef = useRef(showInactiveAssignments);
+	useEffect(() => {
+		showInactiveRef.current = showInactiveAssignments;
+	}, [showInactiveAssignments]);
+
+	const loadAssignments = useCallback(
+		async (includeInactive?: boolean) => {
+			if (!classId) return;
+			setIsLoadingAssignments(true);
+			try {
+				const shouldIncludeInactive =
+					includeInactive !== undefined
+						? includeInactive
+						: showInactiveRef.current;
+				const data = await assignmentService.getByClass(
+					classId,
+					getAccessToken,
+					{
+						includeInactive: shouldIncludeInactive,
+					},
+				);
+				setAllAssignments(data);
+			} catch (error) {
+				console.error("Lỗi khi tải danh sách bài tập:", error);
+				void showAlert({
+					title: "Lỗi tải dữ liệu",
+					message: "Không thể tải danh sách bài tập!",
+					variant: "error",
+				});
+			} finally {
+				setIsLoadingAssignments(false);
+			}
+		},
+		[classId, getAccessToken],
+	);
 
 	const loadGradingEndpoints = useCallback(async () => {
 		setIsLoadingEndpoints(true);
@@ -64,15 +80,39 @@ export const useGradingData = ({
 		}
 	}, [isOpen, classId, loadGradingEndpoints]);
 
+	// Initial load
 	useEffect(() => {
 		if (isOpen && classId) {
-			void loadAssignments();
+			void loadAssignments(showInactiveRef.current);
 		}
 	}, [isOpen, classId, loadAssignments]);
 
+	// When user turns on showInactiveAssignments: refetch to get inactive records from server
+	// When user turns off: only local filter is applied via useMemo (no refetch)
+	const isFirstRender = useRef(true);
+	useEffect(() => {
+		if (isFirstRender.current) {
+			isFirstRender.current = false;
+			return;
+		}
+		if (isOpen && classId && showInactiveAssignments) {
+			void loadAssignments(true);
+		}
+	}, [isOpen, classId, showInactiveAssignments, loadAssignments]);
+
+	// Derived assignments based on toggle filter
+	const assignments = useMemo(() => {
+		if (showInactiveAssignments) {
+			return allAssignments;
+		}
+		return allAssignments.filter((a) => a.isActive);
+	}, [allAssignments, showInactiveAssignments]);
+
 	return {
 		assignments,
-		setAssignments,
+		allAssignments,
+		setAssignments: setAllAssignments,
+		setAllAssignments,
 		gradingEndpoints,
 		loadAssignments,
 		loadGradingEndpoints,

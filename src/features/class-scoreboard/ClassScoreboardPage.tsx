@@ -1,5 +1,5 @@
 import { Icon } from "@bug-on/m3-expressive";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { RouteLoadingFallback } from "../../components/common";
 import { useAuth } from "../../context/AuthContext";
@@ -12,7 +12,10 @@ import type { Assignment } from "../../types/assignment.types";
 import type { Class } from "../../types/class.types";
 import type { ScoreResponse } from "../../types/score.types";
 import type { Student } from "../../types/student.types";
-import { ViewAllScoresModal } from "../grading";
+import ScoreboardActionToolbar from "../grading/components/ScoreboardActionToolbar";
+import ScoreboardContent from "../grading/components/ScoreboardContent";
+import { useScoreboardState } from "../grading/hooks/useScoreboardState";
+import type { CompetencyLevel } from "../grading/utils/scoreboardUtils";
 import { mapLoadError } from "./utils/classScoreboard.utils";
 
 interface ClassScoreboardLocationState {
@@ -35,14 +38,14 @@ const ClassScoreboardPage = () => {
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 
-	const handleBack = () => {
+	const handleBack = useCallback(() => {
 		if (locationState?.returnPath) {
 			navigate(locationState.returnPath);
 			return;
 		}
 
 		navigate("/schools");
-	};
+	}, [locationState?.returnPath, navigate]);
 
 	useEffect(() => {
 		let active = true;
@@ -118,25 +121,60 @@ const ClassScoreboardPage = () => {
 
 	usePageHeader(
 		{
-			title: `Bảng điểm: ${classDisplayName}`,
+			title: `Bảng điểm ${classDisplayName}`,
 			subtitle: `${students.length} học sinh · ${assignments.length} bài tập`,
-			actions: [
-				{
-					id: "back-to-classes",
-					label: "Quay lại",
-					icon: "arrow_back",
-					colorStyle: "outlined",
-					onClick: handleBack,
-				},
-			],
+			actions: [],
 		},
-		[
-			classDisplayName,
-			students.length,
-			assignments.length,
-			locationState?.returnPath,
-		],
+		[classDisplayName, students.length, assignments.length],
 	);
+
+	const scoreboardScores = useMemo(
+		() =>
+			scores.map((s) => ({
+				studentId: s.studentId,
+				assignmentId: s.assignmentId,
+				assignmentName: s.assignmentName,
+				scoreValue: typeof s.scoreValue === "number" ? s.scoreValue : null,
+				autoGradingErrors: s.autoGradingErrors || [],
+				autoGradingTaskResults: s.autoGradingTaskResults || [],
+			})),
+		[scores],
+	);
+
+	const handleStudentClassificationUpdated = useCallback(
+		(studentId: string, classification: CompetencyLevel) => {
+			setStudents((prev) =>
+				prev.map((student) =>
+					student.id === studentId
+						? { ...student, competencyLevel: classification }
+						: student,
+				),
+			);
+		},
+		[],
+	);
+
+	const handleStudentNotesUpdated = useCallback(
+		(studentId: string, notes: string) => {
+			setStudents((prev) =>
+				prev.map((student) =>
+					student.id === studentId ? { ...student, notes } : student,
+				),
+			);
+		},
+		[],
+	);
+
+	const scoreboardState = useScoreboardState({
+		isOpen: true,
+		assignments,
+		students,
+		scores: scoreboardScores,
+		classDisplayName,
+		title: `Bảng điểm lớp ${classDisplayName}`,
+		onStudentClassificationUpdated: handleStudentClassificationUpdated,
+		onStudentNotesUpdated: handleStudentNotesUpdated,
+	});
 
 	if (isLoading) {
 		return <RouteLoadingFallback message="Đang tải bảng điểm lớp..." />;
@@ -145,7 +183,7 @@ const ClassScoreboardPage = () => {
 	if (error) {
 		return (
 			<div className="space-y-4">
-				<div className="flex items-center gap-3 rounded-2xl bg-m3-error-container p-4 text-xs font-medium text-m3-on-error-container shadow-xs">
+				<div className="flex items-center gap-3 rounded-2xl bg-m3-error-container p-4 text-xs font-medium text-m3-on-error-container">
 					<Icon name="warning" className="text-xl shrink-0" />
 					<span>{error}</span>
 				</div>
@@ -156,7 +194,7 @@ const ClassScoreboardPage = () => {
 	if (!canManageClass) {
 		return (
 			<div className="space-y-4">
-				<div className="flex items-center gap-3 rounded-2xl bg-amber-500/15 p-4 text-xs font-medium text-amber-700 dark:text-amber-300 shadow-xs">
+				<div className="flex items-center gap-3 rounded-2xl bg-amber-500/15 p-4 text-xs font-medium text-amber-700 dark:text-amber-300">
 					<Icon name="lock" className="text-xl shrink-0" />
 					<span>
 						Bạn chỉ có quyền xem lớp này, không có quyền mở bảng điểm đầy đủ.
@@ -168,39 +206,14 @@ const ClassScoreboardPage = () => {
 
 	return (
 		<div className="space-y-4">
-			<ViewAllScoresModal
-				isOpen
-				onClose={handleBack}
-				displayMode="page"
-				title={`Bảng điểm lớp ${classDisplayName}`}
-				assignments={assignments}
-				students={students}
-				classDisplayName={classDisplayName}
-				onStudentClassificationUpdated={(studentId, classification) => {
-					setStudents((prev) =>
-						prev.map((student) =>
-							student.id === studentId
-								? { ...student, competencyLevel: classification }
-								: student,
-						),
-					);
-				}}
-				onStudentNotesUpdated={(studentId, notes) => {
-					setStudents((prev) =>
-						prev.map((student) =>
-							student.id === studentId ? { ...student, notes } : student,
-						),
-					);
-				}}
-				scores={scores.map((s) => ({
-					studentId: s.studentId,
-					assignmentId: s.assignmentId,
-					assignmentName: s.assignmentName,
-					scoreValue: typeof s.scoreValue === "number" ? s.scoreValue : null,
-					autoGradingErrors: s.autoGradingErrors || [],
-					autoGradingTaskResults: s.autoGradingTaskResults || [],
-				}))}
+			<ScoreboardContent
+				state={scoreboardState}
+				hideInlineSearch
+				tableMaxHeightClassName="min-h-96 max-h-[calc(100vh-14rem)]"
 			/>
+
+			{/* FloatingActionToolbar hợp nhất với đầy đủ action buttons, sort, xuất file & tìm kiếm */}
+			<ScoreboardActionToolbar state={scoreboardState} onBack={handleBack} />
 		</div>
 	);
 };

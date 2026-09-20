@@ -3,15 +3,18 @@ import {
 	Chip,
 	Icon,
 	LoadingIndicator,
+	ProgressIndicator,
+	ShapeIcon,
 	ShapeMedia,
 	type ShapeMediaProps,
 	Text,
 } from "@bug-on/m3-expressive";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { usePageHeader } from "../context/PageActionsContext";
 import { schoolService } from "../services/school.service";
+import { getWeekProgressInfo } from "../utils/date";
 
 interface DashboardStats {
 	schoolCount: number | null;
@@ -29,6 +32,14 @@ export default function Dashboard() {
 		schoolCount: null,
 		isLoading: true,
 	});
+
+	const [now, setNow] = useState(() => new Date());
+	useEffect(() => {
+		const timer = setInterval(() => setNow(new Date()), 60_000);
+		return () => clearInterval(timer);
+	}, []);
+
+	const weekProgress = useMemo(() => getWeekProgressInfo(now), [now]);
 
 	const isAdmin = user?.role === "Admin";
 	const displayName = user?.fullName || user?.username || "Thầy/Cô";
@@ -142,9 +153,9 @@ export default function Dashboard() {
 	return (
 		<div className="space-y-8">
 			{/* Hero Welcome Banner */}
-			<Card className="relative overflow-hidden p-8 sm:p-10" variant="filled">
+			<Card className="relative overflow-hidden p-6 sm:p-8" variant="filled">
 				<div className="relative z-10 flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
-					<div className="max-w-2xl space-y-3">
+					<div className="max-w-2xl space-y-4">
 						<Chip
 							label="Hệ thống chấm điểm MOS Grader Pro"
 							variant="suggestion"
@@ -153,7 +164,7 @@ export default function Dashboard() {
 						<Text className="text-2xl font-black tracking-tight sm:text-3xl lg:text-4xl">
 							Xin chào, {displayName}! 👋
 						</Text>
-						<Text className="text-sm sm:text-base opacity-90 leading-relaxed">
+						<Text className="text-sm font-sans sm:text-base opacity-90 leading-relaxed">
 							Chào mừng bạn đến với bảng điều khiển trung tâm. Theo dõi tiến độ
 							chấm thi, quản lý lớp học và xuất báo cáo kết quả nhanh chóng.
 						</Text>
@@ -191,29 +202,42 @@ export default function Dashboard() {
 					onClick={() => navigate("/schools")}
 					className="group relative cursor-pointer bg-m3-surface-container p-5"
 					variant="filled"
+					disableElevation
 				>
 					<div className="flex items-center justify-between">
-						<ShapeMedia
+						<ShapeIcon
 							shape="arch"
-							width={48}
-							height={48}
-							className="flex h-12 w-12 items-center justify-center bg-m3-primary-container text-m3-on-primary-container select-none"
+							className="flex size-12 items-center justify-center bg-m3-primary-container text-m3-on-primary-container select-none"
 						>
 							<Icon name="apartment" variant="rounded" size={24} />
-						</ShapeMedia>
+						</ShapeIcon>
 					</div>
 					<div className="mt-4">
 						<p className="text-xs text-left font-semibold uppercase tracking-wider text-m3-on-surface-variant">
 							Trường đang quản lý
 						</p>
-						<div className="mt-4 flex items-baseline gap-2">
-							{stats.isLoading ? (
-								<LoadingIndicator size={24} aria-label="Đang tải số trường" />
-							) : (
-								<span className="text-3xl font-black text-m3-on-surface">
-									{stats.schoolCount ?? "--"}
-								</span>
-							)}
+						<div
+							className="mt-4 flex items-baseline gap-2"
+							aria-busy={stats.isLoading}
+						>
+							<span className="relative inline-flex items-baseline text-3xl font-black text-m3-on-surface min-w-7">
+								{stats.isLoading ? (
+									<>
+										<span className="invisible select-none" aria-hidden="true">
+											0
+										</span>
+										<span className="absolute inset-0 flex items-center justify-start">
+											<LoadingIndicator
+												size={26}
+												aria-label="Đang tải số trường"
+												className="size-7"
+											/>
+										</span>
+									</>
+								) : (
+									(stats.schoolCount ?? "--")
+								)}
+							</span>
 							<span className="text-xs text-m3-on-surface-variant">cơ sở</span>
 						</div>
 					</div>
@@ -224,16 +248,15 @@ export default function Dashboard() {
 					onClick={() => navigate("/admin/xml-grading-rules")}
 					className="group relative cursor-pointer bg-m3-surface-container p-5"
 					variant="filled"
+					disableElevation
 				>
 					<div className="flex items-center justify-between">
-						<ShapeMedia
+						<ShapeIcon
 							shape="circle"
-							width={48}
-							height={48}
-							className="flex h-12 w-12 items-center justify-center bg-m3-secondary-container text-m3-on-secondary-container select-none"
+							className="flex size-12 items-center justify-center bg-m3-secondary-container text-m3-on-secondary-container select-none"
 						>
 							<Icon name="verified" variant="rounded" size={24} />
-						</ShapeMedia>
+						</ShapeIcon>
 					</div>
 					<div className="mt-4">
 						<p className="text-left text-xs font-semibold uppercase tracking-wider text-m3-on-surface-variant">
@@ -243,58 +266,68 @@ export default function Dashboard() {
 							<span className="text-3xl font-black text-m3-secondary">
 								XML Engine
 							</span>
-							<span className="text-xs text-m3-on-surface-variant">
-								Tự động
-							</span>
 						</div>
 					</div>
 				</Card>
 
-				{/* Card 3: Ca coi thi */}
+				{/* Card 3: Lịch tuần & Tiến độ */}
 				<Card
 					onClick={() => navigate("/schedule")}
 					className="group relative cursor-pointer bg-m3-surface-container p-5"
 					variant="filled"
+					disableElevation
 				>
 					<div className="flex items-center justify-between">
-						<ShapeMedia
+						<ShapeIcon
 							shape="pixelCircle"
-							width={48}
-							height={48}
-							className="flex h-12 w-12 items-center justify-center bg-m3-tertiary-container text-m3-on-tertiary-container select-none"
+							className="flex size-12 items-center justify-center bg-m3-tertiary-container text-m3-on-tertiary-container select-none"
 						>
 							<Icon name="schedule" variant="rounded" size={24} />
-						</ShapeMedia>
+						</ShapeIcon>
 					</div>
-					<div className="mt-4">
-						<p className="text-left text-xs font-semibold uppercase tracking-wider text-m3-on-surface-variant">
-							Lịch thi & Chấm thi
-						</p>
-						<div className="mt-4 flex items-baseline gap-2">
-							<span className="text-3xl font-black text-m3-on-surface">
-								Lịch tuần
-							</span>
-							<span className="text-xs text-m3-on-surface-variant">
-								Sẵn sàng
-							</span>
+					<div className="mt-4 flex flex-row items-center justify-between">
+						<div>
+							<p className="truncate text-left text-xs font-semibold uppercase tracking-wider text-m3-on-surface-variant">
+								{weekProgress.weekRangeText}
+							</p>
+							<div className="mt-3 flex items-baseline gap-2">
+								<span className="text-3xl font-black text-m3-on-surface">
+									{weekProgress.currentWeekday}
+								</span>
+								<span className="text-xs text-m3-on-surface-variant">
+									(Ngày {weekProgress.dayInWeek}/7)
+								</span>
+							</div>
 						</div>
+						<ProgressIndicator
+							variant="circular"
+							shape="wavy"
+							trackShape="flat"
+							size={64}
+							waveSpeed={0.4}
+							amplitude={2}
+							wavelength={16}
+							value={weekProgress.percent}
+							aria-label={`Tiến trình ${weekProgress.weekRangeText}: ${weekProgress.percent}%`}
+							className="w-full"
+						/>
 					</div>
 				</Card>
 
 				{/* Card 4: Vai trò & Trạng thái */}
-				<Card className="relative bg-m3-surface-container p-5" variant="filled">
+				<Card
+					className="relative bg-m3-surface-container p-5"
+					variant="filled"
+					disableElevation
+				>
 					<div className="flex items-center justify-between">
-						<ShapeMedia
+						<ShapeIcon
 							shape="clover4Leaf"
-							width={48}
-							height={48}
-							className="flex h-12 w-12 items-center justify-center bg-m3-primary-container text-m3-on-primary-container select-none"
+							className="flex size-12 items-center justify-center bg-m3-primary-container text-m3-on-primary-container select-none"
 						>
 							<Icon name="badge" variant="rounded" size={24} />
-						</ShapeMedia>
-						<span className="inline-flex items-center gap-1 rounded-full bg-m3-primary/10 px-2.5 py-0.5 text-xs font-semibold text-m3-primary dark:bg-m3-primary-container/40 dark:text-m3-primary">
-							{user?.role || "Giáo viên"}
-						</span>
+						</ShapeIcon>
+						<Chip label={user?.role || "Giáo viên"} />
 					</div>
 					<div className="mt-4">
 						<p className="text-left text-xs font-semibold uppercase tracking-wider text-m3-on-surface-variant">
@@ -331,8 +364,9 @@ export default function Dashboard() {
 						<Card
 							key={action.path}
 							onClick={() => navigate(action.path)}
-							className="group flex flex-col justify-between cursor-pointer bg-m3-surface-container p-5"
+							className="group flex flex-col justify-between cursor-pointer bg-m3-surface-container p-6"
 							variant="filled"
+							disableElevation
 						>
 							<div>
 								<ShapeMedia
@@ -363,11 +397,15 @@ export default function Dashboard() {
 			</section>
 
 			{/* Standard MOS Grader Workflow Guide */}
-			<section className="rounded-m3-lg bg-m3-surface-container p-6 sm:p-8">
+			<section className="rounded-m3-lg bg-m3-surface-container p-4 sm:p-6">
 				<div className="mb-6 flex items-center gap-3">
-					<div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-m3-primary/10 text-m3-primary dark:bg-m3-primary-container dark:text-m3-on-primary-container">
+					<ShapeIcon
+						shape="clover4Leaf"
+						morphTo="clover8Leaf"
+						className="flex size-10 items-center justify-center bg-m3-primary/10 text-m3-primary dark:bg-m3-primary-container dark:text-m3-on-primary-container"
+					>
 						<Icon name="hub" className="text-xl" />
-					</div>
+					</ShapeIcon>
 					<div>
 						<h2 className="text-lg font-bold text-m3-on-surface">
 							Quy trình làm việc chuẩn trên MOS Grader

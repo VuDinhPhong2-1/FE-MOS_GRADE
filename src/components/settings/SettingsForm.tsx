@@ -8,7 +8,7 @@ interface SettingsFormProps {
 
 export const SettingsForm = (_props: SettingsFormProps) => {
 	return (
-		<div className="space-y-6 pb-12">
+		<div className="space-y-5">
 			{/* Phần thông tin tài khoản & Đăng xuất */}
 			<AccountSection />
 

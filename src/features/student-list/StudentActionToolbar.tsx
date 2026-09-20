@@ -18,7 +18,7 @@ import {
 import {
 	FloatingActionToolbar,
 	type SearchConfig,
-} from "../../components/common/FloatingActionToolbar";
+} from "../../components/common/floating-action-toolbar";
 
 export interface StudentActionToolbarProps {
 	readOnly: boolean;

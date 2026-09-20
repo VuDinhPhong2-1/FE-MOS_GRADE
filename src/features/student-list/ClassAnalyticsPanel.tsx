@@ -1,22 +1,19 @@
 import {
 	Card,
 	Icon,
+	IconButton,
 	ProgressIndicator,
 	Select,
 	type SelectOption,
 } from "@bug-on/m3-expressive";
-import { memo, useEffect, useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
-import { analyticsService } from "../../services/analytics.service";
-import type {
-	ClassAnalyticsOverviewResponse,
-	WeakTaskResponse,
-} from "../../types/analytics.types";
 import type { Assignment } from "../../types/assignment.types";
 import {
 	mapOverviewToGaugeData,
 	mapWeakTasksToBarChart,
 } from "../../utils/analyticsMappers";
+import { useAnalyticsQueries } from "./hooks/useAnalyticsQueries";
 
 interface ClassAnalyticsPanelProps {
 	classId: string;
@@ -66,13 +63,26 @@ const ClassAnalyticsPanelComponent = ({
 }: ClassAnalyticsPanelProps) => {
 	const { getAccessToken } = useAuth();
 
-	const [overview, setOverview] =
-		useState<ClassAnalyticsOverviewResponse | null>(null);
-	const [weakTasks, setWeakTasks] = useState<WeakTaskResponse[]>([]);
 	const [projectEndpoint, setProjectEndpoint] = useState<string>("");
 	const [top, setTop] = useState<number>(10);
-	const [loading, setLoading] = useState<boolean>(true);
-	const [error, setError] = useState<string>("");
+
+	const {
+		overview,
+		isOverviewLoading,
+		isOverviewFetching,
+		overviewError,
+		weakTasks,
+		isWeakTasksLoading,
+		isWeakTasksFetching,
+		weakTasksError,
+		refetchOverview,
+		refetchWeakTasks,
+	} = useAnalyticsQueries({
+		classId,
+		projectEndpoint: projectEndpoint || undefined,
+		top,
+		getAccessToken,
+	});
 
 	const endpointOptions = useMemo(() => {
 		const values = assignments
@@ -94,47 +104,18 @@ const ClassAnalyticsPanelComponent = ({
 		[endpointOptions, assignments],
 	);
 
-	useEffect(() => {
-		if (!classId) return;
-
-		const load = async () => {
-			setLoading(true);
-			setError("");
-			try {
-				const [overviewData, weakTaskData] = await Promise.all([
-					analyticsService.getClassOverview(classId, getAccessToken),
-					analyticsService.getWeakTasks(
-						classId,
-						getAccessToken,
-						projectEndpoint || undefined,
-						top,
-					),
-				]);
-
-				setOverview(overviewData);
-				setWeakTasks(weakTaskData);
-			} catch (err) {
-				setError(
-					err instanceof Error
-						? err.message
-						: "Không thể tải phân tích lớp học",
-				);
-			} finally {
-				setLoading(false);
-			}
-		};
-
-		void load();
-	}, [classId, getAccessToken, projectEndpoint, top]);
-
 	const gaugeData = useMemo(
 		() => (overview ? mapOverviewToGaugeData(overview) : []),
 		[overview],
 	);
+
 	const weakTaskChartRows = useMemo(
 		() => mapWeakTasksToBarChart(weakTasks),
 		[weakTasks],
 	);
+
+	const errorMessage = overviewError || weakTasksError;
+	const isAnyFetching = isOverviewFetching || isWeakTasksFetching;
 
 	return (
 		<Card variant="filled" className="relative overflow-hidden p-4 sm:p-6">
@@ -164,7 +145,7 @@ const ClassAnalyticsPanelComponent = ({
 								showDividers={false}
 							/>
 						</div>
-						<div className="w-full sm:w-54">
+						<div className="w-full sm:w-52">
 							<Select
 								variant="outlined"
 								options={TOP_OPTIONS}
@@ -176,6 +157,23 @@ const ClassAnalyticsPanelComponent = ({
 								showDividers={false}
 							/>
 						</div>
+						<IconButton
+							colorStyle="standard"
+							aria-label="Làm mới phân tích"
+							title="Làm mới phân tích"
+							disabled={isAnyFetching}
+							onClick={() => {
+								void refetchOverview();
+								void refetchWeakTasks();
+							}}
+							className="self-end sm:self-center text-m3-on-surface-variant hover:text-m3-on-surface shrink-0"
+						>
+							<Icon
+								name="refresh"
+								size={20}
+								className={isAnyFetching ? "animate-spin text-m3-primary" : ""}
+							/>
+						</IconButton>
 					</div>
 				</div>
 
@@ -184,103 +182,149 @@ const ClassAnalyticsPanelComponent = ({
 					nộp/chấm lại được tính là 1 lượt).
 				</div>
 
-				{error && (
+				{errorMessage && (
 					<div className="mb-4 flex items-center gap-2 rounded-2xl bg-m3-error-container/40 p-3.5 text-sm text-m3-on-error-container shadow-2xs">
 						<Icon name="error" className="text-lg text-m3-error" />
-						{error}
+						{errorMessage}
 					</div>
 				)}
 
-				{loading ? (
-					<div className="flex flex-col items-center justify-center gap-3 rounded-xl bg-m3-surface-container-low px-4 py-8 text-sm text-m3-on-surface-variant">
-						<ProgressIndicator
-							variant="circular"
-							shape="wavy"
-							size={64}
-							aria-label="Đang tải dữ liệu phân tích..."
-						/>
-						<span>Đang tải dữ liệu phân tích...</span>
-					</div>
-				) : (
-					<>
-						<div className="mb-5 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-							<Card
-								variant="outlined"
-								className="p-4"
-								title="Trung bình % của tất cả lượt chấm trong lớp"
-							>
-								<div className="text-xs font-medium text-m3-on-surface-variant">
-									Điểm TB theo lượt chấm
-								</div>
-								<div className="text-2xl font-bold text-m3-primary">
-									{pct(overview?.averagePercentage || 0)}
-								</div>
-								<div className="mt-1 text-[11px] text-m3-on-surface-variant/70">
-									TB % của tất cả lượt chấm
-								</div>
-							</Card>
-							<Card
-								variant="outlined"
-								className="p-4"
-								title="Tỷ lệ lượt chấm có điểm từ 60% trở lên"
-							>
-								<div className="text-xs font-medium text-m3-on-surface-variant">
-									Tỷ lệ đạt (&gt;= 60%)
-								</div>
-								<div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-									{pct(overview?.passRate || 0)}
-								</div>
-								<div className="mt-1 text-[11px] text-m3-on-surface-variant/70">
-									Số lượt đạt / tổng lượt
-								</div>
-							</Card>
-							<Card
-								variant="outlined"
-								className="p-4"
-								title="Tỷ lệ lượt chấm dưới 40%"
-							>
-								<div className="text-xs font-medium text-m3-on-surface-variant">
-									Tỷ lệ cảnh báo (&lt; 40%)
-								</div>
-								<div className="text-2xl font-bold text-m3-error">
-									{pct(overview?.warningRate || 0)}
-								</div>
-								<div className="mt-1 text-[11px] text-m3-on-surface-variant/70">
-									Số lượt dưới 40%
-								</div>
-							</Card>
-							<Card
-								variant="outlined"
-								className="p-4"
-								title="Tổng số lượt chấm đã được lưu"
-							>
-								<div className="text-xs font-medium text-m3-on-surface-variant">
-									Tổng lượt chấm
-								</div>
-								<div className="text-2xl font-bold text-m3-on-surface">
-									{overview?.totalAttempts || 0}
-								</div>
-								<div className="mt-1 text-[11px] text-m3-on-surface-variant/70">
-									Không phải số học sinh
-								</div>
-							</Card>
+				{/* 4 Summary Stat Cards - Zero Layout Shift */}
+				<div className="mb-5 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+					<Card
+						variant="outlined"
+						className="p-4"
+						title="Trung bình % của tất cả lượt chấm trong lớp"
+					>
+						<div className="text-xs font-medium text-m3-on-surface-variant">
+							Điểm TB theo lượt chấm
 						</div>
+						{isOverviewLoading ? (
+							<div className="my-1 h-8 w-24 animate-pulse rounded-lg bg-m3-surface-container-highest" />
+						) : (
+							<div className="text-2xl font-bold text-m3-primary">
+								{pct(overview?.averagePercentage || 0)}
+							</div>
+						)}
+						<div className="mt-1 text-[11px] text-m3-on-surface-variant/70">
+							TB % của tất cả lượt chấm
+						</div>
+					</Card>
 
-						<Card variant="outlined" className="p-4">
-							<div className="mb-3 flex items-center gap-2 font-semibold text-m3-on-surface">
-								<Icon name="warning" className="text-m3-error text-lg" />
-								Các câu yếu nhất (lần chấm mới nhất mỗi học sinh)
+					<Card
+						variant="outlined"
+						className="p-4"
+						title="Tỷ lệ lượt chấm có điểm từ 60% trở lên"
+					>
+						<div className="text-xs font-medium text-m3-on-surface-variant">
+							Tỷ lệ đạt (&gt;= 60%)
+						</div>
+						{isOverviewLoading ? (
+							<div className="my-1 h-8 w-24 animate-pulse rounded-lg bg-m3-surface-container-highest" />
+						) : (
+							<div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+								{pct(overview?.passRate || 0)}
 							</div>
-							<div className="mb-3 text-[11px] text-m3-on-surface-variant">
-								Chỉ tính lỗi từ lần chấm gần nhất của từng học sinh trong bộ lọc
-								hiện tại. Phân tích chi tiết câu sai theo từng dự án.
+						)}
+						<div className="mt-1 text-[11px] text-m3-on-surface-variant/70">
+							Số lượt đạt / tổng lượt
+						</div>
+					</Card>
+
+					<Card
+						variant="outlined"
+						className="p-4"
+						title="Tỷ lệ lượt chấm dưới 40%"
+					>
+						<div className="text-xs font-medium text-m3-on-surface-variant">
+							Tỷ lệ cảnh báo (&lt; 40%)
+						</div>
+						{isOverviewLoading ? (
+							<div className="my-1 h-8 w-24 animate-pulse rounded-lg bg-m3-surface-container-highest" />
+						) : (
+							<div className="text-2xl font-bold text-m3-error">
+								{pct(overview?.warningRate || 0)}
 							</div>
-							<div className="space-y-2.5">
-								{weakTaskChartRows.length === 0 && (
-									<div className="text-sm text-m3-on-surface-variant">
-										Không có dữ liệu câu yếu.
+						)}
+						<div className="mt-1 text-[11px] text-m3-on-surface-variant/70">
+							Số lượt dưới 40%
+						</div>
+					</Card>
+
+					<Card
+						variant="outlined"
+						className="p-4"
+						title="Tổng số lượt chấm đã được lưu"
+					>
+						<div className="text-xs font-medium text-m3-on-surface-variant">
+							Tổng lượt chấm
+						</div>
+						{isOverviewLoading ? (
+							<div className="my-1 h-8 w-16 animate-pulse rounded-lg bg-m3-surface-container-highest" />
+						) : (
+							<div className="text-2xl font-bold text-m3-on-surface">
+								{overview?.totalAttempts || 0}
+							</div>
+						)}
+						<div className="mt-1 text-[11px] text-m3-on-surface-variant/70">
+							Không phải số học sinh
+						</div>
+					</Card>
+				</div>
+
+				{/* Weak Tasks Section */}
+				<Card variant="outlined" className="p-4">
+					<div className="mb-3 flex items-center justify-between">
+						<div className="flex items-center gap-2 font-semibold text-m3-on-surface">
+							<Icon name="warning" className="text-m3-error text-lg" />
+							<span>Các câu yếu nhất (lần chấm mới nhất mỗi học sinh)</span>
+						</div>
+						{isWeakTasksFetching && !isWeakTasksLoading && (
+							<div className="flex items-center gap-1.5 text-xs text-m3-primary animate-pulse">
+								<ProgressIndicator
+									variant="circular"
+									size={14}
+									aria-label="Đang cập nhật câu yếu..."
+								/>
+								<span className="hidden sm:inline">Đang cập nhật...</span>
+							</div>
+						)}
+					</div>
+					<div className="mb-3 text-[11px] text-m3-on-surface-variant">
+						Chỉ tính lỗi từ lần chấm gần nhất của từng học sinh trong bộ lọc
+						hiện tại. Phân tích chi tiết câu sai theo từng dự án.
+					</div>
+
+					<div className="space-y-2.5">
+						{isWeakTasksLoading ? (
+							[1, 2, 3].map((idx) => (
+								<div
+									key={idx}
+									className="rounded-xl border border-m3-outline-variant/50 bg-m3-surface-container-low/40 p-3 space-y-2.5 animate-pulse"
+								>
+									<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+										<div className="flex items-center gap-2">
+											<div className="h-5 w-28 rounded-md bg-m3-surface-container-highest" />
+											<div className="h-5 w-16 rounded-md bg-m3-surface-container-highest" />
+										</div>
+										<div className="flex items-center gap-2">
+											<div className="h-5 w-24 rounded-md bg-m3-surface-container-highest" />
+											<div className="h-5 w-12 rounded-full bg-m3-surface-container-highest" />
+										</div>
 									</div>
-								)}
+									<div className="h-2 w-full rounded-full bg-m3-surface-container-highest" />
+								</div>
+							))
+						) : weakTaskChartRows.length === 0 ? (
+							<div className="py-2 text-sm text-m3-on-surface-variant">
+								Không có dữ liệu câu yếu.
+							</div>
+						) : (
+							<div
+								className={`space-y-2.5 transition-opacity duration-200 ${
+									isWeakTasksFetching ? "opacity-60" : "opacity-100"
+								}`}
+							>
 								{weakTaskChartRows.map((row) => {
 									const projectName = getProjectDisplayName(
 										row.projectEndpoint,
@@ -332,18 +376,19 @@ const ClassAnalyticsPanelComponent = ({
 									);
 								})}
 							</div>
-						</Card>
-
-						{gaugeData.length > 0 && (
-							<div className="mt-4 rounded-full bg-m3-surface-container-low sm:px-4 px-3.5 py-2.5 text-xs text-m3-on-surface-variant">
-								Chỉ số quy đổi (theo lượt chấm):{" "}
-								{gaugeData
-									.map((g) => `${g.label}: ${pct(g.value)}`)
-									.join(" | ")}
-							</div>
 						)}
-					</>
-				)}
+					</div>
+				</Card>
+
+				{/* Gauge / Score Conversion note */}
+				{isOverviewLoading ? (
+					<div className="mt-4 h-9 w-full rounded-full bg-m3-surface-container-low animate-pulse" />
+				) : gaugeData.length > 0 ? (
+					<div className="mt-4 rounded-full bg-m3-surface-container-low sm:px-4 px-3.5 py-2.5 text-xs text-m3-on-surface-variant">
+						Chỉ số quy đổi (theo lượt chấm):{" "}
+						{gaugeData.map((g) => `${g.label}: ${pct(g.value)}`).join(" | ")}
+					</div>
+				) : null}
 			</div>
 		</Card>
 	);
