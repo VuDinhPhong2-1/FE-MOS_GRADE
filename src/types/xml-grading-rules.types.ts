@@ -49,6 +49,11 @@ export type SpecialConditionType =
 	| "pageBorder"
 	| "wordTableSort"
 	| "wordParagraphList"
+	| "wordBookmark"
+	| "wordCustomToc"
+	| "wordTextToTable"
+	| "wordBulletStyle"
+	| "wordResolveComment"
 	| "excelTableName"
 	| "excelWorksheetPageSetup"
 	| "excelClearCellFormatting"
@@ -207,6 +212,49 @@ export interface WordParagraphListConfig {
 	listType?: "any" | "bullet" | "number";
 	level?: number;
 	requireSameNumbering?: boolean;
+}
+
+export interface WordBookmarkConfig {
+	sourceFile?: string;
+	bookmarkName?: string;
+	targetText?: string;
+	caseSensitiveName?: boolean;
+}
+
+export interface WordTocStyleLevelConfig {
+	styleName?: string;
+	level?: number;
+}
+
+export interface WordCustomTocConfig {
+	sourceFile?: string;
+	anchorText?: string;
+	requiredStyles?: WordTocStyleLevelConfig[];
+	requireUnderAnchorText?: boolean;
+	expectedFormat?: string;
+}
+
+export interface WordTextToTableConfig {
+	sourceFile?: string;
+	anchorText?: string;
+	expectedColumns?: number;
+	expectedTableStyle?: string;
+	minRows?: number;
+}
+
+export interface WordBulletStyleConfig {
+	sourceFile?: string;
+	numberingFile?: string;
+	anchorText?: string;
+	expectedBulletChar?: string;
+	level?: number;
+	minItems?: number;
+}
+
+export interface WordResolveCommentConfig {
+	commentsExtendedFile?: string;
+	requireAllResolved?: boolean;
+	targetText?: string;
 }
 
 export interface ExcelTableNameConfig {
@@ -437,6 +485,11 @@ export interface SpecialCondition {
 	pageBorderConfig?: PageBorderConfig;
 	wordTableSortConfig?: WordTableSortConfig;
 	wordParagraphListConfig?: WordParagraphListConfig;
+	wordBookmarkConfig?: WordBookmarkConfig;
+	wordCustomTocConfig?: WordCustomTocConfig;
+	wordTextToTableConfig?: WordTextToTableConfig;
+	wordBulletStyleConfig?: WordBulletStyleConfig;
+	wordResolveCommentConfig?: WordResolveCommentConfig;
 	excelTableNameConfig?: ExcelTableNameConfig;
 	excelWorksheetPageSetupConfig?: ExcelWorksheetPageSetupConfig;
 	excelClearCellFormattingConfig?: ExcelClearCellFormattingConfig;
