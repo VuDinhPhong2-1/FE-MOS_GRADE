@@ -1,4 +1,4 @@
-import { Icon } from "@bug-on/m3-expressive";
+﻿import { Icon } from "@bug-on/m3-expressive";
 import type { ClipboardEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { showConfirm } from "../components/common";
@@ -39,27 +39,27 @@ const compareModes: XmlCompareMode[] = [
 const matchPolicies: XmlMatchPolicy[] = ["all", "any", "ordered"];
 
 const compareModesLabels: Record<XmlCompareMode, string> = {
-	xmlContainsNormalized: "Tìm XML, bỏ qua khác biệt về khoảng trắng và format",
+	xmlContainsNormalized: "TÃ¬m XML, bá» qua khÃ¡c biá»‡t vá» khoáº£ng tráº¯ng vÃ  format",
 
-	xmlContains: "Tìm đúng đoạn XML đã nhập, chỉ bỏ khoảng trắng đầu và cuối",
+	xmlContains: "TÃ¬m Ä‘Ãºng Ä‘oáº¡n XML Ä‘Ã£ nháº­p, chá»‰ bá» khoáº£ng tráº¯ng Ä‘áº§u vÃ  cuá»‘i",
 
-	xmlMinOccurrences: "Đếm số lần xuất hiện tối thiểu sau khi chuẩn hóa XML",
+	xmlMinOccurrences: "Äáº¿m sá»‘ láº§n xuáº¥t hiá»‡n tá»‘i thiá»ƒu sau khi chuáº©n hÃ³a XML",
 
 	xmlEquivalentWholeFile:
-		"Đọc XML và so sánh toàn bộ cấu trúc, không phụ thuộc format",
+		"Äá»c XML vÃ  so sÃ¡nh toÃ n bá»™ cáº¥u trÃºc, khÃ´ng phá»¥ thuá»™c format",
 
 	exactStringContains:
-		"Tìm đúng chuỗi ký tự, không thay đổi hoặc chuẩn hóa nội dung",
+		"TÃ¬m Ä‘Ãºng chuá»—i kÃ½ tá»±, khÃ´ng thay Ä‘á»•i hoáº·c chuáº©n hÃ³a ná»™i dung",
 };
 
 const matchPoliciesLabels: Record<XmlMatchPolicy, string> = {
-	all: "Tất cả điều kiện",
-	any: "Bất kỳ điều kiện nào",
-	ordered: "Theo thứ tự",
+	all: "Táº¥t cáº£ Ä‘iá»u kiá»‡n",
+	any: "Báº¥t ká»³ Ä‘iá»u kiá»‡n nÃ o",
+	ordered: "Theo thá»© tá»±",
 };
 
-// Danh sách các loại điều kiện đặc biệt hỗ trợ theo từng Task.
-// Thêm loại mới chỉ cần bổ sung thêm 1 phần tử vào mảng này.
+// Danh sÃ¡ch cÃ¡c loáº¡i Ä‘iá»u kiá»‡n Ä‘áº·c biá»‡t há»— trá»£ theo tá»«ng Task.
+// ThÃªm loáº¡i má»›i chá»‰ cáº§n bá»• sung thÃªm 1 pháº§n tá»­ vÃ o máº£ng nÃ y.
 const specialConditionOptions: Array<{
 	value: SpecialConditionType;
 	label: string;
@@ -68,227 +68,257 @@ const specialConditionOptions: Array<{
 }> = [
 	{
 		value: "pictureBullet",
-		label: "Dấu đầu dòng bằng hình ảnh",
+		label: "Dáº¥u Ä‘áº§u dÃ²ng báº±ng hÃ¬nh áº£nh",
 		description:
-			"Kiểm tra paragraph có sử dụng đúng hình ảnh làm dấu đầu dòng hay không.",
+			"Kiá»ƒm tra paragraph cÃ³ sá»­ dá»¥ng Ä‘Ãºng hÃ¬nh áº£nh lÃ m dáº¥u Ä‘áº§u dÃ²ng hay khÃ´ng.",
 	},
 	{
 		value: "insertedImage",
-		label: "Chèn đúng hình ảnh vào tài liệu",
+		label: "ChÃ¨n Ä‘Ãºng hÃ¬nh áº£nh vÃ o tÃ i liá»‡u",
 		description:
-			"Kiểm tra tài liệu có chèn đúng file ảnh yêu cầu (so khớp theo nội dung ảnh) và đúng chế độ ngắt dòng văn bản (Tight/Square/Through/Top and Bottom/Inline...) hay không.",
+			"Kiá»ƒm tra tÃ i liá»‡u cÃ³ chÃ¨n Ä‘Ãºng file áº£nh yÃªu cáº§u (so khá»›p theo ná»™i dung áº£nh) vÃ  Ä‘Ãºng cháº¿ Ä‘á»™ ngáº¯t dÃ²ng vÄƒn báº£n (Tight/Square/Through/Top and Bottom/Inline...) hay khÃ´ng.",
 	},
 	{
 		value: "convertTableToText",
-		label: "Chuyển bảng thành văn bản",
+		label: "Chuyá»ƒn báº£ng thÃ nh vÄƒn báº£n",
 		description:
-			"Kiểm tra bảng Word đã được chuyển thành các dòng văn bản và tách cột bằng tab.",
+			"Kiá»ƒm tra báº£ng Word Ä‘Ã£ Ä‘Æ°á»£c chuyá»ƒn thÃ nh cÃ¡c dÃ²ng vÄƒn báº£n vÃ  tÃ¡ch cá»™t báº±ng tab.",
 	},
 	{
 		value: "hyperlink",
-		label: "Siêu liên kết Word",
+		label: "SiÃªu liÃªn káº¿t Word",
 		description:
-			"Kiểm tra văn bản hiển thị và URL của siêu liên kết trong Word.",
+			"Kiá»ƒm tra vÄƒn báº£n hiá»ƒn thá»‹ vÃ  URL cá»§a siÃªu liÃªn káº¿t trong Word.",
 	},
 	{
 		value: "sectionBreakBeforeText",
-		label: "Ngắt phần trước văn bản",
+		label: "Ngáº¯t pháº§n trÆ°á»›c vÄƒn báº£n",
 		description:
-			"Kiểm tra ngắt phần đúng loại nằm ngay trước đoạn văn bản mục tiêu trong Word.",
+			"Kiá»ƒm tra ngáº¯t pháº§n Ä‘Ãºng loáº¡i náº±m ngay trÆ°á»›c Ä‘oáº¡n vÄƒn báº£n má»¥c tiÃªu trong Word.",
 	},
 	{
 		value: "pictureStyle",
-		label: "Kiểu ảnh Word",
+		label: "Kiá»ƒu áº£nh Word",
 		description:
-			"Kiểm tra ảnh mục tiêu có viền/kiểu ảnh đúng theo XML DrawingML trong Word.",
+			"Kiá»ƒm tra áº£nh má»¥c tiÃªu cÃ³ viá»n/kiá»ƒu áº£nh Ä‘Ãºng theo XML DrawingML trong Word.",
 	},
 	{
 		value: "textBoxContainsText",
-		label: "Hộp văn bản chứa đúng nội dung",
+		label: "Há»™p vÄƒn báº£n chá»©a Ä‘Ãºng ná»™i dung",
 		description:
-			"Kiểm tra đoạn văn đã được đưa vào hộp văn bản, nội dung đúng đầy đủ và có thể bắt lỗi copy thay vì cut hoặc paste không mặc định.",
+			"Kiá»ƒm tra Ä‘oáº¡n vÄƒn Ä‘Ã£ Ä‘Æ°á»£c Ä‘Æ°a vÃ o há»™p vÄƒn báº£n, ná»™i dung Ä‘Ãºng Ä‘áº§y Ä‘á»§ vÃ  cÃ³ thá»ƒ báº¯t lá»—i copy thay vÃ¬ cut hoáº·c paste khÃ´ng máº·c Ä‘á»‹nh.",
 	},
 	{
 		value: "pageMargins",
-		label: "Lề trang Word",
+		label: "Lá» trang Word",
 		description:
-			"Kiểm tra lề trên/dưới/trái/phải của tài liệu Word. Có thể nhập inch hoặc cm.",
+			"Kiá»ƒm tra lá» trÃªn/dÆ°á»›i/trÃ¡i/pháº£i cá»§a tÃ i liá»‡u Word. CÃ³ thá»ƒ nháº­p inch hoáº·c cm.",
 	},
 	{
 		value: "documentStyleSet",
-		label: "Bộ kiểu tài liệu Word",
+		label: "Bá»™ kiá»ƒu tÃ i liá»‡u Word",
 		description:
-			"Kiểm tra style set của Word bằng các dấu hiệu XML ổn định trong word/styles.xml.",
+			"Kiá»ƒm tra style set cá»§a Word báº±ng cÃ¡c dáº¥u hiá»‡u XML á»•n Ä‘á»‹nh trong word/styles.xml.",
 	},
 	{
 		value: "pageBorder",
-		label: "Đường viền trang Word",
+		label: "ÄÆ°á»ng viá»n trang Word",
 		description:
-			"Kiểm tra Page Border của Word: 4 cạnh Box, kiểu nét, màu và độ dày viền.",
+			"Kiá»ƒm tra Page Border cá»§a Word: 4 cáº¡nh Box, kiá»ƒu nÃ©t, mÃ u vÃ  Ä‘á»™ dÃ y viá»n.",
 	},
 	{
 		value: "wordTableSort",
-		label: "Sắp xếp bảng Word",
+		label: "Sáº¯p xáº¿p báº£ng Word",
 		description:
-			"Kiểm tra bảng Word đã được sắp xếp đúng theo một cột, ví dụ Flavor A-Z trong Project 03.",
+			"Kiá»ƒm tra báº£ng Word Ä‘Ã£ Ä‘Æ°á»£c sáº¯p xáº¿p Ä‘Ãºng theo má»™t cá»™t, vÃ­ dá»¥ Flavor A-Z trong Project 03.",
 	},
 	{
 		value: "wordParagraphList",
-		label: "Danh sách Word",
+		label: "Danh sÃ¡ch Word",
 		description:
-			"Kiểm tra các đoạn văn đã được chuyển thành bullet/number list đúng item, level và numbering.",
+			"Kiá»ƒm tra cÃ¡c Ä‘oáº¡n vÄƒn Ä‘Ã£ Ä‘Æ°á»£c chuyá»ƒn thÃ nh bullet/number list Ä‘Ãºng item, level vÃ  numbering.",
+	},
+	{
+		value: "wordBookmark",
+		label: "Bookmark Word",
+		description:
+			"Kiểm tra tài liệu có bookmark đúng tên và nằm ở đoạn văn bản mục tiêu.",
+	},
+	{
+		value: "wordCustomToc",
+		label: "Mục lục tùy chỉnh Word",
+		description:
+			"Kiểm tra TOC field có style-to-level mapping đúng, ví dụ Title=1, Heading 1=2.",
+	},
+	{
+		value: "wordTextToTable",
+		label: "Chuyển văn bản thành bảng Word",
+		description:
+			"Kiểm tra văn bản đã được chuyển thành bảng đúng số cột, số dòng tối thiểu và style bảng.",
+	},
+	{
+		value: "wordBulletStyle",
+		label: "Ký tự bullet Word",
+		description:
+			"Kiểm tra danh sách bullet dùng đúng ký tự bullet, ví dụ hình vuông đặc cho sidebar Ski Resorts.",
+	},
+	{
+		value: "wordResolveComment",
+		label: "Resolve comment Word",
+		description:
+			"Kiểm tra các comment trong tài liệu đã được đánh dấu resolved/done.",
 	},
 	{
 		value: "excelTableName",
-		label: "Tên bảng Excel",
+		label: "TÃªn báº£ng Excel",
 		description:
-			"Kiểm tra table trong Excel đã được đổi đúng tên, có thể giới hạn theo worksheet.",
+			"Kiá»ƒm tra table trong Excel Ä‘Ã£ Ä‘Æ°á»£c Ä‘á»•i Ä‘Ãºng tÃªn, cÃ³ thá»ƒ giá»›i háº¡n theo worksheet.",
 		subjects: ["excel"],
 	},
 	{
 		value: "excelWorksheetPageSetup",
-		label: "Thiết lập trang Excel",
+		label: "Thiáº¿t láº­p trang Excel",
 		description:
-			"Kiểm tra thiết lập trang tính Excel, hiện hỗ trợ orientation portrait/landscape.",
+			"Kiá»ƒm tra thiáº¿t láº­p trang tÃ­nh Excel, hiá»‡n há»— trá»£ orientation portrait/landscape.",
 		subjects: ["excel"],
 	},
 	{
 		value: "excelClearCellFormatting",
-		label: "Xóa định dạng ô Excel",
+		label: "XÃ³a Ä‘á»‹nh dáº¡ng Ã´ Excel",
 		description:
-			"Kiểm tra một vùng ô trên worksheet đã được xóa định dạng về style mặc định.",
+			"Kiá»ƒm tra má»™t vÃ¹ng Ã´ trÃªn worksheet Ä‘Ã£ Ä‘Æ°á»£c xÃ³a Ä‘á»‹nh dáº¡ng vá» style máº·c Ä‘á»‹nh.",
 		subjects: ["excel"],
 	},
 	{
 		value: "excelDataModelImport",
-		label: "Nhập Data Model Excel",
+		label: "Nháº­p Data Model Excel",
 		description:
-			"Kiểm tra workbook có connection import từ file nguồn và dấu hiệu Data Model.",
+			"Kiá»ƒm tra workbook cÃ³ connection import tá»« file nguá»“n vÃ  dáº¥u hiá»‡u Data Model.",
 		subjects: ["excel"],
 	},
 	{
 		value: "excelCompatibilityReport",
-		label: "Báo cáo tương thích Excel",
+		label: "BÃ¡o cÃ¡o tÆ°Æ¡ng thÃ­ch Excel",
 		description:
-			"Kiểm tra workbook có worksheet/văn bản kết quả Compatibility Checker.",
+			"Kiá»ƒm tra workbook cÃ³ worksheet/vÄƒn báº£n káº¿t quáº£ Compatibility Checker.",
 		subjects: ["excel"],
 	},
 	{
 		value: "excelMergedRange",
-		label: "Gộp ô Excel",
+		label: "Gá»™p Ã´ Excel",
 		description:
-			"Kiểm tra một vùng ô trên worksheet đã được gộp đúng, ví dụ A1:E1.",
+			"Kiá»ƒm tra má»™t vÃ¹ng Ã´ trÃªn worksheet Ä‘Ã£ Ä‘Æ°á»£c gá»™p Ä‘Ãºng, vÃ­ dá»¥ A1:E1.",
 		subjects: ["excel"],
 	},
 	{
 		value: "excelCellHyperlink",
-		label: "Siêu liên kết ô Excel",
+		label: "SiÃªu liÃªn káº¿t Ã´ Excel",
 		description:
-			"Kiểm tra siêu liên kết nội bộ hoặc liên kết ngoài tại một ô Excel cụ thể.",
+			"Kiá»ƒm tra siÃªu liÃªn káº¿t ná»™i bá»™ hoáº·c liÃªn káº¿t ngoÃ i táº¡i má»™t Ã´ Excel cá»¥ thá»ƒ.",
 		subjects: ["excel"],
 	},
 	{
 		value: "excelIconSetConditionalFormatting",
-		label: "Định dạng có điều kiện Icon Set",
+		label: "Äá»‹nh dáº¡ng cÃ³ Ä‘iá»u kiá»‡n Icon Set",
 		description:
-			"Kiểm tra vùng ô có Conditional Formatting dạng Icon Set đúng loại, ví dụ 3Flags.",
+			"Kiá»ƒm tra vÃ¹ng Ã´ cÃ³ Conditional Formatting dáº¡ng Icon Set Ä‘Ãºng loáº¡i, vÃ­ dá»¥ 3Flags.",
 		subjects: ["excel"],
 	},
 	{
 		value: "excelChartDataRange",
-		label: "Vùng dữ liệu biểu đồ Excel",
+		label: "VÃ¹ng dá»¯ liá»‡u biá»ƒu Ä‘á»“ Excel",
 		description:
-			"Kiểm tra biểu đồ đã mở rộng đúng vùng category/value và số điểm dữ liệu.",
+			"Kiá»ƒm tra biá»ƒu Ä‘á»“ Ä‘Ã£ má»Ÿ rá»™ng Ä‘Ãºng vÃ¹ng category/value vÃ  sá»‘ Ä‘iá»ƒm dá»¯ liá»‡u.",
 		subjects: ["excel"],
 	},
 	{
 		value: "excelChartStyle",
-		label: "Kiểu biểu đồ Excel",
+		label: "Kiá»ƒu biá»ƒu Ä‘á»“ Excel",
 		description:
-			"Kiểm tra mã chart style trong xl/charts/style*.xml, ví dụ Style 4 thường là id 204.",
+			"Kiá»ƒm tra mÃ£ chart style trong xl/charts/style*.xml, vÃ­ dá»¥ Style 4 thÆ°á»ng lÃ  id 204.",
 		subjects: ["excel"],
 	},
 	{
 		value: "excelTextReplacement",
-		label: "Thay thế văn bản Excel",
+		label: "Thay tháº¿ vÄƒn báº£n Excel",
 		description:
-			"Kiểm tra đã thay toàn bộ một từ/cụm từ cũ bằng từ/cụm từ mới trong workbook.",
+			"Kiá»ƒm tra Ä‘Ã£ thay toÃ n bá»™ má»™t tá»«/cá»¥m tá»« cÅ© báº±ng tá»«/cá»¥m tá»« má»›i trong workbook.",
 		subjects: ["excel"],
 	},
 	{
 		value: "excelPrintTitles",
-		label: "Tiêu đề in Excel",
+		label: "TiÃªu Ä‘á» in Excel",
 		description:
-			"Kiểm tra worksheet đã lặp lại đúng các hàng tiêu đề/logo khi in.",
+			"Kiá»ƒm tra worksheet Ä‘Ã£ láº·p láº¡i Ä‘Ãºng cÃ¡c hÃ ng tiÃªu Ä‘á»/logo khi in.",
 		subjects: ["excel"],
 	},
 	{
 		value: "excelNumberFormat",
-		label: "Định dạng số Excel",
+		label: "Äá»‹nh dáº¡ng sá»‘ Excel",
 		description:
-			"Kiểm tra các ô dữ liệu số trong vùng/cột đã dùng định dạng Number.",
+			"Kiá»ƒm tra cÃ¡c Ã´ dá»¯ liá»‡u sá»‘ trong vÃ¹ng/cá»™t Ä‘Ã£ dÃ¹ng Ä‘á»‹nh dáº¡ng Number.",
 		subjects: ["excel"],
 	},
 	{
 		value: "excelChartLegend",
-		label: "Vị trí chú giải biểu đồ",
-		description: "Kiểm tra vị trí chú giải của biểu đồ, ví dụ Top.",
+		label: "Vá»‹ trÃ­ chÃº giáº£i biá»ƒu Ä‘á»“",
+		description: "Kiá»ƒm tra vá»‹ trÃ­ chÃº giáº£i cá»§a biá»ƒu Ä‘á»“, vÃ­ dá»¥ Top.",
 		subjects: ["excel"],
 	},
 	{
 		value: "excelDefinedName",
 		label: "Named range Excel",
 		description:
-			"Kiểm tra named range có đúng tên và trỏ đúng các vùng ô yêu cầu, kể cả vùng không liền kề.",
+			"Kiá»ƒm tra named range cÃ³ Ä‘Ãºng tÃªn vÃ  trá» Ä‘Ãºng cÃ¡c vÃ¹ng Ã´ yÃªu cáº§u, ká»ƒ cáº£ vÃ¹ng khÃ´ng liá»n ká».",
 		subjects: ["excel"],
 	},
 	{
 		value: "excelFormulaReferences",
-		label: "Công thức dùng named range",
+		label: "CÃ´ng thá»©c dÃ¹ng named range",
 		description:
-			"Kiểm tra ô có công thức dùng đủ các named range bắt buộc và không tham chiếu trực tiếp ô/vùng khi cần bắt chặt.",
+			"Kiá»ƒm tra Ã´ cÃ³ cÃ´ng thá»©c dÃ¹ng Ä‘á»§ cÃ¡c named range báº¯t buá»™c vÃ  khÃ´ng tham chiáº¿u trá»±c tiáº¿p Ã´/vÃ¹ng khi cáº§n báº¯t cháº·t.",
 		subjects: ["excel"],
 	},
 	{
 		value: "excelNoConditionalFormatting",
-		label: "Xóa Conditional Formatting",
+		label: "XÃ³a Conditional Formatting",
 		description:
-			"Kiểm tra worksheet đã xóa toàn bộ conditional formatting, không chỉ xóa định dạng ô thường.",
+			"Kiá»ƒm tra worksheet Ä‘Ã£ xÃ³a toÃ n bá»™ conditional formatting, khÃ´ng chá»‰ xÃ³a Ä‘á»‹nh dáº¡ng Ã´ thÆ°á»ng.",
 		subjects: ["excel"],
 	},
 	{
 		value: "excelTextRotation",
-		label: "Xoay chữ Excel",
+		label: "Xoay chá»¯ Excel",
 		description:
-			"Kiểm tra các tiêu đề đã dùng đúng textRotation, ví dụ Angle Counterclockwise.",
+			"Kiá»ƒm tra cÃ¡c tiÃªu Ä‘á» Ä‘Ã£ dÃ¹ng Ä‘Ãºng textRotation, vÃ­ dá»¥ Angle Counterclockwise.",
 		subjects: ["excel"],
 	},
 	{
 		value: "excelMultiColumnSort",
-		label: "Sắp xếp nhiều cột Excel",
+		label: "Sáº¯p xáº¿p nhiá»u cá»™t Excel",
 		description:
-			"Kiểm tra thứ tự dữ liệu thực tế sau khi sort theo nhiều khóa, ví dụ Wired Equipment rồi Port Size.",
+			"Kiá»ƒm tra thá»© tá»± dá»¯ liá»‡u thá»±c táº¿ sau khi sort theo nhiá»u khÃ³a, vÃ­ dá»¥ Wired Equipment rá»“i Port Size.",
 		subjects: ["excel"],
 	},
 	{
 		value: "excelFreezePanes",
-		label: "Cố định ngăn Excel",
+		label: "Cá»‘ Ä‘á»‹nh ngÄƒn Excel",
 		description:
-			"Kiểm tra worksheet đã cố định đúng hàng/cột khi cuộn, ví dụ giữ hàng 1 đến 3 khi cuộn dọc.",
+			"Kiá»ƒm tra worksheet Ä‘Ã£ cá»‘ Ä‘á»‹nh Ä‘Ãºng hÃ ng/cá»™t khi cuá»™n, vÃ­ dá»¥ giá»¯ hÃ ng 1 Ä‘áº¿n 3 khi cuá»™n dá»c.",
 		subjects: ["excel"],
 	},
 	{
 		value: "excelDocumentProperty",
-		label: "Thuộc tính tài liệu Excel",
+		label: "Thuá»™c tÃ­nh tÃ i liá»‡u Excel",
 		description:
-			"Kiểm tra custom document property của workbook, ví dụ Status = Draft.",
+			"Kiá»ƒm tra custom document property cá»§a workbook, vÃ­ dá»¥ Status = Draft.",
 		subjects: ["excel"],
 	},
 	{
 		value: "excelPrintArea",
-		label: "Vùng in Excel",
+		label: "VÃ¹ng in Excel",
 		description:
-			"Kiểm tra worksheet đã đặt đúng vùng in, ví dụ Q1 Sales!A1:F17.",
+			"Kiá»ƒm tra worksheet Ä‘Ã£ Ä‘áº·t Ä‘Ãºng vÃ¹ng in, vÃ­ dá»¥ Q1 Sales!A1:F17.",
 		subjects: ["excel"],
 	},
 ];
@@ -312,7 +342,7 @@ const specialConditionGroups: Array<{
 	matches: (option: SpecialConditionOption) => boolean;
 }> = [
 	{
-		label: "Word - Văn bản và bố cục",
+		label: "Word - VÄƒn báº£n vÃ  bá»‘ cá»¥c",
 		matches: (option) =>
 			[
 				"convertTableToText",
@@ -327,19 +357,19 @@ const specialConditionGroups: Array<{
 			].includes(option.value),
 	},
 	{
-		label: "Word - Hình ảnh",
+		label: "Word - HÃ¬nh áº£nh",
 		matches: (option) =>
 			["pictureBullet", "insertedImage", "pictureStyle"].includes(option.value),
 	},
 	{
-		label: "Excel - Biểu đồ",
+		label: "Excel - Biá»ƒu Ä‘á»“",
 		matches: (option) =>
 			["excelChartDataRange", "excelChartStyle", "excelChartLegend"].includes(
 				option.value,
 			),
 	},
 	{
-		label: "Excel - Dữ liệu và công thức",
+		label: "Excel - Dá»¯ liá»‡u vÃ  cÃ´ng thá»©c",
 		matches: (option) =>
 			[
 				"excelTableName",
@@ -351,7 +381,7 @@ const specialConditionGroups: Array<{
 			].includes(option.value),
 	},
 	{
-		label: "Excel - Trang in và workbook",
+		label: "Excel - Trang in vÃ  workbook",
 		matches: (option) =>
 			[
 				"excelWorksheetPageSetup",
@@ -363,7 +393,7 @@ const specialConditionGroups: Array<{
 			].includes(option.value),
 	},
 	{
-		label: "Excel - Định dạng",
+		label: "Excel - Äá»‹nh dáº¡ng",
 		matches: (option) =>
 			[
 				"excelClearCellFormatting",
@@ -398,7 +428,7 @@ const groupSpecialConditionOptions = (
 	}
 
 	if (remaining.size > 0) {
-		grouped.push({ type: "group", label: "Khác" });
+		grouped.push({ type: "group", label: "KhÃ¡c" });
 		grouped.push(
 			...Array.from(remaining).map((option) => ({
 				type: "option" as const,
@@ -465,140 +495,140 @@ const defaultSpecialConditionFeedback = (
 	type?: SpecialConditionType,
 ): ReturnType<typeof emptyFeedback> => {
 	const generic = {
-		successDetail: "Đã hoàn thành đúng yêu cầu.",
-		errorMessage: "Bạn chưa thực hiện đúng yêu cầu.",
-		fixAction: "Mở file và thực hiện lại đúng yêu cầu của task.",
+		successDetail: "ÄÃ£ hoÃ n thÃ nh Ä‘Ãºng yÃªu cáº§u.",
+		errorMessage: "Báº¡n chÆ°a thá»±c hiá»‡n Ä‘Ãºng yÃªu cáº§u.",
+		fixAction: "Má»Ÿ file vÃ  thá»±c hiá»‡n láº¡i Ä‘Ãºng yÃªu cáº§u cá»§a task.",
 	};
 
 	switch (type) {
 		case "excelMergedRange":
 			return {
-				successDetail: "Đã gộp đúng vùng ô yêu cầu.",
-				errorMessage: "Chưa gộp đúng vùng ô yêu cầu.",
+				successDetail: "ÄÃ£ gá»™p Ä‘Ãºng vÃ¹ng Ã´ yÃªu cáº§u.",
+				errorMessage: "ChÆ°a gá»™p Ä‘Ãºng vÃ¹ng Ã´ yÃªu cáº§u.",
 				fixAction:
-					"Chọn đúng vùng ô -> Home -> menu Merge & Center -> Merge Across; không dùng Merge & Center nếu task chỉ yêu cầu gộp ngang.",
+					"Chá»n Ä‘Ãºng vÃ¹ng Ã´ -> Home -> menu Merge & Center -> Merge Across; khÃ´ng dÃ¹ng Merge & Center náº¿u task chá»‰ yÃªu cáº§u gá»™p ngang.",
 			};
 		case "excelCellHyperlink":
 			return {
-				successDetail: "Đã tạo đúng siêu liên kết cho ô yêu cầu.",
-				errorMessage: "Siêu liên kết của ô yêu cầu chưa đúng.",
+				successDetail: "ÄÃ£ táº¡o Ä‘Ãºng siÃªu liÃªn káº¿t cho Ã´ yÃªu cáº§u.",
+				errorMessage: "SiÃªu liÃªn káº¿t cá»§a Ã´ yÃªu cáº§u chÆ°a Ä‘Ãºng.",
 				fixAction:
-					"Chọn ô cần liên kết -> Insert -> Link -> chọn đúng sheet và ô đích.",
+					"Chá»n Ã´ cáº§n liÃªn káº¿t -> Insert -> Link -> chá»n Ä‘Ãºng sheet vÃ  Ã´ Ä‘Ã­ch.",
 			};
 		case "excelIconSetConditionalFormatting":
 			return {
-				successDetail: "Đã áp dụng đúng Icon Set Conditional Formatting.",
+				successDetail: "ÄÃ£ Ã¡p dá»¥ng Ä‘Ãºng Icon Set Conditional Formatting.",
 				errorMessage:
-					"Conditional Formatting Icon Set chưa đúng vùng ô hoặc loại biểu tượng.",
+					"Conditional Formatting Icon Set chÆ°a Ä‘Ãºng vÃ¹ng Ã´ hoáº·c loáº¡i biá»ƒu tÆ°á»£ng.",
 				fixAction:
-					"Chọn đúng vùng ô -> Home -> Conditional Formatting -> Icon Sets -> chọn đúng icon set.",
+					"Chá»n Ä‘Ãºng vÃ¹ng Ã´ -> Home -> Conditional Formatting -> Icon Sets -> chá»n Ä‘Ãºng icon set.",
 			};
 		case "excelChartDataRange":
 			return {
-				successDetail: "Đã mở rộng đúng vùng dữ liệu của biểu đồ.",
-				errorMessage: "Biểu đồ chưa bao gồm đúng vùng dữ liệu yêu cầu.",
+				successDetail: "ÄÃ£ má»Ÿ rá»™ng Ä‘Ãºng vÃ¹ng dá»¯ liá»‡u cá»§a biá»ƒu Ä‘á»“.",
+				errorMessage: "Biá»ƒu Ä‘á»“ chÆ°a bao gá»“m Ä‘Ãºng vÃ¹ng dá»¯ liá»‡u yÃªu cáº§u.",
 				fixAction:
-					"Chọn biểu đồ -> Select Data -> mở rộng category/value range đến đúng hàng yêu cầu.",
+					"Chá»n biá»ƒu Ä‘á»“ -> Select Data -> má»Ÿ rá»™ng category/value range Ä‘áº¿n Ä‘Ãºng hÃ ng yÃªu cáº§u.",
 			};
 		case "excelChartStyle":
 			return {
-				successDetail: "Đã áp dụng đúng Chart Style.",
-				errorMessage: "Chart Style của biểu đồ chưa đúng.",
+				successDetail: "ÄÃ£ Ã¡p dá»¥ng Ä‘Ãºng Chart Style.",
+				errorMessage: "Chart Style cá»§a biá»ƒu Ä‘á»“ chÆ°a Ä‘Ãºng.",
 				fixAction:
-					"Chọn biểu đồ -> Chart Design -> Chart Styles -> chọn đúng style yêu cầu.",
+					"Chá»n biá»ƒu Ä‘á»“ -> Chart Design -> Chart Styles -> chá»n Ä‘Ãºng style yÃªu cáº§u.",
 			};
 		case "excelTextReplacement":
 			return {
-				successDetail: "Đã thay thế đúng toàn bộ văn bản yêu cầu.",
+				successDetail: "ÄÃ£ thay tháº¿ Ä‘Ãºng toÃ n bá»™ vÄƒn báº£n yÃªu cáº§u.",
 				errorMessage:
-					"Workbook vẫn còn văn bản cũ hoặc chưa có đủ văn bản mới.",
+					"Workbook váº«n cÃ²n vÄƒn báº£n cÅ© hoáº·c chÆ°a cÃ³ Ä‘á»§ vÄƒn báº£n má»›i.",
 				fixAction:
-					"Dùng Find and Replace để thay tất cả các lần xuất hiện của văn bản cũ bằng văn bản mới.",
+					"DÃ¹ng Find and Replace Ä‘á»ƒ thay táº¥t cáº£ cÃ¡c láº§n xuáº¥t hiá»‡n cá»§a vÄƒn báº£n cÅ© báº±ng vÄƒn báº£n má»›i.",
 			};
 		case "excelPrintTitles":
 			return {
-				successDetail: "Đã thiết lập đúng Print Titles cho worksheet.",
+				successDetail: "ÄÃ£ thiáº¿t láº­p Ä‘Ãºng Print Titles cho worksheet.",
 				errorMessage:
-					"Worksheet chưa lặp lại đúng hàng logo/tiêu đề trên các trang in.",
+					"Worksheet chÆ°a láº·p láº¡i Ä‘Ãºng hÃ ng logo/tiÃªu Ä‘á» trÃªn cÃ¡c trang in.",
 				fixAction:
-					"Vào Page Layout -> Print Titles -> Rows to repeat at top và chọn đúng các hàng yêu cầu.",
+					"VÃ o Page Layout -> Print Titles -> Rows to repeat at top vÃ  chá»n Ä‘Ãºng cÃ¡c hÃ ng yÃªu cáº§u.",
 			};
 		case "excelNumberFormat":
 			return {
-				successDetail: "Các ô dữ liệu số đã dùng đúng định dạng Number.",
+				successDetail: "CÃ¡c Ã´ dá»¯ liá»‡u sá»‘ Ä‘Ã£ dÃ¹ng Ä‘Ãºng Ä‘á»‹nh dáº¡ng Number.",
 				errorMessage:
-					"Một hoặc nhiều ô dữ liệu số trong vùng yêu cầu chưa dùng định dạng Number.",
+					"Má»™t hoáº·c nhiá»u Ã´ dá»¯ liá»‡u sá»‘ trong vÃ¹ng yÃªu cáº§u chÆ°a dÃ¹ng Ä‘á»‹nh dáº¡ng Number.",
 				fixAction:
-					"Chọn đúng cột/vùng dữ liệu -> Home -> Number Format -> Number.",
+					"Chá»n Ä‘Ãºng cá»™t/vÃ¹ng dá»¯ liá»‡u -> Home -> Number Format -> Number.",
 			};
 		case "excelChartLegend":
 			return {
-				successDetail: "Legend của biểu đồ đã ở đúng vị trí yêu cầu.",
-				errorMessage: "Legend của biểu đồ chưa ở đúng vị trí yêu cầu.",
+				successDetail: "Legend cá»§a biá»ƒu Ä‘á»“ Ä‘Ã£ á»Ÿ Ä‘Ãºng vá»‹ trÃ­ yÃªu cáº§u.",
+				errorMessage: "Legend cá»§a biá»ƒu Ä‘á»“ chÆ°a á»Ÿ Ä‘Ãºng vá»‹ trÃ­ yÃªu cáº§u.",
 				fixAction:
-					"Chọn biểu đồ -> Chart Design -> Add Chart Element -> Legend -> chọn vị trí đúng.",
+					"Chá»n biá»ƒu Ä‘á»“ -> Chart Design -> Add Chart Element -> Legend -> chá»n vá»‹ trÃ­ Ä‘Ãºng.",
 			};
 		case "excelDefinedName":
 			return {
-				successDetail: "Đã tạo đúng named range với tên và các vùng ô yêu cầu.",
+				successDetail: "ÄÃ£ táº¡o Ä‘Ãºng named range vá»›i tÃªn vÃ  cÃ¡c vÃ¹ng Ã´ yÃªu cáº§u.",
 				errorMessage:
-					"Named range chưa đúng tên, thiếu vùng ô hoặc có thêm vùng ngoài yêu cầu.",
+					"Named range chÆ°a Ä‘Ãºng tÃªn, thiáº¿u vÃ¹ng Ã´ hoáº·c cÃ³ thÃªm vÃ¹ng ngoÃ i yÃªu cáº§u.",
 				fixAction:
-					"Chọn đúng các vùng ô không liền kề -> Formulas -> Define Name -> nhập đúng tên vùng.",
+					"Chá»n Ä‘Ãºng cÃ¡c vÃ¹ng Ã´ khÃ´ng liá»n ká» -> Formulas -> Define Name -> nháº­p Ä‘Ãºng tÃªn vÃ¹ng.",
 			};
 		case "excelFormulaReferences":
 			return {
-				successDetail: "Công thức đã dùng đúng các named range yêu cầu.",
+				successDetail: "CÃ´ng thá»©c Ä‘Ã£ dÃ¹ng Ä‘Ãºng cÃ¡c named range yÃªu cáº§u.",
 				errorMessage:
-					"Công thức chưa dùng đủ named range hoặc đang tham chiếu trực tiếp ô/vùng.",
+					"CÃ´ng thá»©c chÆ°a dÃ¹ng Ä‘á»§ named range hoáº·c Ä‘ang tham chiáº¿u trá»±c tiáº¿p Ã´/vÃ¹ng.",
 				fixAction:
-					"Nhập lại công thức bằng đúng các named range được yêu cầu, không thay bằng địa chỉ ô nếu task yêu cầu dùng named range.",
+					"Nháº­p láº¡i cÃ´ng thá»©c báº±ng Ä‘Ãºng cÃ¡c named range Ä‘Æ°á»£c yÃªu cáº§u, khÃ´ng thay báº±ng Ä‘á»‹a chá»‰ Ã´ náº¿u task yÃªu cáº§u dÃ¹ng named range.",
 			};
 		case "excelNoConditionalFormatting":
 			return {
 				successDetail:
-					"Đã xóa toàn bộ conditional formatting trên worksheet yêu cầu.",
-				errorMessage: "Worksheet vẫn còn conditional formatting.",
+					"ÄÃ£ xÃ³a toÃ n bá»™ conditional formatting trÃªn worksheet yÃªu cáº§u.",
+				errorMessage: "Worksheet váº«n cÃ²n conditional formatting.",
 				fixAction:
-					"Chọn worksheet -> Home -> Conditional Formatting -> Clear Rules -> Clear Rules from Entire Sheet.",
+					"Chá»n worksheet -> Home -> Conditional Formatting -> Clear Rules -> Clear Rules from Entire Sheet.",
 			};
 		case "excelTextRotation":
 			return {
 				successDetail:
-					"Các tiêu đề đã được xoay chữ đúng Angle Counterclockwise.",
+					"CÃ¡c tiÃªu Ä‘á» Ä‘Ã£ Ä‘Æ°á»£c xoay chá»¯ Ä‘Ãºng Angle Counterclockwise.",
 				errorMessage:
-					"Một hoặc nhiều tiêu đề chưa được xoay chữ đúng Angle Counterclockwise.",
+					"Má»™t hoáº·c nhiá»u tiÃªu Ä‘á» chÆ°a Ä‘Æ°á»£c xoay chá»¯ Ä‘Ãºng Angle Counterclockwise.",
 				fixAction:
-					"Chọn các ô tiêu đề yêu cầu -> Home -> Orientation -> Angle Counterclockwise.",
+					"Chá»n cÃ¡c Ã´ tiÃªu Ä‘á» yÃªu cáº§u -> Home -> Orientation -> Angle Counterclockwise.",
 			};
 		case "excelMultiColumnSort":
 			return {
-				successDetail: "Dữ liệu đã được sắp xếp đúng theo các cột yêu cầu.",
-				errorMessage: "Thứ tự dữ liệu chưa đúng theo các khóa sắp xếp yêu cầu.",
+				successDetail: "Dá»¯ liá»‡u Ä‘Ã£ Ä‘Æ°á»£c sáº¯p xáº¿p Ä‘Ãºng theo cÃ¡c cá»™t yÃªu cáº§u.",
+				errorMessage: "Thá»© tá»± dá»¯ liá»‡u chÆ°a Ä‘Ãºng theo cÃ¡c khÃ³a sáº¯p xáº¿p yÃªu cáº§u.",
 				fixAction:
-					"Dùng Data -> Sort và thêm đúng thứ tự khóa sắp xếp, khóa trên trước rồi đến khóa phụ.",
+					"DÃ¹ng Data -> Sort vÃ  thÃªm Ä‘Ãºng thá»© tá»± khÃ³a sáº¯p xáº¿p, khÃ³a trÃªn trÆ°á»›c rá»“i Ä‘áº¿n khÃ³a phá»¥.",
 			};
 		case "excelFreezePanes":
 			return {
-				successDetail: "Đã cố định đúng các hàng cần giữ khi cuộn dọc.",
+				successDetail: "ÄÃ£ cá»‘ Ä‘á»‹nh Ä‘Ãºng cÃ¡c hÃ ng cáº§n giá»¯ khi cuá»™n dá»c.",
 				errorMessage:
-					"Worksheet chưa cố định đúng các hàng cần giữ khi cuộn dọc.",
+					"Worksheet chÆ°a cá»‘ Ä‘á»‹nh Ä‘Ãºng cÃ¡c hÃ ng cáº§n giá»¯ khi cuá»™n dá»c.",
 				fixAction:
-					"Chọn ô ngay bên dưới các hàng cần giữ -> View -> Freeze Panes -> Freeze Panes.",
+					"Chá»n Ã´ ngay bÃªn dÆ°á»›i cÃ¡c hÃ ng cáº§n giá»¯ -> View -> Freeze Panes -> Freeze Panes.",
 			};
 		case "excelDocumentProperty":
 			return {
-				successDetail: "Đã cập nhật đúng thuộc tính tài liệu yêu cầu.",
-				errorMessage: "Thuộc tính tài liệu chưa có đúng giá trị yêu cầu.",
+				successDetail: "ÄÃ£ cáº­p nháº­t Ä‘Ãºng thuá»™c tÃ­nh tÃ i liá»‡u yÃªu cáº§u.",
+				errorMessage: "Thuá»™c tÃ­nh tÃ i liá»‡u chÆ°a cÃ³ Ä‘Ãºng giÃ¡ trá»‹ yÃªu cáº§u.",
 				fixAction:
-					"Mở File -> Info -> Properties -> Advanced Properties hoặc Show All Properties, rồi nhập đúng giá trị thuộc tính.",
+					"Má»Ÿ File -> Info -> Properties -> Advanced Properties hoáº·c Show All Properties, rá»“i nháº­p Ä‘Ãºng giÃ¡ trá»‹ thuá»™c tÃ­nh.",
 			};
 		case "excelPrintArea":
 			return {
-				successDetail: "Đã thiết lập đúng vùng in cho worksheet yêu cầu.",
-				errorMessage: "Worksheet chưa được thiết lập đúng vùng in yêu cầu.",
+				successDetail: "ÄÃ£ thiáº¿t láº­p Ä‘Ãºng vÃ¹ng in cho worksheet yÃªu cáº§u.",
+				errorMessage: "Worksheet chÆ°a Ä‘Æ°á»£c thiáº¿t láº­p Ä‘Ãºng vÃ¹ng in yÃªu cáº§u.",
 				fixAction:
-					"Chọn đúng vùng ô -> Page Layout -> Print Area -> Set Print Area.",
+					"Chá»n Ä‘Ãºng vÃ¹ng Ã´ -> Page Layout -> Print Area -> Set Print Area.",
 			};
 		default:
 			return generic;
@@ -753,7 +783,7 @@ const MarginUnitInput = ({
 		const twips = parseMarginInputToTwips(draft);
 		if (twips === undefined) {
 			notify.error(
-				"Giá trị lề không hợp lệ. Hãy nhập ví dụ: 1 in, 1.5 in, 2.54 cm.",
+				"GiÃ¡ trá»‹ lá» khÃ´ng há»£p lá»‡. HÃ£y nháº­p vÃ­ dá»¥: 1 in, 1.5 in, 2.54 cm.",
 			);
 			return;
 		}
@@ -809,10 +839,10 @@ const parsePageBorderWidthInput = (value: string) => {
 	const raw = value
 		.trim()
 		.replace(",", ".")
-		.replace(/½/g, " 1/2")
-		.replace(/¼/g, " 1/4")
-		.replace(/¾/g, " 3/4")
-		.replace(/\b(wide|rộng|rong)\b/gi, "")
+		.replace(/Â½/g, " 1/2")
+		.replace(/Â¼/g, " 1/4")
+		.replace(/Â¾/g, " 3/4")
+		.replace(/\b(wide|rá»™ng|rong)\b/gi, "")
 		.replace(/\s+/g, " ")
 		.toLowerCase()
 		.trim();
@@ -884,7 +914,7 @@ const PageBorderWidthInput = ({
 		const width = parsePageBorderWidthInput(draft);
 		if (width === undefined) {
 			notify.error(
-				"Độ dày viền không hợp lệ. Hãy nhập ví dụ: 1.5 pt, 1 1/2 pt, 1 1/2pt wide, 12 xml.",
+				"Äá»™ dÃ y viá»n khÃ´ng há»£p lá»‡. HÃ£y nháº­p vÃ­ dá»¥: 1.5 pt, 1 1/2 pt, 1 1/2pt wide, 12 xml.",
 			);
 			return;
 		}
@@ -895,7 +925,7 @@ const PageBorderWidthInput = ({
 
 	return (
 		<label className="text-xs font-semibold text-slate-600">
-			Độ dày viền
+			Äá»™ dÃ y viá»n
 			<input
 				type="text"
 				value={draft}
@@ -906,7 +936,7 @@ const PageBorderWidthInput = ({
 						event.currentTarget.blur();
 					}
 				}}
-				placeholder="1.5 pt hoặc 1 1/2 pt"
+				placeholder="1.5 pt hoáº·c 1 1/2 pt"
 				className={inputClass}
 			/>
 		</label>
@@ -958,7 +988,7 @@ const ExcelProject02SpecialConditionEditor = ({
 		return (
 			<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-2">
 				<label className="text-xs font-semibold text-slate-600">
-					Tên worksheet
+					TÃªn worksheet
 					<input
 						value={specialCondition.excelMergedRangeConfig?.worksheetName ?? ""}
 						onChange={(e) =>
@@ -971,7 +1001,7 @@ const ExcelProject02SpecialConditionEditor = ({
 					/>
 				</label>
 				<label className="text-xs font-semibold text-slate-600">
-					Vùng ô
+					VÃ¹ng Ã´
 					<input
 						value={specialCondition.excelMergedRangeConfig?.range ?? ""}
 						onChange={(e) =>
@@ -995,7 +1025,7 @@ const ExcelProject02SpecialConditionEditor = ({
 						}
 						className="h-4 w-4 accent-blue-600"
 					/>
-					Không cho phép căn giữa ngang sau khi gộp ô
+					KhÃ´ng cho phÃ©p cÄƒn giá»¯a ngang sau khi gá»™p Ã´
 				</label>
 			</div>
 		);
@@ -1005,7 +1035,7 @@ const ExcelProject02SpecialConditionEditor = ({
 		return (
 			<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-2">
 				<label className="text-xs font-semibold text-slate-600">
-					Tên worksheet
+					TÃªn worksheet
 					<input
 						value={
 							specialCondition.excelCellHyperlinkConfig?.worksheetName ?? ""
@@ -1020,7 +1050,7 @@ const ExcelProject02SpecialConditionEditor = ({
 					/>
 				</label>
 				<label className="text-xs font-semibold text-slate-600">
-					Ô
+					Ã”
 					<input
 						value={specialCondition.excelCellHyperlinkConfig?.cell ?? ""}
 						onChange={(e) =>
@@ -1031,7 +1061,7 @@ const ExcelProject02SpecialConditionEditor = ({
 					/>
 				</label>
 				<label className="text-xs font-semibold text-slate-600">
-					Vị trí liên kết nội bộ
+					Vá»‹ trÃ­ liÃªn káº¿t ná»™i bá»™
 					<input
 						value={specialCondition.excelCellHyperlinkConfig?.location ?? ""}
 						onChange={(e) =>
@@ -1044,7 +1074,7 @@ const ExcelProject02SpecialConditionEditor = ({
 					/>
 				</label>
 				<label className="text-xs font-semibold text-slate-600">
-					Văn bản hiển thị
+					VÄƒn báº£n hiá»ƒn thá»‹
 					<input
 						value={specialCondition.excelCellHyperlinkConfig?.display ?? ""}
 						onChange={(e) =>
@@ -1052,7 +1082,7 @@ const ExcelProject02SpecialConditionEditor = ({
 								display: e.target.value,
 							})
 						}
-						placeholder="Không bắt buộc"
+						placeholder="KhÃ´ng báº¯t buá»™c"
 						className={inputClass}
 					/>
 				</label>
@@ -1064,7 +1094,7 @@ const ExcelProject02SpecialConditionEditor = ({
 		return (
 			<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-3">
 				<label className="text-xs font-semibold text-slate-600">
-					Tên worksheet
+					TÃªn worksheet
 					<input
 						value={
 							specialCondition.excelIconSetConditionalFormattingConfig
@@ -1080,7 +1110,7 @@ const ExcelProject02SpecialConditionEditor = ({
 					/>
 				</label>
 				<label className="text-xs font-semibold text-slate-600">
-					Vùng ô
+					VÃ¹ng Ã´
 					<input
 						value={
 							specialCondition.excelIconSetConditionalFormattingConfig?.range ??
@@ -1096,7 +1126,7 @@ const ExcelProject02SpecialConditionEditor = ({
 					/>
 				</label>
 				<label className="text-xs font-semibold text-slate-600">
-					Bộ biểu tượng
+					Bá»™ biá»ƒu tÆ°á»£ng
 					<input
 						value={
 							specialCondition.excelIconSetConditionalFormattingConfig
@@ -1119,7 +1149,7 @@ const ExcelProject02SpecialConditionEditor = ({
 		return (
 			<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-2">
 				<label className="text-xs font-semibold text-slate-600">
-					Tên worksheet
+					TÃªn worksheet
 					<input
 						value={
 							specialCondition.excelTextReplacementConfig?.worksheetName ?? ""
@@ -1129,12 +1159,12 @@ const ExcelProject02SpecialConditionEditor = ({
 								worksheetName: e.target.value,
 							})
 						}
-						placeholder="Để trống = toàn workbook"
+						placeholder="Äá»ƒ trá»‘ng = toÃ n workbook"
 						className={inputClass}
 					/>
 				</label>
 				<label className="text-xs font-semibold text-slate-600">
-					File nguồn
+					File nguá»“n
 					<input
 						value={
 							specialCondition.excelTextReplacementConfig?.sourceFile ?? ""
@@ -1149,7 +1179,7 @@ const ExcelProject02SpecialConditionEditor = ({
 					/>
 				</label>
 				<label className="text-xs font-semibold text-slate-600">
-					Văn bản cũ
+					VÄƒn báº£n cÅ©
 					<input
 						value={specialCondition.excelTextReplacementConfig?.oldText ?? ""}
 						onChange={(e) =>
@@ -1162,7 +1192,7 @@ const ExcelProject02SpecialConditionEditor = ({
 					/>
 				</label>
 				<label className="text-xs font-semibold text-slate-600">
-					Văn bản mới
+					VÄƒn báº£n má»›i
 					<input
 						value={specialCondition.excelTextReplacementConfig?.newText ?? ""}
 						onChange={(e) =>
@@ -1175,7 +1205,7 @@ const ExcelProject02SpecialConditionEditor = ({
 					/>
 				</label>
 				<label className="text-xs font-semibold text-slate-600">
-					Số lần tối thiểu văn bản mới
+					Sá»‘ láº§n tá»‘i thiá»ƒu vÄƒn báº£n má»›i
 					<input
 						type="number"
 						min={1}
@@ -1207,7 +1237,7 @@ const ExcelProject02SpecialConditionEditor = ({
 						}
 						className="h-4 w-4 rounded border-slate-300 text-blue-600"
 					/>
-					Bắt buộc không còn văn bản cũ
+					Báº¯t buá»™c khÃ´ng cÃ²n vÄƒn báº£n cÅ©
 				</label>
 			</div>
 		);
@@ -1217,7 +1247,7 @@ const ExcelProject02SpecialConditionEditor = ({
 		return (
 			<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-2">
 				<label className="text-xs font-semibold text-slate-600">
-					Tên worksheet
+					TÃªn worksheet
 					<input
 						value={specialCondition.excelPrintTitlesConfig?.worksheetName ?? ""}
 						onChange={(e) =>
@@ -1230,7 +1260,7 @@ const ExcelProject02SpecialConditionEditor = ({
 					/>
 				</label>
 				<label className="text-xs font-semibold text-slate-600">
-					Hàng lặp lại ở đầu trang
+					HÃ ng láº·p láº¡i á»Ÿ Ä‘áº§u trang
 					<input
 						value={specialCondition.excelPrintTitlesConfig?.expectedRows ?? ""}
 						onChange={(e) =>
@@ -1250,7 +1280,7 @@ const ExcelProject02SpecialConditionEditor = ({
 		return (
 			<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-3">
 				<label className="text-xs font-semibold text-slate-600">
-					Tên worksheet
+					TÃªn worksheet
 					<input
 						value={
 							specialCondition.excelNumberFormatConfig?.worksheetName ?? ""
@@ -1265,7 +1295,7 @@ const ExcelProject02SpecialConditionEditor = ({
 					/>
 				</label>
 				<label className="text-xs font-semibold text-slate-600">
-					Vùng ô
+					VÃ¹ng Ã´
 					<input
 						value={specialCondition.excelNumberFormatConfig?.range ?? ""}
 						onChange={(e) =>
@@ -1278,7 +1308,7 @@ const ExcelProject02SpecialConditionEditor = ({
 					/>
 				</label>
 				<label className="text-xs font-semibold text-slate-600">
-					Loại định dạng
+					Loáº¡i Ä‘á»‹nh dáº¡ng
 					<select
 						value={
 							specialCondition.excelNumberFormatConfig?.category ?? "number"
@@ -1298,18 +1328,18 @@ const ExcelProject02SpecialConditionEditor = ({
 						}
 						className={inputClass}
 					>
-						<option value="number">Số (Number)</option>
-						<option value="currency">Tiền tệ (Currency)</option>
-						<option value="accounting">Kế toán (Accounting)</option>
-						<option value="percentage">Phần trăm (Percentage)</option>
-						<option value="date">Ngày (Date)</option>
-						<option value="time">Thời gian (Time)</option>
+						<option value="number">Sá»‘ (Number)</option>
+						<option value="currency">Tiá»n tá»‡ (Currency)</option>
+						<option value="accounting">Káº¿ toÃ¡n (Accounting)</option>
+						<option value="percentage">Pháº§n trÄƒm (Percentage)</option>
+						<option value="date">NgÃ y (Date)</option>
+						<option value="time">Thá»i gian (Time)</option>
 						<option value="general">Chung (General)</option>
-						<option value="custom">Tùy chỉnh (Custom)</option>
+						<option value="custom">TÃ¹y chá»‰nh (Custom)</option>
 					</select>
 				</label>
 				<label className="text-xs font-semibold text-slate-600">
-					Số chữ số thập phân
+					Sá»‘ chá»¯ sá»‘ tháº­p phÃ¢n
 					<input
 						type="number"
 						min={0}
@@ -1327,7 +1357,7 @@ const ExcelProject02SpecialConditionEditor = ({
 					/>
 				</label>
 				<label className="text-xs font-semibold text-slate-600">
-					Ký hiệu
+					KÃ½ hiá»‡u
 					<input
 						value={specialCondition.excelNumberFormatConfig?.symbol ?? ""}
 						onChange={(e) =>
@@ -1335,12 +1365,12 @@ const ExcelProject02SpecialConditionEditor = ({
 								symbol: e.target.value,
 							})
 						}
-						placeholder="$ / VND / để trống"
+						placeholder="$ / VND / Ä‘á»ƒ trá»‘ng"
 						className={inputClass}
 					/>
 				</label>
 				<label className="text-xs font-semibold text-slate-600">
-					numFmtId hợp lệ nâng cao
+					numFmtId há»£p lá»‡ nÃ¢ng cao
 					<input
 						value={(
 							specialCondition.excelNumberFormatConfig
@@ -1372,7 +1402,7 @@ const ExcelProject02SpecialConditionEditor = ({
 						}
 						className="h-4 w-4 accent-blue-600"
 					/>
-					Bắt buộc có dấu phân tách hàng nghìn
+					Báº¯t buá»™c cÃ³ dáº¥u phÃ¢n tÃ¡ch hÃ ng nghÃ¬n
 				</label>
 			</div>
 		);
@@ -1382,7 +1412,7 @@ const ExcelProject02SpecialConditionEditor = ({
 		return (
 			<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-2">
 				<label className="text-xs font-semibold text-slate-600">
-					File XML biểu đồ
+					File XML biá»ƒu Ä‘á»“
 					<input
 						value={
 							specialCondition.excelChartDataRangeConfig?.chartSourceFile ?? ""
@@ -1397,7 +1427,7 @@ const ExcelProject02SpecialConditionEditor = ({
 					/>
 				</label>
 				<label className="text-xs font-semibold text-slate-600">
-					Số điểm dữ liệu yêu cầu
+					Sá»‘ Ä‘iá»ƒm dá»¯ liá»‡u yÃªu cáº§u
 					<input
 						type="number"
 						min={1}
@@ -1417,7 +1447,7 @@ const ExcelProject02SpecialConditionEditor = ({
 					/>
 				</label>
 				<label className="text-xs font-semibold text-slate-600">
-					Vùng nhãn trục
+					VÃ¹ng nhÃ£n trá»¥c
 					<input
 						value={
 							specialCondition.excelChartDataRangeConfig
@@ -1433,7 +1463,7 @@ const ExcelProject02SpecialConditionEditor = ({
 					/>
 				</label>
 				<label className="text-xs font-semibold text-slate-600">
-					Vùng giá trị
+					VÃ¹ng giÃ¡ trá»‹
 					<input
 						value={
 							specialCondition.excelChartDataRangeConfig?.expectedValueRange ??
@@ -1449,7 +1479,7 @@ const ExcelProject02SpecialConditionEditor = ({
 					/>
 				</label>
 				<label className="text-xs font-semibold text-slate-600 md:col-span-2">
-					Các vùng giá trị (mỗi dòng một series)
+					CÃ¡c vÃ¹ng giÃ¡ trá»‹ (má»—i dÃ²ng má»™t series)
 					<textarea
 						value={(
 							specialCondition.excelChartDataRangeConfig?.expectedValueRanges ??
@@ -1473,7 +1503,7 @@ const ExcelProject02SpecialConditionEditor = ({
 					/>
 				</label>
 				<label className="text-xs font-semibold text-slate-600 md:col-span-2">
-					Tên series (mỗi dòng một series chú giải)
+					TÃªn series (má»—i dÃ²ng má»™t series chÃº giáº£i)
 					<textarea
 						value={(
 							specialCondition.excelChartDataRangeConfig?.expectedSeriesNames ??
@@ -1497,7 +1527,7 @@ const ExcelProject02SpecialConditionEditor = ({
 					/>
 				</label>
 				<label className="text-xs font-semibold text-slate-600 md:col-span-2">
-					Nội dung nhãn cần có
+					Ná»™i dung nhÃ£n cáº§n cÃ³
 					<input
 						value={
 							specialCondition.excelChartDataRangeConfig
@@ -1526,7 +1556,7 @@ const ExcelProject02SpecialConditionEditor = ({
 						}
 						className="h-4 w-4 rounded border-slate-300 text-blue-600"
 					/>
-					Không cho thêm series/range ngoài dữ liệu yêu cầu
+					KhÃ´ng cho thÃªm series/range ngoÃ i dá»¯ liá»‡u yÃªu cáº§u
 				</label>
 			</div>
 		);
@@ -1536,7 +1566,7 @@ const ExcelProject02SpecialConditionEditor = ({
 		return (
 			<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-2">
 				<label className="text-xs font-semibold text-slate-600">
-					File XML biểu đồ
+					File XML biá»ƒu Ä‘á»“
 					<input
 						value={
 							specialCondition.excelChartLegendConfig?.chartSourceFile ?? ""
@@ -1551,7 +1581,7 @@ const ExcelProject02SpecialConditionEditor = ({
 					/>
 				</label>
 				<label className="text-xs font-semibold text-slate-600">
-					Vị trí chú giải
+					Vá»‹ trÃ­ chÃº giáº£i
 					<select
 						value={specialCondition.excelChartLegendConfig?.position ?? "t"}
 						onChange={(e) =>
@@ -1561,11 +1591,11 @@ const ExcelProject02SpecialConditionEditor = ({
 						}
 						className={inputClass}
 					>
-						<option value="t">Trên</option>
-						<option value="b">Dưới</option>
-						<option value="l">Trái</option>
-						<option value="r">Phải</option>
-						<option value="tr">Góc trên bên phải</option>
+						<option value="t">TrÃªn</option>
+						<option value="b">DÆ°á»›i</option>
+						<option value="l">TrÃ¡i</option>
+						<option value="r">Pháº£i</option>
+						<option value="tr">GÃ³c trÃªn bÃªn pháº£i</option>
 					</select>
 				</label>
 			</div>
@@ -1576,7 +1606,7 @@ const ExcelProject02SpecialConditionEditor = ({
 		return (
 			<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-2">
 				<label className="text-xs font-semibold text-slate-600">
-					Tên named range
+					TÃªn named range
 					<input
 						value={specialCondition.excelDefinedNameConfig?.name ?? ""}
 						onChange={(e) =>
@@ -1600,10 +1630,10 @@ const ExcelProject02SpecialConditionEditor = ({
 						}
 						className="h-4 w-4 rounded border-slate-300 text-blue-600"
 					/>
-					Bắt đúng và không cho thêm vùng ngoài yêu cầu
+					Báº¯t Ä‘Ãºng vÃ  khÃ´ng cho thÃªm vÃ¹ng ngoÃ i yÃªu cáº§u
 				</label>
 				<label className="text-xs font-semibold text-slate-600 md:col-span-2">
-					Vùng ô yêu cầu (mỗi dòng một vùng)
+					VÃ¹ng Ã´ yÃªu cáº§u (má»—i dÃ²ng má»™t vÃ¹ng)
 					<textarea
 						value={(
 							specialCondition.excelDefinedNameConfig?.expectedRanges ?? []
@@ -1628,7 +1658,7 @@ const ExcelProject02SpecialConditionEditor = ({
 		return (
 			<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-2">
 				<label className="text-xs font-semibold text-slate-600">
-					Tên worksheet
+					TÃªn worksheet
 					<input
 						value={
 							specialCondition.excelFormulaReferencesConfig?.worksheetName ?? ""
@@ -1643,7 +1673,7 @@ const ExcelProject02SpecialConditionEditor = ({
 					/>
 				</label>
 				<label className="text-xs font-semibold text-slate-600">
-					Ô công thức
+					Ã” cÃ´ng thá»©c
 					<input
 						value={specialCondition.excelFormulaReferencesConfig?.cell ?? ""}
 						onChange={(e) =>
@@ -1656,7 +1686,7 @@ const ExcelProject02SpecialConditionEditor = ({
 					/>
 				</label>
 				<label className="text-xs font-semibold text-slate-600 md:col-span-2">
-					Named range bắt buộc (mỗi dòng một tên)
+					Named range báº¯t buá»™c (má»—i dÃ²ng má»™t tÃªn)
 					<textarea
 						value={(
 							specialCondition.excelFormulaReferencesConfig
@@ -1675,7 +1705,7 @@ const ExcelProject02SpecialConditionEditor = ({
 					/>
 				</label>
 				<label className="text-xs font-semibold text-slate-600">
-					Hàm bắt buộc (mỗi dòng một hàm)
+					HÃ m báº¯t buá»™c (má»—i dÃ²ng má»™t hÃ m)
 					<textarea
 						value={(
 							specialCondition.excelFormulaReferencesConfig
@@ -1694,7 +1724,7 @@ const ExcelProject02SpecialConditionEditor = ({
 					/>
 				</label>
 				<label className="text-xs font-semibold text-slate-600">
-					Fragment công thức bắt buộc
+					Fragment cÃ´ng thá»©c báº¯t buá»™c
 					<textarea
 						value={(
 							specialCondition.excelFormulaReferencesConfig
@@ -1713,7 +1743,7 @@ const ExcelProject02SpecialConditionEditor = ({
 					/>
 				</label>
 				<label className="text-xs font-semibold text-slate-600">
-					Công thức chính xác (không bắt buộc)
+					CÃ´ng thá»©c chÃ­nh xÃ¡c (khÃ´ng báº¯t buá»™c)
 					<input
 						value={
 							specialCondition.excelFormulaReferencesConfig?.expectedFormula ??
@@ -1729,7 +1759,7 @@ const ExcelProject02SpecialConditionEditor = ({
 					/>
 				</label>
 				<label className="text-xs font-semibold text-slate-600">
-					Giá trị lưu trong ô (không bắt buộc)
+					GiÃ¡ trá»‹ lÆ°u trong Ã´ (khÃ´ng báº¯t buá»™c)
 					<input
 						value={
 							specialCondition.excelFormulaReferencesConfig?.expectedValue ?? ""
@@ -1739,7 +1769,7 @@ const ExcelProject02SpecialConditionEditor = ({
 								expectedValue: e.target.value,
 							})
 						}
-						placeholder="Không bắt buộc"
+						placeholder="KhÃ´ng báº¯t buá»™c"
 						className={inputClass}
 					/>
 				</label>
@@ -1757,7 +1787,7 @@ const ExcelProject02SpecialConditionEditor = ({
 						}
 						className="h-4 w-4 rounded border-slate-300 text-blue-600"
 					/>
-					Không cho tham chiếu trực tiếp địa chỉ ô/vùng
+					KhÃ´ng cho tham chiáº¿u trá»±c tiáº¿p Ä‘á»‹a chá»‰ Ã´/vÃ¹ng
 				</label>
 			</div>
 		);
@@ -1767,7 +1797,7 @@ const ExcelProject02SpecialConditionEditor = ({
 		return (
 			<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-2">
 				<label className="text-xs font-semibold text-slate-600">
-					Tên worksheet
+					TÃªn worksheet
 					<input
 						value={
 							specialCondition.excelNoConditionalFormattingConfig
@@ -1796,7 +1826,7 @@ const ExcelProject02SpecialConditionEditor = ({
 						}
 						className="h-4 w-4 rounded border-slate-300 text-blue-600"
 					/>
-					Kiểm tra toàn bộ workbook
+					Kiá»ƒm tra toÃ n bá»™ workbook
 				</label>
 			</div>
 		);
@@ -1806,7 +1836,7 @@ const ExcelProject02SpecialConditionEditor = ({
 		return (
 			<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-3">
 				<label className="text-xs font-semibold text-slate-600">
-					Tên worksheet
+					TÃªn worksheet
 					<input
 						value={specialCondition.excelFreezePanesConfig?.worksheetName ?? ""}
 						onChange={(e) =>
@@ -1819,7 +1849,7 @@ const ExcelProject02SpecialConditionEditor = ({
 					/>
 				</label>
 				<label className="text-xs font-semibold text-slate-600">
-					Ô góc trên bên trái sau khi cố định
+					Ã” gÃ³c trÃªn bÃªn trÃ¡i sau khi cá»‘ Ä‘á»‹nh
 					<input
 						value={specialCondition.excelFreezePanesConfig?.topLeftCell ?? "A4"}
 						onChange={(e) =>
@@ -1832,7 +1862,7 @@ const ExcelProject02SpecialConditionEditor = ({
 					/>
 				</label>
 				<label className="text-xs font-semibold text-slate-600">
-					Số hàng cố định (ySplit)
+					Sá»‘ hÃ ng cá»‘ Ä‘á»‹nh (ySplit)
 					<input
 						type="number"
 						min={0}
@@ -1859,7 +1889,7 @@ const ExcelProject02SpecialConditionEditor = ({
 						}
 						className="h-4 w-4 rounded border-slate-300 text-blue-600"
 					/>
-					Chỉ cố định hàng, không cố định thêm cột
+					Chá»‰ cá»‘ Ä‘á»‹nh hÃ ng, khÃ´ng cá»‘ Ä‘á»‹nh thÃªm cá»™t
 				</label>
 			</div>
 		);
@@ -1869,7 +1899,7 @@ const ExcelProject02SpecialConditionEditor = ({
 		return (
 			<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-3">
 				<label className="text-xs font-semibold text-slate-600">
-					Tên thuộc tính
+					TÃªn thuá»™c tÃ­nh
 					<input
 						value={
 							specialCondition.excelDocumentPropertyConfig?.propertyName ?? ""
@@ -1884,7 +1914,7 @@ const ExcelProject02SpecialConditionEditor = ({
 					/>
 				</label>
 				<label className="text-xs font-semibold text-slate-600">
-					Giá trị yêu cầu
+					GiÃ¡ trá»‹ yÃªu cáº§u
 					<input
 						value={
 							specialCondition.excelDocumentPropertyConfig?.expectedValue ?? ""
@@ -1899,7 +1929,7 @@ const ExcelProject02SpecialConditionEditor = ({
 					/>
 				</label>
 				<label className="text-xs font-semibold text-slate-600">
-					File nguồn
+					File nguá»“n
 					<input
 						value={
 							specialCondition.excelDocumentPropertyConfig?.sourceFile ??
@@ -1922,7 +1952,7 @@ const ExcelProject02SpecialConditionEditor = ({
 		return (
 			<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-2">
 				<label className="text-xs font-semibold text-slate-600">
-					Tên worksheet
+					TÃªn worksheet
 					<input
 						value={specialCondition.excelPrintAreaConfig?.worksheetName ?? ""}
 						onChange={(e) =>
@@ -1935,7 +1965,7 @@ const ExcelProject02SpecialConditionEditor = ({
 					/>
 				</label>
 				<label className="text-xs font-semibold text-slate-600">
-					Vùng in
+					VÃ¹ng in
 					<input
 						value={specialCondition.excelPrintAreaConfig?.expectedRange ?? ""}
 						onChange={(e) =>
@@ -1960,7 +1990,7 @@ const ExcelProject02SpecialConditionEditor = ({
 						}
 						className="h-4 w-4 rounded border-slate-300 text-blue-600"
 					/>
-					Bắt đúng vùng in, không cho thêm vùng khác
+					Báº¯t Ä‘Ãºng vÃ¹ng in, khÃ´ng cho thÃªm vÃ¹ng khÃ¡c
 				</label>
 			</div>
 		);
@@ -1970,7 +2000,7 @@ const ExcelProject02SpecialConditionEditor = ({
 		return (
 			<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-2">
 				<label className="text-xs font-semibold text-slate-600">
-					Tên worksheet
+					TÃªn worksheet
 					<input
 						value={
 							specialCondition.excelTextRotationConfig?.worksheetName ?? ""
@@ -1985,7 +2015,7 @@ const ExcelProject02SpecialConditionEditor = ({
 					/>
 				</label>
 				<label className="text-xs font-semibold text-slate-600">
-					textRotation hợp lệ
+					textRotation há»£p lá»‡
 					<input
 						value={(
 							specialCondition.excelTextRotationConfig
@@ -2004,7 +2034,7 @@ const ExcelProject02SpecialConditionEditor = ({
 					/>
 				</label>
 				<label className="text-xs font-semibold text-slate-600 md:col-span-2">
-					Tiêu đề cần xoay (mỗi dòng một tiêu đề)
+					TiÃªu Ä‘á» cáº§n xoay (má»—i dÃ²ng má»™t tiÃªu Ä‘á»)
 					<textarea
 						value={(
 							specialCondition.excelTextRotationConfig?.expectedTexts ?? []
@@ -2035,7 +2065,7 @@ const ExcelProject02SpecialConditionEditor = ({
 						}
 						className="h-4 w-4 rounded border-slate-300 text-blue-600"
 					/>
-					Bắt buộc tất cả tiêu đề đều phải xoay đúng
+					Báº¯t buá»™c táº¥t cáº£ tiÃªu Ä‘á» Ä‘á»u pháº£i xoay Ä‘Ãºng
 				</label>
 			</div>
 		);
@@ -2045,7 +2075,7 @@ const ExcelProject02SpecialConditionEditor = ({
 		return (
 			<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-2">
 				<label className="text-xs font-semibold text-slate-600">
-					Tên worksheet
+					TÃªn worksheet
 					<input
 						value={
 							specialCondition.excelMultiColumnSortConfig?.worksheetName ?? ""
@@ -2060,7 +2090,7 @@ const ExcelProject02SpecialConditionEditor = ({
 					/>
 				</label>
 				<label className="text-xs font-semibold text-slate-600">
-					Hàng tiêu đề
+					HÃ ng tiÃªu Ä‘á»
 					<input
 						type="number"
 						min={1}
@@ -2074,7 +2104,7 @@ const ExcelProject02SpecialConditionEditor = ({
 					/>
 				</label>
 				<label className="text-xs font-semibold text-slate-600 md:col-span-2">
-					Vùng dữ liệu (không bắt buộc)
+					VÃ¹ng dá»¯ liá»‡u (khÃ´ng báº¯t buá»™c)
 					<input
 						value={specialCondition.excelMultiColumnSortConfig?.dataRange ?? ""}
 						onChange={(e) =>
@@ -2087,7 +2117,7 @@ const ExcelProject02SpecialConditionEditor = ({
 					/>
 				</label>
 				<label className="text-xs font-semibold text-slate-600 md:col-span-2">
-					Khóa sắp xếp (mỗi dòng: tiêu đề cột hoặc tiêu đề|desc)
+					KhÃ³a sáº¯p xáº¿p (má»—i dÃ²ng: tiÃªu Ä‘á» cá»™t hoáº·c tiÃªu Ä‘á»|desc)
 					<textarea
 						value={(
 							specialCondition.excelMultiColumnSortConfig?.keyColumns ?? []
@@ -2130,7 +2160,7 @@ const ExcelProject02SpecialConditionEditor = ({
 		return (
 			<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-3">
 				<label className="text-xs font-semibold text-slate-600">
-					File XML biểu đồ
+					File XML biá»ƒu Ä‘á»“
 					<input
 						value={
 							specialCondition.excelChartStyleConfig?.chartSourceFile ?? ""
@@ -2160,7 +2190,7 @@ const ExcelProject02SpecialConditionEditor = ({
 					/>
 				</label>
 				<label className="text-xs font-semibold text-slate-600">
-					Mã style biểu đồ
+					MÃ£ style biá»ƒu Ä‘á»“
 					<input
 						type="number"
 						min={1}
@@ -2300,7 +2330,7 @@ const XmlGradingRulesPage = () => {
 	const [gradeJson, setGradeJson] = useState("");
 	const [isTestGrading, setIsTestGrading] = useState(false);
 
-	// State quản lý xem JSON thô hoặc Giao diện trực quan
+	// State quáº£n lÃ½ xem JSON thÃ´ hoáº·c Giao diá»‡n trá»±c quan
 	const [viewRawJson, setViewRawJson] = useState(false);
 	const [expandedProjects, setExpandedProjects] = useState<
 		Record<number, boolean>
@@ -2308,8 +2338,8 @@ const XmlGradingRulesPage = () => {
 	const [expandedTasks, setExpandedTasks] = useState<Record<string, boolean>>(
 		{},
 	);
-	// Ẩn/hiện riêng khối "Điều kiện đặc biệt" của từng Task, độc lập với
-	// việc Task đang expand/collapse. Mặc định mở (true) để giữ hành vi cũ.
+	// áº¨n/hiá»‡n riÃªng khá»‘i "Äiá»u kiá»‡n Ä‘áº·c biá»‡t" cá»§a tá»«ng Task, Ä‘á»™c láº­p vá»›i
+	// viá»‡c Task Ä‘ang expand/collapse. Máº·c Ä‘á»‹nh má»Ÿ (true) Ä‘á»ƒ giá»¯ hÃ nh vi cÅ©.
 	const [expandedSpecialConditions, setExpandedSpecialConditions] = useState<
 		Record<string, boolean>
 	>({});
@@ -2326,8 +2356,8 @@ const XmlGradingRulesPage = () => {
 	const savingRef = useRef(false);
 	const saveRuleSetRef = useRef<() => Promise<void>>(async () => undefined);
 
-	// Luôn giữ snapshot mới nhất để thao tác Save không dùng state cũ
-	// trong trường hợp người dùng vừa nhập Condition rồi click Save ngay.
+	// LuÃ´n giá»¯ snapshot má»›i nháº¥t Ä‘á»ƒ thao tÃ¡c Save khÃ´ng dÃ¹ng state cÅ©
+	// trong trÆ°á»ng há»£p ngÆ°á»i dÃ¹ng vá»«a nháº­p Condition rá»“i click Save ngay.
 	useEffect(() => {
 		selectedRef.current = selected;
 	}, [selected]);
@@ -2342,11 +2372,11 @@ const XmlGradingRulesPage = () => {
 	usePageHeader(
 		{
 			title: "XML Grading Rules",
-			subtitle: `Quản lý ruleset · project · task · điều kiện chấm (${selected.isActive ? "ACTIVE" : "INACTIVE"})`,
+			subtitle: `Quáº£n lÃ½ ruleset Â· project Â· task Â· Ä‘iá»u kiá»‡n cháº¥m (${selected.isActive ? "ACTIVE" : "INACTIVE"})`,
 			actions: [
 				{
 					id: "create-ruleset",
-					label: "Tạo ruleset",
+					label: "Táº¡o ruleset",
 					icon: "add",
 					colorStyle: "filled",
 					onClick: startNewRuleSet,
@@ -2368,13 +2398,13 @@ const XmlGradingRulesPage = () => {
 
 			setRuleSets(data);
 
-			// Dùng ref thay vì selected.id từ closure cũ.
-			// Tránh việc request reload sau Save lấy lại state cũ và làm UI nhảy/ghi đè.
+			// DÃ¹ng ref thay vÃ¬ selected.id tá»« closure cÅ©.
+			// TrÃ¡nh viá»‡c request reload sau Save láº¥y láº¡i state cÅ© vÃ  lÃ m UI nháº£y/ghi Ä‘Ã¨.
 		} catch (error) {
 			notify.error(
 				error instanceof Error
 					? error.message
-					: "Không tải được danh sách XML rules.",
+					: "KhÃ´ng táº£i Ä‘Æ°á»£c danh sÃ¡ch XML rules.",
 			);
 		} finally {
 			setLoading(false);
@@ -2399,9 +2429,9 @@ const XmlGradingRulesPage = () => {
 		});
 	};
 
-	// Update state theo kiểu functional + cập nhật ref ngay lập tức.
-	// Đây là phần quan trọng để tránh mất ký tự/field khi người dùng
-	// vừa nhập Condition rồi bấm Save ngay.
+	// Update state theo kiá»ƒu functional + cáº­p nháº­t ref ngay láº­p tá»©c.
+	// ÄÃ¢y lÃ  pháº§n quan trá»ng Ä‘á»ƒ trÃ¡nh máº¥t kÃ½ tá»±/field khi ngÆ°á»i dÃ¹ng
+	// vá»«a nháº­p Condition rá»“i báº¥m Save ngay.
 	const openRuleSet = async (summary: GradingRuleSetSummary) => {
 		setLoadingRuleSetId(summary.id);
 		try {
@@ -2414,7 +2444,7 @@ const XmlGradingRulesPage = () => {
 			notify.error(
 				error instanceof Error
 					? error.message
-					: "Không tải được chi tiết XML ruleset.",
+					: "KhÃ´ng táº£i Ä‘Æ°á»£c chi tiáº¿t XML ruleset.",
 			);
 		} finally {
 			setLoadingRuleSetId("");
@@ -2440,21 +2470,21 @@ const XmlGradingRulesPage = () => {
 		if (savingRef.current) return;
 		savingRef.current = true;
 
-		// Giữ nguyên vị trí scroll: Save không được kéo người dùng về input
-		// hoặc nhảy đến Condition vừa sửa.
+		// Giá»¯ nguyÃªn vá»‹ trÃ­ scroll: Save khÃ´ng Ä‘Æ°á»£c kÃ©o ngÆ°á»i dÃ¹ng vá» input
+		// hoáº·c nháº£y Ä‘áº¿n Condition vá»«a sá»­a.
 		saveScrollYRef.current = window.scrollY;
 		setSaveError("");
 
 		const current = selectedRef.current;
 
-		// Không tự thêm validation HTML/required ở đây.
-		// Backend/service hiện tại vẫn là nguồn xác thực chính.
-		// Điều này tránh browser tự focus + scroll về một input Condition.
+		// KhÃ´ng tá»± thÃªm validation HTML/required á»Ÿ Ä‘Ã¢y.
+		// Backend/service hiá»‡n táº¡i váº«n lÃ  nguá»“n xÃ¡c thá»±c chÃ­nh.
+		// Äiá»u nÃ y trÃ¡nh browser tá»± focus + scroll vá» má»™t input Condition.
 
 		setSaving(true);
 
 		try {
-			// Chuẩn hóa từ snapshot mới nhất, không lấy selected từ closure cũ.
+			// Chuáº©n hÃ³a tá»« snapshot má»›i nháº¥t, khÃ´ng láº¥y selected tá»« closure cÅ©.
 			const payload = prepareRuleSet(current);
 
 			const saved = current.id
@@ -2468,22 +2498,22 @@ const XmlGradingRulesPage = () => {
 			replaceSelected(saved);
 			selectedRef.current = saved;
 
-			// Reload danh sách ở background; selectedRef đã trỏ tới saved
-			// nên request reload không thể quay lại state cũ.
+			// Reload danh sÃ¡ch á»Ÿ background; selectedRef Ä‘Ã£ trá» tá»›i saved
+			// nÃªn request reload khÃ´ng thá»ƒ quay láº¡i state cÅ©.
 			await loadRuleSets();
-			notify.success("Đã lưu ruleset XML.");
+			notify.success("ÄÃ£ lÆ°u ruleset XML.");
 
-			// Sau khi save thành công vẫn giữ nguyên vị trí người dùng đang làm việc.
+			// Sau khi save thÃ nh cÃ´ng váº«n giá»¯ nguyÃªn vá»‹ trÃ­ ngÆ°á»i dÃ¹ng Ä‘ang lÃ m viá»‡c.
 			requestAnimationFrame(() => {
 				window.scrollTo({ top: saveScrollYRef.current, behavior: "auto" });
 			});
 		} catch (error) {
 			const message =
-				error instanceof Error ? error.message : "Lưu ruleset thất bại.";
+				error instanceof Error ? error.message : "LÆ°u ruleset tháº¥t báº¡i.";
 			setSaveError(message);
 			notify.error(message);
 
-			// API lỗi không được làm UI nhảy xuống Condition.
+			// API lá»—i khÃ´ng Ä‘Æ°á»£c lÃ m UI nháº£y xuá»‘ng Condition.
 			requestAnimationFrame(() => {
 				window.scrollTo({ top: saveScrollYRef.current, behavior: "auto" });
 			});
@@ -2546,16 +2576,16 @@ const XmlGradingRulesPage = () => {
 
 	const deleteRuleSet = async (id: string) => {
 		const confirmed = await showConfirm({
-			title: "Xác nhận xóa ruleset",
-			message: "Bạn có chắc chắn muốn xóa ruleset này?",
-			confirmLabel: "Xác nhận xóa",
+			title: "XÃ¡c nháº­n xÃ³a ruleset",
+			message: "Báº¡n cÃ³ cháº¯c cháº¯n muá»‘n xÃ³a ruleset nÃ y?",
+			confirmLabel: "XÃ¡c nháº­n xÃ³a",
 			variant: "destructive",
 		});
 		if (!confirmed) return;
 		await xmlGradingRulesService.delete(id, getAccessToken);
 		startNewRuleSet();
 		await loadRuleSets();
-		notify.success("Đã xóa ruleset.");
+		notify.success("ÄÃ£ xÃ³a ruleset.");
 	};
 
 	const validateRuleSet = async () => {
@@ -2565,10 +2595,10 @@ const XmlGradingRulesPage = () => {
 				getAccessToken,
 			);
 			setValidation(result);
-			notify.success("Ruleset hợp lệ.");
+			notify.success("Ruleset há»£p lá»‡.");
 		} catch (error) {
 			const message =
-				error instanceof Error ? error.message : "Validate thất bại.";
+				error instanceof Error ? error.message : "Validate tháº¥t báº¡i.";
 			setValidation({ isValid: false, errors: [message], warnings: [] });
 			notify.error(message);
 		}
@@ -2576,12 +2606,12 @@ const XmlGradingRulesPage = () => {
 
 	const gradeWithXmlRules = async () => {
 		if (!gradeFile)
-			return notify.warning("Vui lòng chọn file Office cần test chấm.");
+			return notify.warning("Vui lÃ²ng chá»n file Office cáº§n test cháº¥m.");
 		const projectCode = gradeProjectCode || selected.projects[0]?.projectCode;
-		if (!projectCode) return notify.warning("Vui lòng nhập/chọn projectCode.");
+		if (!projectCode) return notify.warning("Vui lÃ²ng nháº­p/chá»n projectCode.");
 		if (!selected.isActive)
 			return notify.warning(
-				"Ruleset hiện tại chưa bật Active. Backend chỉ dùng ruleset Active để chấm thử XML.",
+				"Ruleset hiá»‡n táº¡i chÆ°a báº­t Active. Backend chá»‰ dÃ¹ng ruleset Active Ä‘á»ƒ cháº¥m thá»­ XML.",
 			);
 		if (isTestGrading) return;
 		setIsTestGrading(true);
@@ -2594,10 +2624,10 @@ const XmlGradingRulesPage = () => {
 				getAccessToken,
 			);
 			setGradeJson(JSON.stringify(result, null, 2));
-			notify.success("Test chấm XML hoàn tất.");
+			notify.success("Test cháº¥m XML hoÃ n táº¥t.");
 		} catch (error) {
 			notify.error(
-				error instanceof Error ? error.message : "Test chấm thất bại.",
+				error instanceof Error ? error.message : "Test cháº¥m tháº¥t báº¡i.",
 			);
 		} finally {
 			setIsTestGrading(false);
@@ -2660,7 +2690,7 @@ const XmlGradingRulesPage = () => {
 		}));
 	};
 
-	// Cập nhật Special Condition của riêng 1 Task (không dùng chung toàn trang).
+	// Cáº­p nháº­t Special Condition cá»§a riÃªng 1 Task (khÃ´ng dÃ¹ng chung toÃ n trang).
 	const updateTaskSpecialCondition = (
 		pi: number,
 		ti: number,
@@ -2679,8 +2709,8 @@ const XmlGradingRulesPage = () => {
 		});
 	};
 
-	// Ẩn/hiện riêng khối "Điều kiện đặc biệt" — mặc định mở (true) nếu
-	// chưa từng bấm toggle, để không thay đổi hành vi hiển thị hiện tại.
+	// áº¨n/hiá»‡n riÃªng khá»‘i "Äiá»u kiá»‡n Ä‘áº·c biá»‡t" â€” máº·c Ä‘á»‹nh má»Ÿ (true) náº¿u
+	// chÆ°a tá»«ng báº¥m toggle, Ä‘á»ƒ khÃ´ng thay Ä‘á»•i hÃ nh vi hiá»ƒn thá»‹ hiá»‡n táº¡i.
 	const toggleSpecialCondition = (key: string) =>
 		setExpandedSpecialConditions((prev) => ({
 			...prev,
@@ -2690,11 +2720,11 @@ const XmlGradingRulesPage = () => {
 	usePageHeader(
 		{
 			title: "XML Grading Rules",
-			subtitle: `Quản lý ruleset · project · task · điều kiện chấm (${selected.isActive ? "ACTIVE" : "INACTIVE"})`,
+			subtitle: `Quáº£n lÃ½ ruleset Â· project Â· task Â· Ä‘iá»u kiá»‡n cháº¥m (${selected.isActive ? "ACTIVE" : "INACTIVE"})`,
 			actions: [
 				{
 					id: "create-ruleset",
-					label: "Tạo ruleset",
+					label: "Táº¡o ruleset",
 					icon: "add",
 					colorStyle: "filled",
 					onClick: startNewRuleSet,
@@ -2707,7 +2737,7 @@ const XmlGradingRulesPage = () => {
 	if (!canUsePage) {
 		return (
 			<div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-amber-800">
-				Chỉ tài khoản Admin được quản lý XML grading rules.
+				Chá»‰ tÃ i khoáº£n Admin Ä‘Æ°á»£c quáº£n lÃ½ XML grading rules.
 			</div>
 		);
 	}
@@ -2715,9 +2745,9 @@ const XmlGradingRulesPage = () => {
 	const copyJsonToClipboard = async () => {
 		try {
 			await navigator.clipboard.writeText(gradeJson);
-			notify.success("Đã sao chép JSON kết quả vào clipboard.");
+			notify.success("ÄÃ£ sao chÃ©p JSON káº¿t quáº£ vÃ o clipboard.");
 		} catch {
-			notify.error("Sao chép thất bại.");
+			notify.error("Sao chÃ©p tháº¥t báº¡i.");
 		}
 	};
 
@@ -2731,7 +2761,7 @@ const XmlGradingRulesPage = () => {
 		URL.revokeObjectURL(url);
 	};
 
-	// -GIAO DIỆN HIỂN THỊ KẾT QUẢ CHẤM ĐIỂM CHI TIẾT ---
+	// -GIAO DIá»†N HIá»‚N THá»Š Káº¾T QUáº¢ CHáº¤M ÄIá»‚M CHI TIáº¾T ---
 	const renderGradeResult = () => {
 		if (!gradeJson) return null;
 
@@ -2752,7 +2782,7 @@ const XmlGradingRulesPage = () => {
 			);
 		}
 
-		// Trích xuất dữ liệu tổng quan
+		// TrÃ­ch xuáº¥t dá»¯ liá»‡u tá»•ng quan
 		const totalScore = parsed.totalScore ?? 0;
 		const maxScore = parsed.maxScore ?? 125;
 		const percentage =
@@ -2769,11 +2799,11 @@ const XmlGradingRulesPage = () => {
 
 		return (
 			<div className="mt-5 space-y-4 rounded-xl border border-slate-200 bg-slate-50/50 p-4 shadow-sm">
-				{/* Thanh công cụ / Header */}
+				{/* Thanh cÃ´ng cá»¥ / Header */}
 				<div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
 					<div className="flex items-center gap-2">
 						<h3 className="text-base font-bold text-slate-800">
-							Kết Quả Chấm Điểm
+							Káº¿t Quáº£ Cháº¥m Äiá»ƒm
 						</h3>
 						<span
 							className={cx(
@@ -2783,7 +2813,7 @@ const XmlGradingRulesPage = () => {
 									: "bg-rose-100 text-rose-800",
 							)}
 						>
-							{isPassed ? "ĐẠT (PASSED)" : "KHÔNG ĐẠT (FAILED)"}
+							{isPassed ? "Äáº T (PASSED)" : "KHÃ”NG Äáº T (FAILED)"}
 						</span>
 					</div>
 					<div className="flex items-center gap-2">
@@ -2792,12 +2822,12 @@ const XmlGradingRulesPage = () => {
 							onClick={() => setViewRawJson(!viewRawJson)}
 							className="rounded-lg border border-m3-outline-variant bg-m3-surface px-3 py-1 text-xs font-medium text-m3-on-surface hover:bg-m3-surface-container"
 						>
-							{viewRawJson ? "Giao diện Bảng" : "Xem JSON"}
+							{viewRawJson ? "Giao diá»‡n Báº£ng" : "Xem JSON"}
 						</button>
 						<button
 							type="button"
 							onClick={copyJsonToClipboard}
-							title="Sao chép JSON"
+							title="Sao chÃ©p JSON"
 							className="rounded-lg border border-m3-outline-variant bg-m3-surface p-1.5 text-m3-on-surface-variant hover:bg-m3-surface-container"
 						>
 							<Icon name="content_copy" className="text-sm" />
@@ -2805,7 +2835,7 @@ const XmlGradingRulesPage = () => {
 						<button
 							type="button"
 							onClick={() => downloadJson()}
-							title="Tải xuống JSON"
+							title="Táº£i xuá»‘ng JSON"
 							className="rounded-lg border border-m3-outline-variant bg-m3-surface p-1.5 text-m3-on-surface-variant hover:bg-m3-surface-container"
 						>
 							<Icon name="download" className="text-sm" />
@@ -2821,11 +2851,11 @@ const XmlGradingRulesPage = () => {
 					</div>
 				) : (
 					<>
-						{/* Các ô thẻ thông số tổng quan */}
+						{/* CÃ¡c Ã´ tháº» thÃ´ng sá»‘ tá»•ng quan */}
 						<div className="grid gap-3 sm:grid-cols-3">
 							<div className="rounded-xl border border-emerald-100 bg-emerald-50/60 p-3">
 								<div className="text-xs font-medium text-emerald-800">
-									Tổng điểm
+									Tá»•ng Ä‘iá»ƒm
 								</div>
 								<div className="mt-1 text-2xl font-black text-emerald-700">
 									{totalScore}{" "}
@@ -2837,7 +2867,7 @@ const XmlGradingRulesPage = () => {
 
 							<div className="rounded-xl border border-blue-100 bg-blue-50/60 p-3">
 								<div className="text-xs font-medium text-blue-800">
-									Tỷ lệ đạt
+									Tá»· lá»‡ Ä‘áº¡t
 								</div>
 								<div className="mt-1 text-2xl font-black text-blue-700">
 									{percentage}%
@@ -2852,7 +2882,7 @@ const XmlGradingRulesPage = () => {
 
 							<div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
 								<div className="text-xs font-medium text-slate-500">
-									Mã bài kiểm tra
+									MÃ£ bÃ i kiá»ƒm tra
 								</div>
 								<div className="mt-1 font-mono text-sm font-bold text-slate-800">
 									{parsed.projectId || "N/A"}
@@ -2863,7 +2893,7 @@ const XmlGradingRulesPage = () => {
 							</div>
 						</div>
 
-						{/* BẢNG KẾT QUẢ CHẤM ĐIỂM CHI TIẾT */}
+						{/* Báº¢NG Káº¾T QUáº¢ CHáº¤M ÄIá»‚M CHI TIáº¾T */}
 						<div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
 							<table className="w-full text-left text-xs text-slate-600">
 								<thead className="border-b border-slate-200 bg-slate-100/80 text-xs font-bold uppercase tracking-wider text-slate-700">
@@ -2872,16 +2902,16 @@ const XmlGradingRulesPage = () => {
 											STT
 										</th>
 										<th className="h-12 px-3 py-3.5 w-32 align-middle">
-											Mã Task
+											MÃ£ Task
 										</th>
 										<th className="h-12 px-4 py-3.5 align-middle">
-											Nhiệm vụ (Task Name)
+											Nhiá»‡m vá»¥ (Task Name)
 										</th>
 										<th className="h-12 px-3 py-3.5 w-24 text-center align-middle">
-											Trạng thái
+											Tráº¡ng thÃ¡i
 										</th>
 										<th className="h-12 px-3 py-3.5 w-28 text-right align-middle">
-											Điểm số
+											Äiá»ƒm sá»‘
 										</th>
 									</tr>
 								</thead>
@@ -2913,7 +2943,7 @@ const XmlGradingRulesPage = () => {
 																{task.taskName}
 															</div>
 
-															{/* Chi tiết điều kiện XML / Details */}
+															{/* Chi tiáº¿t Ä‘iá»u kiá»‡n XML / Details */}
 															{Array.isArray(task.details) &&
 																task.details.length > 0 && (
 																	<div className="mt-1.5 space-y-1">
@@ -2928,7 +2958,7 @@ const XmlGradingRulesPage = () => {
 																	</div>
 																)}
 
-															{/* Lỗi (nếu có) */}
+															{/* Lá»—i (náº¿u cÃ³) */}
 															{Array.isArray(task.errors) &&
 																task.errors.length > 0 && (
 																	<div className="mt-1.5 text-[11px] text-rose-600 bg-rose-50 border border-rose-100 p-1 rounded">
@@ -2959,7 +2989,7 @@ const XmlGradingRulesPage = () => {
 																) : (
 																	<Icon name="cancel" className="text-xs" />
 																)}
-																{taskPassed ? "Đạt" : "Sai"}
+																{taskPassed ? "Äáº¡t" : "Sai"}
 															</span>
 														</td>
 														<td className="px-3 py-3 text-right font-bold text-slate-800">
@@ -2987,7 +3017,7 @@ const XmlGradingRulesPage = () => {
 												colSpan={5}
 												className="py-6 text-center text-slate-400"
 											>
-												Không có dữ liệu task trong kết quả.
+												KhÃ´ng cÃ³ dá»¯ liá»‡u task trong káº¿t quáº£.
 											</td>
 										</tr>
 									)}
@@ -3058,14 +3088,14 @@ const XmlGradingRulesPage = () => {
 								Rulesets
 							</p>
 							<p className="text-sm font-bold text-m3-on-surface">
-								{ruleSets.length} bộ luật
+								{ruleSets.length} bá»™ luáº­t
 							</p>
 						</div>
 						<button
 							type="button"
 							onClick={loadRuleSets}
 							className={iconButtonClass}
-							title="Làm mới"
+							title="LÃ m má»›i"
 						>
 							<Icon
 								name="refresh"
@@ -3078,7 +3108,7 @@ const XmlGradingRulesPage = () => {
 						<input
 							value={subjectFilter}
 							onChange={(e) => setSubjectFilter(e.target.value)}
-							placeholder="Tìm theo môn..."
+							placeholder="TÃ¬m theo mÃ´n..."
 							className="w-full rounded-2xl bg-m3-surface-container-high px-3 py-2 text-xs text-m3-on-surface outline-none transition focus:ring-2 focus:ring-m3-primary/30"
 						/>
 						<select
@@ -3088,9 +3118,9 @@ const XmlGradingRulesPage = () => {
 							}
 							className="w-full rounded-2xl bg-m3-surface-container-high px-3 py-2 text-xs text-m3-on-surface outline-none transition focus:ring-2 focus:ring-m3-primary/30"
 						>
-							<option value="all">Tất cả trạng thái</option>
-							<option value="true">Đang bật</option>
-							<option value="false">Đang tắt</option>
+							<option value="all">Táº¥t cáº£ tráº¡ng thÃ¡i</option>
+							<option value="true">Äang báº­t</option>
+							<option value="false">Äang táº¯t</option>
 						</select>
 					</div>
 
@@ -3114,10 +3144,10 @@ const XmlGradingRulesPage = () => {
 									<div className="flex items-start justify-between gap-2">
 										<div className="min-w-0">
 											<div className="truncate text-xs font-bold text-m3-on-surface">
-												{item.subject} · {item.version}
+												{item.subject} Â· {item.version}
 											</div>
 											<div className="mt-0.5 text-[11px] text-m3-on-surface-variant">
-												{item.projectCount} project · {item.taskCount} task
+												{item.projectCount} project Â· {item.taskCount} task
 											</div>
 										</div>
 										{isLoadingDetail ? (
@@ -3147,10 +3177,10 @@ const XmlGradingRulesPage = () => {
 									className="mx-auto mb-2 text-m3-on-surface-variant text-2xl"
 								/>
 								<p className="text-xs font-bold text-m3-on-surface">
-									Chưa có ruleset
+									ChÆ°a cÃ³ ruleset
 								</p>
 								<p className="mt-1 text-[11px] text-m3-on-surface-variant">
-									Tạo ruleset đầu tiên để bắt đầu.
+									Táº¡o ruleset Ä‘áº§u tiÃªn Ä‘á»ƒ báº¯t Ä‘áº§u.
 								</p>
 							</div>
 						)}
@@ -3165,7 +3195,7 @@ const XmlGradingRulesPage = () => {
 							<div>
 								<div className="mb-1 flex flex-wrap items-center gap-2">
 									<h2 className="text-lg font-black text-m3-on-surface">
-										{selected.subject || "Chưa đặt tên"} ·{" "}
+										{selected.subject || "ChÆ°a Ä‘áº·t tÃªn"} Â·{" "}
 										{selected.version || "v1"}
 									</h2>
 									<span
@@ -3174,13 +3204,13 @@ const XmlGradingRulesPage = () => {
 											statusBadge,
 										)}
 									>
-										{selected.isActive ? "Đang hoạt động" : "Đang tắt"}
+										{selected.isActive ? "Äang hoáº¡t Ä‘á»™ng" : "Äang táº¯t"}
 									</span>
 								</div>
 								<p className="text-xs text-m3-on-surface-variant">
 									{selected.id
 										? `ID: ${selected.id}`
-										: "Ruleset mới chưa được lưu"}
+										: "Ruleset má»›i chÆ°a Ä‘Æ°á»£c lÆ°u"}
 								</p>
 							</div>
 
@@ -3189,7 +3219,7 @@ const XmlGradingRulesPage = () => {
 									<button
 										type="button"
 										onClick={() => deleteRuleSet(selected.id)}
-										title="Xóa ruleset"
+										title="XÃ³a ruleset"
 										className="inline-flex h-9 w-9 items-center justify-center rounded-full text-m3-error transition-colors hover:bg-m3-error-container"
 									>
 										<Icon name="delete" className="text-base" />
@@ -3264,16 +3294,16 @@ const XmlGradingRulesPage = () => {
 							<section className="rounded-3xl bg-m3-surface-container p-5 shadow-xs text-m3-on-surface">
 								<div className="mb-4">
 									<h3 className="text-sm font-bold text-m3-on-surface">
-										Thông tin ruleset
+										ThÃ´ng tin ruleset
 									</h3>
 									<p className="mt-1 text-xs text-m3-on-surface-variant">
-										Các thiết lập chung cho toàn bộ bộ luật.
+										CÃ¡c thiáº¿t láº­p chung cho toÃ n bá»™ bá»™ luáº­t.
 									</p>
 								</div>
 
 								<div className="grid gap-4 md:grid-cols-[1fr_1fr_auto]">
 									<label className="text-xs font-semibold text-m3-on-surface-variant">
-										Môn / loại file
+										MÃ´n / loáº¡i file
 										<input
 											value={selected.subject}
 											onChange={(e) =>
@@ -3287,7 +3317,7 @@ const XmlGradingRulesPage = () => {
 										/>
 									</label>
 									<label className="text-xs font-semibold text-m3-on-surface-variant">
-										Phiên bản bộ luật
+										PhiÃªn báº£n bá»™ luáº­t
 										<input
 											value={selected.version}
 											onChange={(e) =>
@@ -3312,7 +3342,7 @@ const XmlGradingRulesPage = () => {
 											}
 											className="h-4 w-4 rounded-sm accent-m3-primary"
 										/>
-										Kích hoạt
+										KÃ­ch hoáº¡t
 									</label>
 								</div>
 							</section>
@@ -3325,7 +3355,7 @@ const XmlGradingRulesPage = () => {
 											Projects
 										</h3>
 										<p className="mt-1 text-xs text-m3-on-surface-variant">
-											Mỗi project chứa các Task và điều kiện chấm tương ứng.
+											Má»—i project chá»©a cÃ¡c Task vÃ  Ä‘iá»u kiá»‡n cháº¥m tÆ°Æ¡ng á»©ng.
 										</p>
 									</div>
 									<button
@@ -3343,7 +3373,7 @@ const XmlGradingRulesPage = () => {
 										}}
 										className="inline-flex items-center gap-2 rounded-xl bg-m3-surface-container-high px-3 py-2 text-xs font-bold text-m3-primary transition hover:bg-m3-surface-container-highest shadow-xs"
 									>
-										<Icon name="add" className="text-base" /> Thêm project
+										<Icon name="add" className="text-base" /> ThÃªm project
 									</button>
 								</div>
 
@@ -3364,16 +3394,16 @@ const XmlGradingRulesPage = () => {
 														className="flex min-w-0 flex-1 items-center gap-3 text-left p-2"
 													>
 														<span className="text-slate-400">
-															{projectExpanded ? "▼" : "▶"}
+															{projectExpanded ? "â–¼" : "â–¶"}
 														</span>
 														<div className="min-w-0">
 															<div className="truncate text-sm font-bold text-slate-900">
-																{project.projectName || "Project chưa đặt tên"}
+																{project.projectName || "Project chÆ°a Ä‘áº·t tÃªn"}
 															</div>
 															<div className="mt-0.5 text-xs text-slate-500">
-																{project.projectCode || "project22"} ·{" "}
-																{project.tasks.length} task · {project.maxScore}{" "}
-																điểm
+																{project.projectCode || "project22"} Â·{" "}
+																{project.tasks.length} task Â· {project.maxScore}{" "}
+																Ä‘iá»ƒm
 															</div>
 														</div>
 													</button>
@@ -3387,7 +3417,7 @@ const XmlGradingRulesPage = () => {
 																),
 															})
 														}
-														title="Xóa project"
+														title="XÃ³a project"
 														className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-red-50 hover:text-red-600"
 													>
 														<Icon name="delete" className="text-base" />
@@ -3399,7 +3429,7 @@ const XmlGradingRulesPage = () => {
 														{/* Project fields */}
 														<div className="grid gap-3 md:grid-cols-[1fr_1.5fr_130px]">
 															<label className="text-xs font-semibold text-m3-on-surface-variant">
-																Mã project
+																MÃ£ project
 																<input
 																	value={project.projectCode}
 																	onChange={(e) =>
@@ -3411,7 +3441,7 @@ const XmlGradingRulesPage = () => {
 																/>
 															</label>
 															<label className="text-xs font-semibold text-m3-on-surface-variant">
-																Tên project
+																TÃªn project
 																<input
 																	value={project.projectName}
 																	onChange={(e) =>
@@ -3423,7 +3453,7 @@ const XmlGradingRulesPage = () => {
 																/>
 															</label>
 															<label className="text-xs font-semibold text-m3-on-surface-variant">
-																Điểm tối đa
+																Äiá»ƒm tá»‘i Ä‘a
 																<input
 																	type="number"
 																	value={project.maxScore}
@@ -3445,7 +3475,7 @@ const XmlGradingRulesPage = () => {
 																		Tasks
 																	</p>
 																	<p className="text-xs text-slate-500">
-																		{project.tasks.length} nhiệm vụ trong
+																		{project.tasks.length} nhiá»‡m vá»¥ trong
 																		project
 																	</p>
 																</div>
@@ -3458,7 +3488,7 @@ const XmlGradingRulesPage = () => {
 																	}
 																	className="inline-flex items-center gap-1.5 rounded-xl bg-m3-surface-container-high px-3 py-1.5 text-xs font-semibold text-m3-on-surface transition hover:bg-m3-surface-container-highest shadow-xs"
 																>
-																	<Icon name="add" className="text-sm" /> Thêm
+																	<Icon name="add" className="text-sm" /> ThÃªm
 																	Task
 																</button>
 															</div>
@@ -3498,18 +3528,18 @@ const XmlGradingRulesPage = () => {
 																					className="flex min-w-0 flex-1 items-center gap-3 text-left"
 																				>
 																					<span className="text-xs text-m3-on-surface-variant">
-																						{taskExpanded ? "▼" : "▶"}
+																						{taskExpanded ? "â–¼" : "â–¶"}
 																					</span>
 																					<span className="rounded-lg bg-m3-surface-container px-2 py-1 font-mono text-[11px] font-bold text-m3-on-surface shadow-2xs">
 																						{task.taskId || `TASK-${ti + 1}`}
 																					</span>
 																					<span className="min-w-0 truncate text-sm font-semibold text-m3-on-surface">
 																						{task.taskName ||
-																							"Task chưa đặt tên"}
+																							"Task chÆ°a Ä‘áº·t tÃªn"}
 																					</span>
 																					<span className="ml-auto shrink-0 text-xs font-semibold text-m3-on-surface-variant">
-																						{task.conditions.length} điều kiện ·{" "}
-																						{task.maxScore} điểm
+																						{task.conditions.length} Ä‘iá»u kiá»‡n Â·{" "}
+																						{task.maxScore} Ä‘iá»ƒm
 																					</span>
 																				</button>
 																				<button
@@ -3521,7 +3551,7 @@ const XmlGradingRulesPage = () => {
 																							),
 																						})
 																					}
-																					title="Xóa Task"
+																					title="XÃ³a Task"
 																					className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-m3-error hover:bg-m3-error-container"
 																				>
 																					<Icon
@@ -3535,7 +3565,7 @@ const XmlGradingRulesPage = () => {
 																				<div className="bg-m3-surface-container-high/40 p-4">
 																					<div className="grid gap-4 md:grid-cols-[180px_minmax(0,1fr)_140px]">
 																						<label className="text-xs font-semibold text-slate-600">
-																							Mã Task
+																							MÃ£ Task
 																							<input
 																								value={task.taskId}
 																								onChange={(e) =>
@@ -3549,7 +3579,7 @@ const XmlGradingRulesPage = () => {
 																						</label>
 
 																						<label className="text-xs font-semibold text-slate-600">
-																							Tên nhiệm vụ
+																							TÃªn nhiá»‡m vá»¥
 																							<input
 																								value={task.taskName}
 																								onChange={(e) =>
@@ -3558,12 +3588,12 @@ const XmlGradingRulesPage = () => {
 																									})
 																								}
 																								className={inputClass}
-																								placeholder="Nhập tên nhiệm vụ..."
+																								placeholder="Nháº­p tÃªn nhiá»‡m vá»¥..."
 																							/>
 																						</label>
 
 																						<label className="text-xs font-semibold text-slate-600">
-																							Điểm tối đa
+																							Äiá»ƒm tá»‘i Ä‘a
 																							<input
 																								type="number"
 																								value={task.maxScore}
@@ -3580,21 +3610,21 @@ const XmlGradingRulesPage = () => {
 																					</div>
 
 																					{/* =========================================================
-                                              SPECIAL CONDITION (thuộc riêng Task này, không phải state global)
-                                              Header có thể bấm để ẩn/hiện toàn bộ nội dung bên trong
-                                              (select loại, điểm, mô tả, PictureBulletEditor), độc lập
-                                              với việc Task đang mở hay đóng.
+                                              SPECIAL CONDITION (thuá»™c riÃªng Task nÃ y, khÃ´ng pháº£i state global)
+                                              Header cÃ³ thá»ƒ báº¥m Ä‘á»ƒ áº©n/hiá»‡n toÃ n bá»™ ná»™i dung bÃªn trong
+                                              (select loáº¡i, Ä‘iá»ƒm, mÃ´ táº£, PictureBulletEditor), Ä‘á»™c láº­p
+                                              vá»›i viá»‡c Task Ä‘ang má»Ÿ hay Ä‘Ã³ng.
                                               ========================================================= */}
 																					<div className="mt-5 rounded-2xl border border-violet-200/80 bg-white p-4 shadow-sm">
 																						<div className="flex items-start gap-3">
 																							{/* Icon */}
 																							<div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
 																								<span className="text-base">
-																									✦
+																									âœ¦
 																								</span>
 																							</div>
 
-																							{/* Title — bấm để ẩn/hiện */}
+																							{/* Title â€” báº¥m Ä‘á»ƒ áº©n/hiá»‡n */}
 																							<button
 																								type="button"
 																								onClick={() =>
@@ -3607,34 +3637,34 @@ const XmlGradingRulesPage = () => {
 																								<div className="min-w-0 flex-1">
 																									<div className="flex flex-wrap items-center gap-2">
 																										<p className="text-sm font-bold text-slate-800">
-																											Điều kiện đặc biệt
+																											Äiá»u kiá»‡n Ä‘áº·c biá»‡t
 																										</p>
 
 																										{task.specialCondition && (
 																											<span className="rounded-full border border-violet-200 bg-violet-50 px-2 py-0.5 text-[10px] font-bold text-violet-700">
-																												ĐANG SỬ DỤNG
+																												ÄANG Sá»¬ Dá»¤NG
 																											</span>
 																										)}
 																									</div>
 
 																									<p className="mt-1 text-xs leading-5 text-slate-500">
-																										Chỉ sử dụng khi Task cần
-																										kiểm tra thành phần đặc biệt
-																										trong file Word mà Condition
-																										XML thông thường không đủ để
-																										xác định. Task có thể chỉ
-																										dùng riêng điều kiện đặc
-																										biệt (không cần Condition
-																										XML nào khác), hoặc kết hợp
-																										cả hai — miễn tổng điểm bằng
-																										Điểm tối đa của Task.
+																										Chá»‰ sá»­ dá»¥ng khi Task cáº§n
+																										kiá»ƒm tra thÃ nh pháº§n Ä‘áº·c biá»‡t
+																										trong file Word mÃ  Condition
+																										XML thÃ´ng thÆ°á»ng khÃ´ng Ä‘á»§ Ä‘á»ƒ
+																										xÃ¡c Ä‘á»‹nh. Task cÃ³ thá»ƒ chá»‰
+																										dÃ¹ng riÃªng Ä‘iá»u kiá»‡n Ä‘áº·c
+																										biá»‡t (khÃ´ng cáº§n Condition
+																										XML nÃ o khÃ¡c), hoáº·c káº¿t há»£p
+																										cáº£ hai â€” miá»…n tá»•ng Ä‘iá»ƒm báº±ng
+																										Äiá»ƒm tá»‘i Ä‘a cá»§a Task.
 																									</p>
 																								</div>
 
 																								<span className="mt-1 shrink-0 text-xs text-slate-400">
 																									{specialConditionExpanded
-																										? "▼"
-																										: "▶"}
+																										? "â–¼"
+																										: "â–¶"}
 																								</span>
 																							</button>
 																						</div>
@@ -3644,7 +3674,7 @@ const XmlGradingRulesPage = () => {
 																								{/* Select */}
 																								<div className="mt-4">
 																									<label className="block text-xs font-semibold text-slate-600">
-																										Loại kiểm tra đặc biệt
+																										Loáº¡i kiá»ƒm tra Ä‘áº·c biá»‡t
 																										<div className="relative">
 																											<select
 																												value={
@@ -3673,8 +3703,8 @@ const XmlGradingRulesPage = () => {
 																															ti,
 																															{
 																																type: "pictureBullet",
-																																// Giữ lại score nếu người dùng đã nhập trước đó
-																																// (VD: đổi qua đổi lại giữa các loại), mặc định 0.
+																																// Giá»¯ láº¡i score náº¿u ngÆ°á»i dÃ¹ng Ä‘Ã£ nháº­p trÆ°á»›c Ä‘Ã³
+																																// (VD: Ä‘á»•i qua Ä‘á»•i láº¡i giá»¯a cÃ¡c loáº¡i), máº·c Ä‘á»‹nh 0.
 																																score:
 																																	task
 																																		.specialCondition
@@ -4969,11 +4999,82 @@ const XmlGradingRulesPage = () => {
 																															},
 																														);
 																													}
+																					if (value === "wordBookmark") {
+																						updateTaskSpecialCondition(pi, ti, {
+																							type: "wordBookmark",
+																							score: task.specialCondition?.score ?? 0,
+																							feedback: task.specialCondition?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																							wordBookmarkConfig: task.specialCondition?.wordBookmarkConfig ?? {
+																								sourceFile: "word/document.xml",
+																								bookmarkName: "Resorts",
+																								targetText: "WORLD-CLASS SKI RESORTS",
+																								caseSensitiveName: true,
+																							},
+																						});
+																					}
+																					if (value === "wordCustomToc") {
+																						updateTaskSpecialCondition(pi, ti, {
+																							type: "wordCustomToc",
+																							score: task.specialCondition?.score ?? 0,
+																							feedback: task.specialCondition?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																							wordCustomTocConfig: task.specialCondition?.wordCustomTocConfig ?? {
+																								sourceFile: "word/document.xml",
+																								anchorText: "TABLE OF CONTENTS",
+																								requireUnderAnchorText: true,
+																								requiredStyles: [
+																									{ styleName: "Title", level: 1 },
+																									{ styleName: "Heading 1", level: 2 },
+																									{ styleName: "Heading 2", level: 3 },
+																									{ styleName: "Caption", level: 4 },
+																								],
+																							},
+																						});
+																					}
+																					if (value === "wordTextToTable") {
+																						updateTaskSpecialCondition(pi, ti, {
+																							type: "wordTextToTable",
+																							score: task.specialCondition?.score ?? 0,
+																							feedback: task.specialCondition?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																							wordTextToTableConfig: task.specialCondition?.wordTextToTableConfig ?? {
+																								sourceFile: "word/document.xml",
+																								anchorText: "Resort Name",
+																								expectedColumns: 5,
+																								minRows: 2,
+																								expectedTableStyle: "Grid Table 5 Dark - Accent 1",
+																							},
+																						});
+																					}
+																					if (value === "wordBulletStyle") {
+																						updateTaskSpecialCondition(pi, ti, {
+																							type: "wordBulletStyle",
+																							score: task.specialCondition?.score ?? 0,
+																							feedback: task.specialCondition?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																							wordBulletStyleConfig: task.specialCondition?.wordBulletStyleConfig ?? {
+																								sourceFile: "word/document.xml",
+																								numberingFile: "word/numbering.xml",
+																								anchorText: "SKI RESORTS",
+																								expectedBulletChar: "■",
+																								level: 0,
+																								minItems: 1,
+																							},
+																						});
+																					}
+																					if (value === "wordResolveComment") {
+																						updateTaskSpecialCondition(pi, ti, {
+																							type: "wordResolveComment",
+																							score: task.specialCondition?.score ?? 0,
+																							feedback: task.specialCondition?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																							wordResolveCommentConfig: task.specialCondition?.wordResolveCommentConfig ?? {
+																								commentsExtendedFile: "word/commentsExtended.xml",
+																								requireAllResolved: true,
+																							},
+																						});
+																					}
 																												}}
 																												className="mt-1 w-full appearance-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 pr-10 text-sm font-medium text-slate-800 shadow-sm outline-none transition hover:border-slate-300 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
 																											>
 																												<option value="">
-																													Không sử dụng
+																													KhÃ´ng sá»­ dá»¥ng
 																												</option>
 
 																												{groupedSpecialConditionOptions.map(
@@ -4984,7 +5085,7 @@ const XmlGradingRulesPage = () => {
 																																key={`group-${item.label}`}
 																																disabled
 																															>
-																																{`──── ${item.label} ────`}
+																																{`â”€â”€â”€â”€ ${item.label} â”€â”€â”€â”€`}
 																															</option>
 																														) : (
 																															<option
@@ -5021,8 +5122,8 @@ const XmlGradingRulesPage = () => {
 
 																								{!currentSpecialConditionSupported && (
 																									<div className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">
-																										Điều kiện đặc biệt này không
-																										hỗ trợ cho subject{" "}
+																										Äiá»u kiá»‡n Ä‘áº·c biá»‡t nÃ y khÃ´ng
+																										há»— trá»£ cho subject{" "}
 																										{selected.subject ||
 																											"unknown"}
 																										.
@@ -5034,7 +5135,7 @@ const XmlGradingRulesPage = () => {
 																									?.type && (
 																									<div className="mt-4 grid gap-3 md:grid-cols-[160px_1fr] md:items-end">
 																										<label className="text-xs font-semibold text-slate-600">
-																											Điểm điều kiện đặc biệt
+																											Äiá»ƒm Ä‘iá»u kiá»‡n Ä‘áº·c biá»‡t
 																											<input
 																												type="number"
 																												min={0}
@@ -5058,13 +5159,13 @@ const XmlGradingRulesPage = () => {
 																											/>
 																										</label>
 																										<p className="text-[11px] leading-4 text-slate-400">
-																											Tổng điểm (các Conditions
-																											XML + Điều kiện đặc biệt)
-																											phải bằng Điểm tối đa của
-																											Task ({task.maxScore}). Có
-																											thể để 0 Condition XML nếu
-																											điều kiện đặc biệt chiếm
-																											trọn điểm Task.
+																											Tá»•ng Ä‘iá»ƒm (cÃ¡c Conditions
+																											XML + Äiá»u kiá»‡n Ä‘áº·c biá»‡t)
+																											pháº£i báº±ng Äiá»ƒm tá»‘i Ä‘a cá»§a
+																											Task ({task.maxScore}). CÃ³
+																											thá»ƒ Ä‘á»ƒ 0 Condition XML náº¿u
+																											Ä‘iá»u kiá»‡n Ä‘áº·c biá»‡t chiáº¿m
+																											trá»n Ä‘iá»ƒm Task.
 																										</p>
 																									</div>
 																								)}
@@ -5073,7 +5174,7 @@ const XmlGradingRulesPage = () => {
 																									?.type && (
 																									<div className="mt-3 grid gap-3 md:grid-cols-2">
 																										<label className="text-xs font-semibold text-slate-600">
-																											Thông báo khi đúng
+																											ThÃ´ng bÃ¡o khi Ä‘Ãºng
 																											<input
 																												value={
 																													task.specialCondition
@@ -5099,12 +5200,12 @@ const XmlGradingRulesPage = () => {
 																														},
 																													)
 																												}
-																												placeholder="Đã hoàn thành đúng yêu cầu."
+																												placeholder="ÄÃ£ hoÃ n thÃ nh Ä‘Ãºng yÃªu cáº§u."
 																												className={inputClass}
 																											/>
 																										</label>
 																										<label className="text-xs font-semibold text-slate-600">
-																											Thông báo khi sai
+																											ThÃ´ng bÃ¡o khi sai
 																											<input
 																												value={
 																													task.specialCondition
@@ -5129,12 +5230,12 @@ const XmlGradingRulesPage = () => {
 																														},
 																													)
 																												}
-																												placeholder="Bạn chưa thực hiện đúng yêu cầu."
+																												placeholder="Báº¡n chÆ°a thá»±c hiá»‡n Ä‘Ãºng yÃªu cáº§u."
 																												className={inputClass}
 																											/>
 																										</label>
 																										<label className="text-xs font-semibold text-slate-600 md:col-span-2">
-																											Gợi ý cách sửa
+																											Gá»£i Ã½ cÃ¡ch sá»­a
 																											<input
 																												value={
 																													task.specialCondition
@@ -5159,7 +5260,7 @@ const XmlGradingRulesPage = () => {
 																														},
 																													)
 																												}
-																												placeholder="Ví dụ: Chọn text -> Insert -> Link -> nhập URL đúng."
+																												placeholder="VÃ­ dá»¥: Chá»n text -> Insert -> Link -> nháº­p URL Ä‘Ãºng."
 																												className={inputClass}
 																											/>
 																										</label>
@@ -5262,7 +5363,7 @@ const XmlGradingRulesPage = () => {
 																							<div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
 																								<div className="grid gap-3 md:grid-cols-2">
 																									<label className="text-xs font-semibold text-slate-600">
-																										Tệp nguồn
+																										Tá»‡p nguá»“n
 																										<input
 																											value={
 																												task.specialCondition
@@ -5483,7 +5584,7 @@ const XmlGradingRulesPage = () => {
 																										}}
 																										className="h-4 w-4 accent-blue-600"
 																									/>
-																									Không yêu cầu bảng Word
+																									KhÃ´ng yÃªu cáº§u báº£ng Word
 																								</label>
 																							</div>
 																						)}
@@ -5492,7 +5593,7 @@ const XmlGradingRulesPage = () => {
 																							<div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
 																								<div className="grid gap-3 md:grid-cols-2">
 																									<label className="text-xs font-semibold text-slate-600">
-																										Văn bản hiển thị
+																										VÄƒn báº£n hiá»ƒn thá»‹
 																										<input
 																											value={
 																												task.specialCondition
@@ -5523,7 +5624,7 @@ const XmlGradingRulesPage = () => {
 																										/>
 																									</label>
 																									<label className="text-xs font-semibold text-slate-600">
-																										Văn bản đứng trước
+																										VÄƒn báº£n Ä‘á»©ng trÆ°á»›c
 																										<input
 																											value={
 																												task.specialCondition
@@ -5550,7 +5651,7 @@ const XmlGradingRulesPage = () => {
 																													},
 																												);
 																											}}
-																											placeholder="Nhập cụm text đứng trước vị trí cần link"
+																											placeholder="Nháº­p cá»¥m text Ä‘á»©ng trÆ°á»›c vá»‹ trÃ­ cáº§n link"
 																											className={inputClass}
 																										/>
 																									</label>
@@ -5588,7 +5689,7 @@ const XmlGradingRulesPage = () => {
 																								</div>
 																								<div className="mt-3 grid gap-3 md:grid-cols-2">
 																									<label className="text-xs font-semibold text-slate-600">
-																										Tệp nguồn
+																										Tá»‡p nguá»“n
 																										<input
 																											value={
 																												task.specialCondition
@@ -5682,8 +5783,8 @@ const XmlGradingRulesPage = () => {
 																										}}
 																										className="h-4 w-4 accent-blue-600"
 																									/>
-																									Văn bản hiển thị phân biệt chữ
-																									hoa/thường
+																									VÄƒn báº£n hiá»ƒn thá»‹ phÃ¢n biá»‡t chá»¯
+																									hoa/thÆ°á»ng
 																								</label>
 																							</div>
 																						)}
@@ -5692,7 +5793,7 @@ const XmlGradingRulesPage = () => {
 																							<div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
 																								<div className="grid gap-3 md:grid-cols-2">
 																									<label className="text-xs font-semibold text-slate-600">
-																										File nguồn
+																										File nguá»“n
 																										<input
 																											value={
 																												task.specialCondition
@@ -5726,7 +5827,7 @@ const XmlGradingRulesPage = () => {
 																										/>
 																									</label>
 																									<label className="text-xs font-semibold text-slate-600">
-																										Văn bản mục tiêu
+																										VÄƒn báº£n má»¥c tiÃªu
 																										<input
 																											value={
 																												task.specialCondition
@@ -5759,7 +5860,7 @@ const XmlGradingRulesPage = () => {
 																										/>
 																									</label>
 																									<label className="text-xs font-semibold text-slate-600">
-																										Loại ngắt phần
+																										Loáº¡i ngáº¯t pháº§n
 																										<select
 																											value={
 																												task.specialCondition
@@ -5808,7 +5909,7 @@ const XmlGradingRulesPage = () => {
 																										</select>
 																									</label>
 																									<label className="text-xs font-semibold text-slate-600">
-																										Tần suất xuất hiện mục tiêu
+																										Táº§n suáº¥t xuáº¥t hiá»‡n má»¥c tiÃªu
 																										<input
 																											type="number"
 																											min={1}
@@ -5882,8 +5983,8 @@ const XmlGradingRulesPage = () => {
 																											}}
 																											className="h-4 w-4 accent-blue-600"
 																										/>
-																										Yêu cầu thực hiện ngay trước
-																										đó
+																										YÃªu cáº§u thá»±c hiá»‡n ngay trÆ°á»›c
+																										Ä‘Ã³
 																									</label>
 																									<label className="flex items-center gap-2 text-xs font-medium text-slate-600">
 																										<input
@@ -5917,10 +6018,58 @@ const XmlGradingRulesPage = () => {
 																											}}
 																											className="h-4 w-4 accent-blue-600"
 																										/>
-																										Cho phép cùng một đoạn
-																										văn/phần
+																										Cho phÃ©p cÃ¹ng má»™t Ä‘oáº¡n
+																										vÄƒn/pháº§n
 																									</label>
 																								</div>
+																							</div>
+																						)}
+																						{task.specialCondition?.type === "wordBookmark" && (
+																							<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-2">
+																								{[
+																									["sourceFile", "File nguồn", "word/document.xml"],
+																									["bookmarkName", "Tên bookmark", "Resorts"],
+																									["targetText", "Văn bản mục tiêu", "WORLD-CLASS SKI RESORTS"],
+																								].map(([field, label, placeholder]) => (
+																									<label key={field} className="text-xs font-semibold text-slate-600">
+																										{label}
+																										<input value={(task.specialCondition?.wordBookmarkConfig as Record<string, string | undefined> | undefined)?.[field] ?? ""} onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, type: "wordBookmark", wordBookmarkConfig: { ...(task.specialCondition?.wordBookmarkConfig ?? {}), [field]: e.target.value } })} placeholder={placeholder} className={inputClass} />
+																									</label>
+																								))}
+																								<label className="flex items-center gap-2 text-xs font-medium text-slate-600">
+																									<input type="checkbox" checked={task.specialCondition.wordBookmarkConfig?.caseSensitiveName ?? true} onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, type: "wordBookmark", wordBookmarkConfig: { ...(task.specialCondition?.wordBookmarkConfig ?? {}), caseSensitiveName: e.target.checked } })} className="h-4 w-4 accent-blue-600" />
+																									Phân biệt hoa/thường tên bookmark
+																								</label>
+																							</div>
+																						)}
+																						{task.specialCondition?.type === "wordCustomToc" && (
+																							<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-2">
+																								<label className="text-xs font-semibold text-slate-600">File nguồn<input value={task.specialCondition.wordCustomTocConfig?.sourceFile ?? "word/document.xml"} onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, type: "wordCustomToc", wordCustomTocConfig: { ...(task.specialCondition?.wordCustomTocConfig ?? {}), sourceFile: e.target.value } })} className={inputClass} /></label>
+																								<label className="text-xs font-semibold text-slate-600">Anchor text<input value={task.specialCondition.wordCustomTocConfig?.anchorText ?? ""} onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, type: "wordCustomToc", wordCustomTocConfig: { ...(task.specialCondition?.wordCustomTocConfig ?? {}), anchorText: e.target.value } })} placeholder="TABLE OF CONTENTS" className={inputClass} /></label>
+																								<label className="text-xs font-semibold text-slate-600 md:col-span-2">Style=level, mỗi dòng một mapping<textarea value={(task.specialCondition.wordCustomTocConfig?.requiredStyles ?? []).map((item) => `${item.styleName ?? ""}=${item.level ?? ""}`).join("\n")} onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, type: "wordCustomToc", wordCustomTocConfig: { ...(task.specialCondition?.wordCustomTocConfig ?? {}), requiredStyles: e.target.value.split("\\n").map((line) => line.trim()).filter(Boolean).map((line: string) => { const [styleName, level] = line.split("="); return { styleName: styleName?.trim(), level: Number(level) || undefined }; }) } })} placeholder="Title=1&#10;Heading 1=2&#10;Heading 2=3&#10;Caption=4" className={`${inputClass} min-h-28`} /></label>
+																								<label className="text-xs font-semibold text-slate-600">Định dạng kỳ vọng<input value={task.specialCondition.wordCustomTocConfig?.expectedFormat ?? ""} onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, type: "wordCustomToc", wordCustomTocConfig: { ...(task.specialCondition?.wordCustomTocConfig ?? {}), expectedFormat: e.target.value } })} placeholder="classic/simple/... nếu cần" className={inputClass} /></label>
+																								<label className="flex items-center gap-2 text-xs font-medium text-slate-600"><input type="checkbox" checked={task.specialCondition.wordCustomTocConfig?.requireUnderAnchorText ?? true} onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, type: "wordCustomToc", wordCustomTocConfig: { ...(task.specialCondition?.wordCustomTocConfig ?? {}), requireUnderAnchorText: e.target.checked } })} className="h-4 w-4 accent-blue-600" />TOC nằm dưới anchor text</label>
+																							</div>
+																						)}
+																						{task.specialCondition?.type === "wordTextToTable" && (
+																							<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-2">
+																								{[["sourceFile", "File nguồn", "word/document.xml"], ["anchorText", "Anchor text", "Resort Name"], ["expectedTableStyle", "Table style", "Grid Table 5 Dark - Accent 1"]].map(([field, label, placeholder]) => (<label key={field} className="text-xs font-semibold text-slate-600">{label}<input value={(task.specialCondition?.wordTextToTableConfig as Record<string, string | undefined> | undefined)?.[field] ?? ""} onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, type: "wordTextToTable", wordTextToTableConfig: { ...(task.specialCondition?.wordTextToTableConfig ?? {}), [field]: e.target.value } })} placeholder={placeholder} className={inputClass} /></label>))}
+																								<label className="text-xs font-semibold text-slate-600">Số cột<input type="number" min={1} value={task.specialCondition.wordTextToTableConfig?.expectedColumns ?? ""} onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, type: "wordTextToTable", wordTextToTableConfig: { ...(task.specialCondition?.wordTextToTableConfig ?? {}), expectedColumns: e.target.value ? Number(e.target.value) : undefined } })} placeholder="5" className={inputClass} /></label>
+																								<label className="text-xs font-semibold text-slate-600">Số dòng tối thiểu<input type="number" min={1} value={task.specialCondition.wordTextToTableConfig?.minRows ?? ""} onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, type: "wordTextToTable", wordTextToTableConfig: { ...(task.specialCondition?.wordTextToTableConfig ?? {}), minRows: e.target.value ? Number(e.target.value) : undefined } })} placeholder="2" className={inputClass} /></label>
+																							</div>
+																						)}
+																						{task.specialCondition?.type === "wordBulletStyle" && (
+																							<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-2">
+																								{[["sourceFile", "File nguồn", "word/document.xml"], ["numberingFile", "Numbering file", "word/numbering.xml"], ["anchorText", "Anchor text", "SKI RESORTS"], ["expectedBulletChar", "Ký tự bullet", "■"]].map(([field, label, placeholder]) => (<label key={field} className="text-xs font-semibold text-slate-600">{label}<input value={(task.specialCondition?.wordBulletStyleConfig as Record<string, string | undefined> | undefined)?.[field] ?? ""} onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, type: "wordBulletStyle", wordBulletStyleConfig: { ...(task.specialCondition?.wordBulletStyleConfig ?? {}), [field]: e.target.value } })} placeholder={placeholder} className={inputClass} /></label>))}
+																								<label className="text-xs font-semibold text-slate-600">Level<input type="number" min={0} value={task.specialCondition.wordBulletStyleConfig?.level ?? 0} onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, type: "wordBulletStyle", wordBulletStyleConfig: { ...(task.specialCondition?.wordBulletStyleConfig ?? {}), level: Number(e.target.value) } })} className={inputClass} /></label>
+																								<label className="text-xs font-semibold text-slate-600">Số item tối thiểu<input type="number" min={1} value={task.specialCondition.wordBulletStyleConfig?.minItems ?? ""} onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, type: "wordBulletStyle", wordBulletStyleConfig: { ...(task.specialCondition?.wordBulletStyleConfig ?? {}), minItems: e.target.value ? Number(e.target.value) : undefined } })} placeholder="1" className={inputClass} /></label>
+																							</div>
+																						)}
+																						{task.specialCondition?.type === "wordResolveComment" && (
+																							<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-2">
+																								<label className="text-xs font-semibold text-slate-600">commentsExtended file<input value={task.specialCondition.wordResolveCommentConfig?.commentsExtendedFile ?? "word/commentsExtended.xml"} onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, type: "wordResolveComment", wordResolveCommentConfig: { ...(task.specialCondition?.wordResolveCommentConfig ?? {}), commentsExtendedFile: e.target.value } })} className={inputClass} /></label>
+																								<label className="text-xs font-semibold text-slate-600">Target text<input value={task.specialCondition.wordResolveCommentConfig?.targetText ?? ""} onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, type: "wordResolveComment", wordResolveCommentConfig: { ...(task.specialCondition?.wordResolveCommentConfig ?? {}), targetText: e.target.value } })} placeholder="Để trống = mọi comment" className={inputClass} /></label>
+																								<label className="flex items-center gap-2 text-xs font-medium text-slate-600"><input type="checkbox" checked={task.specialCondition.wordResolveCommentConfig?.requireAllResolved ?? true} onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, type: "wordResolveComment", wordResolveCommentConfig: { ...(task.specialCondition?.wordResolveCommentConfig ?? {}), requireAllResolved: e.target.checked } })} className="h-4 w-4 accent-blue-600" />Yêu cầu tất cả comment resolved</label>
 																							</div>
 																						)}
 																						{task.specialCondition?.type ===
@@ -5928,7 +6077,7 @@ const XmlGradingRulesPage = () => {
 																							<div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
 																								<div className="grid gap-3 md:grid-cols-2">
 																									<label className="text-xs font-semibold text-slate-600">
-																										File nguồn
+																										File nguá»“n
 																										<input
 																											value={
 																												task.specialCondition
@@ -5962,7 +6111,7 @@ const XmlGradingRulesPage = () => {
 																										/>
 																									</label>
 																									<label className="text-xs font-semibold text-slate-600">
-																										Chế độ so khớp
+																										Cháº¿ Ä‘á»™ so khá»›p
 																										<select
 																											value={
 																												task.specialCondition
@@ -5995,15 +6144,15 @@ const XmlGradingRulesPage = () => {
 																											className={inputClass}
 																										>
 																											<option value="exact">
-																												Đúng nguyên đoạn
+																												ÄÃºng nguyÃªn Ä‘oáº¡n
 																											</option>
 																											<option value="contains">
-																												Chỉ cần chứa đoạn này
+																												Chá»‰ cáº§n chá»©a Ä‘oáº¡n nÃ y
 																											</option>
 																										</select>
 																									</label>
 																									<label className="text-xs font-semibold text-slate-600 md:col-span-2">
-																										Văn bản yêu cầu
+																										VÄƒn báº£n yÃªu cáº§u
 																										<textarea
 																											value={
 																												task.specialCondition
@@ -6031,13 +6180,13 @@ const XmlGradingRulesPage = () => {
 																													},
 																												);
 																											}}
-																											placeholder="Nhập nguyên đoạn văn bắt đầu bằng Note:"
+																											placeholder="Nháº­p nguyÃªn Ä‘oáº¡n vÄƒn báº¯t Ä‘áº§u báº±ng Note:"
 																											rows={5}
 																											className={inputClass}
 																										/>
 																									</label>
 																									<label className="text-xs font-semibold text-slate-600">
-																										Lần xuất hiện mục tiêu
+																										Láº§n xuáº¥t hiá»‡n má»¥c tiÃªu
 																										<input
 																											type="number"
 																											min={1}
@@ -6110,7 +6259,7 @@ const XmlGradingRulesPage = () => {
 																											}}
 																											className="h-4 w-4 accent-blue-600"
 																										/>
-																										Phân biệt hoa/thường
+																										PhÃ¢n biá»‡t hoa/thÆ°á»ng
 																									</label>
 																									<label className="flex items-center gap-2 text-xs font-medium text-slate-600">
 																										<input
@@ -6144,7 +6293,7 @@ const XmlGradingRulesPage = () => {
 																											}}
 																											className="h-4 w-4 accent-blue-600"
 																										/>
-																										Bắt paste mặc định
+																										Báº¯t paste máº·c Ä‘á»‹nh
 																									</label>
 																									<label className="flex items-center gap-2 text-xs font-medium text-slate-600">
 																										<input
@@ -6178,12 +6327,12 @@ const XmlGradingRulesPage = () => {
 																											}}
 																											className="h-4 w-4 accent-blue-600"
 																										/>
-																										Không còn ngoài hộp văn bản
+																										KhÃ´ng cÃ²n ngoÃ i há»™p vÄƒn báº£n
 																									</label>
 																								</div>
 																								<label className="mt-3 block text-xs font-semibold text-slate-600">
-																									Run properties cấm khi bắt
-																									paste mặc định
+																									Run properties cáº¥m khi báº¯t
+																									paste máº·c Ä‘á»‹nh
 																									<textarea
 																										value={(
 																											task.specialCondition
@@ -6222,14 +6371,14 @@ const XmlGradingRulesPage = () => {
 																										}}
 																										rows={5}
 																										placeholder={
-																											"Để trống nếu không có dấu hiệu XML sai ổn định"
+																											"Äá»ƒ trá»‘ng náº¿u khÃ´ng cÃ³ dáº¥u hiá»‡u XML sai á»•n Ä‘á»‹nh"
 																										}
 																										className={inputClass}
 																									/>
 																								</label>
 																								<label className="mt-3 block text-xs font-semibold text-slate-600">
-																									Màu chữ cấm khi bắt paste mặc
-																									định
+																									MÃ u chá»¯ cáº¥m khi báº¯t paste máº·c
+																									Ä‘á»‹nh
 																									<textarea
 																										value={(
 																											task.specialCondition
@@ -6284,7 +6433,7 @@ const XmlGradingRulesPage = () => {
 																							<div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
 																								<div className="grid gap-3 md:grid-cols-3">
 																									<label className="text-xs font-semibold text-slate-600">
-																										File nguồn
+																										File nguá»“n
 																										<input
 																											value={
 																												task.specialCondition
@@ -6318,7 +6467,7 @@ const XmlGradingRulesPage = () => {
 																										/>
 																									</label>
 																									<label className="text-xs font-semibold text-slate-600">
-																										Anchor trước bảng
+																										Anchor trÆ°á»›c báº£ng
 																										<input
 																											value={
 																												task.specialCondition
@@ -6351,7 +6500,7 @@ const XmlGradingRulesPage = () => {
 																										/>
 																									</label>
 																									<label className="text-xs font-semibold text-slate-600">
-																										Cột sort
+																										Cá»™t sort
 																										<input
 																											type="number"
 																											min={1}
@@ -6388,7 +6537,7 @@ const XmlGradingRulesPage = () => {
 																									</label>
 																								</div>
 																								<label className="mt-3 block text-xs font-semibold text-slate-600">
-																									Thứ tự giá trị mong đợi
+																									Thá»© tá»± giÃ¡ trá»‹ mong Ä‘á»£i
 																									<textarea
 																										value={(
 																											task.specialCondition
@@ -6459,7 +6608,7 @@ const XmlGradingRulesPage = () => {
 																											}}
 																											className="h-4 w-4 accent-blue-600"
 																										/>
-																										Có hàng tiêu đề
+																										CÃ³ hÃ ng tiÃªu Ä‘á»
 																									</label>
 																									<label className="flex items-center gap-2 text-xs font-medium text-slate-600">
 																										<input
@@ -6526,7 +6675,7 @@ const XmlGradingRulesPage = () => {
 																											}}
 																											className="h-4 w-4 accent-blue-600"
 																										/>
-																										Bắt đúng thứ tự cấu hình
+																										Báº¯t Ä‘Ãºng thá»© tá»± cáº¥u hÃ¬nh
 																									</label>
 																								</div>
 																							</div>
@@ -6536,7 +6685,7 @@ const XmlGradingRulesPage = () => {
 																							<div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
 																								<div className="grid gap-3 md:grid-cols-3">
 																									<label className="text-xs font-semibold text-slate-600">
-																										File nguồn
+																										File nguá»“n
 																										<input
 																											value={
 																												task.specialCondition
@@ -6570,7 +6719,7 @@ const XmlGradingRulesPage = () => {
 																										/>
 																									</label>
 																									<label className="text-xs font-semibold text-slate-600">
-																										Anchor trước danh sách
+																										Anchor trÆ°á»›c danh sÃ¡ch
 																										<input
 																											value={
 																												task.specialCondition
@@ -6603,7 +6752,7 @@ const XmlGradingRulesPage = () => {
 																										/>
 																									</label>
 																									<label className="text-xs font-semibold text-slate-600">
-																										Loại list
+																										Loáº¡i list
 																										<select
 																											value={
 																												task.specialCondition
@@ -6643,13 +6792,13 @@ const XmlGradingRulesPage = () => {
 																												Number
 																											</option>
 																											<option value="any">
-																												Bất kỳ
+																												Báº¥t ká»³
 																											</option>
 																										</select>
 																									</label>
 																								</div>
 																								<label className="mt-3 block text-xs font-semibold text-slate-600">
-																									Các item mong đợi
+																									CÃ¡c item mong Ä‘á»£i
 																									<textarea
 																										value={(
 																											task.specialCondition
@@ -6721,7 +6870,7 @@ const XmlGradingRulesPage = () => {
 																										}}
 																										className="h-4 w-4 accent-blue-600"
 																									/>
-																									Các item dùng cùng numbering
+																									CÃ¡c item dÃ¹ng cÃ¹ng numbering
 																								</label>
 																							</div>
 																						)}
@@ -6730,7 +6879,7 @@ const XmlGradingRulesPage = () => {
 																							<div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
 																								<div className="grid gap-3 md:grid-cols-3">
 																									<label className="text-xs font-semibold text-slate-600 md:col-span-3">
-																										File nguồn
+																										File nguá»“n
 																										<input
 																											value={
 																												task.specialCondition
@@ -6762,10 +6911,10 @@ const XmlGradingRulesPage = () => {
 																										/>
 																									</label>
 																									{[
-																										["top", "Lề trên"],
-																										["bottom", "Lề dưới"],
-																										["left", "Lề trái"],
-																										["right", "Lề phải"],
+																										["top", "Lá» trÃªn"],
+																										["bottom", "Lá» dÆ°á»›i"],
+																										["left", "Lá» trÃ¡i"],
+																										["right", "Lá» pháº£i"],
 																										["gutter", "Gutter"],
 																									].map(([field, label]) => (
 																										<MarginUnitInput
@@ -6786,10 +6935,10 @@ const XmlGradingRulesPage = () => {
 																											placeholder={
 																												field === "top" ||
 																												field === "bottom"
-																													? "1 in hoặc 2.54 cm"
+																													? "1 in hoáº·c 2.54 cm"
 																													: field === "left" ||
 																															field === "right"
-																														? "1.5 in hoặc 3.81 cm"
+																														? "1.5 in hoáº·c 3.81 cm"
 																														: "0"
 																											}
 																											inputClass={inputClass}
@@ -6815,8 +6964,8 @@ const XmlGradingRulesPage = () => {
 																									))}
 																								</div>
 																								<p className="mt-2 text-xs text-slate-500">
-																									Nhập số mặc định là inch. Ví
-																									dụ: 1, 1 in, 1.5 in, 2.54 cm,
+																									Nháº­p sá»‘ máº·c Ä‘á»‹nh lÃ  inch. VÃ­
+																									dá»¥: 1, 1 in, 1.5 in, 2.54 cm,
 																									3.81 cm.
 																								</p>
 																								<label className="mt-3 flex items-center gap-2 text-xs font-medium text-slate-600">
@@ -6849,7 +6998,7 @@ const XmlGradingRulesPage = () => {
 																										}}
 																										className="h-4 w-4 accent-blue-600"
 																									/>
-																									Áp dụng cho tất cả section
+																									Ãp dá»¥ng cho táº¥t cáº£ section
 																								</label>
 																							</div>
 																						)}
@@ -6858,7 +7007,7 @@ const XmlGradingRulesPage = () => {
 																							<div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
 																								<div className="grid gap-3 md:grid-cols-2">
 																									<label className="text-xs font-semibold text-slate-600 md:col-span-2">
-																										File nguồn
+																										File nguá»“n
 																										<input
 																											value={
 																												task.specialCondition
@@ -6890,7 +7039,7 @@ const XmlGradingRulesPage = () => {
 																										/>
 																									</label>
 																									<label className="text-xs font-semibold text-slate-600">
-																										Kiểu đường viền
+																										Kiá»ƒu Ä‘Æ°á»ng viá»n
 																										<select
 																											value={
 																												task.specialCondition
@@ -6920,19 +7069,19 @@ const XmlGradingRulesPage = () => {
 																											className={inputClass}
 																										>
 																											<option value="single">
-																												Đường liền
+																												ÄÆ°á»ng liá»n
 																											</option>
 																											<option value="double">
-																												Đường đôi
+																												ÄÆ°á»ng Ä‘Ã´i
 																											</option>
 																											<option value="dotted">
-																												Chấm tròn
+																												Cháº¥m trÃ²n
 																											</option>
 																											<option value="dashed">
-																												Nét đứt
+																												NÃ©t Ä‘á»©t
 																											</option>
 																											<option value="dashSmallGap">
-																												Nét đứt ngắn
+																												NÃ©t Ä‘á»©t ngáº¯n
 																											</option>
 																										</select>
 																									</label>
@@ -6964,7 +7113,7 @@ const XmlGradingRulesPage = () => {
 																										}}
 																									/>
 																									<label className="text-xs font-semibold text-slate-600">
-																										Màu viền
+																										MÃ u viá»n
 																										<select
 																											value={selectedPageBorderColorPreset(
 																												task.specialCondition
@@ -7016,12 +7165,12 @@ const XmlGradingRulesPage = () => {
 																												),
 																											)}
 																											<option value="custom">
-																												Tùy chỉnh
+																												TÃ¹y chá»‰nh
 																											</option>
 																										</select>
 																									</label>
 																									<label className="text-xs font-semibold text-slate-600">
-																										Mã màu tùy chỉnh
+																										MÃ£ mÃ u tÃ¹y chá»‰nh
 																										<input
 																											value={
 																												task.specialCondition
@@ -7047,12 +7196,12 @@ const XmlGradingRulesPage = () => {
 																													},
 																												);
 																											}}
-																											placeholder="00B0F0 hoặc Light Blue"
+																											placeholder="00B0F0 hoáº·c Light Blue"
 																											className={inputClass}
 																										/>
 																									</label>
 																									<label className="text-xs font-semibold text-slate-600 md:col-span-2">
-																										Màu chấp nhận thêm
+																										MÃ u cháº¥p nháº­n thÃªm
 																										<textarea
 																											value={(
 																												task.specialCondition
@@ -7126,7 +7275,7 @@ const XmlGradingRulesPage = () => {
 																											}}
 																											className="h-4 w-4 accent-blue-600"
 																										/>
-																										Bắt buộc đủ 4 cạnh Box
+																										Báº¯t buá»™c Ä‘á»§ 4 cáº¡nh Box
 																									</label>
 																									<label className="flex items-center gap-2 text-xs font-medium text-slate-600">
 																										<input
@@ -7159,12 +7308,12 @@ const XmlGradingRulesPage = () => {
 																											}}
 																											className="h-4 w-4 accent-blue-600"
 																										/>
-																										Áp dụng cho tất cả section
+																										Ãp dá»¥ng cho táº¥t cáº£ section
 																									</label>
 																								</div>
 																								<p className="mt-2 text-xs text-slate-500">
-																									Trong OpenXML, độ dày page
-																									border lưu theo 1/8 pt: 1.5 pt
+																									Trong OpenXML, Ä‘á»™ dÃ y page
+																									border lÆ°u theo 1/8 pt: 1.5 pt
 																									= 12.
 																								</p>
 																							</div>
@@ -7174,7 +7323,7 @@ const XmlGradingRulesPage = () => {
 																							<div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
 																								<div className="grid gap-3 md:grid-cols-2">
 																									<label className="text-xs font-semibold text-slate-600">
-																										File nguồn
+																										File nguá»“n
 																										<input
 																											value={
 																												task.specialCondition
@@ -7272,15 +7421,15 @@ const XmlGradingRulesPage = () => {
 																											className={inputClass}
 																										>
 																											<option value="all">
-																												Tất cả fragment
+																												Táº¥t cáº£ fragment
 																											</option>
 																											<option value="any">
-																												Bất kỳ fragment nào
+																												Báº¥t ká»³ fragment nÃ o
 																											</option>
 																										</select>
 																									</label>
 																									<label className="text-xs font-semibold text-slate-600">
-																										Thuộc tính bỏ qua
+																										Thuá»™c tÃ­nh bá» qua
 																										<textarea
 																											value={(
 																												task.specialCondition
@@ -7324,7 +7473,7 @@ const XmlGradingRulesPage = () => {
 																										/>
 																									</label>
 																									<label className="text-xs font-semibold text-slate-600 md:col-span-2">
-																										Các fragment yêu cầu
+																										CÃ¡c fragment yÃªu cáº§u
 																										<textarea
 																											value={(
 																												task.specialCondition
@@ -7367,7 +7516,7 @@ const XmlGradingRulesPage = () => {
 																												);
 																											}}
 																											rows={8}
-																											placeholder="Dán các đoạn XML ổn định trong word/styles.xml của file đáp án Lines (Simple). Tách nhiều fragment bằng dòng ---FRAGMENT---"
+																											placeholder="DÃ¡n cÃ¡c Ä‘oáº¡n XML á»•n Ä‘á»‹nh trong word/styles.xml cá»§a file Ä‘Ã¡p Ã¡n Lines (Simple). TÃ¡ch nhiá»u fragment báº±ng dÃ²ng ---FRAGMENT---"
 																											className={inputClass}
 																										/>
 																									</label>
@@ -7405,7 +7554,7 @@ const XmlGradingRulesPage = () => {
 																									"excelTableName" && (
 																									<div className="grid gap-3 md:grid-cols-2">
 																										<label className="text-xs font-semibold text-slate-600">
-																											Tên worksheet
+																											TÃªn worksheet
 																											<input
 																												value={
 																													task.specialCondition
@@ -7440,7 +7589,7 @@ const XmlGradingRulesPage = () => {
 																											/>
 																										</label>
 																										<label className="text-xs font-semibold text-slate-600">
-																											File nguồn
+																											File nguá»“n
 																											<input
 																												value={
 																													task.specialCondition
@@ -7474,7 +7623,7 @@ const XmlGradingRulesPage = () => {
 																											/>
 																										</label>
 																										<label className="text-xs font-semibold text-slate-600">
-																											Tên yêu cầu
+																											TÃªn yÃªu cáº§u
 																											<input
 																												value={
 																													task.specialCondition
@@ -7508,7 +7657,7 @@ const XmlGradingRulesPage = () => {
 																											/>
 																										</label>
 																										<label className="text-xs font-semibold text-slate-600">
-																											Tên ban đầu
+																											TÃªn ban Ä‘áº§u
 																											<input
 																												value={
 																													task.specialCondition
@@ -7573,8 +7722,8 @@ const XmlGradingRulesPage = () => {
 																													);
 																												}}
 																											/>
-																											Bắt buộc không còn tên ban
-																											đầu
+																											Báº¯t buá»™c khÃ´ng cÃ²n tÃªn ban
+																											Ä‘áº§u
 																										</label>
 																									</div>
 																								)}
@@ -7583,7 +7732,7 @@ const XmlGradingRulesPage = () => {
 																									"excelWorksheetPageSetup" && (
 																									<div className="grid gap-3 md:grid-cols-3">
 																										<label className="text-xs font-semibold text-slate-600">
-																											Tên worksheet
+																											TÃªn worksheet
 																											<input
 																												value={
 																													task.specialCondition
@@ -7618,7 +7767,7 @@ const XmlGradingRulesPage = () => {
 																											/>
 																										</label>
 																										<label className="text-xs font-semibold text-slate-600">
-																											File nguồn
+																											File nguá»“n
 																											<input
 																												value={
 																													task.specialCondition
@@ -7652,7 +7801,7 @@ const XmlGradingRulesPage = () => {
 																											/>
 																										</label>
 																										<label className="text-xs font-semibold text-slate-600">
-																											Hướng trang
+																											HÆ°á»›ng trang
 																											<select
 																												value={
 																													task.specialCondition
@@ -7690,7 +7839,7 @@ const XmlGradingRulesPage = () => {
 																													Ngang (Landscape)
 																												</option>
 																												<option value="portrait">
-																													Dọc (Portrait)
+																													Dá»c (Portrait)
 																												</option>
 																											</select>
 																										</label>
@@ -7701,7 +7850,7 @@ const XmlGradingRulesPage = () => {
 																									"excelClearCellFormatting" && (
 																									<div className="grid gap-3 md:grid-cols-4">
 																										<label className="text-xs font-semibold text-slate-600">
-																											Tên worksheet
+																											TÃªn worksheet
 																											<input
 																												value={
 																													task.specialCondition
@@ -7736,7 +7885,7 @@ const XmlGradingRulesPage = () => {
 																											/>
 																										</label>
 																										<label className="text-xs font-semibold text-slate-600">
-																											File nguồn
+																											File nguá»“n
 																											<input
 																												value={
 																													task.specialCondition
@@ -7770,7 +7919,7 @@ const XmlGradingRulesPage = () => {
 																											/>
 																										</label>
 																										<label className="text-xs font-semibold text-slate-600">
-																											Vùng ô
+																											VÃ¹ng Ã´
 																											<input
 																												value={
 																													task.specialCondition
@@ -7804,7 +7953,7 @@ const XmlGradingRulesPage = () => {
 																											/>
 																										</label>
 																										<label className="text-xs font-semibold text-slate-600">
-																											Mã style mặc định
+																											MÃ£ style máº·c Ä‘á»‹nh
 																											<input
 																												type="number"
 																												min={0}
@@ -7848,7 +7997,7 @@ const XmlGradingRulesPage = () => {
 																									"excelDataModelImport" && (
 																									<div className="grid gap-3 md:grid-cols-2">
 																										<label className="text-xs font-semibold text-slate-600">
-																											Tên file nguồn
+																											TÃªn file nguá»“n
 																											<input
 																												value={
 																													task.specialCondition
@@ -7883,7 +8032,7 @@ const XmlGradingRulesPage = () => {
 																											/>
 																										</label>
 																										<label className="text-xs font-semibold text-slate-600">
-																											Tên worksheet yêu cầu
+																											TÃªn worksheet yÃªu cáº§u
 																											<input
 																												value={
 																													task.specialCondition
@@ -7918,7 +8067,7 @@ const XmlGradingRulesPage = () => {
 																											/>
 																										</label>
 																										<label className="text-xs font-semibold text-slate-600">
-																											Tên connection yêu cầu
+																											TÃªn connection yÃªu cáº§u
 																											<input
 																												value={
 																													task.specialCondition
@@ -7984,7 +8133,7 @@ const XmlGradingRulesPage = () => {
 																													);
 																												}}
 																											/>
-																											Bắt buộc có connection
+																											Báº¯t buá»™c cÃ³ connection
 																										</label>
 																										<label className="flex items-center gap-2 text-xs font-medium text-slate-600">
 																											<input
@@ -8018,7 +8167,7 @@ const XmlGradingRulesPage = () => {
 																													);
 																												}}
 																											/>
-																											Bắt buộc có worksheet đã
+																											Báº¯t buá»™c cÃ³ worksheet Ä‘Ã£
 																											import
 																										</label>
 																										<label className="flex items-center gap-2 text-xs font-medium text-slate-600">
@@ -8053,7 +8202,7 @@ const XmlGradingRulesPage = () => {
 																													);
 																												}}
 																											/>
-																											Bắt buộc có query table
+																											Báº¯t buá»™c cÃ³ query table
 																										</label>
 																										<label className="flex items-center gap-2 text-xs font-medium text-slate-600">
 																											<input
@@ -8087,7 +8236,7 @@ const XmlGradingRulesPage = () => {
 																													);
 																												}}
 																											/>
-																											Bắt buộc có Data Model
+																											Báº¯t buá»™c cÃ³ Data Model
 																										</label>
 																									</div>
 																								)}
@@ -8096,7 +8245,7 @@ const XmlGradingRulesPage = () => {
 																									"excelCompatibilityReport" && (
 																									<div className="grid gap-3 md:grid-cols-2">
 																										<label className="text-xs font-semibold text-slate-600">
-																											Tên worksheet
+																											TÃªn worksheet
 																											<input
 																												value={
 																													task.specialCondition
@@ -8162,10 +8311,10 @@ const XmlGradingRulesPage = () => {
 																													);
 																												}}
 																											/>
-																											Bắt buộc có worksheet mới
+																											Báº¯t buá»™c cÃ³ worksheet má»›i
 																										</label>
 																										<label className="text-xs font-semibold text-slate-600 md:col-span-2">
-																											Các văn bản yêu cầu
+																											CÃ¡c vÄƒn báº£n yÃªu cáº§u
 																											<textarea
 																												value={(
 																													task.specialCondition
@@ -8240,11 +8389,11 @@ const XmlGradingRulesPage = () => {
 																						<div className="mb-3 flex items-center justify-between gap-2">
 																							<div>
 																								<p className="text-xs font-bold uppercase tracking-wide text-slate-500">
-																									Điều kiện
+																									Äiá»u kiá»‡n
 																								</p>
 																								<p className="mt-1 text-xs text-slate-400">
-																									{task.conditions.length} điều
-																									kiện chấm điểm
+																									{task.conditions.length} Ä‘iá»u
+																									kiá»‡n cháº¥m Ä‘iá»ƒm
 																								</p>
 																							</div>
 																							<button
@@ -8263,7 +8412,7 @@ const XmlGradingRulesPage = () => {
 																									name="add"
 																									className="text-sm"
 																								/>{" "}
-																								Thêm điều kiện
+																								ThÃªm Ä‘iá»u kiá»‡n
 																							</button>
 																						</div>
 
@@ -8293,7 +8442,7 @@ const XmlGradingRulesPage = () => {
 																													</span>
 																													<span className="text-xs text-m3-on-surface-variant">
 																														{condition.score}{" "}
-																														điểm
+																														Ä‘iá»ƒm
 																													</span>
 																												</div>
 																												<button
@@ -8307,7 +8456,7 @@ const XmlGradingRulesPage = () => {
 																																),
 																														})
 																													}
-																													title="Xóa điều kiện"
+																													title="XÃ³a Ä‘iá»u kiá»‡n"
 																													className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-m3-on-surface-variant/60 hover:bg-m3-error/10 hover:text-m3-error"
 																												>
 																													<Icon
@@ -8336,15 +8485,15 @@ const XmlGradingRulesPage = () => {
 																														)}
 																													/>
 																													<span className="shrink-0 text-xs font-semibold text-m3-on-surface">
-																														Thông tin điều kiện
+																														ThÃ´ng tin Ä‘iá»u kiá»‡n
 																													</span>
 																													<span className="min-w-0 truncate font-mono text-[11px] text-m3-on-surface-variant">
 																														{condition.conditionId ||
 																															`C${String(ci + 1).padStart(2, "0")}`}{" "}
-																														· {condition.score}{" "}
-																														điểm ·{" "}
+																														Â· {condition.score}{" "}
+																														Ä‘iá»ƒm Â·{" "}
 																														{condition.sourceFile ||
-																															"Chưa chọn file XML"}
+																															"ChÆ°a chá»n file XML"}
 																													</span>
 																												</button>
 
@@ -8352,7 +8501,7 @@ const XmlGradingRulesPage = () => {
 																													<div className="border-t border-m3-outline-variant/50 px-3 pb-3 pt-1">
 																														<div className="grid gap-3 md:grid-cols-[1fr_120px]">
 																															<label className="text-xs font-semibold text-slate-600">
-																																Mã điều kiện
+																																MÃ£ Ä‘iá»u kiá»‡n
 																																<input
 																																	value={
 																																		condition.conditionId
@@ -8378,7 +8527,7 @@ const XmlGradingRulesPage = () => {
 																																/>
 																															</label>
 																															<label className="text-xs font-semibold text-slate-600">
-																																Điểm
+																																Äiá»ƒm
 																																<input
 																																	type="number"
 																																	value={
@@ -8409,7 +8558,7 @@ const XmlGradingRulesPage = () => {
 																														</div>
 
 																														<label className="mt-3 block text-xs font-semibold text-slate-600">
-																															File XML cần kiểm
+																															File XML cáº§n kiá»ƒm
 																															tra
 																															<input
 																																value={
@@ -8439,7 +8588,7 @@ const XmlGradingRulesPage = () => {
 																											</div>
 
 																											<label className="mt-3 block text-xs font-semibold text-slate-600">
-																												Giá trị cần tìm trong
+																												GiÃ¡ trá»‹ cáº§n tÃ¬m trong
 																												XML
 																												<textarea
 																													value={formatExpectedValuesInput(
@@ -8486,7 +8635,7 @@ const XmlGradingRulesPage = () => {
 																											<div className="mt-3 rounded-lg border border-blue-100 bg-white/70 p-3">
 																												<div className="mb-2 flex items-center justify-between gap-3">
 																													<span className="text-xs font-semibold text-slate-600">
-																														Các biến thể dự kiến
+																														CÃ¡c biáº¿n thá»ƒ dá»± kiáº¿n
 																													</span>
 																													<button
 																														type="button"
@@ -8517,7 +8666,7 @@ const XmlGradingRulesPage = () => {
 																															name="add"
 																															className="text-sm"
 																														/>{" "}
-																														Thêm biến thể
+																														ThÃªm biáº¿n thá»ƒ
 																													</button>
 																												</div>
 
@@ -8633,7 +8782,7 @@ const XmlGradingRulesPage = () => {
 
 																											<div className="mt-3 grid gap-3 md:grid-cols-2">
 																												<label className="text-xs font-semibold text-slate-600">
-																													Cách so khớp
+																													CÃ¡ch so khá»›p
 																													<select
 																														value={
 																															condition.compareMode
@@ -8671,7 +8820,7 @@ const XmlGradingRulesPage = () => {
 																													</select>
 																												</label>
 																												<label className="text-xs font-semibold text-slate-600">
-																													Quy tắc nhiều giá trị
+																													Quy táº¯c nhiá»u giÃ¡ trá»‹
 																													<select
 																														value={
 																															condition.matchPolicy
@@ -8720,15 +8869,15 @@ const XmlGradingRulesPage = () => {
 																												className="mt-4 text-xs font-semibold text-blue-600 hover:text-blue-700"
 																											>
 																												{advanced
-																													? "▲ Ẩn cài đặt nâng cao"
-																													: "▼ Cài đặt nâng cao"}
+																													? "â–² áº¨n cÃ i Ä‘áº·t nÃ¢ng cao"
+																													: "â–¼ CÃ i Ä‘áº·t nÃ¢ng cao"}
 																											</button>
 
 																											{advanced && (
 																												<div className="mt-3 rounded-xl bg-m3-surface-container p-3.5 shadow-xs text-m3-on-surface">
 																													<div className="grid gap-3 md:grid-cols-2">
 																														<label className="text-xs font-semibold text-slate-600">
-																															Thông báo khi đúng
+																															ThÃ´ng bÃ¡o khi Ä‘Ãºng
 																															<input
 																																value={
 																																	condition
@@ -8754,14 +8903,14 @@ const XmlGradingRulesPage = () => {
 																																		},
 																																	)
 																																}
-																																placeholder="Thành công..."
+																																placeholder="ThÃ nh cÃ´ng..."
 																																className={
 																																	inputClass
 																																}
 																															/>
 																														</label>
 																														<label className="text-xs font-semibold text-slate-600">
-																															Thông báo khi sai
+																															ThÃ´ng bÃ¡o khi sai
 																															<input
 																																value={
 																																	condition
@@ -8787,7 +8936,7 @@ const XmlGradingRulesPage = () => {
 																																		},
 																																	)
 																																}
-																																placeholder="Lỗi..."
+																																placeholder="Lá»—i..."
 																																className={
 																																	inputClass
 																																}
@@ -8795,7 +8944,7 @@ const XmlGradingRulesPage = () => {
 																														</label>
 																													</div>
 																													<label className="mt-3 block text-xs font-semibold text-slate-600">
-																														Gợi ý cách sửa
+																														Gá»£i Ã½ cÃ¡ch sá»­a
 																														<input
 																															value={
 																																condition
@@ -8819,15 +8968,15 @@ const XmlGradingRulesPage = () => {
 																																	},
 																																)
 																															}
-																															placeholder="Ví dụ: Kiểm tra lại định dạng ô..."
+																															placeholder="VÃ­ dá»¥: Kiá»ƒm tra láº¡i Ä‘á»‹nh dáº¡ng Ã´..."
 																															className={
 																																inputClass
 																															}
 																														/>
 																													</label>
 																													<label className="mt-3 block text-xs font-semibold text-slate-600">
-																														Bỏ qua các thuộc
-																														tính
+																														Bá» qua cÃ¡c thuá»™c
+																														tÃ­nh
 																														<textarea
 																															value={(
 																																condition.ignoreAttributes ??
@@ -8860,8 +9009,8 @@ const XmlGradingRulesPage = () => {
 																														"xmlMinOccurrences" && (
 																														<div className="mt-3 grid gap-3 md:grid-cols-2">
 																															<label className="block text-xs font-semibold text-slate-600">
-																																Số lần xuất hiện
-																																tối thiểu
+																																Sá»‘ láº§n xuáº¥t hiá»‡n
+																																tá»‘i thiá»ƒu
 																																<input
 																																	type="number"
 																																	min={1}
@@ -8898,8 +9047,8 @@ const XmlGradingRulesPage = () => {
 																																/>
 																															</label>
 																															<label className="block text-xs font-semibold text-slate-600">
-																																Số lần xuất hiện
-																																tối đa
+																																Sá»‘ láº§n xuáº¥t hiá»‡n
+																																tá»‘i Ä‘a
 																																<input
 																																	type="number"
 																																	min={1}
@@ -8929,7 +9078,7 @@ const XmlGradingRulesPage = () => {
 																																			},
 																																		)
 																																	}
-																																	placeholder="Để trống nếu không giới hạn"
+																																	placeholder="Äá»ƒ trá»‘ng náº¿u khÃ´ng giá»›i háº¡n"
 																																	className={
 																																		inputClass
 																																	}
@@ -8957,8 +9106,8 @@ const XmlGradingRulesPage = () => {
 																															}
 																															className="h-4 w-4 accent-blue-600"
 																														/>
-																														Dừng Task nếu điều
-																														kiện thất bại
+																														Dá»«ng Task náº¿u Ä‘iá»u
+																														kiá»‡n tháº¥t báº¡i
 																													</label>
 																												</div>
 																											)}
@@ -8971,13 +9120,13 @@ const XmlGradingRulesPage = () => {
 																								<div className="rounded-xl border border-dashed border-slate-200 px-4 py-7 text-center">
 																									<p className="text-sm font-medium text-slate-500">
 																										{task.specialCondition
-																											? "Không có điều kiện XML — Task chỉ dùng điều kiện đặc biệt."
-																											: "Chưa có điều kiện"}
+																											? "KhÃ´ng cÃ³ Ä‘iá»u kiá»‡n XML â€” Task chá»‰ dÃ¹ng Ä‘iá»u kiá»‡n Ä‘áº·c biá»‡t."
+																											: "ChÆ°a cÃ³ Ä‘iá»u kiá»‡n"}
 																									</p>
 																									<p className="mt-1 text-xs text-slate-400">
 																										{task.specialCondition
-																											? "Hợp lệ nếu điểm Điều kiện đặc biệt bằng Điểm tối đa của Task."
-																											: "Thêm condition hoặc bật Điều kiện đặc biệt để ruleset có thể chấm Task này."}
+																											? "Há»£p lá»‡ náº¿u Ä‘iá»ƒm Äiá»u kiá»‡n Ä‘áº·c biá»‡t báº±ng Äiá»ƒm tá»‘i Ä‘a cá»§a Task."
+																											: "ThÃªm condition hoáº·c báº­t Äiá»u kiá»‡n Ä‘áº·c biá»‡t Ä‘á»ƒ ruleset cÃ³ thá»ƒ cháº¥m Task nÃ y."}
 																									</p>
 																								</div>
 																							)}
@@ -8992,7 +9141,7 @@ const XmlGradingRulesPage = () => {
 																{project.tasks.length === 0 && (
 																	<div className="rounded-xl border border-dashed border-slate-200 px-4 py-8 text-center">
 																		<p className="text-sm font-medium text-slate-500">
-																			Project chưa có Task
+																			Project chÆ°a cÃ³ Task
 																		</p>
 																		<button
 																			type="button"
@@ -9003,7 +9152,7 @@ const XmlGradingRulesPage = () => {
 																			}
 																			className="mt-2 text-xs font-semibold text-blue-600 hover:underline"
 																		>
-																			+ Thêm Task đầu tiên
+																			+ ThÃªm Task Ä‘áº§u tiÃªn
 																		</button>
 																	</div>
 																)}
@@ -9022,10 +9171,10 @@ const XmlGradingRulesPage = () => {
 												className="mx-auto mb-3 text-4xl text-m3-on-surface-variant/40"
 											/>
 											<p className="font-semibold text-m3-on-surface">
-												Chưa có Project
+												ChÆ°a cÃ³ Project
 											</p>
 											<p className="mt-1 text-sm text-m3-on-surface-variant">
-												Tạo project đầu tiên để xây ruleset.
+												Táº¡o project Ä‘áº§u tiÃªn Ä‘á»ƒ xÃ¢y ruleset.
 											</p>
 											<button
 												type="button"
@@ -9037,7 +9186,7 @@ const XmlGradingRulesPage = () => {
 												}
 												className="mt-4 inline-flex items-center gap-2 rounded-xl bg-m3-primary px-3.5 py-2 text-sm font-semibold text-m3-on-primary hover:bg-m3-primary/90"
 											>
-												<Icon name="add" className="text-base" /> Thêm project
+												<Icon name="add" className="text-base" /> ThÃªm project
 											</button>
 										</div>
 									)}
@@ -9055,7 +9204,7 @@ const XmlGradingRulesPage = () => {
 										Validation
 									</h3>
 									<p className="mt-1 text-xs text-m3-on-surface-variant">
-										Kiểm tra cấu trúc ruleset trước khi bật Active.
+										Kiá»ƒm tra cáº¥u trÃºc ruleset trÆ°á»›c khi báº­t Active.
 									</p>
 								</div>
 								<button
@@ -9063,7 +9212,7 @@ const XmlGradingRulesPage = () => {
 									onClick={validateRuleSet}
 									className="inline-flex items-center gap-2 rounded-xl bg-m3-primary px-3.5 py-2 text-sm font-semibold text-m3-on-primary hover:bg-m3-primary/90"
 								>
-									<Icon name="check_circle" className="text-base" /> Chạy
+									<Icon name="check_circle" className="text-base" /> Cháº¡y
 									Validate
 								</button>
 							</div>
@@ -9075,10 +9224,10 @@ const XmlGradingRulesPage = () => {
 										className="mx-auto mb-2 text-3xl text-m3-on-surface-variant/40"
 									/>
 									<p className="text-sm font-medium text-m3-on-surface">
-										Chưa chạy validation
+										ChÆ°a cháº¡y validation
 									</p>
 									<p className="mt-1 text-xs text-m3-on-surface-variant">
-										Nên Validate trước khi bật Active.
+										NÃªn Validate trÆ°á»›c khi báº­t Active.
 									</p>
 								</div>
 							)}
@@ -9111,12 +9260,12 @@ const XmlGradingRulesPage = () => {
 												)}
 											>
 												{validation.isValid
-													? "Ruleset hợp lệ"
-													: "Ruleset có lỗi"}
+													? "Ruleset há»£p lá»‡"
+													: "Ruleset cÃ³ lá»—i"}
 											</p>
 											<p className="text-xs text-m3-on-surface-variant">
-												{validation.errors?.length || 0} lỗi ·{" "}
-												{validation.warnings?.length || 0} cảnh báo
+												{validation.errors?.length || 0} lá»—i Â·{" "}
+												{validation.warnings?.length || 0} cáº£nh bÃ¡o
 											</p>
 										</div>
 									</div>
@@ -9124,7 +9273,7 @@ const XmlGradingRulesPage = () => {
 									{(validation.errors || []).length > 0 && (
 										<div className="rounded-2xl border border-m3-error/20 bg-m3-surface overflow-hidden">
 											<div className="border-b border-m3-error/10 bg-m3-error-container/40 px-4 py-3 text-xs font-bold text-m3-on-error-container">
-												Lỗi cần sửa
+												Lá»—i cáº§n sá»­a
 											</div>
 											<div className="divide-y divide-m3-outline-variant/40">
 												{(validation.errors || []).map((err) => (
@@ -9146,7 +9295,7 @@ const XmlGradingRulesPage = () => {
 									{(validation.warnings || []).length > 0 && (
 										<div className="rounded-2xl border border-amber-200/60 bg-m3-surface overflow-hidden">
 											<div className="border-b border-amber-100 bg-amber-50 px-4 py-3 text-xs font-bold text-amber-800">
-												Cảnh báo
+												Cáº£nh bÃ¡o
 											</div>
 											<div className="divide-y divide-m3-outline-variant/40">
 												{(validation.warnings || []).map((warning) => (
@@ -9179,12 +9328,12 @@ const XmlGradingRulesPage = () => {
 											<Icon name="code" className="text-lg" />
 										</div>
 										<h3 className="text-sm font-bold text-m3-on-surface">
-											Test chấm XML
+											Test cháº¥m XML
 										</h3>
 									</div>
 									<p className="mt-1 text-xs text-m3-on-surface-variant">
-										Chọn project và file Office để kiểm tra kết quả chấm trước
-										khi đưa ruleset vào sử dụng.
+										Chá»n project vÃ  file Office Ä‘á»ƒ kiá»ƒm tra káº¿t quáº£ cháº¥m trÆ°á»›c
+										khi Ä‘Æ°a ruleset vÃ o sá»­ dá»¥ng.
 									</p>
 								</div>
 							</div>
@@ -9198,7 +9347,7 @@ const XmlGradingRulesPage = () => {
 										disabled={isTestGrading}
 										className={inputClass}
 									>
-										<option value="">Chọn project</option>
+										<option value="">Chá»n project</option>
 										{selected.projects.map((p) => (
 											<option key={p.projectCode} value={p.projectCode}>
 												{p.projectName || p.projectCode}
@@ -9208,7 +9357,7 @@ const XmlGradingRulesPage = () => {
 								</label>
 
 								<label className="text-xs font-semibold text-slate-600">
-									File bài làm
+									File bÃ i lÃ m
 									<input
 										type="file"
 										accept=".xlsx,.xlsm,.docx"
@@ -9234,7 +9383,7 @@ const XmlGradingRulesPage = () => {
 										</>
 									) : (
 										<>
-											<Icon name="upload" className="text-base" /> Chấm thử
+											<Icon name="upload" className="text-base" /> Cháº¥m thá»­
 										</>
 									)}
 								</button>
@@ -9259,14 +9408,14 @@ const XmlGradingRulesPage = () => {
 									className="mt-0.5 shrink-0 text-base text-m3-error"
 								/>
 								<div className="min-w-0">
-									<p className="font-bold">Không thể lưu ruleset</p>
+									<p className="font-bold">KhÃ´ng thá»ƒ lÆ°u ruleset</p>
 									<p className="mt-0.5">{saveError}</p>
 								</div>
 								<button
 									type="button"
 									onClick={() => setSaveError("")}
 									className="ml-auto shrink-0 text-m3-on-error-container/60 hover:text-m3-error"
-									title="Đóng"
+									title="ÄÃ³ng"
 								>
 									<Icon name="close" className="text-base" />
 								</button>
@@ -9280,12 +9429,12 @@ const XmlGradingRulesPage = () => {
 							className="shrink-0 text-base text-amber-600"
 						/>
 						<span>
-							Hãy chạy <strong>Validate</strong> đầy đủ trước khi bật{" "}
+							HÃ£y cháº¡y <strong>Validate</strong> Ä‘áº§y Ä‘á»§ trÆ°á»›c khi báº­t{" "}
 							<strong>Active</strong>.
 						</span>
 					</div>
 
-					{/* Sticky action bar: Save ngay tại vị trí đang nhập, không cần cuộn về đầu trang. */}
+					{/* Sticky action bar: Save ngay táº¡i vá»‹ trÃ­ Ä‘ang nháº­p, khÃ´ng cáº§n cuá»™n vá» Ä‘áº§u trang. */}
 					<div className="sticky bottom-4 z-30 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-m3-outline-variant/60 bg-m3-surface/90 px-4 py-3.5 shadow-xl backdrop-blur-xl p-4">
 						<div className="flex min-w-0 items-center gap-2 text-xs text-m3-on-surface-variant ">
 							<span
@@ -9300,12 +9449,12 @@ const XmlGradingRulesPage = () => {
 							/>
 							<span className="truncate">
 								{saving
-									? "Đang lưu thay đổi..."
+									? "Äang lÆ°u thay Ä‘á»•i..."
 									: saveError
-										? "Có lỗi cần kiểm tra"
+										? "CÃ³ lá»—i cáº§n kiá»ƒm tra"
 										: selected.id
-											? "Đã tải ruleset · sẵn sàng lưu"
-											: "Ruleset mới · chưa lưu"}
+											? "ÄÃ£ táº£i ruleset Â· sáºµn sÃ ng lÆ°u"
+											: "Ruleset má»›i Â· chÆ°a lÆ°u"}
 							</span>
 						</div>
 
@@ -9329,7 +9478,7 @@ const XmlGradingRulesPage = () => {
 									name="save"
 									className={cx("text-base", saving && "animate-pulse")}
 								/>
-								{saving ? "Đang lưu..." : "Lưu thay đổi"}
+								{saving ? "Äang lÆ°u..." : "LÆ°u thay Ä‘á»•i"}
 							</button>
 						</div>
 					</div>
@@ -9340,3 +9489,6 @@ const XmlGradingRulesPage = () => {
 };
 
 export default XmlGradingRulesPage;
+
+
+
