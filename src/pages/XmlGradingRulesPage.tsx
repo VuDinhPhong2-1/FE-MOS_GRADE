@@ -58,6 +58,21 @@ const matchPoliciesLabels: Record<XmlMatchPolicy, string> = {
 	ordered: "Theo thứ tự",
 };
 
+const wordBulletCharacterOptions = [
+	{ value: "•", label: "•  Bullet tròn đặc" },
+	{ value: "○", label: "○  Bullet tròn rỗng" },
+	{ value: "■", label: "■  Bullet vuông đặc" },
+	{ value: "□", label: "□  Bullet vuông rỗng" },
+	{ value: "◆", label: "◆  Bullet kim cương đặc" },
+	{ value: "◇", label: "◇  Bullet kim cương rỗng" },
+	{ value: "➢", label: "➢  Mũi tên" },
+	{ value: "➤", label: "➤  Mũi tên đặc" },
+	{ value: "✓", label: "✓  Dấu tích" },
+	{ value: "✔", label: "✔  Dấu tích đậm" },
+	{ value: "★", label: "★  Ngôi sao đặc" },
+	{ value: "➔", label: "➔  Mũi tên phải" },
+];
+
 // Danh sách các loại điều kiện đặc biệt hỗ trợ theo từng Task.
 // Thêm loại mới chỉ cần bổ sung thêm 1 phần tử vào mảng này.
 const specialConditionOptions: Array<{
@@ -6060,7 +6075,18 @@ const XmlGradingRulesPage = () => {
 																						)}
 																						{task.specialCondition?.type === "wordBulletStyle" && (
 																							<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-2">
-																								{[["sourceFile", "File nguồn", "word/document.xml"], ["numberingFile", "Numbering file", "word/numbering.xml"], ["anchorText", "Văn bản neo", "SKI RESORTS"], ["expectedBulletChar", "Ký tự bullet", "■"]].map(([field, label, placeholder]) => (<label key={field} className="text-xs font-semibold text-slate-600">{label}<input value={(task.specialCondition?.wordBulletStyleConfig as Record<string, string | undefined> | undefined)?.[field] ?? ""} onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, type: "wordBulletStyle", wordBulletStyleConfig: { ...(task.specialCondition?.wordBulletStyleConfig ?? {}), [field]: e.target.value } })} placeholder={placeholder} className={inputClass} /></label>))}
+																								{[["sourceFile", "File nguồn", "word/document.xml"], ["numberingFile", "Numbering file", "word/numbering.xml"], ["anchorText", "Văn bản neo", "SKI RESORTS"]].map(([field, label, placeholder]) => (<label key={field} className="text-xs font-semibold text-slate-600">{label}<input value={(task.specialCondition?.wordBulletStyleConfig as Record<string, string | undefined> | undefined)?.[field] ?? ""} onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, type: "wordBulletStyle", wordBulletStyleConfig: { ...(task.specialCondition?.wordBulletStyleConfig ?? {}), [field]: e.target.value } })} placeholder={placeholder} className={inputClass} /></label>))}
+																								<label className="text-xs font-semibold text-slate-600">
+																									Ký tự bullet
+																									<select value={task.specialCondition.wordBulletStyleConfig?.expectedBulletChar ?? "■"} onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, type: "wordBulletStyle", wordBulletStyleConfig: { ...(task.specialCondition?.wordBulletStyleConfig ?? {}), expectedBulletChar: e.target.value } })} className={inputClass}>
+																										{task.specialCondition.wordBulletStyleConfig?.expectedBulletChar && !wordBulletCharacterOptions.some((option) => option.value === task.specialCondition?.wordBulletStyleConfig?.expectedBulletChar) && (
+																											<option value={task.specialCondition.wordBulletStyleConfig.expectedBulletChar}>Giá trị hiện tại: {task.specialCondition.wordBulletStyleConfig.expectedBulletChar}</option>
+																										)}
+																										{wordBulletCharacterOptions.map((option) => (
+																											<option key={option.value} value={option.value}>{option.label}</option>
+																										))}
+																									</select>
+																								</label>
 																								<label className="text-xs font-semibold text-slate-600">Level<input type="number" min={0} value={task.specialCondition.wordBulletStyleConfig?.level ?? 0} onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, type: "wordBulletStyle", wordBulletStyleConfig: { ...(task.specialCondition?.wordBulletStyleConfig ?? {}), level: Number(e.target.value) } })} className={inputClass} /></label>
 																								<label className="text-xs font-semibold text-slate-600">Số item tối thiểu<input type="number" min={1} value={task.specialCondition.wordBulletStyleConfig?.minItems ?? ""} onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, type: "wordBulletStyle", wordBulletStyleConfig: { ...(task.specialCondition?.wordBulletStyleConfig ?? {}), minItems: e.target.value ? Number(e.target.value) : undefined } })} placeholder="1" className={inputClass} /></label>
 																							</div>
