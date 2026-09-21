@@ -3,6 +3,7 @@ import {
 	FAST_SPATIAL_SPRING,
 	HorizontalFloatingToolbar,
 	Icon,
+	IconButton,
 	PlainTooltip,
 	Search,
 	ToolbarIconButton,
@@ -80,6 +81,7 @@ const FloatingActionToolbarComponent = ({
 			if (search?.clearQueryOnClose) {
 				search.onQueryChange("");
 			}
+			search?.onReset?.();
 
 			if (isControlled) {
 				controlledCloseSearch?.();
@@ -131,11 +133,15 @@ const FloatingActionToolbarComponent = ({
 				if (search?.clearQueryOnClose) {
 					search.onQueryChange("");
 				}
+				search?.onReset?.();
 				if (isControlled) {
 					controlledCloseSearch?.();
 				} else {
 					setInternalSearchActive(false);
 				}
+			} else if (e.key === "Enter" && search?.onSubmit) {
+				e.preventDefault();
+				search.onSubmit();
 			}
 		};
 
@@ -215,7 +221,10 @@ const FloatingActionToolbarComponent = ({
 									id={search.id}
 									query={search.query}
 									onQueryChange={search.onQueryChange}
-									onSearch={search.onQueryChange}
+									onSearch={(q) => {
+										search.onQueryChange(q);
+										search.onSubmit?.();
+									}}
 									active={false}
 									onActiveChange={() => {}}
 									placeholder={search.placeholder}
@@ -224,6 +233,56 @@ const FloatingActionToolbarComponent = ({
 									styleType="contained"
 									showLeadingIcon={search.showLeadingIcon ?? false}
 								/>
+
+								{/* Nút điều hướng ↑↓ và badge kết quả (nếu onNavigate được cấu hình) */}
+								{search.onNavigate && (
+									<div className="flex items-center gap-1 ml-1.5 shrink-0">
+										{search.matchedCount !== undefined &&
+											search.matchedCount > 0 && (
+												<span className="min-w-12 rounded-full bg-m3-primary-container px-2 py-0.5 text-center text-xs font-semibold text-m3-on-primary-container shrink-0">
+													{(search.matchIndex ?? 0) + 1}/{search.matchedCount}
+												</span>
+											)}
+										<TooltipBox
+											tooltip={<PlainTooltip>Kết quả trước</PlainTooltip>}
+											placement="top"
+										>
+											<IconButton
+												type="button"
+												size="sm"
+												colorStyle="standard"
+												onMouseDown={(e) => e.preventDefault()}
+												onClick={() => {
+													search.onNavigate?.(-1);
+													requestAnimationFrame(focusSearchInput);
+												}}
+												disabled={(search.matchedCount ?? 0) === 0}
+												aria-label="Kết quả trước"
+											>
+												<Icon name="keyboard_arrow_up" size={20} />
+											</IconButton>
+										</TooltipBox>
+										<TooltipBox
+											tooltip={<PlainTooltip>Kết quả tiếp theo</PlainTooltip>}
+											placement="top"
+										>
+											<IconButton
+												type="button"
+												size="sm"
+												colorStyle="standard"
+												onMouseDown={(e) => e.preventDefault()}
+												onClick={() => {
+													search.onNavigate?.(1);
+													requestAnimationFrame(focusSearchInput);
+												}}
+												disabled={(search.matchedCount ?? 0) === 0}
+												aria-label="Kết quả tiếp theo"
+											>
+												<Icon name="keyboard_arrow_down" size={20} />
+											</IconButton>
+										</TooltipBox>
+									</div>
+								)}
 							</motion.div>
 						) : (
 							<motion.div

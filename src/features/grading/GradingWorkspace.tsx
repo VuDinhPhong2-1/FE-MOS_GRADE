@@ -10,7 +10,6 @@ import { ManageAssignmentsPanel } from "./components/manage/ManageAssignmentsPan
 import { MultiAssignmentSelector } from "./components/multi/MultiAssignmentSelector";
 import { MultiGradingTable } from "./components/multi/MultiGradingTable";
 import { MultiGradingToolbar } from "./components/multi/MultiGradingToolbar";
-import { StudentTableSearchBar } from "./components/StudentTableSearchBar";
 import { SingleGradingTable } from "./components/single/SingleGradingTable";
 import { SingleGradingToolbar } from "./components/single/SingleGradingToolbar";
 import { useAssignmentManager } from "./hooks/useAssignmentManager";
@@ -323,7 +322,7 @@ export const GradingWorkspace: React.FC<GradingWorkspaceProps> = ({
 				)}
 
 				{!isLoadingAssignments && chooseMode === "existing" && (
-					<div>
+					<div className="pb-32">
 						<SingleGradingToolbar
 							assignments={assignments}
 							selectedAssignment={selectedAssignment}
@@ -334,37 +333,33 @@ export const GradingWorkspace: React.FC<GradingWorkspaceProps> = ({
 							onBulkFilesChange={handleBulkStudentFilesChange}
 							onSaveAllScores={handleSaveAllScores}
 							onBack={handleBackToModes}
+							studentSearchQuery={studentSearchQuery}
+							onStudentSearchQueryChange={setStudentSearchQuery}
+							studentSearchMatchedCount={studentSearchMatchedIds.length}
+							studentSearchMatchIndex={studentSearchMatchIndex}
+							studentSearchHint={studentSearchHint}
+							onStudentSearchSubmit={scrollToStudentByKeyword}
+							onStudentSearchNavigate={moveToMatchedStudent}
+							onStudentSearchReset={resetSearchState}
 						/>
 
 						{selectedAssignment ? (
-							<>
-								<StudentTableSearchBar
-									query={studentSearchQuery}
-									hint={studentSearchHint}
-									matchedCount={studentSearchMatchedIds.length}
-									matchIndex={studentSearchMatchIndex}
-									onQueryChange={setStudentSearchQuery}
-									onSubmit={scrollToStudentByKeyword}
-									onNavigate={moveToMatchedStudent}
-									onReset={resetSearchState}
-								/>
-								<SingleGradingTable
-									gradingStudents={gradingStudents}
-									studentGradingStates={studentGradingStates}
-									singlePersistedScores={singlePersistedScores}
-									singleUndoSnapshots={singleUndoSnapshots}
-									selectedAssignmentData={selectedAssignmentData}
-									singleDragOverStudentId={singleDragOverStudentId}
-									undoingSingleStudentId={undoingSingleStudentId}
-									highlightedStudentId={highlightedStudentId}
-									rowRefs={rowRefs}
-									onFileChange={handleStudentFileChange}
-									onDragOver={handleStudentFileDragOver}
-									onDragLeave={handleStudentFileDragLeave}
-									onDrop={handleStudentFileDrop}
-									onUndo={handleUndoSingleStudentFile}
-								/>
-							</>
+							<SingleGradingTable
+								gradingStudents={gradingStudents}
+								studentGradingStates={studentGradingStates}
+								singlePersistedScores={singlePersistedScores}
+								singleUndoSnapshots={singleUndoSnapshots}
+								selectedAssignmentData={selectedAssignmentData}
+								singleDragOverStudentId={singleDragOverStudentId}
+								undoingSingleStudentId={undoingSingleStudentId}
+								highlightedStudentId={highlightedStudentId}
+								rowRefs={rowRefs}
+								onFileChange={handleStudentFileChange}
+								onDragOver={handleStudentFileDragOver}
+								onDragLeave={handleStudentFileDragLeave}
+								onDrop={handleStudentFileDrop}
+								onUndo={handleUndoSingleStudentFile}
+							/>
 						) : (
 							<div className="p-8 text-center text-sm text-m3-on-surface-variant rounded-2xl bg-m3-surface border border-m3-outline-variant/30">
 								Vui lòng chọn bài tập ở thanh trên để bắt đầu chấm điểm học
@@ -377,22 +372,14 @@ export const GradingWorkspace: React.FC<GradingWorkspaceProps> = ({
 				{!isLoadingAssignments && chooseMode === "existing-multi" && (
 					<div className="pb-32">
 						<MultiAssignmentSelector
-							autoAssignments={activeAutoAssignments}
 							filteredAutoAssignments={filteredAutoAssignments}
 							multiAssignmentDraftIds={multiAssignmentDraftIds}
-							multiAssignmentIds={multiAssignmentIds}
-							multiAssignmentQuery={multiAssignmentQuery}
 							isSelectingAssignments={isSelectingAssignments}
-							hasPendingChanges={hasPendingMultiAssignmentSelectionChanges}
 							activeAutoAssignmentIdsByPractice={
 								activeAutoAssignmentIdsByPractice
 							}
-							onQueryChange={setMultiAssignmentQuery}
 							onToggleAssignment={handleToggleMultiAssignmentSelection}
 							onTogglePractice={handleToggleQuickPracticeSelection}
-							onSelectAll={handleSelectAllAutoAssignments}
-							onClear={handleClearAutoAssignments}
-							onCommit={handleCommitMultiAssignmentSelection}
 						/>
 
 						{pendingManualMultiFileMatches.length > 0 && (
@@ -416,19 +403,6 @@ export const GradingWorkspace: React.FC<GradingWorkspaceProps> = ({
 									Xem và chọn bài
 								</Button>
 							</div>
-						)}
-
-						{selectedMultiAssignments.length > 0 && (
-							<StudentTableSearchBar
-								query={studentSearchQuery}
-								hint={studentSearchHint}
-								matchedCount={studentSearchMatchedIds.length}
-								matchIndex={studentSearchMatchIndex}
-								onQueryChange={setStudentSearchQuery}
-								onSubmit={scrollToStudentByKeyword}
-								onNavigate={moveToMatchedStudent}
-								onReset={resetSearchState}
-							/>
 						)}
 
 						<MultiGradingTable
@@ -486,13 +460,24 @@ export const GradingWorkspace: React.FC<GradingWorkspaceProps> = ({
 
 						<MultiGradingToolbar
 							onBack={handleBackToModes}
-							selectedCount={multiAssignmentIds.length}
+							committedCount={multiAssignmentIds.length}
+							draftCount={multiAssignmentDraftIds.length}
 							totalAssignmentsCount={activeAutoAssignments.length}
-							isLoading={multiLoading}
+							isLoading={isSelectingAssignments || multiLoading}
 							hasPendingChanges={hasPendingMultiAssignmentSelectionChanges}
+							onCommit={handleCommitMultiAssignmentSelection}
 							onSaveAll={handleSaveMultipleAssignments}
 							onSelectAll={handleSelectAllAutoAssignments}
 							onClear={handleClearAutoAssignments}
+							searchQuery={multiAssignmentQuery}
+							onSearchQueryChange={setMultiAssignmentQuery}
+							studentSearchQuery={studentSearchQuery}
+							onStudentSearchQueryChange={setStudentSearchQuery}
+							studentSearchMatchedCount={studentSearchMatchedIds.length}
+							studentSearchMatchIndex={studentSearchMatchIndex}
+							onStudentSearchSubmit={scrollToStudentByKeyword}
+							onStudentSearchNavigate={moveToMatchedStudent}
+							onStudentSearchReset={resetSearchState}
 						/>
 					</div>
 				)}

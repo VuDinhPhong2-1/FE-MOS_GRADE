@@ -6080,63 +6080,769 @@ const XmlGradingRulesPage = () => {
 																								</div>
 																							</div>
 																						)}
-																						{task.specialCondition?.type === "wordBookmark" && (
+																						{task.specialCondition?.type ===
+																							"wordBookmark" && (
 																							<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-2">
 																								{[
-																									["sourceFile", "File nguồn", "word/document.xml"],
-																									["bookmarkName", "Tên bookmark", "Resorts"],
-																									["targetText", "Văn bản mục tiêu", "WORLD-CLASS SKI RESORTS"],
-																								].map(([field, label, placeholder]) => (
-																									<label key={field} className="text-xs font-semibold text-slate-600">
-																										{label}
-																										<input value={(task.specialCondition?.wordBookmarkConfig as Record<string, string | undefined> | undefined)?.[field] ?? ""} onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, type: "wordBookmark", wordBookmarkConfig: { ...(task.specialCondition?.wordBookmarkConfig ?? {}), [field]: e.target.value } })} placeholder={placeholder} className={inputClass} />
-																									</label>
-																								))}
+																									[
+																										"sourceFile",
+																										"File nguồn",
+																										"word/document.xml",
+																									],
+																									[
+																										"bookmarkName",
+																										"Tên bookmark",
+																										"Resorts",
+																									],
+																									[
+																										"targetText",
+																										"Văn bản mục tiêu",
+																										"WORLD-CLASS SKI RESORTS",
+																									],
+																								].map(
+																									([
+																										field,
+																										label,
+																										placeholder,
+																									]) => (
+																										<label
+																											key={field}
+																											className="text-xs font-semibold text-slate-600"
+																										>
+																											{label}
+																											<input
+																												value={
+																													(
+																														task
+																															.specialCondition
+																															?.wordBookmarkConfig as
+																															| Record<
+																																	string,
+																																	| string
+																																	| undefined
+																															  >
+																															| undefined
+																													)?.[field] ?? ""
+																												}
+																												onChange={(e) =>
+																													updateTaskSpecialCondition(
+																														pi,
+																														ti,
+																														{
+																															...task.specialCondition!,
+																															type: "wordBookmark",
+																															wordBookmarkConfig:
+																																{
+																																	...(task
+																																		.specialCondition
+																																		?.wordBookmarkConfig ??
+																																		{}),
+																																	[field]:
+																																		e.target
+																																			.value,
+																																},
+																														},
+																													)
+																												}
+																												placeholder={
+																													placeholder
+																												}
+																												className={inputClass}
+																											/>
+																										</label>
+																									),
+																								)}
 																								<label className="flex items-center gap-2 text-xs font-medium text-slate-600">
-																									<input type="checkbox" checked={task.specialCondition.wordBookmarkConfig?.caseSensitiveName ?? true} onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, type: "wordBookmark", wordBookmarkConfig: { ...(task.specialCondition?.wordBookmarkConfig ?? {}), caseSensitiveName: e.target.checked } })} className="h-4 w-4 accent-blue-600" />
-																									Phân biệt hoa/thường tên bookmark
+																									<input
+																										type="checkbox"
+																										checked={
+																											task.specialCondition
+																												.wordBookmarkConfig
+																												?.caseSensitiveName ??
+																											true
+																										}
+																										onChange={(e) =>
+																											updateTaskSpecialCondition(
+																												pi,
+																												ti,
+																												{
+																													...task.specialCondition!,
+																													type: "wordBookmark",
+																													wordBookmarkConfig: {
+																														...(task
+																															.specialCondition
+																															?.wordBookmarkConfig ??
+																															{}),
+																														caseSensitiveName:
+																															e.target.checked,
+																													},
+																												},
+																											)
+																										}
+																										className="h-4 w-4 accent-blue-600"
+																									/>
+																									Phân biệt hoa/thường tên
+																									bookmark
 																								</label>
 																							</div>
 																						)}
-																						{task.specialCondition?.type === "wordCustomToc" && (
+																						{task.specialCondition?.type ===
+																							"wordCustomToc" && (
 																							<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-2">
-																								<label className="text-xs font-semibold text-slate-600">File nguồn<input value={task.specialCondition.wordCustomTocConfig?.sourceFile ?? "word/document.xml"} onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, type: "wordCustomToc", wordCustomTocConfig: { ...(task.specialCondition?.wordCustomTocConfig ?? {}), sourceFile: e.target.value } })} className={inputClass} /></label>
-																								<label className="text-xs font-semibold text-slate-600">Văn bản neo<input value={task.specialCondition.wordCustomTocConfig?.anchorText ?? ""} onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, type: "wordCustomToc", wordCustomTocConfig: { ...(task.specialCondition?.wordCustomTocConfig ?? {}), anchorText: e.target.value } })} placeholder="TABLE OF CONTENTS" className={inputClass} /></label>
-																								<label className="text-xs font-semibold text-slate-600 md:col-span-2">Style=level, mỗi dòng một mapping<textarea value={(task.specialCondition.wordCustomTocConfig?.requiredStyles ?? []).map((item) => `${item.styleName ?? ""}=${item.level ?? ""}`).join("\n")} onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, type: "wordCustomToc", wordCustomTocConfig: { ...(task.specialCondition?.wordCustomTocConfig ?? {}), requiredStyles: e.target.value.split("\n").map((line) => line.trim()).filter(Boolean).map((line: string) => { const [styleName, level] = line.split("="); return { styleName: styleName?.trim(), level: Number(level) || undefined }; }) } })} placeholder="Title=1&#10;Heading 1=2&#10;Heading 2=3&#10;Caption=4" className={`${inputClass} min-h-28`} /></label>
-																								<label className="text-xs font-semibold text-slate-600">Định dạng kỳ vọng<input value={task.specialCondition.wordCustomTocConfig?.expectedFormat ?? ""} onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, type: "wordCustomToc", wordCustomTocConfig: { ...(task.specialCondition?.wordCustomTocConfig ?? {}), expectedFormat: e.target.value } })} placeholder="classic/simple/... nếu cần" className={inputClass} /></label>
-																								<label className="flex items-center gap-2 text-xs font-medium text-slate-600"><input type="checkbox" checked={task.specialCondition.wordCustomTocConfig?.requireUnderAnchorText ?? true} onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, type: "wordCustomToc", wordCustomTocConfig: { ...(task.specialCondition?.wordCustomTocConfig ?? {}), requireUnderAnchorText: e.target.checked } })} className="h-4 w-4 accent-blue-600" />TOC nằm dưới anchor text</label>
+																								<label className="text-xs font-semibold text-slate-600">
+																									File nguồn
+																									<input
+																										value={
+																											task.specialCondition
+																												.wordCustomTocConfig
+																												?.sourceFile ??
+																											"word/document.xml"
+																										}
+																										onChange={(e) =>
+																											updateTaskSpecialCondition(
+																												pi,
+																												ti,
+																												{
+																													...task.specialCondition!,
+																													type: "wordCustomToc",
+																													wordCustomTocConfig: {
+																														...(task
+																															.specialCondition
+																															?.wordCustomTocConfig ??
+																															{}),
+																														sourceFile:
+																															e.target.value,
+																													},
+																												},
+																											)
+																										}
+																										className={inputClass}
+																									/>
+																								</label>
+																								<label className="text-xs font-semibold text-slate-600">
+																									Văn bản neo
+																									<input
+																										value={
+																											task.specialCondition
+																												.wordCustomTocConfig
+																												?.anchorText ?? ""
+																										}
+																										onChange={(e) =>
+																											updateTaskSpecialCondition(
+																												pi,
+																												ti,
+																												{
+																													...task.specialCondition!,
+																													type: "wordCustomToc",
+																													wordCustomTocConfig: {
+																														...(task
+																															.specialCondition
+																															?.wordCustomTocConfig ??
+																															{}),
+																														anchorText:
+																															e.target.value,
+																													},
+																												},
+																											)
+																										}
+																										placeholder="TABLE OF CONTENTS"
+																										className={inputClass}
+																									/>
+																								</label>
+																								<label className="text-xs font-semibold text-slate-600 md:col-span-2">
+																									Style=level, mỗi dòng một
+																									mapping
+																									<textarea
+																										value={(
+																											task.specialCondition
+																												.wordCustomTocConfig
+																												?.requiredStyles ?? []
+																										)
+																											.map(
+																												(item) =>
+																													`${item.styleName ?? ""}=${item.level ?? ""}`,
+																											)
+																											.join("\n")}
+																										onChange={(e) =>
+																											updateTaskSpecialCondition(
+																												pi,
+																												ti,
+																												{
+																													...task.specialCondition!,
+																													type: "wordCustomToc",
+																													wordCustomTocConfig: {
+																														...(task
+																															.specialCondition
+																															?.wordCustomTocConfig ??
+																															{}),
+																														requiredStyles:
+																															e.target.value
+																																.split("\n")
+																																.map((line) =>
+																																	line.trim(),
+																																)
+																																.filter(Boolean)
+																																.map(
+																																	(
+																																		line: string,
+																																	) => {
+																																		const [
+																																			styleName,
+																																			level,
+																																		] =
+																																			line.split(
+																																				"=",
+																																			);
+																																		return {
+																																			styleName:
+																																				styleName?.trim(),
+																																			level:
+																																				Number(
+																																					level,
+																																				) ||
+																																				undefined,
+																																		};
+																																	},
+																																),
+																													},
+																												},
+																											)
+																										}
+																										placeholder="Title=1&#10;Heading 1=2&#10;Heading 2=3&#10;Caption=4"
+																										className={`${inputClass} min-h-28`}
+																									/>
+																								</label>
+																								<label className="text-xs font-semibold text-slate-600">
+																									Định dạng kỳ vọng
+																									<input
+																										value={
+																											task.specialCondition
+																												.wordCustomTocConfig
+																												?.expectedFormat ?? ""
+																										}
+																										onChange={(e) =>
+																											updateTaskSpecialCondition(
+																												pi,
+																												ti,
+																												{
+																													...task.specialCondition!,
+																													type: "wordCustomToc",
+																													wordCustomTocConfig: {
+																														...(task
+																															.specialCondition
+																															?.wordCustomTocConfig ??
+																															{}),
+																														expectedFormat:
+																															e.target.value,
+																													},
+																												},
+																											)
+																										}
+																										placeholder="classic/simple/... nếu cần"
+																										className={inputClass}
+																									/>
+																								</label>
+																								<label className="flex items-center gap-2 text-xs font-medium text-slate-600">
+																									<input
+																										type="checkbox"
+																										checked={
+																											task.specialCondition
+																												.wordCustomTocConfig
+																												?.requireUnderAnchorText ??
+																											true
+																										}
+																										onChange={(e) =>
+																											updateTaskSpecialCondition(
+																												pi,
+																												ti,
+																												{
+																													...task.specialCondition!,
+																													type: "wordCustomToc",
+																													wordCustomTocConfig: {
+																														...(task
+																															.specialCondition
+																															?.wordCustomTocConfig ??
+																															{}),
+																														requireUnderAnchorText:
+																															e.target.checked,
+																													},
+																												},
+																											)
+																										}
+																										className="h-4 w-4 accent-blue-600"
+																									/>
+																									TOC nằm dưới anchor text
+																								</label>
 																							</div>
 																						)}
-																						{task.specialCondition?.type === "wordTextToTable" && (
+																						{task.specialCondition?.type ===
+																							"wordTextToTable" && (
 																							<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-2">
-																								{[["sourceFile", "File nguồn", "word/document.xml"], ["anchorText", "Văn bản neo", "Resort Name"], ["expectedTableStyle", "Table style", "Grid Table 5 Dark - Accent 1"]].map(([field, label, placeholder]) => (<label key={field} className="text-xs font-semibold text-slate-600">{label}<input value={(task.specialCondition?.wordTextToTableConfig as Record<string, string | undefined> | undefined)?.[field] ?? ""} onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, type: "wordTextToTable", wordTextToTableConfig: { ...(task.specialCondition?.wordTextToTableConfig ?? {}), [field]: e.target.value } })} placeholder={placeholder} className={inputClass} /></label>))}
-																								<label className="text-xs font-semibold text-slate-600">Số cột<input type="number" min={1} value={task.specialCondition.wordTextToTableConfig?.expectedColumns ?? ""} onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, type: "wordTextToTable", wordTextToTableConfig: { ...(task.specialCondition?.wordTextToTableConfig ?? {}), expectedColumns: e.target.value ? Number(e.target.value) : undefined } })} placeholder="5" className={inputClass} /></label>
-																								<label className="text-xs font-semibold text-slate-600">Số dòng tối thiểu<input type="number" min={1} value={task.specialCondition.wordTextToTableConfig?.minRows ?? ""} onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, type: "wordTextToTable", wordTextToTableConfig: { ...(task.specialCondition?.wordTextToTableConfig ?? {}), minRows: e.target.value ? Number(e.target.value) : undefined } })} placeholder="2" className={inputClass} /></label>
+																								{[
+																									[
+																										"sourceFile",
+																										"File nguồn",
+																										"word/document.xml",
+																									],
+																									[
+																										"anchorText",
+																										"Văn bản neo",
+																										"Resort Name",
+																									],
+																									[
+																										"expectedTableStyle",
+																										"Table style",
+																										"Grid Table 5 Dark - Accent 1",
+																									],
+																								].map(
+																									([
+																										field,
+																										label,
+																										placeholder,
+																									]) => (
+																										<label
+																											key={field}
+																											className="text-xs font-semibold text-slate-600"
+																										>
+																											{label}
+																											<input
+																												value={
+																													(
+																														task
+																															.specialCondition
+																															?.wordTextToTableConfig as
+																															| Record<
+																																	string,
+																																	| string
+																																	| undefined
+																															  >
+																															| undefined
+																													)?.[field] ?? ""
+																												}
+																												onChange={(e) =>
+																													updateTaskSpecialCondition(
+																														pi,
+																														ti,
+																														{
+																															...task.specialCondition!,
+																															type: "wordTextToTable",
+																															wordTextToTableConfig:
+																																{
+																																	...(task
+																																		.specialCondition
+																																		?.wordTextToTableConfig ??
+																																		{}),
+																																	[field]:
+																																		e.target
+																																			.value,
+																																},
+																														},
+																													)
+																												}
+																												placeholder={
+																													placeholder
+																												}
+																												className={inputClass}
+																											/>
+																										</label>
+																									),
+																								)}
+																								<label className="text-xs font-semibold text-slate-600">
+																									Số cột
+																									<input
+																										type="number"
+																										min={1}
+																										value={
+																											task.specialCondition
+																												.wordTextToTableConfig
+																												?.expectedColumns ?? ""
+																										}
+																										onChange={(e) =>
+																											updateTaskSpecialCondition(
+																												pi,
+																												ti,
+																												{
+																													...task.specialCondition!,
+																													type: "wordTextToTable",
+																													wordTextToTableConfig:
+																														{
+																															...(task
+																																.specialCondition
+																																?.wordTextToTableConfig ??
+																																{}),
+																															expectedColumns: e
+																																.target.value
+																																? Number(
+																																		e.target
+																																			.value,
+																																	)
+																																: undefined,
+																														},
+																												},
+																											)
+																										}
+																										placeholder="5"
+																										className={inputClass}
+																									/>
+																								</label>
+																								<label className="text-xs font-semibold text-slate-600">
+																									Số dòng tối thiểu
+																									<input
+																										type="number"
+																										min={1}
+																										value={
+																											task.specialCondition
+																												.wordTextToTableConfig
+																												?.minRows ?? ""
+																										}
+																										onChange={(e) =>
+																											updateTaskSpecialCondition(
+																												pi,
+																												ti,
+																												{
+																													...task.specialCondition!,
+																													type: "wordTextToTable",
+																													wordTextToTableConfig:
+																														{
+																															...(task
+																																.specialCondition
+																																?.wordTextToTableConfig ??
+																																{}),
+																															minRows: e.target
+																																.value
+																																? Number(
+																																		e.target
+																																			.value,
+																																	)
+																																: undefined,
+																														},
+																												},
+																											)
+																										}
+																										placeholder="2"
+																										className={inputClass}
+																									/>
+																								</label>
 																							</div>
 																						)}
-																						{task.specialCondition?.type === "wordBulletStyle" && (
+																						{task.specialCondition?.type ===
+																							"wordBulletStyle" && (
 																							<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-2">
-																								{[["sourceFile", "File nguồn", "word/document.xml"], ["numberingFile", "Numbering file", "word/numbering.xml"], ["anchorText", "Văn bản neo bắt đầu", "SKI RESORTS"], ["endAnchorText", "Văn bản neo kết thúc", ""]].map(([field, label, placeholder]) => (<label key={field} className="text-xs font-semibold text-slate-600">{label}<input value={(task.specialCondition?.wordBulletStyleConfig as Record<string, string | undefined> | undefined)?.[field] ?? ""} onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, type: "wordBulletStyle", wordBulletStyleConfig: { ...(task.specialCondition?.wordBulletStyleConfig ?? {}), [field]: e.target.value } })} placeholder={placeholder} className={inputClass} /></label>))}
+																								{[
+																									[
+																										"sourceFile",
+																										"File nguồn",
+																										"word/document.xml",
+																									],
+																									[
+																										"numberingFile",
+																										"Numbering file",
+																										"word/numbering.xml",
+																									],
+																									[
+																										"anchorText",
+																										"Văn bản neo bắt đầu",
+																										"SKI RESORTS",
+																									],
+																									[
+																										"endAnchorText",
+																										"Văn bản neo kết thúc",
+																										"",
+																									],
+																								].map(
+																									([
+																										field,
+																										label,
+																										placeholder,
+																									]) => (
+																										<label
+																											key={field}
+																											className="text-xs font-semibold text-slate-600"
+																										>
+																											{label}
+																											<input
+																												value={
+																													(
+																														task
+																															.specialCondition
+																															?.wordBulletStyleConfig as
+																															| Record<
+																																	string,
+																																	| string
+																																	| undefined
+																															  >
+																															| undefined
+																													)?.[field] ?? ""
+																												}
+																												onChange={(e) =>
+																													updateTaskSpecialCondition(
+																														pi,
+																														ti,
+																														{
+																															...task.specialCondition!,
+																															type: "wordBulletStyle",
+																															wordBulletStyleConfig:
+																																{
+																																	...(task
+																																		.specialCondition
+																																		?.wordBulletStyleConfig ??
+																																		{}),
+																																	[field]:
+																																		e.target
+																																			.value,
+																																},
+																														},
+																													)
+																												}
+																												placeholder={
+																													placeholder
+																												}
+																												className={inputClass}
+																											/>
+																										</label>
+																									),
+																								)}
 																								<label className="text-xs font-semibold text-slate-600">
 																									Ký tự bullet
-																									<select value={task.specialCondition.wordBulletStyleConfig?.expectedBulletChar ?? "■"} onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, type: "wordBulletStyle", wordBulletStyleConfig: { ...(task.specialCondition?.wordBulletStyleConfig ?? {}), expectedBulletChar: e.target.value } })} className={inputClass}>
-																										{task.specialCondition.wordBulletStyleConfig?.expectedBulletChar && !wordBulletCharacterOptions.some((option) => option.value === task.specialCondition?.wordBulletStyleConfig?.expectedBulletChar) && (
-																											<option value={task.specialCondition.wordBulletStyleConfig.expectedBulletChar}>Giá trị hiện tại: {task.specialCondition.wordBulletStyleConfig.expectedBulletChar}</option>
+																									<select
+																										value={
+																											task.specialCondition
+																												.wordBulletStyleConfig
+																												?.expectedBulletChar ??
+																											"■"
+																										}
+																										onChange={(e) =>
+																											updateTaskSpecialCondition(
+																												pi,
+																												ti,
+																												{
+																													...task.specialCondition!,
+																													type: "wordBulletStyle",
+																													wordBulletStyleConfig:
+																														{
+																															...(task
+																																.specialCondition
+																																?.wordBulletStyleConfig ??
+																																{}),
+																															expectedBulletChar:
+																																e.target.value,
+																														},
+																												},
+																											)
+																										}
+																										className={inputClass}
+																									>
+																										{task.specialCondition
+																											.wordBulletStyleConfig
+																											?.expectedBulletChar &&
+																											!wordBulletCharacterOptions.some(
+																												(option) =>
+																													option.value ===
+																													task.specialCondition
+																														?.wordBulletStyleConfig
+																														?.expectedBulletChar,
+																											) && (
+																												<option
+																													value={
+																														task
+																															.specialCondition
+																															.wordBulletStyleConfig
+																															.expectedBulletChar
+																													}
+																												>
+																													Giá trị hiện tại:{" "}
+																													{
+																														task
+																															.specialCondition
+																															.wordBulletStyleConfig
+																															.expectedBulletChar
+																													}
+																												</option>
+																											)}
+																										{wordBulletCharacterOptions.map(
+																											(option) => (
+																												<option
+																													key={option.value}
+																													value={option.value}
+																												>
+																													{option.label}
+																												</option>
+																											),
 																										)}
-																										{wordBulletCharacterOptions.map((option) => (
-																											<option key={option.value} value={option.value}>{option.label}</option>
-																										))}
 																									</select>
 																								</label>
-																								<label className="text-xs font-semibold text-slate-600">Level<input type="number" min={0} value={task.specialCondition.wordBulletStyleConfig?.level ?? 0} onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, type: "wordBulletStyle", wordBulletStyleConfig: { ...(task.specialCondition?.wordBulletStyleConfig ?? {}), level: Number(e.target.value) } })} className={inputClass} /></label>
-																								<label className="text-xs font-semibold text-slate-600">Số item tối thiểu<input type="number" min={1} value={task.specialCondition.wordBulletStyleConfig?.minItems ?? ""} onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, type: "wordBulletStyle", wordBulletStyleConfig: { ...(task.specialCondition?.wordBulletStyleConfig ?? {}), minItems: e.target.value ? Number(e.target.value) : undefined } })} placeholder="1" className={inputClass} /></label>
+																								<label className="text-xs font-semibold text-slate-600">
+																									Level
+																									<input
+																										type="number"
+																										min={0}
+																										value={
+																											task.specialCondition
+																												.wordBulletStyleConfig
+																												?.level ?? 0
+																										}
+																										onChange={(e) =>
+																											updateTaskSpecialCondition(
+																												pi,
+																												ti,
+																												{
+																													...task.specialCondition!,
+																													type: "wordBulletStyle",
+																													wordBulletStyleConfig:
+																														{
+																															...(task
+																																.specialCondition
+																																?.wordBulletStyleConfig ??
+																																{}),
+																															level: Number(
+																																e.target.value,
+																															),
+																														},
+																												},
+																											)
+																										}
+																										className={inputClass}
+																									/>
+																								</label>
+																								<label className="text-xs font-semibold text-slate-600">
+																									Số item tối thiểu
+																									<input
+																										type="number"
+																										min={1}
+																										value={
+																											task.specialCondition
+																												.wordBulletStyleConfig
+																												?.minItems ?? ""
+																										}
+																										onChange={(e) =>
+																											updateTaskSpecialCondition(
+																												pi,
+																												ti,
+																												{
+																													...task.specialCondition!,
+																													type: "wordBulletStyle",
+																													wordBulletStyleConfig:
+																														{
+																															...(task
+																																.specialCondition
+																																?.wordBulletStyleConfig ??
+																																{}),
+																															minItems: e.target
+																																.value
+																																? Number(
+																																		e.target
+																																			.value,
+																																	)
+																																: undefined,
+																														},
+																												},
+																											)
+																										}
+																										placeholder="1"
+																										className={inputClass}
+																									/>
+																								</label>
 																							</div>
 																						)}
-																						{task.specialCondition?.type === "wordResolveComment" && (
+																						{task.specialCondition?.type ===
+																							"wordResolveComment" && (
 																							<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-2">
-																								<label className="text-xs font-semibold text-slate-600">commentsExtended file<input value={task.specialCondition.wordResolveCommentConfig?.commentsExtendedFile ?? "word/commentsExtended.xml"} onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, type: "wordResolveComment", wordResolveCommentConfig: { ...(task.specialCondition?.wordResolveCommentConfig ?? {}), commentsExtendedFile: e.target.value } })} className={inputClass} /></label>
-																								<label className="text-xs font-semibold text-slate-600">Nội dung comment mục tiêu<input value={task.specialCondition.wordResolveCommentConfig?.targetText ?? ""} onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, type: "wordResolveComment", wordResolveCommentConfig: { ...(task.specialCondition?.wordResolveCommentConfig ?? {}), targetText: e.target.value } })} placeholder="Để trống = mọi comment" className={inputClass} /></label>
-																								<label className="flex items-center gap-2 text-xs font-medium text-slate-600"><input type="checkbox" checked={task.specialCondition.wordResolveCommentConfig?.requireAllResolved ?? true} onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, type: "wordResolveComment", wordResolveCommentConfig: { ...(task.specialCondition?.wordResolveCommentConfig ?? {}), requireAllResolved: e.target.checked } })} className="h-4 w-4 accent-blue-600" />Yêu cầu tất cả comment resolved</label>
+																								<label className="text-xs font-semibold text-slate-600">
+																									commentsExtended file
+																									<input
+																										value={
+																											task.specialCondition
+																												.wordResolveCommentConfig
+																												?.commentsExtendedFile ??
+																											"word/commentsExtended.xml"
+																										}
+																										onChange={(e) =>
+																											updateTaskSpecialCondition(
+																												pi,
+																												ti,
+																												{
+																													...task.specialCondition!,
+																													type: "wordResolveComment",
+																													wordResolveCommentConfig:
+																														{
+																															...(task
+																																.specialCondition
+																																?.wordResolveCommentConfig ??
+																																{}),
+																															commentsExtendedFile:
+																																e.target.value,
+																														},
+																												},
+																											)
+																										}
+																										className={inputClass}
+																									/>
+																								</label>
+																								<label className="text-xs font-semibold text-slate-600">
+																									Nội dung comment mục tiêu
+																									<input
+																										value={
+																											task.specialCondition
+																												.wordResolveCommentConfig
+																												?.targetText ?? ""
+																										}
+																										onChange={(e) =>
+																											updateTaskSpecialCondition(
+																												pi,
+																												ti,
+																												{
+																													...task.specialCondition!,
+																													type: "wordResolveComment",
+																													wordResolveCommentConfig:
+																														{
+																															...(task
+																																.specialCondition
+																																?.wordResolveCommentConfig ??
+																																{}),
+																															targetText:
+																																e.target.value,
+																														},
+																												},
+																											)
+																										}
+																										placeholder="Để trống = mọi comment"
+																										className={inputClass}
+																									/>
+																								</label>
+																								<label className="flex items-center gap-2 text-xs font-medium text-slate-600">
+																									<input
+																										type="checkbox"
+																										checked={
+																											task.specialCondition
+																												.wordResolveCommentConfig
+																												?.requireAllResolved ??
+																											true
+																										}
+																										onChange={(e) =>
+																											updateTaskSpecialCondition(
+																												pi,
+																												ti,
+																												{
+																													...task.specialCondition!,
+																													type: "wordResolveComment",
+																													wordResolveCommentConfig:
+																														{
+																															...(task
+																																.specialCondition
+																																?.wordResolveCommentConfig ??
+																																{}),
+																															requireAllResolved:
+																																e.target
+																																	.checked,
+																														},
+																												},
+																											)
+																										}
+																										className="h-4 w-4 accent-blue-600"
+																									/>
+																									Yêu cầu tất cả comment
+																									resolved
+																								</label>
 																							</div>
 																						)}
 																						{task.specialCondition?.type === "wordEndnote" && (
@@ -9569,6 +10275,3 @@ const XmlGradingRulesPage = () => {
 };
 
 export default XmlGradingRulesPage;
-
-
-

@@ -7,6 +7,8 @@ interface UseStudentTableSearchProps {
 	rowRefs: RefObject<Map<string, HTMLTableRowElement>>;
 }
 
+const FLOATING_TOOLBAR_OFFSET = 88;
+
 export const useStudentTableSearch = ({
 	gradingStudents,
 	rowRefs,
@@ -16,23 +18,45 @@ export const useStudentTableSearch = ({
 	const [studentSearchMatchedIds, setStudentSearchMatchedIds] = useState<
 		string[]
 	>([]);
-	const [studentSearchMatchIndex, setStudentSearchMatchIndex] = useState(-1);
+	const [studentSearchMatchIndex, setStudentSearchMatchIndex] = useState(0);
 	const [highlightedStudentId, setHighlightedStudentId] = useState<
 		string | null
 	>(null);
 	const [lastStudentSearchKeyword, setLastStudentSearchKeyword] = useState("");
 
 	const scrollRowIntoStudentTable = (row: HTMLTableRowElement) => {
-		const scrollContainer = row.closest(
+		let scrollContainer = row.closest(
 			'[data-student-scroll-container="true"]',
 		) as HTMLElement | null;
+
+		// Fallback: Nếu container được đánh dấu không cuộn được (scrollHeight <= clientHeight),
+		// tìm container cha gần nhất có overflow scroll/auto
+		if (
+			!scrollContainer ||
+			scrollContainer.scrollHeight <= scrollContainer.clientHeight
+		) {
+			let parent = row.parentElement;
+			while (parent && parent !== document.body) {
+				const style = window.getComputedStyle(parent);
+				const overflowY = style.overflowY;
+				if (
+					(overflowY === "auto" || overflowY === "scroll") &&
+					parent.scrollHeight > parent.clientHeight
+				) {
+					scrollContainer = parent;
+					break;
+				}
+				parent = parent.parentElement;
+			}
+		}
+
 		if (!scrollContainer) {
 			row.scrollIntoView({ behavior: "smooth", block: "center" });
 			return;
 		}
 
 		const stickyHeader = scrollContainer.querySelector(
-			"thead.sticky",
+			"thead.sticky, thead",
 		) as HTMLElement | null;
 		const stickyHeaderHeight =
 			stickyHeader?.getBoundingClientRect().height ?? 0;
@@ -46,19 +70,43 @@ export const useStudentTableSearch = ({
 
 		const visibleTop = currentScrollTop + stickyHeaderHeight + padding;
 		const visibleBottom =
-			currentScrollTop + scrollContainer.clientHeight - padding;
+			currentScrollTop +
+			scrollContainer.clientHeight -
+			padding -
+			FLOATING_TOOLBAR_OFFSET;
 
 		let nextScrollTop = currentScrollTop;
 		if (rowTop < visibleTop) {
 			nextScrollTop = rowTop - stickyHeaderHeight - padding;
 		} else if (rowBottom > visibleBottom) {
-			nextScrollTop = rowBottom - scrollContainer.clientHeight + padding;
+			nextScrollTop =
+				rowBottom -
+				scrollContainer.clientHeight +
+				padding +
+				FLOATING_TOOLBAR_OFFSET;
 		}
 
 		scrollContainer.scrollTo({
 			top: Math.max(0, nextScrollTop),
 			behavior: "smooth",
 		});
+
+		// Đảm bảo hàng không bị khuất ngoài viewport trình duyệt (do floating toolbar hoặc topbar)
+		const targetRowViewportTop = containerRect.top + (rowTop - nextScrollTop);
+		const targetRowViewportBottom = targetRowViewportTop + rowRect.height;
+		const viewportBottomLimit = window.innerHeight - FLOATING_TOOLBAR_OFFSET;
+
+		if (targetRowViewportBottom > viewportBottomLimit) {
+			window.scrollBy({
+				top: targetRowViewportBottom - viewportBottomLimit + padding,
+				behavior: "smooth",
+			});
+		} else if (targetRowViewportTop < 72) {
+			window.scrollBy({
+				top: targetRowViewportTop - 72,
+				behavior: "smooth",
+			});
+		}
 	};
 
 	const focusMatchedStudent = (matchedIds: string[], index: number) => {

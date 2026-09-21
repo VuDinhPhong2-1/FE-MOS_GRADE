@@ -1,4 +1,9 @@
-import { Button, Icon, ProgressIndicator } from "@bug-on/m3-expressive";
+import {
+	Button,
+	Icon,
+	ProgressIndicator,
+	TextField,
+} from "@bug-on/m3-expressive";
 import type React from "react";
 import { memo } from "react";
 import type { Assignment } from "../../../../types/assignment.types";
@@ -70,7 +75,7 @@ const MultiGradingCellComponent: React.FC<MultiGradingCellProps> = ({
 				<Button
 					type="button"
 					colorStyle="text"
-					className="h-auto p-0 text-[11px] text-amber-700 dark:text-amber-300 hover:underline cursor-pointer"
+					className="h-auto p-0 text-[11px] text-m3-error hover:underline cursor-pointer border-none shadow-none"
 					onClick={() => {
 						try {
 							notify.custom({
@@ -91,29 +96,43 @@ const MultiGradingCellComponent: React.FC<MultiGradingCellProps> = ({
 	};
 
 	return (
-		<div className="px-3 py-3 align-top min-w-42.5">
+		<div className="px-3 py-3 align-top min-w-44">
 			<div className="flex flex-col items-center">
-				<input
+				<TextField
 					type="number"
 					aria-label={`Điểm bài ${assignment.name} của ${student.middleName} ${student.firstName}`}
-					value={currentScore?.scoreValue ?? ""}
-					onChange={(e) => {
-						const val = e.target.value === "" ? null : Number(e.target.value);
-						onScoreChange(val);
+					value={
+						currentScore?.scoreValue !== undefined &&
+						currentScore?.scoreValue !== null
+							? String(currentScore.scoreValue)
+							: ""
+					}
+					onChange={(valStr) => {
+						const trimmed = valStr.trim();
+						if (trimmed === "") {
+							onScoreChange(null);
+							return;
+						}
+						const num = Number(trimmed);
+						onScoreChange(Number.isNaN(num) ? null : num);
 					}}
-					className="w-20 border border-m3-outline-variant rounded-lg px-2 py-1 text-center bg-m3-surface-container-low text-m3-on-surface text-sm font-medium"
 					min="0"
+					max={String(assignment.maxScore)}
 					step="0.01"
 					placeholder="0"
+					dense
+					fullWidth={false}
+					noSpinner
+					className="w-24 text-center [&_input]:text-center [&_input]:font-semibold [&_input]:text-sm border-none shadow-none"
 				/>
 
 				{assignment.gradingType === "auto" && (
 					<section
 						aria-label={`Vùng nộp bài ${assignment.name} cho ${student.middleName} ${student.firstName}`}
-						className={`mt-2 w-full space-y-1 rounded-xl border border-dashed p-2 transition text-center ${
+						className={`mt-2 w-full space-y-1.5 rounded-2xl p-2.5 transition-colors text-center ${
 							isDragOver
-								? "border-m3-primary bg-m3-primary/10"
-								: "border-m3-outline-variant bg-m3-surface-container-low"
+								? "bg-m3-primary-container/40"
+								: "bg-m3-surface-container-low"
 						} ${autoState?.isGrading ? "opacity-60 cursor-not-allowed" : ""}`}
 						onDragEnter={(e) => onDragOver(Boolean(autoState?.isGrading), e)}
 						onDragOver={(e) => onDragOver(Boolean(autoState?.isGrading), e)}
@@ -139,16 +158,24 @@ const MultiGradingCellComponent: React.FC<MultiGradingCellProps> = ({
 							disabled={autoState?.isGrading}
 							className="hidden"
 						/>
-						<label
-							htmlFor={`multi-file-${assignment.id}-${student.id}`}
-							className={`inline-flex px-2.5 py-1 rounded-lg text-[11px] font-medium border transition ${
-								autoState?.isGrading
-									? "bg-m3-surface-container text-m3-on-surface-variant/40 border-m3-outline-variant/40 cursor-not-allowed"
-									: "bg-m3-primary-container text-m3-on-primary-container border-m3-primary/20 cursor-pointer hover:opacity-90"
-							}`}
+						<Button
+							asChild
+							colorStyle="tonal"
+							size="sm"
+							disabled={Boolean(autoState?.isGrading)}
+							className="h-7 px-2.5 text-[11px] rounded-lg border-none shadow-none cursor-pointer"
 						>
-							{autoState?.studentFile ? "Đổi file" : "Chọn file"}
-						</label>
+							<label
+								htmlFor={`multi-file-${assignment.id}-${student.id}`}
+								className={
+									autoState?.isGrading
+										? "cursor-not-allowed opacity-60"
+										: "cursor-pointer"
+								}
+							>
+								{autoState?.studentFile ? "Đổi file" : "Chọn file"}
+							</label>
+						</Button>
 
 						<p className="text-[10px] text-m3-on-surface-variant/70">
 							Kéo thả file vào đây
@@ -175,7 +202,7 @@ const MultiGradingCellComponent: React.FC<MultiGradingCellProps> = ({
 						)}
 
 						{autoState?.gradingResult && (
-							<p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
+							<p className="text-[11px] text-m3-tertiary font-medium">
 								Đã chấm tự động
 							</p>
 						)}
@@ -193,7 +220,7 @@ const MultiGradingCellComponent: React.FC<MultiGradingCellProps> = ({
 									colorStyle="tonal"
 									onClick={onUndo}
 									disabled={Boolean(autoState?.isGrading)}
-									className="mt-1 h-6 px-1.5 text-[10px]"
+									className="mt-1 h-6 px-1.5 text-[10px] border-none shadow-none"
 								>
 									<Icon name="undo" className="text-xs mr-0.5" />
 									Hoàn tác

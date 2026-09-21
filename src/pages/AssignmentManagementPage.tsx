@@ -1,4 +1,9 @@
-import { Button, Icon, ProgressIndicator } from "@bug-on/m3-expressive";
+import {
+	Button,
+	Icon,
+	LoadingIndicator,
+	ProgressIndicator,
+} from "@bug-on/m3-expressive";
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { showConfirm } from "../components/common";
 import { useAuth } from "../context/AuthContext";
@@ -1186,9 +1191,7 @@ const AssignmentManagementPage = ({
 									<div className="mt-2 max-h-56 overflow-auto rounded-2xl border border-m3-outline-variant/60 bg-m3-surface p-3">
 										{isLoadingStudents ? (
 											<div className="flex items-center gap-2 text-xs text-m3-on-surface-variant">
-												<ProgressIndicator
-													variant="circular"
-													shape="wavy"
+												<LoadingIndicator
 													size={16}
 													aria-label="Đang tải học sinh"
 												/>

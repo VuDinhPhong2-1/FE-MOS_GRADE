@@ -2,7 +2,9 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const projectRoot = path.resolve(__dirname, "..");
-const defaultTargets = [path.join(projectRoot, "src", "pages", "XmlGradingRulesPage.tsx")];
+const defaultTargets = [
+	path.join(projectRoot, "src", "pages", "XmlGradingRulesPage.tsx"),
+];
 
 const mojibakePattern = /Ã|Ä|á»|áº|Â|\uFFFD|[\u0080-\u009F]/;
 const utf8Decoder = new TextDecoder("utf-8", { fatal: false });
@@ -51,7 +53,11 @@ const encodeAsOriginalBytes = (value) => {
 	for (const char of value) {
 		const codePoint = char.codePointAt(0);
 		const windows1252Byte = unicodeToWindows1252.get(codePoint);
-		bytes.push(...(windows1252Byte === undefined ? Buffer.from(char, "utf8") : [windows1252Byte]));
+		bytes.push(
+			...(windows1252Byte === undefined
+				? Buffer.from(char, "utf8")
+				: [windows1252Byte]),
+		);
 	}
 
 	return Uint8Array.from(bytes);
@@ -68,7 +74,10 @@ const fixVietnameseMojibake = (value) => {
 const args = process.argv.slice(2);
 const shouldWrite = args.includes("--write");
 const targetArgs = args.filter((arg) => !arg.startsWith("--"));
-const targets = targetArgs.length > 0 ? targetArgs.map((target) => path.resolve(target)) : defaultTargets;
+const targets =
+	targetArgs.length > 0
+		? targetArgs.map((target) => path.resolve(target))
+		: defaultTargets;
 
 let changedCount = 0;
 let remainingMojibakeCount = 0;
@@ -82,17 +91,23 @@ for (const target of targets) {
 		if (shouldWrite) {
 			fs.writeFileSync(target, fixed, "utf8");
 		}
-		console.log(`${shouldWrite ? "Fixed" : "Would fix"}: ${path.relative(projectRoot, target)}`);
+		console.log(
+			`${shouldWrite ? "Fixed" : "Would fix"}: ${path.relative(projectRoot, target)}`,
+		);
 	}
 
 	if (mojibakePattern.test(fixed)) {
 		remainingMojibakeCount += 1;
-		console.error(`Mojibake markers remain after decoding: ${path.relative(projectRoot, target)}`);
+		console.error(
+			`Mojibake markers remain after decoding: ${path.relative(projectRoot, target)}`,
+		);
 	}
 }
 
 if (!shouldWrite && changedCount > 0) {
-	console.error(`Vietnamese mojibake found in ${changedCount} file(s). Run with --write to fix.`);
+	console.error(
+		`Vietnamese mojibake found in ${changedCount} file(s). Run with --write to fix.`,
+	);
 	process.exitCode = 1;
 }
 

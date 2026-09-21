@@ -30,6 +30,19 @@ export interface SearchConfig
 	/** Tự động focus vào ô input khi mở tìm kiếm (mặc định: true) */
 	autoFocus?: boolean;
 
+	/** Callback khi submit tìm kiếm (nhấn Enter hoặc submit) */
+	onSubmit?: () => void;
+	/** Callback điều hướng giữa các kết quả (-1: kết quả trước, 1: kết quả tiếp theo) */
+	onNavigate?: (direction: -1 | 1) => void;
+	/** Callback reset trạng thái tìm kiếm (nhấn Escape hoặc nút đóng) */
+	onReset?: () => void;
+	/** Tổng số kết quả khớp */
+	matchedCount?: number;
+	/** Vị trí kết quả đang duyệt (0-indexed) */
+	matchIndex?: number;
+	/** Gợi ý hoặc thông báo kết quả tìm kiếm */
+	hint?: string;
+
 	/**
 	 * Visual emphasis cho ToolbarIconButton ("standard" | "tonal" | "filled").
 	 * Hỗ trợ string mở rộng để không bắt buộc 'as const' khi khai báo object literal.

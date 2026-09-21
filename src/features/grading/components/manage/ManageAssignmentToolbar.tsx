@@ -116,7 +116,7 @@ const ManageAssignmentToolbarComponent = ({
 						transition={FAST_SPATIAL_SPRING}
 						className="overflow-hidden flex shrink-0"
 					>
-						<div className="flex items-center gap-1.5 rounded-full bg-m3-surface-container-high pl-3 pr-1.5 py-1.5 text-xs shadow-xs text-m3-on-surface">
+						<div className="flex items-center gap-2 rounded-full bg-m3-surface-container-high pl-3 pr-2 py-2 text-xs shadow-xs text-m3-on-surface">
 							<Icon
 								name="checklist"
 								size={16}

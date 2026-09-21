@@ -1,7 +1,19 @@
-import { Icon, ProgressIndicator } from "@bug-on/m3-expressive";
+import {
+	Button,
+	Card,
+	Chip,
+	Icon,
+	ProgressIndicator,
+	ScrollArea,
+	Select,
+	type SelectOption,
+	Text,
+	TextField,
+} from "@bug-on/m3-expressive";
 import { useEffect, useMemo, useState } from "react";
 import { showAlert, showConfirm } from "../components/common";
 import { useAuth } from "../context/AuthContext";
+import { usePageHeader } from "../context/PageActionsContext";
 import { ResultCard } from "../features/grading";
 import { gradingService } from "../services/grading.service";
 import type { GradingResult } from "../types";
@@ -87,21 +99,28 @@ const severityMeta: Record<BugSeverity, { label: string; badgeClass: string }> =
 	{
 		low: {
 			label: "Low",
-			badgeClass: "bg-slate-100 text-slate-700",
+			badgeClass: "bg-m3-surface-container-highest text-m3-on-surface-variant",
 		},
 		medium: {
 			label: "Medium",
-			badgeClass: "bg-blue-100 text-blue-700",
+			badgeClass: "bg-m3-secondary-container text-m3-on-secondary-container",
 		},
 		high: {
 			label: "High",
-			badgeClass: "bg-amber-100 text-amber-800",
+			badgeClass: "bg-m3-tertiary-container text-m3-on-tertiary-container",
 		},
 		critical: {
 			label: "Critical",
-			badgeClass: "bg-rose-100 text-rose-800",
+			badgeClass: "bg-m3-error-container text-m3-on-error-container",
 		},
 	};
+
+const severityOptions: SelectOption[] = [
+	{ label: "Low", value: "low" },
+	{ label: "Medium", value: "medium" },
+	{ label: "High", value: "high" },
+	{ label: "Critical", value: "critical" },
+];
 
 const GradingView = () => {
 	const { getAccessToken } = useAuth();
@@ -160,7 +179,7 @@ const GradingView = () => {
 				const message =
 					err instanceof Error
 						? err.message
-						: "Khong tai duoc danh sach project test.";
+						: "Không tải được danh sách project test.";
 				setProjectLoadError(message);
 			} finally {
 				if (active) {
@@ -194,7 +213,7 @@ const GradingView = () => {
 
 				setBugNotes([]);
 				const message =
-					err instanceof Error ? err.message : "Khong tai duoc bug notes.";
+					err instanceof Error ? err.message : "Không tải được bug notes.";
 				setBugActionMessage(message);
 			} finally {
 				if (active) {
@@ -217,6 +236,24 @@ const GradingView = () => {
 	const wordProjectOptions = useMemo(
 		() => projectOptions.filter((project) => project.fileType === "word"),
 		[projectOptions],
+	);
+
+	const excelSelectOptions = useMemo<SelectOption[]>(
+		() =>
+			excelProjectOptions.map((project) => ({
+				label: project.displayName,
+				value: project.code,
+			})),
+		[excelProjectOptions],
+	);
+
+	const wordSelectOptions = useMemo<SelectOption[]>(
+		() =>
+			wordProjectOptions.map((project) => ({
+				label: project.displayName,
+				value: project.code,
+			})),
+		[wordProjectOptions],
 	);
 
 	const selectedProjectDisplayName = useMemo(
@@ -256,7 +293,6 @@ const GradingView = () => {
 
 	const isValidGradingFile = (file: File): boolean => {
 		const fileName = file.name.toLowerCase();
-		// Support both Excel and Word files
 		return (
 			fileName.endsWith(".xls") ||
 			fileName.endsWith(".xlsx") ||
@@ -311,7 +347,7 @@ const GradingView = () => {
 			setResult(data);
 		} catch (err: unknown) {
 			const message =
-				err instanceof Error ? err.message : "Co loi xay ra khi cham diem.";
+				err instanceof Error ? err.message : "Có lỗi xảy ra khi chấm điểm.";
 			setError(message);
 			setResult(null);
 		} finally {
@@ -340,12 +376,12 @@ const GradingView = () => {
 		const description = bugDescription.trim();
 
 		if (!title) {
-			setBugActionMessage("Vui long nhap tieu de bug.");
+			setBugActionMessage("Vui lòng nhập tiêu đề bug.");
 			return;
 		}
 
 		if (!description) {
-			setBugActionMessage("Vui long nhap mo ta bug.");
+			setBugActionMessage("Vui lòng nhập mô tả bug.");
 			return;
 		}
 
@@ -378,10 +414,10 @@ const GradingView = () => {
 			]);
 			setIsBugTitleDirty(false);
 			setBugDescription("");
-			setBugActionMessage("Da luu bug note.");
+			setBugActionMessage("Đã lưu bug note.");
 		} catch (err: unknown) {
 			const message =
-				err instanceof Error ? err.message : "Khong luu duoc bug note.";
+				err instanceof Error ? err.message : "Không lưu được bug note.";
 			setBugActionMessage(message);
 		} finally {
 			setIsSavingBugNote(false);
@@ -406,7 +442,7 @@ const GradingView = () => {
 			setCopiedNoteId((prev) => (prev === noteId ? null : prev));
 		} catch (err: unknown) {
 			const message =
-				err instanceof Error ? err.message : "Khong xoa duoc bug note.";
+				err instanceof Error ? err.message : "Không xóa được bug note.";
 			setBugActionMessage(message);
 		} finally {
 			setDeletingBugNoteId(null);
@@ -425,103 +461,82 @@ const GradingView = () => {
 			);
 		} catch {
 			setBugActionMessage(
-				"Khong copy duoc bug note. Hay copy thu cong tu danh sach.",
+				"Không copy được bug note. Hãy copy thủ công từ danh sách.",
 			);
 		}
 	};
 
+	const isExcelActive = excelProjectOptions.some(
+		(project) => project.code === projectCode,
+	);
+	const isWordActive = wordProjectOptions.some(
+		(project) => project.code === projectCode,
+	);
+
+	const pageHeaderConfig = useMemo(
+		() => ({
+			title: "Kiểm thử chấm điểm (Excel & Word)",
+			subtitle:
+				"Trang này để test nhanh lượng chấm điểm Excel và Word. Bạn có thể lưu bug note theo từng project để theo dõi.",
+		}),
+		[],
+	);
+
+	usePageHeader(pageHeaderConfig, [pageHeaderConfig]);
+
 	return (
 		<div className="mx-auto max-w-4xl p-4">
-			<h1 className="mb-2 text-2xl font-bold text-gray-800">
-				Kiểm thử chấm điểm (Excel & Word)
-			</h1>
-			<p className="mb-6 text-sm text-slate-600">
-				Trang này để test nhanh lượng chấm điểm Excel và Word. Bạn có thể lưu
-				bug note theo từng project để theo dõi.
-			</p>
+			{/* Main Grading Card - Zero Border & Shadow, Pure Tonal Depth */}
+			<Card
+				variant="filled"
+				disableElevation
+				className="rounded-m3-extra-large bg-m3-surface-container p-6"
+			>
+				<div className="mb-6 grid gap-4 md:grid-cols-2">
+					<Select
+						label="Chọn bài Excel"
+						variant="filled"
+						value={isExcelActive ? projectCode : ""}
+						onChange={(val) => handleProjectChange(val)}
+						options={excelSelectOptions}
+						disabled={loadingProjects || excelSelectOptions.length === 0}
+						placeholder={
+							excelSelectOptions.length === 0
+								? "Không có bài Excel"
+								: "Chọn bài Excel"
+						}
+						fullWidth
+					/>
 
-			<div className="rounded-lg border border-gray-200 bg-white p-6 shadow-md">
-				<div className="mb-4 grid gap-4 md:grid-cols-2">
-					<div>
-						<label
-							htmlFor="excel-project-select"
-							className="mb-1 block text-sm font-medium text-gray-700"
-						>
-							Chọn bài Excel
-						</label>
-						<select
-							id="excel-project-select"
-							value={
-								excelProjectOptions.some(
-									(project) => project.code === projectCode,
-								)
-									? projectCode
-									: ""
-							}
-							onChange={(e) => handleProjectChange(e.target.value)}
-							className="w-full rounded-md border border-gray-300 bg-gray-50 p-2"
-							disabled={loadingProjects || excelProjectOptions.length === 0}
-						>
-							<option value="" disabled>
-								{excelProjectOptions.length === 0
-									? "Không có bài Excel"
-									: "Chọn bài Excel"}
-							</option>
-							{excelProjectOptions.map((project) => (
-								<option key={project.code} value={project.code}>
-									{project.displayName}
-								</option>
-							))}
-						</select>
-					</div>
-
-					<div>
-						<label
-							htmlFor="word-project-select"
-							className="mb-1 block text-sm font-medium text-gray-700"
-						>
-							Chọn bài Word
-						</label>
-						<select
-							id="word-project-select"
-							value={
-								wordProjectOptions.some(
-									(project) => project.code === projectCode,
-								)
-									? projectCode
-									: ""
-							}
-							onChange={(e) => handleProjectChange(e.target.value)}
-							className="w-full rounded-md border border-gray-300 bg-gray-50 p-2"
-							disabled={loadingProjects || wordProjectOptions.length === 0}
-						>
-							<option value="" disabled>
-								{wordProjectOptions.length === 0
-									? "Không có bài Word"
-									: "Chọn bài Word"}
-							</option>
-							{wordProjectOptions.map((project) => (
-								<option key={project.code} value={project.code}>
-									{project.displayName}
-								</option>
-							))}
-						</select>
-					</div>
+					<Select
+						label="Chọn bài Word"
+						variant="filled"
+						value={isWordActive ? projectCode : ""}
+						onChange={(val) => handleProjectChange(val)}
+						options={wordSelectOptions}
+						disabled={loadingProjects || wordSelectOptions.length === 0}
+						placeholder={
+							wordSelectOptions.length === 0
+								? "Không có bài Word"
+								: "Chọn bài Word"
+						}
+						fullWidth
+					/>
 
 					{projectLoadError && (
-						<p className="text-xs text-red-600 md:col-span-2">
+						<Text variant="body-sm" className="text-m3-error md:col-span-2">
 							{projectLoadError}
-						</p>
+						</Text>
 					)}
 				</div>
 
 				<div className="mb-6">
 					{/* biome-ignore lint/a11y/noStaticElementInteractions: Drag and drop file upload container */}
 					<div
-						className={`flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 transition ${
+						className={`flex flex-col items-center justify-center rounded-m3-large p-8 transition-colors ${
 							isDragOver
-								? "border-blue-500 bg-blue-50"
-								: "border-gray-300 bg-gray-50 hover:bg-gray-100"
+								? "bg-m3-primary-container/40"
+								: "bg-m3-surface-container-high hover:bg-m3-surface-container-highest"
 						}`}
 						onDragOver={(e) => {
 							e.preventDefault();
@@ -548,55 +563,72 @@ const GradingView = () => {
 						/>
 						<label
 							htmlFor="student-upload"
-							className="cursor-pointer text-center"
+							className="flex cursor-pointer flex-col items-center text-center"
 						>
 							<Icon
 								name="table_chart"
 								variant="rounded"
 								size={48}
-								className="mx-auto mb-2 text-green-600"
+								className="mb-2 text-m3-primary"
 							/>
-							<span className="text-sm font-medium text-gray-700">
-								File bai lam hoc sinh (Excel hoac Word)
-							</span>
-							<p className="mt-1 text-xs text-gray-500">
-								Keo tha file .xlsx, .xls, .xlsm, .docx hoac .txt vao day
-							</p>
-							{studentFile && (
-								<p className="mt-1 text-xs font-semibold text-green-600">
-									{studentFile.name}
-								</p>
-							)}
+							<Text
+								variant="title-sm"
+								className="font-medium text-m3-on-surface"
+							>
+								File bài làm học sinh (Excel hoặc Word)
+							</Text>
+							<Text
+								variant="body-sm"
+								className="mt-1 text-m3-on-surface-variant"
+							>
+								Kéo thả file .xlsx, .xls, .xlsm, .docx hoặc .txt vào đây
+							</Text>
 						</label>
+
+						{studentFile && (
+							<div className="mt-3">
+								<Chip
+									variant="input"
+									label={studentFile.name}
+									leadingIcon={
+										<Icon name="description" variant="rounded" size={18} />
+									}
+									onRemove={() => setStudentFile(null)}
+								/>
+							</div>
+						)}
 					</div>
 				</div>
 
 				{error && (
-					<div className="mb-4 rounded-md bg-red-100 p-3 text-sm text-red-700">
-						{error}
+					<div className="mb-4 flex items-center gap-3 rounded-m3-medium bg-m3-error-container p-4 text-sm text-m3-on-error-container">
+						<Icon
+							name="error"
+							variant="rounded"
+							size={20}
+							className="shrink-0"
+						/>
+						<span>{error}</span>
 					</div>
 				)}
 
-				<button
+				<Button
 					type="button"
+					fullWidth
+					colorStyle="filled"
+					size="md"
 					onClick={handleGrade}
 					disabled={loading || loadingProjects || projectOptions.length === 0}
-					className="flex w-full items-center justify-center gap-2 rounded-md bg-blue-600 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:bg-gray-400"
+					loading={loading}
+					icon={
+						!loading ? (
+							<Icon name="upload" variant="rounded" size={20} />
+						) : undefined
+					}
 				>
-					{loading ? (
-						<ProgressIndicator
-							variant="circular"
-							shape="wavy"
-							showTrack
-							size={20}
-							aria-label="Đang chấm điểm..."
-						/>
-					) : (
-						<Icon name="upload" variant="rounded" size={20} />
-					)}
 					{loading ? "Đang chấm điểm..." : "Bắt đầu chấm"}
-				</button>
-			</div>
+				</Button>
+			</Card>
 
 			{result && (
 				<div className="mt-6">
@@ -604,178 +636,235 @@ const GradingView = () => {
 				</div>
 			)}
 
-			<section className="mt-6 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-				<div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+			{/* Bug Notes Section - Zero Border & Shadow */}
+			<Card
+				variant="filled"
+				disableElevation
+				className="mt-6 rounded-m3-extra-large bg-m3-surface-container p-6"
+			>
+				<div className="mb-5 flex flex-wrap items-center justify-between gap-2">
 					<div>
-						<h2 className="flex items-center gap-2 text-lg font-semibold text-slate-800">
+						<div className="flex items-center gap-2">
 							<Icon
 								name="bug_report"
 								variant="rounded"
-								size={18}
-								className="text-amber-600"
+								size={20}
+								className="text-m3-tertiary"
 							/>
-							Bug Notes
-						</h2>
-						<p className="text-xs text-slate-500">
-							Dang xem:{" "}
-							<span className="font-medium">{selectedProjectDisplayName}</span>{" "}
+							<Text
+								variant="title-lg"
+								className="font-semibold text-m3-on-surface"
+							>
+								Bug Notes
+							</Text>
+						</div>
+						<Text
+							variant="body-sm"
+							className="mt-0.5 text-m3-on-surface-variant"
+						>
+							Đang xem:{" "}
+							<span className="font-semibold text-m3-on-surface">
+								{selectedProjectDisplayName}
+							</span>{" "}
 							({currentProjectNotes.length} note)
-						</p>
+						</Text>
 					</div>
-					<p className="text-xs text-slate-500">
-						Tong notes da luu: {bugNotes.length}
-					</p>
+					<Chip
+						variant="assist"
+						label={`Tổng notes đã lưu: ${bugNotes.length}`}
+						className="bg-m3-surface-container-high text-m3-on-surface-variant"
+					/>
 				</div>
 
-				<div className="grid gap-4 md:grid-cols-2">
-					<div className="rounded-md border border-slate-200 bg-slate-50 p-4">
-						<label
-							htmlFor="bug-title-input"
-							className="mb-1 block text-xs font-medium text-slate-700"
-						>
-							Tieu de bug
-						</label>
-						<input
-							id="bug-title-input"
-							type="text"
+				<div className="grid gap-5 md:grid-cols-2">
+					{/* Create Bug Note Sub-Card */}
+					<Card
+						variant="filled"
+						disableElevation
+						className="space-y-4 rounded-m3-large bg-m3-surface-container-low p-4"
+					>
+						<TextField
+							fullWidth
+							variant="filled"
+							label="Tiêu đề bug"
 							value={bugTitle}
-							onChange={(e) => {
-								setBugTitle(e.target.value);
+							onChange={(val) => {
+								setBugTitle(val);
 								setIsBugTitleDirty(true);
 							}}
-							placeholder="Vi du: Project 09 cham sai task T4"
-							className="mb-3 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+							placeholder="Ví dụ: Project 09 chấm sai task T4"
 						/>
 
-						<label
-							htmlFor="bug-severity-select"
-							className="mb-1 block text-xs font-medium text-slate-700"
-						>
-							Muc do
-						</label>
-						<select
-							id="bug-severity-select"
+						<Select
+							fullWidth
+							variant="filled"
+							label="Mức độ"
 							value={bugSeverity}
-							onChange={(e) => setBugSeverity(e.target.value as BugSeverity)}
-							className="mb-3 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-						>
-							<option value="low">Low</option>
-							<option value="medium">Medium</option>
-							<option value="high">High</option>
-							<option value="critical">Critical</option>
-						</select>
-
-						<label
-							htmlFor="bug-description-textarea"
-							className="mb-1 block text-xs font-medium text-slate-700"
-						>
-							Mo ta bug
-						</label>
-						<textarea
-							id="bug-description-textarea"
-							value={bugDescription}
-							onChange={(e) => {
-								setBugDescription(e.target.value);
-							}}
-							placeholder="Mo ta buoc tai hien, ket qua mong doi, ket qua thuc te..."
-							rows={5}
-							className="mb-3 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+							options={severityOptions}
+							onChange={(val) => setBugSeverity(val as BugSeverity)}
 						/>
 
-						<button
+						<TextField
+							fullWidth
+							type="textarea"
+							variant="filled"
+							label="Mô tả bug"
+							rows={4}
+							value={bugDescription}
+							onChange={(val) => setBugDescription(val)}
+							placeholder="Mô tả bước tái hiện, kết quả mong đợi, kết quả thực tế..."
+						/>
+
+						<Button
 							type="button"
+							fullWidth
+							colorStyle="filled"
+							size="sm"
 							onClick={() => void handleSaveBugNote()}
 							disabled={isSavingBugNote}
-							className="w-full rounded-md bg-amber-600 px-3 py-2 text-sm font-semibold text-white hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
+							loading={isSavingBugNote}
+							icon={<Icon name="save" variant="rounded" size={18} />}
 						>
-							{isSavingBugNote ? "Dang luu..." : "Luu bug note"}
-						</button>
+							{isSavingBugNote ? "Đang lưu..." : "Lưu bug note"}
+						</Button>
 
 						{bugActionMessage && (
-							<p className="mt-2 text-xs text-slate-600">{bugActionMessage}</p>
+							<Text
+								variant="body-sm"
+								className="mt-2 block text-m3-on-surface-variant"
+							>
+								{bugActionMessage}
+							</Text>
 						)}
-					</div>
+					</Card>
 
-					<div className="max-h-105 space-y-3 overflow-y-auto pr-1">
-						{isLoadingBugNotes && (
-							<div className="rounded-md border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-500">
-								Dang tai bug notes...
-							</div>
-						)}
+					{/* Bug Notes List Scroll Area */}
+					<ScrollArea className="max-h-115 pr-2">
+						<div className="space-y-3">
+							{isLoadingBugNotes && (
+								<div className="flex items-center justify-center rounded-m3-large bg-m3-surface-container-low p-8 text-center">
+									<ProgressIndicator
+										variant="circular"
+										shape="wavy"
+										showTrack
+										size={32}
+										aria-label="Đang tải bug notes..."
+									/>
+								</div>
+							)}
 
-						{!isLoadingBugNotes && currentProjectNotes.length === 0 && (
-							<div className="rounded-md border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-500">
-								Chua co bug note nao cho project nay.
-							</div>
-						)}
+							{!isLoadingBugNotes && currentProjectNotes.length === 0 && (
+								<div className="flex flex-col items-center justify-center rounded-m3-large bg-m3-surface-container-low p-8 text-center">
+									<Icon
+										name="task_alt"
+										variant="rounded"
+										size={36}
+										className="mb-2 text-m3-on-surface-variant/60"
+									/>
+									<Text
+										variant="body-md"
+										className="text-m3-on-surface-variant"
+									>
+										Chưa có bug note nào cho project này.
+									</Text>
+								</div>
+							)}
 
-						{!isLoadingBugNotes &&
-							currentProjectNotes.map((note) => (
-								<article
-									key={note.id}
-									className="rounded-md border border-slate-200 p-3"
-								>
-									<div className="mb-2 flex items-start justify-between gap-2">
-										<div>
-											<h3 className="text-sm font-semibold text-slate-800">
-												{note.title}
-											</h3>
-											<p className="text-[11px] text-slate-500">
-												{new Date(note.createdAt).toLocaleString("vi-VN")}
-											</p>
+							{!isLoadingBugNotes &&
+								currentProjectNotes.map((note) => (
+									<Card
+										key={note.id}
+										variant="filled"
+										disableElevation
+										className="rounded-m3-large bg-m3-surface-container-low p-4 transition-colors hover:bg-m3-surface-container-high"
+									>
+										<div className="mb-2 flex items-start justify-between gap-2">
+											<div>
+												<Text
+													variant="title-sm"
+													className="font-semibold text-m3-on-surface"
+												>
+													{note.title}
+												</Text>
+												<Text
+													variant="label-sm"
+													className="text-m3-on-surface-variant/80"
+												>
+													{new Date(note.createdAt).toLocaleString("vi-VN")}
+												</Text>
+											</div>
+											<span
+												className={`rounded-m3-full px-2.5 py-0.5 text-[11px] font-semibold ${
+													severityMeta[note.severity].badgeClass
+												}`}
+											>
+												{severityMeta[note.severity].label}
+											</span>
 										</div>
-										<span
-											className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
-												severityMeta[note.severity].badgeClass
-											}`}
+
+										{note.scoreSummary && (
+											<div className="mb-2 rounded-m3-small bg-m3-surface-container px-2.5 py-1.5 text-xs text-m3-on-surface-variant">
+												Score: {note.scoreSummary.totalScore}/
+												{note.scoreSummary.maxScore} (
+												{note.scoreSummary.percentage}%) -{" "}
+												{note.scoreSummary.status}
+											</div>
+										)}
+
+										{note.gradingError && (
+											<div className="mb-2 rounded-m3-small bg-m3-error-container px-2.5 py-1.5 text-xs text-m3-on-error-container">
+												{note.gradingError}
+											</div>
+										)}
+
+										<Text
+											variant="body-sm"
+											className="mb-3 whitespace-pre-wrap text-m3-on-surface"
 										>
-											{severityMeta[note.severity].label}
-										</span>
-									</div>
+											{note.description}
+										</Text>
 
-									{note.scoreSummary && (
-										<p className="mb-2 text-xs text-slate-600">
-											Score: {note.scoreSummary.totalScore}/
-											{note.scoreSummary.maxScore} (
-											{note.scoreSummary.percentage}
-											%) - {note.scoreSummary.status}
-										</p>
-									)}
+										<div className="flex items-center gap-2">
+											<Button
+												type="button"
+												colorStyle="tonal"
+												size="xs"
+												onClick={() => void handleCopyBugNote(note)}
+												icon={
+													<Icon
+														name={
+															copiedNoteId === note.id
+																? "check"
+																: "content_copy"
+														}
+														variant="rounded"
+														size={14}
+													/>
+												}
+											>
+												{copiedNoteId === note.id ? "Đã copy" : "Copy"}
+											</Button>
 
-									{note.gradingError && (
-										<p className="mb-2 rounded bg-rose-50 px-2 py-1 text-xs text-rose-700">
-											{note.gradingError}
-										</p>
-									)}
-
-									<p className="mb-3 whitespace-pre-wrap text-sm text-slate-700">
-										{note.description}
-									</p>
-
-									<div className="flex items-center gap-2">
-										<button
-											type="button"
-											onClick={() => void handleCopyBugNote(note)}
-											className="inline-flex items-center gap-1 rounded border border-slate-300 px-2 py-1 text-xs text-slate-700 hover:bg-slate-100"
-										>
-											<Icon name="content_copy" variant="rounded" size={12} />
-											{copiedNoteId === note.id ? "Da copy" : "Copy"}
-										</button>
-										<button
-											type="button"
-											onClick={() => void handleDeleteBugNote(note.id)}
-											disabled={deletingBugNoteId === note.id}
-											className="inline-flex items-center gap-1 rounded border border-rose-200 px-2 py-1 text-xs text-rose-700 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
-										>
-											<Icon name="delete" variant="rounded" size={12} />
-											{deletingBugNoteId === note.id ? "Dang xoa..." : "Xoa"}
-										</button>
-									</div>
-								</article>
-							))}
-					</div>
+											<Button
+												type="button"
+												colorStyle="text"
+												size="xs"
+												className="text-m3-error hover:bg-m3-error/10"
+												onClick={() => void handleDeleteBugNote(note.id)}
+												disabled={deletingBugNoteId === note.id}
+												icon={
+													<Icon name="delete" variant="rounded" size={14} />
+												}
+											>
+												{deletingBugNoteId === note.id ? "Đang xóa..." : "Xóa"}
+											</Button>
+										</div>
+									</Card>
+								))}
+						</div>
+					</ScrollArea>
 				</div>
-			</section>
+			</Card>
 		</div>
 	);
 };

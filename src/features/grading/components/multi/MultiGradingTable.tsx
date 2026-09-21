@@ -1,3 +1,4 @@
+import { Card } from "@bug-on/m3-expressive";
 import {
 	createColumnHelper,
 	tableFeatures,
@@ -5,8 +6,10 @@ import {
 } from "@tanstack/react-table";
 import type React from "react";
 import { useMemo } from "react";
+import { DataTable, TableEmptyState } from "../../../../components/data-table";
 import type { Assignment } from "../../../../types/assignment.types";
 import type { Student } from "../../../../types/student.types";
+import { cn } from "../../../../utils/utils";
 import type {
 	MultiAutoCellState,
 	MultiScoreCellValue,
@@ -77,9 +80,9 @@ export const MultiGradingTable: React.FC<MultiGradingTableProps> = ({
 					header: "STT",
 					meta: {
 						headerClassName:
-							"sticky left-0 z-30 bg-m3-surface-container px-4 py-3.5 text-left text-xs font-bold text-m3-on-surface uppercase tracking-wider w-16 border-r border-m3-outline-variant/20",
+							"sticky left-0 z-30 bg-m3-surface-container-high px-4 py-3.5 text-left text-xs font-bold text-m3-on-surface uppercase tracking-wider w-16",
 						cellClassName:
-							"sticky left-0 z-10 bg-m3-surface px-4 py-3 text-sm text-m3-on-surface-variant font-medium border-r border-m3-outline-variant/20",
+							"sticky left-0 z-10 bg-m3-surface-container px-4 py-3 text-sm text-m3-on-surface-variant font-medium",
 					},
 					cell: ({ row }) => row.index + 1,
 				}),
@@ -88,9 +91,9 @@ export const MultiGradingTable: React.FC<MultiGradingTableProps> = ({
 					header: "Học sinh",
 					meta: {
 						headerClassName:
-							"sticky left-16 z-30 bg-m3-surface-container px-4 py-3.5 text-left text-xs font-bold text-m3-on-surface uppercase tracking-wider min-w-50 border-r border-m3-outline-variant/20 shadow-xs",
+							"sticky left-16 z-30 bg-m3-surface-container-high px-4 py-3.5 text-left text-xs font-bold text-m3-on-surface uppercase tracking-wider min-w-50",
 						cellClassName:
-							"sticky left-16 z-10 bg-m3-surface px-4 py-3 text-sm font-semibold text-m3-on-surface border-r border-m3-outline-variant/20 shadow-xs",
+							"sticky left-16 z-10 bg-m3-surface-container px-4 py-3 text-sm font-semibold text-m3-on-surface",
 					},
 					cell: ({ row }) =>
 						`${row.original.middleName} ${row.original.firstName}`,
@@ -116,9 +119,8 @@ export const MultiGradingTable: React.FC<MultiGradingTableProps> = ({
 						),
 						meta: {
 							headerClassName:
-								"px-4 py-3.5 text-center text-xs font-bold text-m3-on-surface border-r border-m3-outline-variant/20 last:border-r-0 min-w-42.5",
-							cellClassName:
-								"border-r border-m3-outline-variant/20 last:border-r-0",
+								"px-4 py-3.5 text-center text-xs font-bold text-m3-on-surface min-w-44",
+							cellClassName: "min-w-44",
 						},
 						cell: ({ row }) => {
 							const student = row.original;
@@ -183,18 +185,20 @@ export const MultiGradingTable: React.FC<MultiGradingTableProps> = ({
 
 	if (selectedAssignments.length === 0) {
 		return (
-			<div className="rounded-3xl border border-m3-outline-variant/30 bg-m3-surface p-8 text-center text-sm text-m3-on-surface-variant">
+			<Card
+				variant="filled"
+				disableElevation
+				className="p-8 text-center text-sm border-none shadow-none"
+			>
 				Chưa có bài tập nào được chốt trong ma trận. Hãy chọn các bài tập ở trên
 				và bấm "Chốt danh sách".
-			</div>
+			</Card>
 		);
 	}
 
 	return (
 		<section
-			data-student-scroll-container="true"
 			aria-label="Bang cham diem nhieu bai"
-			className="max-h-[62vh] overflow-auto rounded-2xl border border-m3-outline-variant/30 bg-m3-surface shadow-xs"
 			onDragOver={(event) => {
 				event.preventDefault();
 				event.dataTransfer.dropEffect = "copy";
@@ -203,65 +207,60 @@ export const MultiGradingTable: React.FC<MultiGradingTableProps> = ({
 				event.preventDefault();
 			}}
 		>
-			<table className="min-w-full border-collapse divide-y divide-m3-outline-variant/30">
-				<thead className="sticky top-0 z-20 bg-m3-surface-container-high shadow-xs">
-					{table.getHeaderGroups().map((headerGroup) => (
-						<tr
-							key={headerGroup.id}
-							className="h-12 border-b border-m3-outline-variant/60 bg-m3-surface-container-high text-xs font-bold uppercase tracking-wider text-m3-on-surface-variant"
-						>
-							{headerGroup.headers.map((header) => (
-								<th
-									key={header.id}
-									className={
-										header.column.columnDef.meta?.headerClassName ||
-										"h-12 px-4 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-m3-on-surface-variant align-middle"
-									}
-								>
-									{header.isPlaceholder ? null : (
-										<table.FlexRender header={header} />
-									)}
-								</th>
-							))}
-						</tr>
-					))}
-				</thead>
-				<tbody className="divide-y divide-m3-outline-variant/20 bg-m3-surface-container">
-					{table.getRowModel().rows.map((row, index) => (
+			<DataTable
+				table={table}
+				data-student-scroll-container="true"
+				className="max-h-[62vh] overflow-auto rounded-2xl border-none shadow-none bg-m3-surface"
+				minWidthClassName="min-w-full"
+				tableClassName="border-collapse"
+				headerRowClassName="sticky top-0 z-20 bg-m3-surface-container-high shadow-none"
+				bodyClassName="bg-m3-surface-container"
+				banded={false}
+				renderRow={(row, index) => {
+					const isHighlighted = highlightedStudentId === row.original.id;
+					return (
 						<tr
 							key={row.id}
 							ref={(node) => {
 								if (node) rowRefs.current?.set(row.original.id, node);
 								else rowRefs.current?.delete(row.original.id);
 							}}
-							className={`transition-colors ${
-								highlightedStudentId === row.original.id
-									? "bg-yellow-100 ring-2 ring-yellow-400 dark:bg-yellow-900/30"
+							className={cn(
+								"transition-colors",
+								isHighlighted
+									? "bg-m3-secondary-container/80 text-m3-on-secondary-container font-medium"
 									: index % 2 === 1
-										? "bg-m3-surface-container-high/25"
-										: "bg-transparent"
-							} hover:bg-m3-surface-container-high/40`}
+										? "bg-m3-surface-container-high/40"
+										: "bg-transparent",
+								"hover:bg-m3-surface-container-highest/50",
+							)}
 						>
 							{row.getAllCells().map((cell) => {
 								const meta = cell.column.columnDef.meta;
-								const isHighlighted = highlightedStudentId === row.original.id;
 								return (
 									<td
 										key={cell.id}
-										className={`${meta?.cellClassName || ""} ${
-											isHighlighted
-												? "!bg-yellow-100 dark:!bg-yellow-900/30"
-												: ""
-										}`}
+										className={cn(
+											meta?.cellClassName || "",
+											isHighlighted &&
+												"bg-m3-secondary-container! text-m3-on-secondary-container",
+										)}
 									>
 										<table.FlexRender cell={cell} />
 									</td>
 								);
 							})}
 						</tr>
-					))}
-				</tbody>
-			</table>
+					);
+				}}
+				emptyState={
+					<TableEmptyState
+						icon="fact_check"
+						title="Không có học sinh nào"
+						description="Chưa có học sinh phù hợp trong danh sách chấm điểm."
+					/>
+				}
+			/>
 		</section>
 	);
 };

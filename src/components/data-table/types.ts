@@ -59,6 +59,7 @@ export interface DataTableProps<
 	 * @default true
 	 */
 	banded?: boolean;
+	"data-student-scroll-container"?: string | boolean;
 }
 
 export interface SortableHeaderProps<

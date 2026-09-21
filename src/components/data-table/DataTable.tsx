@@ -46,6 +46,7 @@ export function DataTable<
 	renderCell,
 	minWidthClassName = "w-full",
 	banded = true,
+	"data-student-scroll-container": dataStudentScrollContainer,
 }: DataTableProps<TFeatures, TData>) {
 	const headerGroups = table.getHeaderGroups();
 	const rows = table.getRowModel().rows;
@@ -233,6 +234,7 @@ export function DataTable<
 				"relative overflow-hidden rounded-2xl bg-m3-surface-container p-0 shadow-xs border-none",
 				className,
 			)}
+			data-student-scroll-container={dataStudentScrollContainer}
 		>
 			{isLoading && <TableLoadingBar ariaLabel={loadingAriaLabel} />}
 			{headerSlot}
