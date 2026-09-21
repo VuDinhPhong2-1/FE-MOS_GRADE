@@ -184,6 +184,18 @@ const specialConditionOptions: Array<{
 			"Kiểm tra các comment trong tài liệu đã được đánh dấu resolved/done.",
 	},
 	{
+		value: "wordEndnote",
+		label: "Endnote Word",
+		description:
+			"Kiểm tra endnote gắn tại đoạn văn bản yêu cầu, nội dung endnote và định dạng đánh số.",
+	},
+	{
+		value: "wordSmartArt",
+		label: "SmartArt Word",
+		description:
+			"Kiểm tra SmartArt trong Word: màu, số node/shape, nội dung và vị trí tương đối trong tài liệu.",
+	},
+	{
 		value: "excelTableName",
 		label: "Tên bảng Excel",
 		description:
@@ -5086,6 +5098,30 @@ const XmlGradingRulesPage = () => {
 																							},
 																						});
 																					}
+																					if (value === "wordEndnote") {
+																						updateTaskSpecialCondition(pi, ti, {
+																							type: "wordEndnote",
+																							score: task.specialCondition?.score ?? 0,
+																							feedback: task.specialCondition?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																							wordEndnoteConfig: task.specialCondition?.wordEndnoteConfig ?? {
+																								sourceFile: "word/document.xml",
+																								endnotesFile: "word/endnotes.xml",
+																								expectedNumberFormat: "decimal",
+																							},
+																						});
+																					}
+																					if (value === "wordSmartArt") {
+																						updateTaskSpecialCondition(pi, ti, {
+																							type: "wordSmartArt",
+																							score: task.specialCondition?.score ?? 0,
+																							feedback: task.specialCondition?.feedback ?? defaultSpecialConditionFeedback(value as SpecialConditionType),
+																							wordSmartArtConfig: task.specialCondition?.wordSmartArtConfig ?? {
+																								sourceFile: "word/document.xml",
+																								dataFile: "word/diagrams/data1.xml",
+																								colorsFile: "word/diagrams/colors1.xml",
+																							},
+																						});
+																					}
 																												}}
 																												className="mt-1 w-full appearance-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 pr-10 text-sm font-medium text-slate-800 shadow-sm outline-none transition hover:border-slate-300 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
 																											>
@@ -6037,6 +6073,10 @@ const XmlGradingRulesPage = () => {
 																										Cho phép cùng một đoạn
 																										văn/phần
 																									</label>
+																									<label className="text-xs font-semibold text-slate-600">
+																										Số cột mong đợi
+																										<input type="number" min={1} value={task.specialCondition.sectionBreakBeforeTextConfig?.expectedColumnCount ?? ""} onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, type: "sectionBreakBeforeText", sectionBreakBeforeTextConfig: { ...(task.specialCondition?.sectionBreakBeforeTextConfig ?? {}), expectedColumnCount: e.target.value ? Number(e.target.value) : undefined } })} placeholder="2" className={inputClass} />
+																									</label>
 																								</div>
 																							</div>
 																						)}
@@ -6097,6 +6137,19 @@ const XmlGradingRulesPage = () => {
 																								<label className="text-xs font-semibold text-slate-600">commentsExtended file<input value={task.specialCondition.wordResolveCommentConfig?.commentsExtendedFile ?? "word/commentsExtended.xml"} onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, type: "wordResolveComment", wordResolveCommentConfig: { ...(task.specialCondition?.wordResolveCommentConfig ?? {}), commentsExtendedFile: e.target.value } })} className={inputClass} /></label>
 																								<label className="text-xs font-semibold text-slate-600">Nội dung comment mục tiêu<input value={task.specialCondition.wordResolveCommentConfig?.targetText ?? ""} onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, type: "wordResolveComment", wordResolveCommentConfig: { ...(task.specialCondition?.wordResolveCommentConfig ?? {}), targetText: e.target.value } })} placeholder="Để trống = mọi comment" className={inputClass} /></label>
 																								<label className="flex items-center gap-2 text-xs font-medium text-slate-600"><input type="checkbox" checked={task.specialCondition.wordResolveCommentConfig?.requireAllResolved ?? true} onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, type: "wordResolveComment", wordResolveCommentConfig: { ...(task.specialCondition?.wordResolveCommentConfig ?? {}), requireAllResolved: e.target.checked } })} className="h-4 w-4 accent-blue-600" />Yêu cầu tất cả comment resolved</label>
+																							</div>
+																						)}
+																						{task.specialCondition?.type === "wordEndnote" && (
+																							<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-2">
+																								{[["sourceFile", "File nguồn", "word/document.xml"], ["endnotesFile", "Endnotes file", "word/endnotes.xml"], ["anchorText", "Văn bản neo", "Improving and protecting journalism since 1909"], ["expectedText", "Nội dung endnote", "http://www.spj.org/index.asp"], ["expectedNumberFormat", "Định dạng số", "decimal"]].map(([field, label, placeholder]) => (<label key={field} className="text-xs font-semibold text-slate-600">{label}<input value={(task.specialCondition?.wordEndnoteConfig as Record<string, string | undefined> | undefined)?.[field] ?? ""} onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, type: "wordEndnote", wordEndnoteConfig: { ...(task.specialCondition?.wordEndnoteConfig ?? {}), [field]: e.target.value } })} placeholder={placeholder} className={inputClass} /></label>))}
+																								<label className="flex items-center gap-2 text-xs font-medium text-slate-600"><input type="checkbox" checked={task.specialCondition.wordEndnoteConfig?.caseSensitive ?? false} onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, type: "wordEndnote", wordEndnoteConfig: { ...(task.specialCondition?.wordEndnoteConfig ?? {}), caseSensitive: e.target.checked } })} className="h-4 w-4 accent-blue-600" />Phân biệt hoa/thường</label>
+																							</div>
+																						)}
+																						{task.specialCondition?.type === "wordSmartArt" && (
+																							<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-2">
+																								{[["sourceFile", "File nguồn", "word/document.xml"], ["dataFile", "SmartArt data file", "word/diagrams/data1.xml"], ["colorsFile", "SmartArt colors file", "word/diagrams/colors1.xml"], ["expectedColorStyle", "Color style", "accent5_6"], ["expectedText", "Text cần có", "Be Accountable and Transparent"], ["beforeText", "SmartArt đứng trước", "1 Code of Ethics"], ["afterText", "SmartArt đứng sau", ""]].map(([field, label, placeholder]) => (<label key={field} className="text-xs font-semibold text-slate-600">{label}<input value={(task.specialCondition?.wordSmartArtConfig as Record<string, string | undefined> | undefined)?.[field] ?? ""} onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, type: "wordSmartArt", wordSmartArtConfig: { ...(task.specialCondition?.wordSmartArtConfig ?? {}), [field]: e.target.value } })} placeholder={placeholder} className={inputClass} /></label>))}
+																								<label className="text-xs font-semibold text-slate-600">Số shape/node<input type="number" min={1} value={task.specialCondition.wordSmartArtConfig?.expectedShapeCount ?? ""} onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, type: "wordSmartArt", wordSmartArtConfig: { ...(task.specialCondition?.wordSmartArtConfig ?? {}), expectedShapeCount: e.target.value ? Number(e.target.value) : undefined } })} placeholder="4" className={inputClass} /></label>
+																								<label className="flex items-center gap-2 text-xs font-medium text-slate-600"><input type="checkbox" checked={task.specialCondition.wordSmartArtConfig?.caseSensitive ?? false} onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, type: "wordSmartArt", wordSmartArtConfig: { ...(task.specialCondition?.wordSmartArtConfig ?? {}), caseSensitive: e.target.checked } })} className="h-4 w-4 accent-blue-600" />Phân biệt hoa/thường</label>
 																							</div>
 																						)}
 																						{task.specialCondition?.type ===

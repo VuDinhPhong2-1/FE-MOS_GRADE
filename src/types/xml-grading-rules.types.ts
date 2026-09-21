@@ -54,6 +54,8 @@ export type SpecialConditionType =
 	| "wordTextToTable"
 	| "wordBulletStyle"
 	| "wordResolveComment"
+	| "wordEndnote"
+	| "wordSmartArt"
 	| "excelTableName"
 	| "excelWorksheetPageSetup"
 	| "excelClearCellFormatting"
@@ -136,6 +138,7 @@ export interface SectionBreakBeforeTextConfig {
 	targetOccurrence?: number;
 	requireImmediateBefore?: boolean;
 	allowSameParagraphSectPr?: boolean;
+	expectedColumnCount?: number;
 }
 
 export interface PictureStyleConfig {
@@ -256,6 +259,27 @@ export interface WordResolveCommentConfig {
 	commentsExtendedFile?: string;
 	requireAllResolved?: boolean;
 	targetText?: string;
+}
+
+export interface WordEndnoteConfig {
+	sourceFile?: string;
+	endnotesFile?: string;
+	anchorText?: string;
+	expectedText?: string;
+	expectedNumberFormat?: string;
+	caseSensitive?: boolean;
+}
+
+export interface WordSmartArtConfig {
+	sourceFile?: string;
+	dataFile?: string;
+	colorsFile?: string;
+	expectedColorStyle?: string;
+	expectedShapeCount?: number;
+	expectedText?: string;
+	beforeText?: string;
+	afterText?: string;
+	caseSensitive?: boolean;
 }
 
 export interface ExcelTableNameConfig {
@@ -491,6 +515,8 @@ export interface SpecialCondition {
 	wordTextToTableConfig?: WordTextToTableConfig;
 	wordBulletStyleConfig?: WordBulletStyleConfig;
 	wordResolveCommentConfig?: WordResolveCommentConfig;
+	wordEndnoteConfig?: WordEndnoteConfig;
+	wordSmartArtConfig?: WordSmartArtConfig;
 	excelTableNameConfig?: ExcelTableNameConfig;
 	excelWorksheetPageSetupConfig?: ExcelWorksheetPageSetupConfig;
 	excelClearCellFormattingConfig?: ExcelClearCellFormattingConfig;
