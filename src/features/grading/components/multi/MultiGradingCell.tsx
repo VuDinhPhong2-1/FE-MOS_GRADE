@@ -103,7 +103,6 @@ const MultiGradingCellComponent: React.FC<MultiGradingCellProps> = ({
 					}}
 					className="w-20 border border-m3-outline-variant rounded-lg px-2 py-1 text-center bg-m3-surface-container-low text-m3-on-surface text-sm font-medium"
 					min="0"
-					max={assignment.maxScore}
 					step="0.01"
 					placeholder="0"
 				/>

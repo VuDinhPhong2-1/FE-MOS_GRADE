@@ -88,9 +88,9 @@ export const GradingModeSelector: React.FC<GradingModeSelectorProps> = ({
 								}
 								supportingText={
 									<span className="text-xs sm:text-sm text-m3-on-surface-variant">
-										Điểm tối đa:{" "}
+							Mốc bài:{" "}
 										<span className="font-semibold text-m3-primary">
-											{assignment.maxScore}
+								{assignment.maxScore}đ
 										</span>
 									</span>
 								}

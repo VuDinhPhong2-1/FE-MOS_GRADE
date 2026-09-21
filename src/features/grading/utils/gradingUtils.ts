@@ -316,35 +316,12 @@ export const resolveEndpointsBySubjectAndPractice = (
 
 export const convertAutoScoreToAssignmentScale = (
 	result: GradingResult,
-	assignmentMaxScore?: number,
+	_assignmentMaxScore?: number,
 ): number => {
-	const backendMax =
-		typeof result.maxScore === "number" && Number.isFinite(result.maxScore)
-			? result.maxScore
-			: 0;
 	const backendScore =
 		typeof result.totalScore === "number" && Number.isFinite(result.totalScore)
 			? result.totalScore
 			: 0;
-	const targetMax =
-		typeof assignmentMaxScore === "number" &&
-		Number.isFinite(assignmentMaxScore) &&
-		assignmentMaxScore > 0
-			? assignmentMaxScore
-			: 0;
-
-	if (backendMax > 0 && targetMax > 0) {
-		const scaledScore = (backendScore / backendMax) * targetMax;
-		return Number(Math.max(0, Math.min(targetMax, scaledScore)).toFixed(2));
-	}
-
-	if (targetMax > 0) {
-		return Number(Math.max(0, Math.min(targetMax, backendScore)).toFixed(2));
-	}
-
-	if (backendMax > 0) {
-		return Number(Math.max(0, Math.min(backendMax, backendScore)).toFixed(2));
-	}
 
 	return Number(Math.max(0, Math.min(1000, backendScore)).toFixed(2));
 };

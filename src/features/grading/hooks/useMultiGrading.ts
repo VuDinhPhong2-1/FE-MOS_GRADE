@@ -418,7 +418,7 @@ export const useMultiGrading = ({
 						studentId,
 					},
 				);
-				const scaledAutoScore = convertAutoScoreToAssignmentScale(
+				const backendAutoScore = convertAutoScoreToAssignmentScale(
 					result,
 					assignment?.maxScore,
 				);
@@ -444,7 +444,7 @@ export const useMultiGrading = ({
 				handleMultiScoreChange(
 					assignmentId,
 					studentId,
-					scaledAutoScore,
+					backendAutoScore,
 					autoErrors,
 					autoTaskResults,
 				);
@@ -890,9 +890,6 @@ export const useMultiGrading = ({
 			const assignmentNameById = new Map(
 				assignments.map((assignment) => [assignment.id, assignment.name]),
 			);
-			const assignmentMaxScoreById = new Map(
-				assignments.map((assignment) => [assignment.id, assignment.maxScore]),
-			);
 			const failedAssignments: string[] = [];
 			let savedAssignmentCount = 0;
 
@@ -932,13 +929,8 @@ export const useMultiGrading = ({
 					})
 					.map(([studentId, item]) => {
 						const autoState = multiAutoStates.get(assignmentId)?.get(studentId);
-						const assignmentMaxScore =
-							assignmentMaxScoreById.get(assignmentId) ?? 0;
 						const rawScore = item.scoreValue ?? 0;
-						const scoreValue =
-							Number.isFinite(assignmentMaxScore) && assignmentMaxScore > 0
-								? Math.min(Math.max(rawScore, 0), assignmentMaxScore)
-								: Math.max(rawScore, 0);
+						const scoreValue = Math.max(rawScore, 0);
 
 						return {
 							studentId,

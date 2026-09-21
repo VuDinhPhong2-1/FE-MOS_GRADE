@@ -103,7 +103,7 @@ export const MultiGradingTable: React.FC<MultiGradingTableProps> = ({
 									{assignment.name}
 								</div>
 								<div className="mt-0.5 text-[11px] font-normal text-m3-on-surface-variant/80">
-									Max: {assignment.maxScore}đ •{" "}
+									Mốc bài: {assignment.maxScore}đ •{" "}
 									{assignment.gradingType === "auto" ? "Tự động" : "Thủ công"}
 								</div>
 							</>

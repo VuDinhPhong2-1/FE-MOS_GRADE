@@ -255,7 +255,7 @@ export const useSingleGrading = ({
 						studentId,
 					},
 				);
-				const scaledAutoScore = convertAutoScoreToAssignmentScale(
+				const backendAutoScore = convertAutoScoreToAssignmentScale(
 					result,
 					selectedAssignmentData?.maxScore,
 				);
@@ -270,7 +270,7 @@ export const useSingleGrading = ({
 							isGrading: false,
 							gradingResult: result,
 							error: null,
-							manualScore: scaledAutoScore,
+							manualScore: backendAutoScore,
 							autoGradingErrors: autoErrors,
 						});
 					}
@@ -281,7 +281,7 @@ export const useSingleGrading = ({
 				const autoTaskResults = mapTaskResultsForScorePayload(result);
 				const savedScore = await saveScoreForStudent(
 					studentId,
-					scaledAutoScore,
+					backendAutoScore,
 					autoErrors,
 					autoTaskResults,
 				);
