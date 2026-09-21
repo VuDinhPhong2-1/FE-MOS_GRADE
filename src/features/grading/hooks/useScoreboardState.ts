@@ -12,6 +12,7 @@ import {
 	normalizeIssueText,
 } from "../../../utils/gradingIssues";
 import type { NotifyIssue } from "../../../utils/notify";
+import { getShortAssignmentName } from "../utils/gradingUtils";
 import {
 	type AssignmentColumnDisplayMode,
 	buildDiscoveredPracticeColumns,
@@ -616,7 +617,11 @@ export function useScoreboardState({
 			"Họ và tên đệm",
 			"Tên",
 			...assignments.map(
-				(assignment) => `${assignment.name} (tối đa ${assignment.maxScore})`,
+				(assignment) =>
+					getShortAssignmentName(
+						assignment.name,
+						assignment.gradingApiEndpoint,
+					),
 			),
 			"Xếp loại",
 			...availablePracticeColumns.flatMap((practice) => [

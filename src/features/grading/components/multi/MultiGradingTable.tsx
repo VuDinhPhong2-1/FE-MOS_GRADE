@@ -12,6 +12,7 @@ import type {
 	MultiScoreCellValue,
 	MultiUndoSnapshot,
 } from "../../types/gradingFeature.types";
+import { getShortAssignmentName } from "../../utils/gradingUtils";
 import { MultiGradingCell } from "./MultiGradingCell";
 
 interface MultiGradingTableProps {
@@ -99,11 +100,16 @@ export const MultiGradingTable: React.FC<MultiGradingTableProps> = ({
 						id: `assignment_${assignment.id}`,
 						header: () => (
 							<>
-								<div className="mx-auto max-w-42.5 truncate font-semibold">
-									{assignment.name}
+								<div
+									className="mx-auto max-w-42.5 truncate font-semibold"
+									title={assignment.name}
+								>
+									{getShortAssignmentName(
+										assignment.name,
+										assignment.gradingApiEndpoint,
+									)}
 								</div>
 								<div className="mt-0.5 text-[11px] font-normal text-m3-on-surface-variant/80">
-									Mốc bài: {assignment.maxScore}đ •{" "}
 									{assignment.gradingType === "auto" ? "Tự động" : "Thủ công"}
 								</div>
 							</>

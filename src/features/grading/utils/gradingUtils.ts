@@ -70,6 +70,33 @@ export const extractProjectNumberFromEndpoint = (
 	return null;
 };
 
+export const getShortAssignmentName = (
+	name?: string,
+	endpoint?: string,
+): string => {
+	const trimmedName = (name || "").trim();
+	const normalizedName = trimmedName
+		.normalize("NFD")
+		.replace(/[\u0300-\u036f]/g, "");
+
+	const projectNameMatch = normalizedName.match(/project\s*0*(\d{1,3})/i);
+	if (projectNameMatch) {
+		return `Project ${projectNameMatch[1].padStart(2, "0")}`;
+	}
+
+	const vietnameseProjectMatch = normalizedName.match(/du\s*an\s*0*(\d{1,3})/i);
+	if (vietnameseProjectMatch) {
+		return `Project ${vietnameseProjectMatch[1].padStart(2, "0")}`;
+	}
+
+	const endpointProjectNumber = extractProjectNumberFromEndpoint(endpoint);
+	if (endpointProjectNumber !== null) {
+		return `Project ${String(endpointProjectNumber).padStart(2, "0")}`;
+	}
+
+	return trimmedName;
+};
+
 export const getAcceptedSubmissionFileTypes = (endpoint?: string): string => {
 	const normalized = (endpoint || "").trim().replace(/\\/g, "/").toLowerCase();
 

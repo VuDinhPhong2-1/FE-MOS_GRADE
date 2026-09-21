@@ -13,6 +13,7 @@ import type React from "react";
 import { useMemo, useRef } from "react";
 import { notify } from "../../../utils/notify";
 import type { ScoreboardState } from "../hooks/useScoreboardState";
+import { getShortAssignmentName } from "../utils/gradingUtils";
 import {
 	type CompetencyLevel,
 	classificationClassMap,
@@ -131,9 +132,11 @@ export const ScoreboardContent: React.FC<ScoreboardContentProps> = ({
 					id: `assignment-${assignment.id}`,
 					header: () => (
 						<div className="text-center" title={assignment.name}>
-							<div className="truncate">{assignment.name}</div>
-							<div className="text-[11px] font-normal text-m3-on-surface-variant">
-								(tối đa {assignment.maxScore})
+							<div className="truncate">
+								{getShortAssignmentName(
+									assignment.name,
+									assignment.gradingApiEndpoint,
+								)}
 							</div>
 						</div>
 					),

@@ -207,9 +207,6 @@ export const MultiAssignmentSelector: React.FC<
 									)}
 								</div>
 								<div className="flex flex-col items-end gap-1 shrink-0">
-									<span className="text-[11px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-200 font-medium">
-										Mốc {assignment.maxScore}đ
-									</span>
 									{isSelected && (
 										<span className="inline-flex items-center gap-1 text-[11px] text-m3-primary font-semibold">
 											<Icon name="check" className="text-sm" />

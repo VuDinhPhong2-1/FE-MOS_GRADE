@@ -2,7 +2,10 @@ import { Button, Icon, ProgressIndicator, Select } from "@bug-on/m3-expressive";
 import type React from "react";
 import { useMemo } from "react";
 import type { Assignment } from "../../../../types/assignment.types";
-import { getAcceptedSubmissionFileTypes } from "../../utils/gradingUtils";
+import {
+	getAcceptedSubmissionFileTypes,
+	getShortAssignmentName,
+} from "../../utils/gradingUtils";
 
 interface SingleGradingToolbarProps {
 	assignments: Assignment[];
@@ -37,7 +40,7 @@ export const SingleGradingToolbar: React.FC<SingleGradingToolbarProps> = ({
 			{ value: "", label: "Chọn bài tập" },
 			...autoAssignments.map((a) => ({
 				value: a.id,
-				label: `${a.name} (Tự động - Điểm tối đa: ${a.maxScore})`,
+				label: `${getShortAssignmentName(a.name, a.gradingApiEndpoint)} - Tự động`,
 			})),
 		],
 		[autoAssignments],
