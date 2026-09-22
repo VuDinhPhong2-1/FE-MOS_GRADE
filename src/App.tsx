@@ -11,6 +11,9 @@ import { hasPermission } from "./utils/permissions";
 // Lazy-loaded page components for optimal bundle splitting
 const AuthPage = lazy(() => import("./pages/AuthPage"));
 const PublicExamPage = lazy(() => import("./pages/PublicExamPage"));
+const PublicSubmissionPortalPage = lazy(
+	() => import("./pages/PublicSubmissionPortalPage"),
+);
 const AccountStatusPage = lazy(() => import("./pages/AccountStatusPage"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const SchoolList = lazy(() => import("./pages/SchoolList"));
@@ -18,6 +21,9 @@ const TeacherSchedule = lazy(() => import("./pages/TeacherSchedule"));
 const ComputerRoomsPage = lazy(() => import("./pages/ComputerRoomsPage"));
 const AssignmentManagementPage = lazy(
 	() => import("./pages/AssignmentManagementPage"),
+);
+const SubmissionPortalManagementPage = lazy(
+	() => import("./pages/SubmissionPortalManagementPage"),
 );
 const XmlGradingRulesPage = lazy(() => import("./pages/XmlGradingRulesPage"));
 const PermissionManagement = lazy(() => import("./pages/PermissionManagement"));
@@ -100,6 +106,12 @@ const AppLayout: React.FC = () => {
 					path: "/assignments/exam",
 				},
 				{
+					id: "submission-portals",
+					label: "Link nộp bài",
+					icon: "upload_file",
+					path: "/submission-portals",
+				},
+				{
 					id: "grading-test",
 					label: "Thử nghiệm",
 					icon: "science",
@@ -150,6 +162,10 @@ function App() {
 					<Routes>
 						<Route path="/login" element={<AuthPage />} />
 						<Route path="/exam/:token" element={<PublicExamPage />} />
+						<Route
+							path="/submit/:token"
+							element={<PublicSubmissionPortalPage />}
+						/>
 
 						<Route element={<ProtectedRoute />}>
 							<Route path="/account-status" element={<AccountStatusPage />} />
@@ -185,6 +201,10 @@ function App() {
 									<Route
 										path="/assignments/exam"
 										element={<AssignmentManagementPage section="exam" />}
+									/>
+									<Route
+										path="/submission-portals"
+										element={<SubmissionPortalManagementPage />}
 									/>
 
 									{/* XML Rules: bảo vệ theo permission 'xmlrules.view' */}

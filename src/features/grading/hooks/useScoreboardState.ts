@@ -616,12 +616,8 @@ export function useScoreboardState({
 			"STT",
 			"Họ và tên đệm",
 			"Tên",
-			...assignments.map(
-				(assignment) =>
-					getShortAssignmentName(
-						assignment.name,
-						assignment.gradingApiEndpoint,
-					),
+			...assignments.map((assignment) =>
+				getShortAssignmentName(assignment.name, assignment.gradingApiEndpoint),
 			),
 			"Xếp loại",
 			...availablePracticeColumns.flatMap((practice) => [
