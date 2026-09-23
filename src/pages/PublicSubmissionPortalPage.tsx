@@ -171,6 +171,11 @@ const PublicSubmissionPortalPage = () => {
 		}
 		setSubmittingAssignmentId(confirmAssignmentId);
 		setMessage("");
+		setResults((prev) => {
+			const next = { ...prev };
+			delete next[confirmAssignmentId];
+			return next;
+		});
 		try {
 			const result = await submissionPortalService.submit(
 				token,
@@ -215,6 +220,8 @@ const PublicSubmissionPortalPage = () => {
 		const fallbackErrors = result
 			? uniqueNonEmpty(result.autoGradingErrors)
 			: [];
+		const hasDetailedIssues =
+			failedTaskResults.length > 0 || fallbackErrors.length > 0;
 		const meta = subjectMeta[assignment.subject];
 		const isSubmitting = submittingAssignmentId === assignment.id;
 		return (
@@ -357,6 +364,11 @@ const PublicSubmissionPortalPage = () => {
 									</p>
 								))}
 							</div>
+						)}
+						{info.showDetailedFeedback && !hasDetailedIssues && (
+							<p className="mt-3 rounded-2xl border border-emerald-200 bg-white px-3 py-2 text-sm font-bold text-emerald-700">
+								🎉 Tuyệt vời! Bài nộp hiện không còn lỗi cần sửa.
+							</p>
 						)}
 					</div>
 				)}
