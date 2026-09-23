@@ -73,6 +73,24 @@ const wordBulletCharacterOptions = [
 	{ value: "➔", label: "➔  Mũi tên phải" },
 ];
 
+const excelTextRotationPresets = [
+	{ value: 45, label: "Angle Counterclockwise - 45" },
+	{ value: 135, label: "Angle Clockwise - 135" },
+	{ value: 90, label: "Rotate Text Up - 90" },
+	{ value: 180, label: "Rotate Text Down - 180" },
+	{ value: 255, label: "Vertical Text - 255" },
+];
+
+const selectedExcelTextRotationPreset = (values?: number[]) => {
+	if (!values || values.length !== 1) {
+		return "custom";
+	}
+
+	return excelTextRotationPresets.some((preset) => preset.value === values[0])
+		? String(values[0])
+		: "custom";
+};
+
 // Danh sách các loại điều kiện đặc biệt hỗ trợ theo từng Task.
 // Thêm loại mới chỉ cần bổ sung thêm 1 phần tử vào mảng này.
 const specialConditionOptions: Array<{
@@ -2042,7 +2060,33 @@ const ExcelProject02SpecialConditionEditor = ({
 					/>
 				</label>
 				<label className="text-xs font-semibold text-slate-600">
-					textRotation hợp lệ
+					Kiểu xoay chữ
+					<select
+						value={selectedExcelTextRotationPreset(
+							specialCondition.excelTextRotationConfig
+								?.allowedTextRotationValues ?? [45],
+						)}
+						onChange={(e) => {
+							if (e.target.value === "custom") {
+								return;
+							}
+
+							updateConfig("excelTextRotationConfig", {
+								allowedTextRotationValues: [Number(e.target.value)],
+							});
+						}}
+						className={inputClass}
+					>
+						{excelTextRotationPresets.map((preset) => (
+							<option key={preset.value} value={preset.value}>
+								{preset.label}
+							</option>
+						))}
+						<option value="custom">Tùy chỉnh / nhiều giá trị</option>
+					</select>
+				</label>
+				<label className="text-xs font-semibold text-slate-600">
+					Giá trị textRotation trong XML
 					<input
 						value={(
 							specialCondition.excelTextRotationConfig
@@ -2056,7 +2100,7 @@ const ExcelProject02SpecialConditionEditor = ({
 									.filter((item) => Number.isFinite(item)),
 							})
 						}
-						placeholder="45"
+						placeholder="45 hoặc 45, 90"
 						className={inputClass}
 					/>
 				</label>

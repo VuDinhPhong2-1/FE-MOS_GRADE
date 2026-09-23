@@ -8,6 +8,7 @@ import type {
 	SubmissionLeaderboardItem,
 	SubmissionLog,
 	SubmissionPortal,
+	UpdateSubmissionPortalRequest,
 } from "../types/submission-portal.types";
 import { authFetch } from "./auth-fetch";
 
@@ -50,6 +51,34 @@ export const submissionPortalService = {
 		if (!res.ok)
 			throw new Error(await errorMessage(res, "Không thể tạo link nộp bài"));
 		return res.json() as Promise<SubmissionPortal>;
+	},
+
+	async update(
+		portalId: string,
+		data: UpdateSubmissionPortalRequest,
+		getAccessToken: (forceRefresh?: boolean) => Promise<string | null>,
+	) {
+		const res = await authFetch(
+			`${API_BASE_URL}/submission-portals/${portalId}`,
+			{ method: "PUT", headers: jsonHeaders, body: JSON.stringify(data) },
+			getAccessToken,
+		);
+		if (!res.ok)
+			throw new Error(await errorMessage(res, "Không thể cập nhật link nộp bài"));
+		return res.json() as Promise<SubmissionPortal>;
+	},
+
+	async delete(
+		portalId: string,
+		getAccessToken: (forceRefresh?: boolean) => Promise<string | null>,
+	) {
+		const res = await authFetch(
+			`${API_BASE_URL}/submission-portals/${portalId}`,
+			{ method: "DELETE" },
+			getAccessToken,
+		);
+		if (!res.ok)
+			throw new Error(await errorMessage(res, "Không thể xóa link nộp bài"));
 	},
 
 	async getAlerts(

@@ -54,6 +54,7 @@ const SubmissionPortalManagementPage = () => {
 	const [showLeaderboard, setShowLeaderboard] = useState(true);
 	const [showDetailedFeedback, setShowDetailedFeedback] = useState(true);
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
+	const [editingPortal, setEditingPortal] = useState<SubmissionPortal | null>(null);
 	const [selectedPortal, setSelectedPortal] = useState<SubmissionPortal | null>(
 		null,
 	);
@@ -101,16 +102,23 @@ const SubmissionPortalManagementPage = () => {
 		() => schools.find((school) => school.id === selectedSchoolId)?.name || "",
 		[schools, selectedSchoolId],
 	);
+	const visiblePortals = useMemo(
+		() => portals.filter((portal) => portal.isActive),
+		[portals],
+	);
 	const stats = useMemo(
 		() => ({
-			active: portals.filter((p) => p.isActive).length,
-			totalAlerts: portals.reduce((s, p) => s + (p.unreadAlertCount || 0), 0),
-			scopedAssignments: portals.reduce(
+			active: visiblePortals.length,
+			totalAlerts: visiblePortals.reduce(
+				(s, p) => s + (p.unreadAlertCount || 0),
+				0,
+			),
+			scopedAssignments: visiblePortals.reduce(
 				(s, p) => s + p.assignmentIds.length,
 				0,
 			),
 		}),
-		[portals],
+		[visiblePortals],
 	);
 
 	const loadInitial = useCallback(async () => {
@@ -242,6 +250,85 @@ const SubmissionPortalManagementPage = () => {
 		}
 	};
 
+	const openEdit = (portal: SubmissionPortal) => {
+		setEditingPortal(portal);
+		setTitle(portal.title);
+		setDescription(portal.description || "");
+		setMaxSubmissions(portal.maxSubmissionsPerStudent);
+		setScoringPolicy(portal.scoringPolicy);
+		setShowLeaderboard(portal.showLeaderboard);
+		setShowDetailedFeedback(portal.showDetailedFeedback);
+		setMessage("");
+	};
+
+	const closeEdit = () => {
+		setEditingPortal(null);
+		setTitle("Link nộp bài thực hành");
+		setDescription("");
+		setMaxSubmissions(0);
+		setScoringPolicy("BestScore");
+		setShowLeaderboard(true);
+		setShowDetailedFeedback(true);
+	};
+
+	const updatePortal = async (isActive: boolean) => {
+		if (!editingPortal) return;
+		if (!title.trim()) {
+			setMessage("Vui lòng nhập tiêu đề link nộp bài.");
+			return;
+		}
+
+		setLoading(true);
+		setMessage("");
+		try {
+			await submissionPortalService.update(
+				editingPortal.id,
+				{
+					title: title.trim(),
+					description: description.trim(),
+					classIds: editingPortal.classIds,
+					assignmentIds: editingPortal.assignmentIds,
+					startsAt: editingPortal.startsAt,
+					endsAt: editingPortal.endsAt,
+					maxSubmissionsPerStudent: maxSubmissions,
+					scoringPolicy,
+					showLeaderboard,
+					showDetailedFeedback,
+					isActive,
+				},
+				getAccessToken,
+			);
+			closeEdit();
+			setMessage("Đã cập nhật link nộp bài.");
+			setPortals(await submissionPortalService.getAll(getAccessToken));
+		} catch (error) {
+			setMessage(error instanceof Error ? error.message : "Không thể cập nhật link");
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	const deletePortal = async (portal: SubmissionPortal) => {
+		const ok = window.confirm(
+			`Xóa link "${portal.title}"? Link sẽ bị đóng và học sinh không thể nộp bài qua link này nữa.`,
+		);
+		if (!ok) return;
+
+		setLoading(true);
+		setMessage("");
+		try {
+			await submissionPortalService.delete(portal.id, getAccessToken);
+			setMessage("Đã xóa link nộp bài.");
+			setPortals(await submissionPortalService.getAll(getAccessToken));
+			if (selectedPortal?.id === portal.id) setSelectedPortal(null);
+			if (editingPortal?.id === portal.id) closeEdit();
+		} catch (error) {
+			setMessage(error instanceof Error ? error.message : "Không thể xóa link");
+		} finally {
+			setLoading(false);
+		}
+	};
+
 	const copyText = async (value: string) => {
 		await navigator.clipboard.writeText(value);
 		setMessage("Đã sao chép link vào bộ nhớ tạm.");
@@ -297,7 +384,7 @@ const SubmissionPortalManagementPage = () => {
 		URL.revokeObjectURL(url);
 	};
 
-	if (loading && portals.length === 0)
+	if (loading && visiblePortals.length === 0)
 		return <RouteLoadingFallback message="Đang tải cổng nộp bài..." />;
 
 	return (
@@ -338,7 +425,7 @@ const SubmissionPortalManagementPage = () => {
 					</button>
 				</div>
 				<div className="mt-5 grid gap-4 xl:grid-cols-2">
-					{portals.map((portal) => {
+					{visiblePortals.map((portal) => {
 						const url = `${publicOrigin}/submit/${portal.publicToken}`;
 						return (
 							<article
@@ -416,14 +503,29 @@ const SubmissionPortalManagementPage = () => {
 										>
 											Chi tiết
 										</button>
+										<button
+											type="button"
+											className="rounded-xl border border-blue-200 px-3 py-2 text-sm font-bold text-blue-700"
+											onClick={() => openEdit(portal)}
+										>
+											Sửa
+										</button>
+										<button
+											type="button"
+											disabled={loading}
+											className="rounded-xl border border-rose-200 px-3 py-2 text-sm font-bold text-rose-700 disabled:text-slate-400"
+											onClick={() => void deletePortal(portal)}
+										>
+											Xóa
+										</button>
 									</div>
 								</div>
 							</article>
 						);
 					})}
-					{portals.length === 0 && (
+					{visiblePortals.length === 0 && (
 						<div className="rounded-3xl border border-dashed border-slate-300 p-8 text-center text-slate-500 xl:col-span-2">
-							Chưa có link nộp bài.
+							Chưa có link nộp bài đang mở.
 						</div>
 					)}
 				</div>
@@ -831,6 +933,112 @@ const SubmissionPortalManagementPage = () => {
 								onClick={createPortal}
 							>
 								Tạo link nộp bài
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
+			{editingPortal && (
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4">
+					<div className="w-full max-w-2xl rounded-3xl bg-white p-6 shadow-2xl">
+						<div className="flex items-start justify-between gap-4">
+							<div>
+								<p className="text-sm font-bold uppercase tracking-[0.25em] text-blue-700">
+									Sửa link nộp bài
+								</p>
+								<h2 className="mt-2 text-2xl font-black">
+									{editingPortal.title}
+								</h2>
+								<p className="mt-1 text-sm text-slate-500">
+									Phạm vi lớp và bài tập được giữ nguyên để tránh thay đổi nhầm dữ liệu nộp bài đã có.
+								</p>
+							</div>
+							<button
+								type="button"
+								className="rounded-2xl border px-4 py-2 font-bold"
+								onClick={closeEdit}
+							>
+								Đóng
+							</button>
+						</div>
+						<div className="mt-6 grid gap-4 sm:grid-cols-2">
+							<label className="block sm:col-span-2">
+								<span className="text-sm font-bold">Tiêu đề</span>
+								<input
+									className="mt-2 w-full rounded-2xl border p-3"
+									value={title}
+									onChange={(e) => setTitle(e.target.value)}
+								/>
+							</label>
+							<label className="block sm:col-span-2">
+								<span className="text-sm font-bold">Mô tả</span>
+								<textarea
+									className="mt-2 min-h-24 w-full rounded-2xl border p-3"
+									value={description}
+									onChange={(e) => setDescription(e.target.value)}
+								/>
+							</label>
+							<label className="block">
+								<span className="text-sm font-bold">Giới hạn lượt nộp</span>
+								<input
+									className="mt-2 w-full rounded-2xl border p-3"
+									type="number"
+									min={0}
+									value={maxSubmissions}
+									onChange={(e) => setMaxSubmissions(Number(e.target.value))}
+								/>
+							</label>
+							<label className="block">
+								<span className="text-sm font-bold">Cách tính điểm</span>
+								<select
+									className="mt-2 w-full rounded-2xl border p-3"
+									value={scoringPolicy}
+									onChange={(e) => setScoringPolicy(e.target.value as ScoringPolicy)}
+								>
+									<option value="BestScore">Điểm cao nhất</option>
+									<option value="LatestScore">Điểm mới nhất</option>
+								</select>
+							</label>
+							<label className="flex items-center justify-between rounded-2xl bg-slate-50 p-3">
+								<span className="font-semibold">Hiển thị bảng xếp hạng</span>
+								<input
+									type="checkbox"
+									checked={showLeaderboard}
+									onChange={(e) => setShowLeaderboard(e.target.checked)}
+								/>
+							</label>
+							<label className="flex items-center justify-between rounded-2xl bg-slate-50 p-3">
+								<span className="font-semibold">Hiển thị nhận xét chi tiết</span>
+								<input
+									type="checkbox"
+									checked={showDetailedFeedback}
+									onChange={(e) => setShowDetailedFeedback(e.target.checked)}
+								/>
+							</label>
+						</div>
+						<div className="mt-6 flex flex-wrap justify-end gap-3">
+							<button
+								type="button"
+								className="rounded-2xl border px-5 py-3 font-bold"
+								onClick={closeEdit}
+							>
+								Hủy
+							</button>
+							<button
+								type="button"
+								disabled={loading}
+								className="rounded-2xl border border-rose-200 px-5 py-3 font-bold text-rose-700 disabled:text-slate-400"
+								onClick={() => void updatePortal(false)}
+							>
+								Đóng link
+							</button>
+							<button
+								type="button"
+								disabled={loading}
+								className="rounded-2xl bg-emerald-600 px-5 py-3 font-bold text-white disabled:bg-slate-300"
+								onClick={() => void updatePortal(true)}
+							>
+								Lưu và mở link
 							</button>
 						</div>
 					</div>

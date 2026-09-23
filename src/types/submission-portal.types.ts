@@ -29,6 +29,11 @@ export interface CreateSubmissionPortalRequest {
 	showDetailedFeedback: boolean;
 }
 
+export interface UpdateSubmissionPortalRequest
+	extends CreateSubmissionPortalRequest {
+	isActive: boolean;
+}
+
 export interface PublicPortalInfo {
 	id: string;
 	title: string;
