@@ -16,6 +16,7 @@ import {
 import {
 	buildBulkAssignmentDrafts as buildSharedBulkAssignmentDrafts,
 	deriveExamTypeFromPreset,
+	resolveEndpointMaxScore,
 	resolveEndpointsBySubjectAndPractice,
 } from "../features/grading/utils/gradingUtils";
 import { assignmentService } from "../services/assignment.service";
@@ -101,13 +102,14 @@ const normalizeText = (value: string) =>
 
 const buildEndpointLabel = (endpoint: GradingEndpointInfo) => {
 	const parts = [endpoint.displayName || endpoint.endpoint];
+	const maxScore = resolveEndpointMaxScore(endpoint);
 
 	if (endpoint.practiceName) {
 		parts.push(endpoint.practiceName);
 	}
 
-	if (typeof endpoint.maxScore === "number") {
-		parts.push(`${endpoint.maxScore} điểm`);
+	if (maxScore > 0) {
+		parts.push(`${maxScore} điểm`);
 	}
 
 	return parts.join(" • ");
@@ -535,7 +537,9 @@ const AssignmentManagementPage = ({
 			...prev,
 			gradingApiEndpoint: endpointValue,
 			projectCode: getProjectCodeForSubject(endpointValue) || prev.projectCode,
-			maxScore: endpoint?.maxScore ? String(endpoint.maxScore) : prev.maxScore,
+			maxScore: endpoint
+				? String(resolveEndpointMaxScore(endpoint) || prev.maxScore)
+				: prev.maxScore,
 			name: prev.name.trim()
 				? prev.name
 				: buildDefaultNameFromEndpoint(endpoint),

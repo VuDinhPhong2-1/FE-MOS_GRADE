@@ -38,6 +38,17 @@ export const runLimitedConcurrency = async (
 	);
 };
 
+export const resolveEndpointMaxScore = (
+	endpoint: GradingEndpointInfo,
+): number => {
+	const candidates = [endpoint.rawMaxScore, endpoint.maxScore];
+	const validScore = candidates.find(
+		(score) => typeof score === "number" && Number.isFinite(score) && score > 0,
+	);
+
+	return validScore ?? 0;
+};
+
 export const normalizeVietnameseText = (value?: string): string =>
 	(value || "")
 		.normalize("NFD")
@@ -266,7 +277,7 @@ export const buildBulkAssignmentDrafts = (
 		return {
 			endpoint: endpoint.endpoint,
 			displayName: endpoint.displayName,
-			maxScore: endpoint.maxScore,
+			maxScore: resolveEndpointMaxScore(endpoint),
 			name: nextName,
 			selected: previous ? previous.selected : true,
 		};
