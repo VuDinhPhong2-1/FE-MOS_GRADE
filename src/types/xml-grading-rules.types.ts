@@ -54,6 +54,11 @@ export type SpecialConditionType =
 	| "wordTextToTable"
 	| "wordBulletStyle"
 	| "wordResolveComment"
+	| "wordCommentReply"
+	| "wordDocumentInspector"
+	| "wordParagraphStyle"
+	| "wordTableAutoFit"
+	| "wordViewSetting"
 	| "wordEndnote"
 	| "wordSmartArt"
 	| "excelTableName"
@@ -259,6 +264,44 @@ export interface WordResolveCommentConfig {
 	commentsExtendedFile?: string;
 	requireAllResolved?: boolean;
 	targetText?: string;
+}
+
+export interface WordCommentReplyConfig {
+	commentsFile?: string;
+	commentsExtendedFile?: string;
+	parentCommentText?: string;
+	expectedReplyText?: string;
+	caseSensitive?: boolean;
+}
+
+export interface WordDocumentInspectorConfig {
+	sourceFile?: string;
+	requireNoHeaders?: boolean;
+	requireNoFooters?: boolean;
+	requireNoWatermarks?: boolean;
+	preserveDocumentProperties?: boolean;
+	preserveCustomXml?: boolean;
+}
+
+export interface WordParagraphStyleConfig {
+	sourceFile?: string;
+	targetText?: string;
+	expectedStyle?: string;
+	caseSensitive?: boolean;
+}
+
+export interface WordTableAutoFitConfig {
+	sourceFile?: string;
+	tableIndex?: number;
+	anchorText?: string;
+	autoFitType?: string;
+}
+
+export interface WordViewSettingConfig {
+	settingsFile?: string;
+	settingElement?: string;
+	expectedEnabled?: boolean;
+	allowMissingAsPass?: boolean;
 }
 
 export interface WordEndnoteConfig {
@@ -515,6 +558,11 @@ export interface SpecialCondition {
 	wordTextToTableConfig?: WordTextToTableConfig;
 	wordBulletStyleConfig?: WordBulletStyleConfig;
 	wordResolveCommentConfig?: WordResolveCommentConfig;
+	wordCommentReplyConfig?: WordCommentReplyConfig;
+	wordDocumentInspectorConfig?: WordDocumentInspectorConfig;
+	wordParagraphStyleConfig?: WordParagraphStyleConfig;
+	wordTableAutoFitConfig?: WordTableAutoFitConfig;
+	wordViewSettingConfig?: WordViewSettingConfig;
 	wordEndnoteConfig?: WordEndnoteConfig;
 	wordSmartArtConfig?: WordSmartArtConfig;
 	excelTableNameConfig?: ExcelTableNameConfig;

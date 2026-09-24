@@ -197,9 +197,39 @@ const specialConditionOptions: Array<{
 	},
 	{
 		value: "wordResolveComment",
-		label: "Resolve comment Word",
+		label: "Đánh dấu giải quyết comment Word",
 		description:
 			"Kiểm tra các comment trong tài liệu đã được đánh dấu resolved/done.",
+	},
+	{
+		value: "wordCommentReply",
+		label: "Phản hồi comment Word",
+		description:
+			"Kiểm tra comment trong tài liệu đã có phản hồi đúng nội dung yêu cầu.",
+	},
+	{
+		value: "wordDocumentInspector",
+		label: "Document Inspector Word",
+		description:
+			"Kiểm tra tài liệu đã được dọn dẹp header, footer, watermark hoặc metadata theo yêu cầu Document Inspector.",
+	},
+	{
+		value: "wordParagraphStyle",
+		label: "Kiểu đoạn văn Word",
+		description:
+			"Kiểm tra đoạn văn chứa nội dung mục tiêu đã áp dụng đúng style, ví dụ Heading, Quote hoặc Normal.",
+	},
+	{
+		value: "wordTableAutoFit",
+		label: "Tự động căn chỉnh bảng Word",
+		description:
+			"Kiểm tra bảng Word đã dùng đúng chế độ AutoFit, ví dụ AutoFit Contents.",
+	},
+	{
+		value: "wordViewSetting",
+		label: "Thiết lập hiển thị Word",
+		description:
+			"Kiểm tra các thiết lập hiển thị được lưu trong word/settings.xml khi tệp Word có lưu thông tin này.",
 	},
 	{
 		value: "wordEndnote",
@@ -387,24 +417,70 @@ const specialConditionGroups: Array<{
 	matches: (option: SpecialConditionOption) => boolean;
 }> = [
 	{
-		label: "Word - Văn bản và bố cục",
+		label: "Word - Nội dung và đoạn văn",
 		matches: (option) =>
 			[
-				"convertTableToText",
 				"hyperlink",
-				"sectionBreakBeforeText",
 				"textBoxContainsText",
-				"pageMargins",
-				"documentStyleSet",
-				"pageBorder",
-				"wordTableSort",
+				"wordParagraphStyle",
 				"wordParagraphList",
+				"wordBulletStyle",
+				"wordBookmark",
+				"wordEndnote",
 			].includes(option.value),
 	},
 	{
-		label: "Word - Hình ảnh",
+		label: "Word - Bảng",
 		matches: (option) =>
-			["pictureBullet", "insertedImage", "pictureStyle"].includes(option.value),
+			[
+				"convertTableToText",
+				"wordTextToTable",
+				"wordTableSort",
+				"wordTableAutoFit",
+			].includes(option.value),
+	},
+	{
+		label: "Word - Hình ảnh và đồ họa",
+		matches: (option) =>
+			["pictureBullet", "insertedImage", "pictureStyle", "wordSmartArt"].includes(
+				option.value,
+			),
+	},
+	{
+		label: "Word - Bố cục và trang",
+		matches: (option) =>
+			[
+				"pageMargins",
+				"pageBorder",
+				"sectionBreakBeforeText",
+				"documentStyleSet",
+				"wordCustomToc",
+			].includes(option.value),
+	},
+	{
+		label: "Word - Nhận xét, kiểm tra và thiết lập",
+		matches: (option) =>
+			[
+				"wordResolveComment",
+				"wordCommentReply",
+				"wordDocumentInspector",
+				"wordViewSetting",
+			].includes(option.value),
+	},
+	{
+		label: "Excel - Bảng và dữ liệu",
+		matches: (option) =>
+			[
+				"excelTableName",
+				"excelTextReplacement",
+				"excelMultiColumnSort",
+				"excelDataModelImport",
+			].includes(option.value),
+	},
+	{
+		label: "Excel - Công thức và vùng đặt tên",
+		matches: (option) =>
+			["excelDefinedName", "excelFormulaReferences"].includes(option.value),
 	},
 	{
 		label: "Excel - Biểu đồ",
@@ -412,18 +488,6 @@ const specialConditionGroups: Array<{
 			["excelChartDataRange", "excelChartStyle", "excelChartLegend"].includes(
 				option.value,
 			),
-	},
-	{
-		label: "Excel - Dữ liệu và công thức",
-		matches: (option) =>
-			[
-				"excelTableName",
-				"excelDefinedName",
-				"excelFormulaReferences",
-				"excelTextReplacement",
-				"excelMultiColumnSort",
-				"excelDataModelImport",
-			].includes(option.value),
 	},
 	{
 		label: "Excel - Trang in và workbook",
@@ -438,7 +502,7 @@ const specialConditionGroups: Array<{
 			].includes(option.value),
 	},
 	{
-		label: "Excel - Định dạng",
+		label: "Excel - Ô, định dạng và liên kết",
 		matches: (option) =>
 			[
 				"excelClearCellFormatting",
