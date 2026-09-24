@@ -82,7 +82,7 @@ const excelTextRotationPresets = [
 ];
 
 const selectedExcelTextRotationPreset = (values?: number[]) => {
-	if (!values || values.length !== 1) {
+	if (values?.length !== 1) {
 		return "custom";
 	}
 

@@ -59,6 +59,16 @@ export interface DataTableProps<
 	 * @default true
 	 */
 	banded?: boolean;
+	/**
+	 * Class cho container bao quanh bảng (thẻ div cuộn).
+	 * Dùng để giới hạn chiều cao và bật cuộn dọc, ví dụ: "max-h-120 overflow-y-auto".
+	 */
+	scrollContainerClassName?: string;
+	/**
+	 * Cố định thanh tiêu đề ở trên cùng khi cuộn dọc.
+	 * @default false
+	 */
+	stickyHeader?: boolean;
 	"data-student-scroll-container"?: string | boolean;
 }
 

@@ -490,7 +490,7 @@ const GradingView = () => {
 			<Card
 				variant="filled"
 				disableElevation
-				className="rounded-m3-extra-large bg-m3-surface-container p-6"
+				className="rounded-m3-xl bg-m3-surface-container p-6"
 			>
 				<div className="mb-6 grid gap-4 md:grid-cols-2">
 					<Select
@@ -533,7 +533,7 @@ const GradingView = () => {
 				<div className="mb-6">
 					{/* biome-ignore lint/a11y/noStaticElementInteractions: Drag and drop file upload container */}
 					<div
-						className={`flex flex-col items-center justify-center rounded-m3-large p-8 transition-colors ${
+						className={`flex flex-col items-center justify-center rounded-m3-lg p-8 transition-colors ${
 							isDragOver
 								? "bg-m3-primary-container/40"
 								: "bg-m3-surface-container-high hover:bg-m3-surface-container-highest"
@@ -601,7 +601,7 @@ const GradingView = () => {
 				</div>
 
 				{error && (
-					<div className="mb-4 flex items-center gap-3 rounded-m3-medium bg-m3-error-container p-4 text-sm text-m3-on-error-container">
+					<div className="mb-4 flex items-center gap-3 rounded-m3-md bg-m3-error-container p-4 text-sm text-m3-on-error-container">
 						<Icon
 							name="error"
 							variant="rounded"
@@ -640,7 +640,7 @@ const GradingView = () => {
 			<Card
 				variant="filled"
 				disableElevation
-				className="mt-6 rounded-m3-extra-large bg-m3-surface-container p-6"
+				className="mt-6 rounded-m3-xl bg-m3-surface-container p-6"
 			>
 				<div className="mb-5 flex flex-wrap items-center justify-between gap-2">
 					<div>
@@ -681,7 +681,7 @@ const GradingView = () => {
 					<Card
 						variant="filled"
 						disableElevation
-						className="space-y-4 rounded-m3-large bg-m3-surface-container-low p-4"
+						className="space-y-4 rounded-m3-lg bg-m3-surface-container-low p-4"
 					>
 						<TextField
 							fullWidth
@@ -742,7 +742,7 @@ const GradingView = () => {
 					<ScrollArea className="max-h-115 pr-2">
 						<div className="space-y-3">
 							{isLoadingBugNotes && (
-								<div className="flex items-center justify-center rounded-m3-large bg-m3-surface-container-low p-8 text-center">
+								<div className="flex items-center justify-center rounded-m3-lg bg-m3-surface-container-low p-8 text-center">
 									<ProgressIndicator
 										variant="circular"
 										shape="wavy"
@@ -754,7 +754,7 @@ const GradingView = () => {
 							)}
 
 							{!isLoadingBugNotes && currentProjectNotes.length === 0 && (
-								<div className="flex flex-col items-center justify-center rounded-m3-large bg-m3-surface-container-low p-8 text-center">
+								<div className="flex flex-col items-center justify-center rounded-m3-lg bg-m3-surface-container-low p-8 text-center">
 									<Icon
 										name="task_alt"
 										variant="rounded"
@@ -776,7 +776,7 @@ const GradingView = () => {
 										key={note.id}
 										variant="filled"
 										disableElevation
-										className="rounded-m3-large bg-m3-surface-container-low p-4 transition-colors hover:bg-m3-surface-container-high"
+										className="rounded-m3-lg bg-m3-surface-container-low p-4 transition-colors hover:bg-m3-surface-container-high"
 									>
 										<div className="mb-2 flex items-start justify-between gap-2">
 											<div>
@@ -803,7 +803,7 @@ const GradingView = () => {
 										</div>
 
 										{note.scoreSummary && (
-											<div className="mb-2 rounded-m3-small bg-m3-surface-container px-2.5 py-1.5 text-xs text-m3-on-surface-variant">
+											<div className="mb-2 rounded-m3-sm bg-m3-surface-container px-2.5 py-1.5 text-xs text-m3-on-surface-variant">
 												Score: {note.scoreSummary.totalScore}/
 												{note.scoreSummary.maxScore} (
 												{note.scoreSummary.percentage}%) -{" "}
@@ -812,7 +812,7 @@ const GradingView = () => {
 										)}
 
 										{note.gradingError && (
-											<div className="mb-2 rounded-m3-small bg-m3-error-container px-2.5 py-1.5 text-xs text-m3-on-error-container">
+											<div className="mb-2 rounded-m3-sm bg-m3-error-container px-2.5 py-1.5 text-xs text-m3-on-error-container">
 												{note.gradingError}
 											</div>
 										)}
