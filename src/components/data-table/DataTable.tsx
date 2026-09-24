@@ -40,6 +40,8 @@ export function DataTable<
 	tableClassName = "",
 	headerRowClassName = "",
 	bodyClassName = "",
+	scrollContainerClassName = "",
+	stickyHeader = false,
 	onRowClick,
 	getRowClassName,
 	renderRow,
@@ -67,7 +69,7 @@ export function DataTable<
 		: table.getAllLeafColumns().length;
 
 	const content = (
-		<div className="overflow-x-auto">
+		<div className={cn("overflow-x-auto", scrollContainerClassName)}>
 			<table
 				className={`border-collapse text-left ${minWidthClassName} ${tableClassName}`}
 			>
@@ -77,6 +79,7 @@ export function DataTable<
 							key={headerGroup.id}
 							className={cn(
 								"h-12 border-b border-m3-outline-variant/60 bg-m3-surface-container-high text-xs font-bold uppercase tracking-wider text-m3-on-surface-variant",
+								stickyHeader && "sticky top-0 z-10",
 								headerRowClassName,
 							)}
 						>
@@ -111,6 +114,8 @@ export function DataTable<
 										colSpan={header.colSpan}
 										className={cn(
 											"h-12 px-6 py-3.5 align-middle text-xs font-bold uppercase tracking-wider text-m3-on-surface-variant",
+											stickyHeader &&
+												"sticky top-0 z-10 bg-m3-surface-container-high",
 											alignClass,
 											widthClass,
 										)}

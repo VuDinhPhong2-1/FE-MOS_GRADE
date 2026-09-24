@@ -64,7 +64,9 @@ export const submissionPortalService = {
 			getAccessToken,
 		);
 		if (!res.ok)
-			throw new Error(await errorMessage(res, "Không thể cập nhật link nộp bài"));
+			throw new Error(
+				await errorMessage(res, "Không thể cập nhật link nộp bài"),
+			);
 		return res.json() as Promise<SubmissionPortal>;
 	},
 
@@ -163,7 +165,8 @@ export const submissionPortalService = {
 			`${API_BASE_URL}/public/portals/${token}/grade-preview`,
 			{ method: "POST", body },
 		);
-		if (!res.ok) throw new Error(await errorMessage(res, "Không thể chấm thử bài"));
+		if (!res.ok)
+			throw new Error(await errorMessage(res, "Không thể chấm thử bài"));
 		return res.json() as Promise<PublicPortalSubmitResult>;
 	},
 

@@ -107,7 +107,7 @@ const AppLayout: React.FC = () => {
 				},
 				{
 					id: "submission-portals",
-					label: "Link nộp bài",
+					label: "Nộp bài",
 					icon: "upload_file",
 					path: "/submission-portals",
 				},

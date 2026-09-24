@@ -355,7 +355,7 @@ const StudentModalComponent = ({
 							/>
 						</DialogBody>
 
-						<DialogFooter className="flex justify-end gap-2 border-t border-m3-outline-variant/40 px-6 py-4">
+						<DialogFooter className="flex justify-end gap-2 px-6 py-4">
 							<Button
 								type="button"
 								colorStyle="text"
