@@ -147,6 +147,26 @@ export const submissionPortalService = {
 		return res.json() as Promise<PublicPortalSubmitResult>;
 	},
 
+	async gradePreview(
+		token: string,
+		classId: string,
+		studentId: string,
+		assignmentId: string,
+		file: File,
+	) {
+		const body = new FormData();
+		body.append("classId", classId);
+		body.append("studentId", studentId);
+		body.append("assignmentId", assignmentId);
+		body.append("file", file);
+		const res = await fetch(
+			`${API_BASE_URL}/public/portals/${token}/grade-preview`,
+			{ method: "POST", body },
+		);
+		if (!res.ok) throw new Error(await errorMessage(res, "Không thể chấm thử bài"));
+		return res.json() as Promise<PublicPortalSubmitResult>;
+	},
+
 	async getLeaderboard(token: string, classId?: string, assignmentId?: string) {
 		const params = new URLSearchParams();
 		if (classId) params.set("classId", classId);

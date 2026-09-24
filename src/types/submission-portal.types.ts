@@ -80,6 +80,7 @@ export interface PublicPortalSubmitResult {
 	submittedAt: string;
 	rank?: number;
 	alerts: string[];
+	isPreview?: boolean;
 }
 
 export interface PublicPortalAutoGradingTaskResult {

@@ -1,5 +1,5 @@
 ﻿import { useCallback, useEffect, useMemo, useState } from "react";
-import { RouteLoadingFallback } from "../components/common";
+import { RouteLoadingFallback, showConfirm } from "../components/common";
 import { useAuth } from "../context/AuthContext";
 import { usePageHeader } from "../context/PageActionsContext";
 import { assignmentService } from "../services/assignment.service";
@@ -35,6 +35,25 @@ const severityTone = (severity: string) =>
 			? "border-amber-200 bg-amber-50 text-amber-800"
 			: "border-blue-200 bg-blue-50 text-blue-800";
 
+const severityLabel = (severity: string) => {
+	const normalized = severity.toLowerCase();
+	if (normalized.includes("high")) return "Nghiêm trọng";
+	if (normalized.includes("medium")) return "Cần kiểm tra";
+	return "Thông tin";
+};
+
+type PageMessage = {
+	type: "success" | "warning" | "error" | "info";
+	text: string;
+};
+
+const messageTone: Record<PageMessage["type"], string> = {
+	success: "border-emerald-200 bg-emerald-50 text-emerald-900",
+	warning: "border-amber-200 bg-amber-50 text-amber-900",
+	error: "border-rose-200 bg-rose-50 text-rose-900",
+	info: "border-blue-200 bg-blue-50 text-blue-900",
+};
+
 const SubmissionPortalManagementPage = () => {
 	const { getAccessToken } = useAuth();
 	const [schools, setSchools] = useState<School[]>([]);
@@ -59,7 +78,10 @@ const SubmissionPortalManagementPage = () => {
 		null,
 	);
 	const [loading, setLoading] = useState(false);
-	const [message, setMessage] = useState("");
+	const [loadingClasses, setLoadingClasses] = useState(false);
+	const [loadingAssignments, setLoadingAssignments] = useState(false);
+	const [loadingDetails, setLoadingDetails] = useState(false);
+	const [message, setMessage] = useState<PageMessage | null>(null);
 	const [alerts, setAlerts] = useState<SubmissionAlert[]>([]);
 	const [logs, setLogs] = useState<SubmissionLog[]>([]);
 	const publicOrigin = window.location.origin;
@@ -131,9 +153,10 @@ const SubmissionPortalManagementPage = () => {
 			setSchools(schoolList.filter((school) => school.isActive !== false));
 			setPortals(portalList);
 		} catch (error) {
-			setMessage(
-				error instanceof Error ? error.message : "Không thể tải dữ liệu",
-			);
+			setMessage({
+				type: "error",
+				text: error instanceof Error ? error.message : "Không thể tải dữ liệu",
+			});
 		} finally {
 			setLoading(false);
 		}
@@ -148,6 +171,7 @@ const SubmissionPortalManagementPage = () => {
 			return;
 		}
 
+		setLoadingClasses(true);
 		try {
 			const classList = await classService.getClassesBySchool(
 				selectedSchoolId,
@@ -156,9 +180,13 @@ const SubmissionPortalManagementPage = () => {
 			);
 			setClasses(classList.filter((cls) => cls.isActive !== false));
 		} catch (error) {
-			setMessage(
-				error instanceof Error ? error.message : "Không thể tải danh sách lớp",
-			);
+			setMessage({
+				type: "error",
+				text:
+					error instanceof Error ? error.message : "Không thể tải danh sách lớp",
+			});
+		} finally {
+			setLoadingClasses(false);
 		}
 	}, [getAccessToken, selectedSchoolId]);
 
@@ -168,6 +196,7 @@ const SubmissionPortalManagementPage = () => {
 			setSelectedAssignmentIds([]);
 			return;
 		}
+		setLoadingAssignments(true);
 		try {
 			const results = await Promise.all(
 				selectedClassIds.map((classId) =>
@@ -180,9 +209,12 @@ const SubmissionPortalManagementPage = () => {
 					.filter((assignment) => hasAutoGradingEndpoint(assignment)),
 			);
 		} catch (error) {
-			setMessage(
-				error instanceof Error ? error.message : "Không thể tải bài tập",
-			);
+			setMessage({
+				type: "error",
+				text: error instanceof Error ? error.message : "Không thể tải bài tập",
+			});
+		} finally {
+			setLoadingAssignments(false);
 		}
 	}, [getAccessToken, selectedClassIds]);
 
@@ -217,13 +249,14 @@ const SubmissionPortalManagementPage = () => {
 			selectedClassIds.length === 0 ||
 			selectedAssignmentIds.length === 0
 		) {
-			setMessage(
-				"Vui lòng nhập tiêu đề, chọn trường, ít nhất một lớp và một bài tập.",
-			);
+			setMessage({
+				type: "warning",
+				text: "Vui lòng nhập tiêu đề, chọn trường, ít nhất một lớp và một bài tập.",
+			});
 			return;
 		}
 		setLoading(true);
-		setMessage("");
+		setMessage(null);
 		try {
 			await submissionPortalService.create(
 				{
@@ -241,10 +274,13 @@ const SubmissionPortalManagementPage = () => {
 			setSelectedAssignmentIds([]);
 			setDescription("");
 			setIsCreateOpen(false);
-			setMessage("Đã tạo link nộp bài.");
+			setMessage({ type: "success", text: "Đã tạo link nộp bài." });
 			setPortals(await submissionPortalService.getAll(getAccessToken));
 		} catch (error) {
-			setMessage(error instanceof Error ? error.message : "Không thể tạo link");
+			setMessage({
+				type: "error",
+				text: error instanceof Error ? error.message : "Không thể tạo link",
+			});
 		} finally {
 			setLoading(false);
 		}
@@ -258,7 +294,7 @@ const SubmissionPortalManagementPage = () => {
 		setScoringPolicy(portal.scoringPolicy);
 		setShowLeaderboard(portal.showLeaderboard);
 		setShowDetailedFeedback(portal.showDetailedFeedback);
-		setMessage("");
+		setMessage(null);
 	};
 
 	const closeEdit = () => {
@@ -274,12 +310,12 @@ const SubmissionPortalManagementPage = () => {
 	const updatePortal = async (isActive: boolean) => {
 		if (!editingPortal) return;
 		if (!title.trim()) {
-			setMessage("Vui lòng nhập tiêu đề link nộp bài.");
+			setMessage({ type: "warning", text: "Vui lòng nhập tiêu đề link nộp bài." });
 			return;
 		}
 
 		setLoading(true);
-		setMessage("");
+		setMessage(null);
 		try {
 			await submissionPortalService.update(
 				editingPortal.id,
@@ -299,43 +335,63 @@ const SubmissionPortalManagementPage = () => {
 				getAccessToken,
 			);
 			closeEdit();
-			setMessage("Đã cập nhật link nộp bài.");
+			setMessage({ type: "success", text: "Đã cập nhật link nộp bài." });
 			setPortals(await submissionPortalService.getAll(getAccessToken));
 		} catch (error) {
-			setMessage(error instanceof Error ? error.message : "Không thể cập nhật link");
+			setMessage({
+				type: "error",
+				text: error instanceof Error ? error.message : "Không thể cập nhật link",
+			});
 		} finally {
 			setLoading(false);
 		}
 	};
 
 	const deletePortal = async (portal: SubmissionPortal) => {
-		const ok = window.confirm(
-			`Xóa link "${portal.title}"? Link sẽ bị đóng và học sinh không thể nộp bài qua link này nữa.`,
-		);
+		const ok = await showConfirm({
+			title: "Đóng link nộp bài?",
+			message: `Đóng link "${portal.title}"? Học sinh sẽ không thể nộp bài qua link này nữa.`,
+			description: "Dữ liệu lịch sử nộp và điểm đã lưu vẫn được giữ nguyên.",
+			confirmLabel: "Đóng link",
+			cancelLabel: "Hủy",
+			variant: "destructive",
+			icon: "link_off",
+		});
 		if (!ok) return;
 
 		setLoading(true);
-		setMessage("");
+		setMessage(null);
 		try {
 			await submissionPortalService.delete(portal.id, getAccessToken);
-			setMessage("Đã xóa link nộp bài.");
+			setMessage({ type: "success", text: "Đã đóng link nộp bài." });
 			setPortals(await submissionPortalService.getAll(getAccessToken));
 			if (selectedPortal?.id === portal.id) setSelectedPortal(null);
 			if (editingPortal?.id === portal.id) closeEdit();
 		} catch (error) {
-			setMessage(error instanceof Error ? error.message : "Không thể xóa link");
+			setMessage({
+				type: "error",
+				text: error instanceof Error ? error.message : "Không thể đóng link",
+			});
 		} finally {
 			setLoading(false);
 		}
 	};
 
 	const copyText = async (value: string) => {
-		await navigator.clipboard.writeText(value);
-		setMessage("Đã sao chép link vào bộ nhớ tạm.");
+		try {
+			await navigator.clipboard.writeText(value);
+			setMessage({ type: "success", text: "Đã sao chép link vào bộ nhớ tạm." });
+		} catch {
+			setMessage({
+				type: "warning",
+				text: "Trình duyệt không cho phép sao chép tự động. Hãy chọn link và sao chép thủ công.",
+			});
+		}
 	};
 
 	const openDetails = async (portal: SubmissionPortal) => {
 		setSelectedPortal(portal);
+		setLoadingDetails(true);
 		try {
 			const [portalAlerts, portalLogs] = await Promise.all([
 				submissionPortalService.getAlerts(portal.id, getAccessToken),
@@ -344,9 +400,12 @@ const SubmissionPortalManagementPage = () => {
 			setAlerts(portalAlerts);
 			setLogs(portalLogs);
 		} catch (error) {
-			setMessage(
-				error instanceof Error ? error.message : "Không thể mở chi tiết",
-			);
+			setMessage({
+				type: "error",
+				text: error instanceof Error ? error.message : "Không thể mở chi tiết",
+			});
+		} finally {
+			setLoadingDetails(false);
 		}
 	};
 
@@ -390,8 +449,18 @@ const SubmissionPortalManagementPage = () => {
 	return (
 		<div className="space-y-6">
 			{message && (
-				<div className="rounded-3xl border border-amber-200 bg-amber-50 p-4 text-sm font-medium text-amber-900">
-					{message}
+				<div
+					className={`flex items-start justify-between gap-3 rounded-3xl border p-4 text-sm font-medium ${messageTone[message.type]}`}
+				>
+					<span>{message.text}</span>
+					<button
+						type="button"
+						className="shrink-0 font-black opacity-70 hover:opacity-100"
+						onClick={() => setMessage(null)}
+						aria-label="Đóng thông báo"
+					>
+						×
+					</button>
 				</div>
 			)}
 			<section className="grid gap-4 md:grid-cols-3">
@@ -516,7 +585,7 @@ const SubmissionPortalManagementPage = () => {
 											className="rounded-xl border border-rose-200 px-3 py-2 text-sm font-bold text-rose-700 disabled:text-slate-400"
 											onClick={() => void deletePortal(portal)}
 										>
-											Xóa
+							Đóng link
 										</button>
 									</div>
 								</div>
@@ -524,8 +593,21 @@ const SubmissionPortalManagementPage = () => {
 						);
 					})}
 					{visiblePortals.length === 0 && (
-						<div className="rounded-3xl border border-dashed border-slate-300 p-8 text-center text-slate-500 xl:col-span-2">
-							Chưa có link nộp bài đang mở.
+						<div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-slate-600 xl:col-span-2">
+							<div className="text-4xl">🔗</div>
+							<p className="mt-3 text-lg font-black text-slate-900">
+								Chưa có link nộp bài đang mở
+							</p>
+							<p className="mt-1 text-sm">
+								Tạo link mới để học sinh chọn lớp, chọn tên và nộp file tự chấm.
+							</p>
+							<button
+								type="button"
+								className="mt-4 rounded-2xl bg-emerald-600 px-4 py-2 font-bold text-white"
+								onClick={() => setIsCreateOpen(true)}
+							>
+								Tạo link đầu tiên
+							</button>
 						</div>
 					)}
 				</div>
@@ -546,6 +628,11 @@ const SubmissionPortalManagementPage = () => {
 								Đóng
 							</button>
 						</div>
+						{loadingDetails && (
+							<div className="mt-4 rounded-2xl border border-blue-100 bg-blue-50 p-3 text-sm font-semibold text-blue-800">
+								Đang tải cảnh báo và lịch sử nộp bài...
+							</div>
+						)}
 						<div className="mt-4 space-y-3">
 							{alerts.map((alert) => (
 								<div
@@ -554,7 +641,7 @@ const SubmissionPortalManagementPage = () => {
 								>
 									<div className="flex justify-between gap-2">
 										<span className="text-xs font-black uppercase">
-											{alert.severity}
+											{severityLabel(alert.severity)}
 										</span>
 										<span className="text-xs">
 											{formatDateTime(alert.createdAt)}
@@ -610,8 +697,8 @@ const SubmissionPortalManagementPage = () => {
 									)}
 								</div>
 							))}
-							{alerts.length === 0 && (
-								<p className="rounded-2xl bg-emerald-50 p-4 text-sm text-emerald-800">
+							{alerts.length === 0 && !loadingDetails && (
+								<p className="rounded-2xl bg-emerald-50 p-4 text-center text-sm font-semibold text-emerald-800">
 									Không có cảnh báo.
 								</p>
 							)}
@@ -815,7 +902,13 @@ const SubmissionPortalManagementPage = () => {
 								<div>
 									<h4 className="text-sm font-bold text-slate-700">Lớp</h4>
 									<div className="mt-2 max-h-72 space-y-2 overflow-auto rounded-2xl bg-slate-50 p-3">
+										{loadingClasses && (
+											<p className="rounded-xl bg-blue-50 p-3 text-sm font-semibold text-blue-800">
+												Đang tải danh sách lớp...
+											</p>
+										)}
 										{selectedSchoolId &&
+											!loadingClasses &&
 											classes.map((cls) => (
 												<label
 													key={cls.id}
@@ -840,7 +933,7 @@ const SubmissionPortalManagementPage = () => {
 												Vui lòng chọn trường trước khi chọn lớp.
 											</p>
 										)}
-										{selectedSchoolId && classes.length === 0 && (
+										{selectedSchoolId && !loadingClasses && classes.length === 0 && (
 											<p className="p-3 text-sm text-slate-500">
 												Chưa có lớp hoạt động trong trường đã chọn.
 											</p>
@@ -857,7 +950,12 @@ const SubmissionPortalManagementPage = () => {
 										</p>
 									)}
 									<div className="mt-2 max-h-72 space-y-2 overflow-auto rounded-2xl bg-slate-50 p-3">
-										{filteredAssignments.map((assignment) => (
+										{loadingAssignments && (
+											<p className="rounded-xl bg-blue-50 p-3 text-sm font-semibold text-blue-800">
+												Đang tải bài tập chấm tự động...
+											</p>
+										)}
+										{!loadingAssignments && filteredAssignments.map((assignment) => (
 											<label
 												key={assignment.id}
 												className="flex items-start gap-3 rounded-xl bg-white p-3 shadow-xs"
@@ -901,7 +999,7 @@ const SubmissionPortalManagementPage = () => {
 												Vui lòng chọn lớp sau khi đã chọn trường.
 											</p>
 										)}
-										{selectedClassIds.length > 0 &&
+										{!loadingAssignments && selectedClassIds.length > 0 &&
 											filteredAssignments.length === 0 && (
 												<div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
 													<p className="font-bold">

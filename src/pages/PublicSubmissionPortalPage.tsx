@@ -30,6 +30,35 @@ const formatDateTime = (value?: string) =>
 const formatFileSize = (size: number) =>
 	`${(size / 1024 / 1024).toFixed(2)} MB`;
 
+const normalizeText = (value: string) =>
+	value
+		.toLowerCase()
+		.normalize("NFD")
+		.replace(/[\u0300-\u036f]/g, "")
+		.replace(/đ/g, "d")
+		.trim();
+
+const expectedExtensionsBySubject: Record<
+	PublicPortalAssignment["subject"],
+	string[]
+> = {
+	excel: [".xlsx", ".xlsm", ".xls"],
+	word: [".docx", ".docm", ".doc"],
+	ppt: [".pptx", ".pptm", ".ppt"],
+};
+
+const getFileExtensionWarning = (
+	assignment: PublicPortalAssignment,
+	file?: File,
+) => {
+	if (!file) return "";
+	const fileName = file.name.toLowerCase();
+	const expectedExtensions = expectedExtensionsBySubject[assignment.subject] || [];
+	if (expectedExtensions.some((extension) => fileName.endsWith(extension))) return "";
+
+	return `File này có thể không đúng định dạng cho bài ${subjectMeta[assignment.subject].label}. Nên chọn file ${expectedExtensions.join(", ")}.`;
+};
+
 const getScoreTone = (score?: number, maxScore = 100) => {
 	if (score === undefined) return "bg-slate-100 text-slate-700";
 	const ratio = maxScore > 0 ? score / maxScore : 0;
@@ -72,6 +101,14 @@ const PublicSubmissionPortalPage = () => {
 	const [submittingAssignmentId, setSubmittingAssignmentId] = useState<
 		string | null
 	>(null);
+	const [previewingAssignmentId, setPreviewingAssignmentId] = useState<string | null>(
+		null,
+	);
+	const [loadingStudents, setLoadingStudents] = useState(false);
+	const [loadingLeaderboard, setLoadingLeaderboard] = useState(false);
+	const [draggingAssignmentId, setDraggingAssignmentId] = useState<string | null>(
+		null,
+	);
 	const [loading, setLoading] = useState(false);
 	const [message, setMessage] = useState("");
 
@@ -85,15 +122,15 @@ const PublicSubmissionPortalPage = () => {
 		[info, classId],
 	);
 	const filteredStudents = useMemo(() => {
-		const keyword = studentSearch.trim().toLowerCase();
+		const keyword = normalizeText(studentSearch);
 		if (!keyword) return students;
 		return students.filter((student) =>
-			student.fullName.toLowerCase().includes(keyword),
+			normalizeText(student.fullName).includes(keyword),
 		);
 	}, [studentSearch, students]);
 	const confirmedIdentity = Boolean(classId && studentId);
 	const completedCount = visibleAssignments.filter(
-		(assignment) => results[assignment.id],
+		(assignment) => results[assignment.id] && !results[assignment.id].isPreview,
 	).length;
 	const topRows = leaderboard.slice(0, 3);
 	const confirmAssignment = visibleAssignments.find(
@@ -125,6 +162,7 @@ const PublicSubmissionPortalPage = () => {
 			setStudents([]);
 			return;
 		}
+		setLoadingStudents(true);
 		try {
 			setStudents(
 				await submissionPortalService.getPublicStudents(token, classId),
@@ -135,10 +173,13 @@ const PublicSubmissionPortalPage = () => {
 					? error.message
 					: "Không thể lấy danh sách học sinh",
 			);
+		} finally {
+			setLoadingStudents(false);
 		}
 	}, [classId, token]);
 
 	const loadLeaderboard = useCallback(async () => {
+		setLoadingLeaderboard(true);
 		try {
 			setLeaderboard(
 				await submissionPortalService.getLeaderboard(
@@ -148,6 +189,8 @@ const PublicSubmissionPortalPage = () => {
 			);
 		} catch {
 			setLeaderboard([]);
+		} finally {
+			setLoadingLeaderboard(false);
 		}
 	}, [classId, token]);
 
@@ -184,7 +227,10 @@ const PublicSubmissionPortalPage = () => {
 				confirmAssignmentId,
 				file,
 			);
-			setResults((prev) => ({ ...prev, [confirmAssignmentId]: result }));
+			setResults((prev) => ({
+				...prev,
+				[confirmAssignmentId]: { ...result, isPreview: false },
+			}));
 			setMessage("Đã nộp và chấm bài thành công.");
 			await loadLeaderboard();
 		} catch (error) {
@@ -192,6 +238,43 @@ const PublicSubmissionPortalPage = () => {
 		} finally {
 			setSubmittingAssignmentId(null);
 			setConfirmAssignmentId(null);
+		}
+	};
+
+	const handleFileSelected = async (
+		assignment: PublicPortalAssignment,
+		file?: File,
+	) => {
+		setFiles((prev) => ({ ...prev, [assignment.id]: file }));
+		setResults((prev) => {
+			const next = { ...prev };
+			delete next[assignment.id];
+			return next;
+		});
+		if (!file) return;
+		if (!classId || !studentId) {
+			setMessage("Vui lòng chọn lớp và học sinh trước khi chấm thử file.");
+			return;
+		}
+
+		setPreviewingAssignmentId(assignment.id);
+		setMessage("");
+		try {
+			const preview = await submissionPortalService.gradePreview(
+				token,
+				classId,
+				studentId,
+				assignment.id,
+				file,
+			);
+			setResults((prev) => ({
+				...prev,
+				[assignment.id]: { ...preview, isPreview: true },
+			}));
+		} catch (error) {
+			setMessage(error instanceof Error ? error.message : "Không thể chấm thử bài");
+		} finally {
+			setPreviewingAssignmentId(null);
 		}
 	};
 
@@ -216,6 +299,7 @@ const PublicSubmissionPortalPage = () => {
 	const renderAssignmentCard = (assignment: PublicPortalAssignment) => {
 		const result = results[assignment.id];
 		const file = files[assignment.id];
+		const fileWarning = getFileExtensionWarning(assignment, file);
 		const failedTaskResults = result ? getFailedTaskResults(result) : [];
 		const fallbackErrors = result
 			? uniqueNonEmpty(result.autoGradingErrors)
@@ -224,18 +308,44 @@ const PublicSubmissionPortalPage = () => {
 			failedTaskResults.length > 0 || fallbackErrors.length > 0;
 		const meta = subjectMeta[assignment.subject];
 		const isSubmitting = submittingAssignmentId === assignment.id;
+		const isPreviewing = previewingAssignmentId === assignment.id;
+		const isDragging = draggingAssignmentId === assignment.id;
+		const scoreRatio =
+			result?.scoreValue !== undefined && result.maxScore > 0
+				? Math.round((result.scoreValue / result.maxScore) * 100)
+				: 0;
 		return (
 			<article
 				key={assignment.id}
-				className="flex h-full flex-col rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
+				className={`relative flex h-full flex-col rounded-3xl border bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg ${isSubmitting ? "border-emerald-300 ring-4 ring-emerald-100" : "border-slate-200"}`}
 			>
+				{isSubmitting && (
+					<div className="absolute inset-x-5 top-0 h-1 overflow-hidden rounded-full bg-emerald-100">
+						<div className="h-full w-1/2 animate-pulse rounded-full bg-emerald-500" />
+					</div>
+				)}
 				<div className="flex items-start justify-between gap-3">
 					<div>
-						<span
-							className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${meta.accent}`}
-						>
-							{meta.icon} {meta.label}
-						</span>
+						<div className="flex flex-wrap gap-2">
+							<span
+								className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${meta.accent}`}
+							>
+								{meta.icon} {meta.label}
+							</span>
+							<span
+								className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${result ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-600"}`}
+							>
+								{isSubmitting
+									? "Đang nộp"
+									: isPreviewing
+										? "Đang chấm thử"
+										: result?.isPreview
+											? "Đã chấm thử"
+											: result
+												? "Đã nộp"
+												: "Chưa nộp"}
+							</span>
+						</div>
 						<h2 className="mt-3 text-lg font-bold text-slate-950">
 							{assignment.name}
 						</h2>
@@ -257,10 +367,29 @@ const PublicSubmissionPortalPage = () => {
 						{assignment.hasTemplate ? "Có file mẫu" : "Không có file mẫu"}
 					</span>
 				</div>
-				<label className="mt-5 flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 p-5 text-center hover:border-emerald-400 hover:bg-emerald-50">
+				<label
+					className={`mt-5 flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed p-5 text-center transition ${isDragging ? "border-emerald-500 bg-emerald-50 ring-4 ring-emerald-100" : "border-slate-300 bg-slate-50 hover:border-emerald-400 hover:bg-emerald-50"} ${isSubmitting || isPreviewing ? "pointer-events-none opacity-70" : ""}`}
+					onDragOver={(event) => {
+						event.preventDefault();
+						setDraggingAssignmentId(assignment.id);
+					}}
+					onDragLeave={() => setDraggingAssignmentId(null)}
+					onDrop={(event) => {
+						event.preventDefault();
+						setDraggingAssignmentId(null);
+						const droppedFile = event.dataTransfer.files?.[0];
+						if (droppedFile) {
+							void handleFileSelected(assignment, droppedFile);
+						}
+					}}
+				>
 					<span className="text-3xl">⬆️</span>
 					<span className="mt-2 text-sm font-semibold text-slate-800">
-						{file ? file.name : "Chọn file bài làm"}
+						{isPreviewing
+							? "Đang chấm thử file..."
+							: file
+								? file.name
+								: "Chọn hoặc kéo thả file bài làm"}
 					</span>
 					{file && (
 						<span className="text-xs text-slate-500">
@@ -270,30 +399,56 @@ const PublicSubmissionPortalPage = () => {
 					<input
 						className="hidden"
 						type="file"
+						disabled={isSubmitting || isPreviewing}
 						onChange={(e) =>
-							setFiles((prev) => ({
-								...prev,
-								[assignment.id]: e.target.files?.[0],
-							}))
+							void handleFileSelected(assignment, e.target.files?.[0])
 						}
 					/>
 				</label>
+				{file && (
+					<div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-slate-50 px-3 py-2 text-xs text-slate-600">
+						<span>Đã chọn: {file.name}</span>
+						<button
+							type="button"
+							disabled={isSubmitting || isPreviewing}
+							className="font-bold text-rose-600 disabled:text-slate-400"
+								onClick={() => void handleFileSelected(assignment, undefined)}
+						>
+							Xóa file
+						</button>
+					</div>
+				)}
+				{fileWarning && (
+					<p className="mt-2 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900">
+						⚠️ {fileWarning}
+					</p>
+				)}
 				<button
 					type="button"
 					disabled={
-						!confirmedIdentity || !file || Boolean(submittingAssignmentId)
+						!confirmedIdentity || !file || Boolean(submittingAssignmentId) || isPreviewing
 					}
 					onClick={() => setConfirmAssignmentId(assignment.id)}
 					className="mt-4 rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white shadow-sm disabled:cursor-not-allowed disabled:bg-slate-300"
 				>
 					{isSubmitting
-						? "Đang nộp và chấm..."
-						: result
-							? "Nộp lại bài"
-							: "Nộp & chấm điểm"}
+						? "⏳ Đang ghi nhận điểm..."
+						: isPreviewing
+							? "Đang chấm thử..."
+							: result?.isPreview
+								? "Nộp bài để ghi nhận điểm"
+								: result
+									? "Nộp lại bài"
+									: "Nộp bài"}
 				</button>
 				{result && (
 					<div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+						<div className="mb-3 h-2 overflow-hidden rounded-full bg-white">
+							<div
+								className="h-full rounded-full bg-emerald-500 transition-all"
+								style={{ width: `${Math.min(100, Math.max(0, scoreRatio))}%` }}
+							/>
+						</div>
 						<div
 							className={`inline-flex rounded-full px-3 py-1 text-sm font-bold ${getScoreTone(result.scoreValue, result.maxScore)}`}
 						>
@@ -301,7 +456,9 @@ const PublicSubmissionPortalPage = () => {
 							{result.rank ? ` • Hạng #${result.rank}` : ""}
 						</div>
 						<p className="mt-2 text-xs text-emerald-700">
-							Đã nộp: {formatDateTime(result.submittedAt)}
+							{result.isPreview
+								? "Kết quả chấm thử chưa ghi nhận điểm. Bấm Nộp bài để lưu điểm chính thức."
+								: `Đã nộp: ${formatDateTime(result.submittedAt)}`}
 						</p>
 						{info.showDetailedFeedback && result.feedback && (
 							<p className="mt-3 whitespace-pre-line text-sm text-slate-700">
@@ -369,6 +526,16 @@ const PublicSubmissionPortalPage = () => {
 							<p className="mt-3 rounded-2xl border border-emerald-200 bg-white px-3 py-2 text-sm font-bold text-emerald-700">
 								🎉 Tuyệt vời! Bài nộp hiện không còn lỗi cần sửa.
 							</p>
+						)}
+						{result.alerts.length > 0 && (
+							<div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+								<p className="font-black">⚠️ Cảnh báo cần lưu ý</p>
+								<ul className="mt-2 list-disc space-y-1 pl-5">
+									{result.alerts.map((alert) => (
+										<li key={alert}>{alert}</li>
+									))}
+								</ul>
+							</div>
 						)}
 					</div>
 				)}
@@ -488,9 +655,11 @@ const PublicSubmissionPortalPage = () => {
 										className="mt-2 w-full rounded-2xl border border-slate-200 p-3"
 										value={studentId}
 										onChange={(e) => setStudentId(e.target.value)}
-										disabled={!classId}
+										disabled={!classId || loadingStudents}
 									>
-										<option value="">-- Chọn đúng tên --</option>
+										<option value="">
+											{loadingStudents ? "Đang tải danh sách..." : "-- Chọn đúng tên --"}
+										</option>
 										{filteredStudents.map((s) => (
 											<option key={s.id} value={s.id}>
 												{s.fullName}
@@ -499,6 +668,16 @@ const PublicSubmissionPortalPage = () => {
 									</select>
 								</label>
 							</div>
+							{classId && loadingStudents && (
+								<div className="mt-4 rounded-2xl border border-blue-100 bg-blue-50 p-3 text-sm font-semibold text-blue-800">
+									Đang tải danh sách học sinh của lớp {selectedClass?.name || "đã chọn"}...
+								</div>
+							)}
+							{classId && !loadingStudents && filteredStudents.length === 0 && (
+								<div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+									Không tìm thấy học sinh phù hợp. Hãy kiểm tra lại lớp hoặc từ khóa tìm kiếm.
+								</div>
+							)}
 							{selectedStudent && (
 								<div className="mt-4 rounded-2xl bg-emerald-50 p-4 text-emerald-900">
 									Đang nộp bài cho <b>{selectedStudent.fullName}</b> - lớp{" "}
@@ -513,15 +692,30 @@ const PublicSubmissionPortalPage = () => {
 								</div>
 							)}
 						</section>
-						<section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-							{visibleAssignments.map(renderAssignmentCard)}
-						</section>
+						{visibleAssignments.length > 0 ? (
+							<section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+								{visibleAssignments.map(renderAssignmentCard)}
+							</section>
+						) : (
+							<section className="rounded-3xl border border-dashed border-slate-300 bg-white p-8 text-center shadow-sm">
+								<div className="text-4xl">📭</div>
+								<h2 className="mt-3 text-xl font-black">Chưa có bài tập để nộp</h2>
+								<p className="mt-2 text-sm text-slate-500">
+									Lớp đã chọn chưa có bài tập trong cổng này. Hãy báo giáo viên kiểm tra lại phạm vi link.
+								</p>
+							</section>
+						)}
 					</>
 				) : (
 					<section className="rounded-3xl bg-white p-5 shadow-sm">
 						<h2 className="text-2xl font-black">
 							Bảng xếp hạng{selectedClass ? ` - ${selectedClass.name}` : ""}
 						</h2>
+						{loadingLeaderboard && (
+							<div className="mt-4 rounded-2xl border border-blue-100 bg-blue-50 p-3 text-sm font-semibold text-blue-800">
+								Đang cập nhật bảng xếp hạng...
+							</div>
+						)}
 						<div className="mt-5 grid gap-3 md:grid-cols-3">
 							{topRows.map((row, index) => (
 								<div
