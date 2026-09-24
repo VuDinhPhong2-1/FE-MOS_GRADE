@@ -95,9 +95,6 @@ const PublicSubmissionPortalPage = () => {
 		[],
 	);
 	const [tab, setTab] = useState<"submit" | "leaderboard">("submit");
-	const [confirmAssignmentId, setConfirmAssignmentId] = useState<string | null>(
-		null,
-	);
 	const [submittingAssignmentId, setSubmittingAssignmentId] = useState<
 		string | null
 	>(null);
@@ -133,12 +130,6 @@ const PublicSubmissionPortalPage = () => {
 		(assignment) => results[assignment.id] && !results[assignment.id].isPreview,
 	).length;
 	const topRows = leaderboard.slice(0, 3);
-	const confirmAssignment = visibleAssignments.find(
-		(assignment) => assignment.id === confirmAssignmentId,
-	);
-	const confirmFile = confirmAssignmentId
-		? files[confirmAssignmentId]
-		: undefined;
 
 	const loadInfo = useCallback(async () => {
 		setLoading(true);
@@ -204,19 +195,18 @@ const PublicSubmissionPortalPage = () => {
 		if (info?.showLeaderboard) void loadLeaderboard();
 	}, [info?.showLeaderboard, loadLeaderboard]);
 
-	const submit = async () => {
-		if (!confirmAssignmentId || !classId || !studentId) return;
-		const file = files[confirmAssignmentId];
+	const submit = async (assignmentId: string) => {
+		if (!assignmentId || !classId || !studentId) return;
+		const file = files[assignmentId];
 		if (!file) {
 			setMessage("Vui lòng chọn file trước khi nộp.");
-			setConfirmAssignmentId(null);
 			return;
 		}
-		setSubmittingAssignmentId(confirmAssignmentId);
+		setSubmittingAssignmentId(assignmentId);
 		setMessage("");
 		setResults((prev) => {
 			const next = { ...prev };
-			delete next[confirmAssignmentId];
+			delete next[assignmentId];
 			return next;
 		});
 		try {
@@ -224,12 +214,12 @@ const PublicSubmissionPortalPage = () => {
 				token,
 				classId,
 				studentId,
-				confirmAssignmentId,
+				assignmentId,
 				file,
 			);
 			setResults((prev) => ({
 				...prev,
-				[confirmAssignmentId]: { ...result, isPreview: false },
+				[assignmentId]: { ...result, isPreview: false },
 			}));
 			setMessage("Đã nộp và chấm bài thành công.");
 			await loadLeaderboard();
@@ -237,7 +227,6 @@ const PublicSubmissionPortalPage = () => {
 			setMessage(error instanceof Error ? error.message : "Không thể nộp bài");
 		} finally {
 			setSubmittingAssignmentId(null);
-			setConfirmAssignmentId(null);
 		}
 	};
 
@@ -428,7 +417,7 @@ const PublicSubmissionPortalPage = () => {
 					disabled={
 						!confirmedIdentity || !file || Boolean(submittingAssignmentId) || isPreviewing
 					}
-					onClick={() => setConfirmAssignmentId(assignment.id)}
+					onClick={() => void submit(assignment.id)}
 					className="mt-4 rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white shadow-sm disabled:cursor-not-allowed disabled:bg-slate-300"
 				>
 					{isSubmitting
@@ -768,35 +757,6 @@ const PublicSubmissionPortalPage = () => {
 					</section>
 				)}
 			</main>
-			{confirmAssignmentId && selectedStudent && confirmAssignment && (
-				<div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4">
-					<div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl">
-						<h2 className="text-2xl font-black">Xác nhận danh tính</h2>
-						<p className="mt-3 text-slate-600">
-							Bạn có chắc chắn muốn nộp file <b>{confirmFile?.name}</b> cho bài{" "}
-							<b>{confirmAssignment.name}</b> dưới tên{" "}
-							<b>{selectedStudent.fullName}</b> - lớp{" "}
-							<b>{selectedClass?.name}</b> không?
-						</p>
-						<div className="mt-6 flex justify-end gap-3">
-							<button
-								type="button"
-								className="rounded-2xl border px-5 py-3 font-bold"
-								onClick={() => setConfirmAssignmentId(null)}
-							>
-								Hủy
-							</button>
-							<button
-								type="button"
-								className="rounded-2xl bg-emerald-600 px-5 py-3 font-bold text-white"
-								onClick={submit}
-							>
-								Đúng, nộp bài
-							</button>
-						</div>
-					</div>
-				</div>
-			)}
 		</div>
 	);
 };
