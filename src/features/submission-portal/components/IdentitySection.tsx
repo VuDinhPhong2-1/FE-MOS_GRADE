@@ -8,6 +8,7 @@ import type {
 	PublicPortalClass,
 	PublicPortalStudent,
 } from "../../../types/submission-portal.types";
+import { cn } from "../../../utils/utils";
 import { normalizeText } from "../utils/grading";
 
 export interface IdentitySectionProps {
@@ -94,31 +95,59 @@ export const IdentitySection = ({
 	return (
 		<Card
 			variant="filled"
-			className="flex flex-col gap-4 bg-m3-surface-container-low p-5 text-m3-on-surface"
+			className="flex flex-col gap-4 bg-m3-surface-container-lowest p-5 text-m3-on-surface"
 		>
 			<div className="flex flex-wrap items-center gap-2">
 				<span
-					className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold ${
+					className={cn(
+						"inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold h-10",
 						classId
 							? "bg-m3-primary-container text-m3-on-primary-container"
-							: "bg-m3-surface-container-high text-m3-on-surface-variant"
-					}`}
+							: "bg-m3-surface-container-high text-m3-on-surface-variant",
+					)}
 				>
-					<Icon name={classId ? "check_circle" : "looks_one"} size={16} />
+					<Icon
+						name={classId ? "check_circle" : "looks_one"}
+						size={16}
+						animateFill
+						fill={classId ? 1 : 0}
+					/>
 					1. Chọn lớp
 				</span>
 				<span
-					className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold ${
+					className={cn(
+						"inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold h-10",
 						studentId
 							? "bg-m3-primary-container text-m3-on-primary-container"
-							: "bg-m3-surface-container-high text-m3-on-surface-variant"
-					}`}
+							: "bg-m3-surface-container-high text-m3-on-surface-variant",
+					)}
 				>
-					<Icon name={studentId ? "check_circle" : "looks_two"} size={16} />
+					<Icon
+						name={studentId ? "check_circle" : "looks_two"}
+						size={16}
+						animateFill
+						fill={studentId ? 1 : 0}
+					/>
 					2. Xác nhận học sinh
 				</span>
-				<span className="inline-flex items-center gap-1 rounded-full bg-m3-surface-container-high px-3 py-1 text-xs font-bold text-m3-on-surface-variant">
-					<Icon name="assignment_turned_in" size={16} />
+				<span
+					className={cn(
+						"inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold h-10",
+						completedCount === totalAssignmentsCount
+							? "bg-m3-primary-container text-m3-on-primary-container"
+							: "bg-m3-surface-container-high text-m3-on-surface-variant",
+					)}
+				>
+					<Icon
+						name={
+							completedCount === totalAssignmentsCount
+								? "check_circle"
+								: "assignment_turned_in"
+						}
+						size={16}
+						animateFill
+						fill={completedCount === totalAssignmentsCount ? 1 : 0}
+					/>
 					3. Nộp bài ({completedCount}/{totalAssignmentsCount})
 				</span>
 			</div>
@@ -194,11 +223,11 @@ export const IdentitySection = ({
 			{selectedStudent && (
 				<Card
 					variant="filled"
-					className="flex flex-wrap items-center justify-between gap-2 bg-m3-primary-container p-4 text-m3-on-primary-container"
+					className="flex items-center justify-between gap-2 bg-m3-tertiary-container rounded-m3-md p-4 text-m3-on-tertiary-container flex-row"
 				>
 					<div className="flex items-center gap-2">
 						<Icon name="account_circle" size={24} className="text-m3-primary" />
-						<Text variant="body-md">
+						<Text variant="body-lg">
 							Đang nộp bài cho{" "}
 							<span className="font-bold">{selectedStudent.fullName}</span> —
 							lớp <span className="font-bold">{selectedClass?.name}</span>
@@ -207,7 +236,8 @@ export const IdentitySection = ({
 					<Button
 						colorStyle="text"
 						onClick={() => onStudentChange("")}
-						size="md"
+						size="sm"
+						className="text-m3-on-tertiary-container"
 					>
 						Đổi học sinh
 					</Button>

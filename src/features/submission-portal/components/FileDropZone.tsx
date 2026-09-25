@@ -2,6 +2,7 @@ import { IconButton } from "@bug-on/m3-expressive/buttons";
 import { Icon } from "@bug-on/m3-expressive/core";
 import { Card, Text } from "@bug-on/m3-expressive/layout";
 import { type DragEvent, useRef } from "react";
+import { cn } from "../../../utils/utils";
 import { formatFileSize } from "../utils/formatters";
 
 export interface FileDropZoneProps {
@@ -55,15 +56,15 @@ export const FileDropZone = ({
 			<Card
 				variant="outlined"
 				disableElevation
-				className={`flex border-dashed flex-col items-center justify-center p-6 text-center transition-colors ${
-					isDragging
-						? "bg-m3-primary-container text-m3-on-primary-container"
-						: "bg-m3-surface-container text-m3-on-surface hover:bg-m3-surface-container-high"
-				} ${disabled || isPreviewing ? "cursor-not-allowed opacity-60" : "cursor-pointer"}`}
+				className={cn(
+					"flex border-dashed flex-col items-center justify-center p-6 text-center transition-colors cursor-pointer rounded-m3-md",
+					isDragging && "bg-m3-primary-container text-m3-on-primary-container",
+				)}
 				onClick={handleContainerClick}
 				onDragOver={handleDragOver}
 				onDragLeave={handleDragLeave}
 				onDrop={handleDrop}
+				disabled={disabled || isPreviewing}
 			>
 				<Icon
 					name={file ? "check_circle" : "cloud_upload"}
@@ -106,7 +107,7 @@ export const FileDropZone = ({
 			{file && (
 				<Card
 					variant="filled"
-					className="flex items-center justify-between bg-m3-surface-container-low px-3 py-2 text-m3-on-surface"
+					className="flex flex-row items-center justify-between bg-m3-surface-container-low px-3 py-2 text-m3-on-surface rounded-m3-md"
 				>
 					<div className="flex items-center gap-2 overflow-hidden">
 						<Icon name="description" size={18} className="text-m3-primary" />

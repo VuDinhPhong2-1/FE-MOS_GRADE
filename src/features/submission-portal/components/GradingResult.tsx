@@ -31,12 +31,17 @@ export const GradingResult = ({
 	return (
 		<Card
 			variant="filled"
-			className="mt-4 flex flex-col gap-3 bg-m3-surface-container p-4 text-m3-on-surface"
+			className="mt-4 flex flex-col rounded-m3-md gap-3 bg-m3-surface-container p-4 text-m3-on-surface"
 		>
 			<ProgressIndicator
 				variant="linear"
 				trackShape="flat"
 				shape="wavy"
+				waveSpeed={0.6}
+				amplitude={2}
+				wavelength={32}
+				trackHeight={4}
+				showStopIndicator={false}
 				aria-label={`Điểm số đạt được: ${scoreRatio}%`}
 				value={Math.min(100, Math.max(0, scoreRatio))}
 			/>
@@ -71,7 +76,7 @@ export const GradingResult = ({
 
 			{failedTaskResults.length > 0 && (
 				<div className="mt-2 space-y-2">
-					<Text variant="title-sm" className="font-bold text-m3-error">
+					<Text variant="title-sm" className="font-bold text-m3-error mb-2">
 						Các câu cần sửa:
 					</Text>
 					{failedTaskResults.map((task, index) => {
@@ -89,8 +94,8 @@ export const GradingResult = ({
 						return (
 							<Card
 								key={taskKey}
-								variant="filled"
-								className="bg-m3-surface-container-high p-3"
+								variant="outlined"
+								className="border-m3-error-container rounded-m3-sm p-3"
 							>
 								<div className="flex items-center justify-between">
 									<Text

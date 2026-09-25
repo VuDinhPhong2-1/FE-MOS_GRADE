@@ -27,7 +27,12 @@ export const PortalTabs = ({
 			value={tab}
 			onValueChange={(val) => onTabChange(val as "submit" | "leaderboard")}
 		>
-			<TabsList variant="primary" scrollable={false} className="w-full">
+			<TabsList
+				variant="primary"
+				scrollable={false}
+				className="w-full"
+				backgroundColor="transparent"
+			>
 				<Tab value="submit">
 					<span className="flex items-center gap-2">
 						<Icon name="edit_note" size={20} />

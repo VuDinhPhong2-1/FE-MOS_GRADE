@@ -71,7 +71,7 @@ export const SubmissionPortalPage = () => {
 
 	if (!info) {
 		return (
-			<div className="flex min-h-screen items-center justify-center bg-m3-surface p-6 text-m3-on-surface">
+			<div className="flex min-h-screen items-center justify-center bg-m3-surface-container p-6 text-m3-on-surface">
 				<Card
 					variant="filled"
 					className="max-w-md bg-m3-error-container p-8 text-center text-m3-on-error-container"
@@ -89,7 +89,7 @@ export const SubmissionPortalPage = () => {
 	}
 
 	return (
-		<div className="min-h-screen bg-m3-surface text-m3-on-surface">
+		<div className="min-h-screen bg-m3-surface-container text-m3-on-surface">
 			<PortalHeader
 				title={info.title}
 				description={info.description}
@@ -102,10 +102,12 @@ export const SubmissionPortalPage = () => {
 				{message && (
 					<Card
 						variant="filled"
-						className="flex items-center gap-2 bg-m3-tertiary-container p-4 text-m3-on-tertiary-container"
+						className="flex items-center gap-2 bg-m3-error-container p-4 text-m3-on-error-container"
 					>
 						<Icon name="info" size={20} />
-						<Text variant="body-md">{message}</Text>
+						<Text variant="body-md" className="text-m3-on-error-container">
+							{message}
+						</Text>
 					</Card>
 				)}
 

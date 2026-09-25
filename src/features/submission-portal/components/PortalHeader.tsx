@@ -1,5 +1,8 @@
 import { Icon } from "@bug-on/m3-expressive/core";
-import { Card, Text } from "@bug-on/m3-expressive/layout";
+import {
+	type AppBarColors,
+	SmallAppBar,
+} from "@bug-on/m3-expressive/navigation";
 
 export interface PortalHeaderProps {
 	title: string;
@@ -16,65 +19,64 @@ export const PortalHeader = ({
 	assignmentsCount,
 	maxSubmissionsPerStudent,
 }: PortalHeaderProps) => {
-	return (
-		<header className="bg-m3-primary px-4 py-8 text-m3-on-primary sm:px-6 lg:px-10">
-			<div className="mx-auto max-w-7xl">
-				<div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-					<div>
-						<span className="inline-flex items-center gap-1.5 rounded-full bg-m3-on-primary/15 px-3 py-1 text-xs font-bold uppercase tracking-wider text-m3-on-primary">
-							<Icon name="school" size={16} />
-							MOS Submission Portal
-						</span>
-						<Text
-							as="h1"
-							variant="headline-lg"
-							className="mt-3 font-black text-m3-on-primary sm:text-4xl"
-						>
-							{title}
-						</Text>
-						{description && (
-							<Text
-								variant="body-lg"
-								className="mt-3 max-w-3xl text-m3-on-primary/90"
-							>
-								{description}
-							</Text>
-						)}
-					</div>
+	const primaryColors: AppBarColors = {
+		containerColor: "var(--md-sys-color-primary)",
+		scrolledContainerColor: "var(--md-sys-color-primary)",
+		titleColor: "var(--md-sys-color-on-primary)",
+		subtitleColor: "var(--md-sys-color-on-primary)",
+	};
 
-					<div className="grid grid-cols-3 gap-3">
-						<Card
-							variant="filled"
-							className="flex flex-col items-center justify-center p-4 text-center "
-						>
-							<Text variant="title-lg" className="font-black">
-								{classesCount}
-							</Text>
-							<Text variant="label-md">Lớp</Text>
-						</Card>
-
-						<Card
-							variant="filled"
-							className="flex flex-col items-center justify-center p-4 text-center "
-						>
-							<Text variant="title-lg" className="font-black">
-								{assignmentsCount}
-							</Text>
-							<Text variant="label-md">Bài tập</Text>
-						</Card>
-
-						<Card
-							variant="filled"
-							className="flex flex-col items-center justify-center p-4 text-center "
-						>
-							<Text variant="title-lg" className="font-black">
-								{maxSubmissionsPerStudent || "∞"}
-							</Text>
-							<Text variant="label-md">Lần nộp</Text>
-						</Card>
-					</div>
-				</div>
+	const actions = (
+		<div className="flex items-center gap-1.5 sm:gap-2">
+			<div
+				title={`${classesCount} Lớp`}
+				className="flex items-center gap-1.5 rounded-full bg-m3-on-primary/15 px-2.5 py-1 text-xs font-semibold text-m3-on-primary transition-colors hover:bg-m3-on-primary/20 sm:px-3 sm:py-1.5"
+			>
+				<Icon name="groups" size={16} className="opacity-80" />
+				<span>{classesCount}</span>
+				<span className="hidden opacity-80 sm:inline">Lớp</span>
 			</div>
-		</header>
+
+			<div
+				title={`${assignmentsCount} Bài tập`}
+				className="flex items-center gap-1.5 rounded-full bg-m3-on-primary/15 px-2.5 py-1 text-xs font-semibold text-m3-on-primary transition-colors hover:bg-m3-on-primary/20 sm:px-3 sm:py-1.5"
+			>
+				<Icon name="assignment" size={16} className="opacity-80" />
+				<span>{assignmentsCount}</span>
+				<span className="hidden opacity-80 sm:inline">Bài tập</span>
+			</div>
+
+			<div
+				title={`Lần nộp: ${maxSubmissionsPerStudent || "Không giới hạn"}`}
+				className="flex items-center gap-1.5 rounded-full bg-m3-on-primary/15 px-2.5 py-1 text-xs font-semibold text-m3-on-primary transition-colors hover:bg-m3-on-primary/20 sm:px-3 sm:py-1.5"
+			>
+				<Icon name="repeat" size={16} className="opacity-80" />
+				<span>{maxSubmissionsPerStudent || "∞"}</span>
+				<span className="hidden opacity-80 sm:inline">Lần nộp</span>
+			</div>
+		</div>
+	);
+
+	const navigationIcon = (
+		<div
+			title="MOS Submission"
+			className="flex h-10 w-10 items-center justify-center rounded-full bg-m3-on-primary/15 text-m3-on-primary"
+		>
+			<Icon name="school" size={20} />
+		</div>
+	);
+
+	return (
+		<>
+			<SmallAppBar
+				title={title}
+				subtitle={description || "MOS Submission"}
+				navigationIcon={navigationIcon}
+				actions={actions}
+				colors={primaryColors}
+				scrollBehavior="pinned"
+			/>
+			<div className="h-16" aria-hidden="true" />
+		</>
 	);
 };

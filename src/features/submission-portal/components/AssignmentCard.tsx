@@ -62,7 +62,7 @@ export const AssignmentCard = ({
 	return (
 		<Card
 			variant="filled"
-			className={`relative flex h-full flex-col overflow-hidden bg-m3-surface-container-highest p-5 text-m3-on-surface transition-all ${
+			className={`relative flex h-full flex-col bg-m3-surface-container-lowest p-5 text-m3-on-surface transition-all ${
 				isSubmitting ? "ring-2 ring-m3-primary" : ""
 			}`}
 		>

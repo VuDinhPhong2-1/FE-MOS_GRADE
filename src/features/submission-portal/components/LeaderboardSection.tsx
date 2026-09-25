@@ -28,7 +28,50 @@ export const LeaderboardSection = ({
 	selectedClass,
 }: LeaderboardSectionProps) => {
 	const topRows = leaderboard.slice(0, 3);
-	const medals = ["🥇", "🥈", "🥉"];
+
+	const podiumItems = useMemo(() => {
+		if (topRows.length === 0) return [];
+		if (topRows.length === 1) {
+			return [
+				{
+					row: topRows[0],
+					medal: "🥇",
+					heightClass: "min-h-80 sm:min-h-96",
+				},
+			];
+		}
+		if (topRows.length === 2) {
+			return [
+				{
+					row: topRows[1],
+					medal: "🥈",
+					heightClass: "min-h-64 sm:min-h-72",
+				},
+				{
+					row: topRows[0],
+					medal: "🥇",
+					heightClass: "min-h-80 sm:min-h-96",
+				},
+			];
+		}
+		return [
+			{
+				row: topRows[1],
+				medal: "🥈",
+				heightClass: "min-h-64 sm:min-h-72",
+			},
+			{
+				row: topRows[0],
+				medal: "🥇",
+				heightClass: "min-h-80 sm:min-h-96",
+			},
+			{
+				row: topRows[2],
+				medal: "🥉",
+				heightClass: "min-h-52 sm:min-h-56",
+			},
+		];
+	}, [topRows]);
 
 	const columns = useMemo(
 		() =>
@@ -129,7 +172,7 @@ export const LeaderboardSection = ({
 	return (
 		<Card
 			variant="filled"
-			className="bg-m3-surface-container-low p-5 text-m3-on-surface"
+			className="bg-m3-surface-container-lowest p-5 text-m3-on-surface"
 		>
 			<Text variant="headline-sm" className="font-black">
 				Bảng xếp hạng{selectedClass ? ` - ${selectedClass.name}` : ""}
@@ -147,20 +190,21 @@ export const LeaderboardSection = ({
 				</Card>
 			)}
 
-			{topRows.length > 0 && (
-				<div className="mt-5 grid gap-3 md:grid-cols-3">
-					{topRows.map((row, index) => (
+			{podiumItems.length > 0 && (
+				<div className="mt-5 flex items-end justify-center gap-3">
+					{podiumItems.map((item) => (
 						<Card
-							key={`${row.studentId}-${row.assignmentId || "all"}-podium`}
+							key={`${item.row.studentId}-${item.row.assignmentId || "all"}-podium`}
 							variant="filled"
-							className="flex flex-col items-center justify-center bg-m3-tertiary-container/30 p-5 text-center text-m3-on-surface"
+							className={`flex flex-1 flex-col items-center justify-center bg-m3-tertiary-container p-4 text-center text-m3-on-tertiary-container ${item.heightClass}`}
 						>
-							<span className="text-4xl">{medals[index]}</span>
-							<Text variant="title-md" className="mt-2 font-bold">
-								{row.studentName}
+							<span className="text-8xl">{item.medal}</span>
+							<Text variant="title-lg" className="mt-2 font-bold">
+								{item.row.studentName}
 							</Text>
-							<Text variant="body-sm" className="text-m3-on-surface-variant">
-								{formatScore(row.scoreValue)}/{formatScore(row.maxScore)} điểm
+							<Text variant="body-md" className="text-m3-on-surface-variant">
+								{formatScore(item.row.scoreValue)}/
+								{formatScore(item.row.maxScore)} điểm
 							</Text>
 						</Card>
 					))}
