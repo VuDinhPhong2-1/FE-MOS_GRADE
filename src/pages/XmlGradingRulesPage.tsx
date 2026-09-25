@@ -91,6 +91,11 @@ const selectedExcelTextRotationPreset = (values?: number[]) => {
 		: "custom";
 };
 
+const excelColumnReferencePattern = /^[A-Za-z]{1,3}$/;
+
+const normalizeEscapedNewlines = (value: string) =>
+	value.replace(/\\r\\n/g, "\n").replace(/\\n/g, "\n").replace(/\\r/g, "\n");
+
 // Danh sách các loại điều kiện đặc biệt hỗ trợ theo từng Task.
 // Thêm loại mới chỉ cần bổ sung thêm 1 phần tử vào mảng này.
 const specialConditionOptions: Array<{
@@ -2168,7 +2173,7 @@ const ExcelProject02SpecialConditionEditor = ({
 						).join("\n")}
 						onChange={(e) =>
 							updateConfig("excelTextRotationConfig", {
-								expectedTexts: e.target.value
+								expectedTexts: normalizeEscapedNewlines(e.target.value)
 									.split(/\r?\n/)
 									.map((item) => item.trim())
 									.filter(Boolean),
@@ -2244,7 +2249,7 @@ const ExcelProject02SpecialConditionEditor = ({
 					/>
 				</label>
 				<label className="text-xs font-semibold text-slate-600 md:col-span-2">
-					Khóa sắp xếp (mỗi dòng: tiêu đề cột hoặc tiêu đề|desc)
+					Khóa sắp xếp (mỗi dòng: tiêu đề cột/cột Excel hoặc giá trị|desc)
 					<textarea
 						value={(
 							specialCondition.excelMultiColumnSortConfig?.keyColumns ?? []
@@ -2266,8 +2271,12 @@ const ExcelProject02SpecialConditionEditor = ({
 										const [name, direction] = line
 											.split("|")
 											.map((item) => item.trim());
+										const isColumnReference = excelColumnReferencePattern.test(name);
+
 										return {
-											headerName: name,
+											...(isColumnReference
+												? { column: name.toUpperCase() }
+												: { headerName: name }),
 											descending:
 												direction?.toLowerCase() === "desc" ||
 												direction?.toLowerCase() === "z-a",
@@ -2275,7 +2284,7 @@ const ExcelProject02SpecialConditionEditor = ({
 									}),
 							})
 						}
-						placeholder={"Wired Equipment\nPort Size"}
+						placeholder={"Wired Equipment\nC"}
 						className={textareaClass}
 					/>
 				</label>
@@ -2409,7 +2418,9 @@ const prepareSpecialCondition = (
 		next.excelTextRotationConfig = {
 			...next.excelTextRotationConfig,
 			expectedTexts: cleanTextareaLines(
-				next.excelTextRotationConfig.expectedTexts,
+				next.excelTextRotationConfig.expectedTexts?.flatMap((text) =>
+					normalizeEscapedNewlines(text).split(/\r?\n/),
+				),
 			),
 		};
 	}
@@ -4978,8 +4989,7 @@ const XmlGradingRulesPage = () => {
 																																					descending: false,
 																																				},
 																																				{
-																																					headerName:
-																																						"Port Size",
+																																	column: "C",
 																																					descending: false,
 																																				},
 																																			],
