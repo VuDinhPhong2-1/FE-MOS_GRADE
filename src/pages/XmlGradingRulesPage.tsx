@@ -1,4 +1,4 @@
-import { Icon } from "@bug-on/m3-expressive";
+﻿import { Icon } from "@bug-on/m3-expressive";
 import type { ClipboardEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { showConfirm } from "../components/common";
@@ -2230,7 +2230,7 @@ const ExcelProject02SpecialConditionEditor = ({
 					/>
 				</label>
 				<label className="text-xs font-semibold text-slate-600">
-					Hàng tiêu đề
+					Tiêu đề nằm ở dòng thứ mấy
 					<input
 						type="number"
 						min={1}
