@@ -133,11 +133,6 @@ export const AssignmentCard = ({
 			{fileWarning && (
 				<Card
 					variant="filled"
-					morphRadius={{
-						hover: 24,
-						rest: 16,
-						pressed: 24,
-					}}
 					className="mt-2 flex items-center gap-2 bg-m3-tertiary-container p-3 text-m3-on-tertiary-container"
 				>
 					<Icon name="warning" size={18} />

@@ -552,6 +552,15 @@ const splitTextareaLines = (value: string) =>
 const cleanTextareaLines = (values?: string[]) =>
 	(values ?? []).map((item) => item.trim()).filter(Boolean);
 
+const escapeInternalNewlinesForTextareaLine = (value: string) =>
+	value.replace(/\r\n/g, "\\n").replace(/\n/g, "\\n").replace(/\r/g, "\\n");
+
+const parseTextRotationExpectedTexts = (value: string) =>
+	value
+		.split(/\r?\n/)
+		.map((item) => normalizeEscapedNewlines(item.trim()))
+		.filter(Boolean);
+
 const textareaValueAfterPaste = (
 	event: ClipboardEvent<HTMLTextAreaElement>,
 ) => {
@@ -2166,20 +2175,19 @@ const ExcelProject02SpecialConditionEditor = ({
 					/>
 				</label>
 				<label className="text-xs font-semibold text-slate-600 md:col-span-2">
-					Tiêu đề cần xoay (mỗi dòng một tiêu đề)
+					Tiêu đề cần xoay (mỗi dòng một tiêu đề, dùng {"\\\\n"} cho xuống dòng trong cùng tiêu đề)
 					<textarea
 						value={(
 							specialCondition.excelTextRotationConfig?.expectedTexts ?? []
-						).join("\n")}
+						)
+							.map(escapeInternalNewlinesForTextareaLine)
+							.join("\n")}
 						onChange={(e) =>
 							updateConfig("excelTextRotationConfig", {
-								expectedTexts: normalizeEscapedNewlines(e.target.value)
-									.split(/\r?\n/)
-									.map((item) => item.trim())
-									.filter(Boolean),
+								expectedTexts: parseTextRotationExpectedTexts(e.target.value),
 							})
 						}
-						placeholder={"Port Size\nBand Size\nPrice\nInstall\nSupport"}
+						placeholder={"Port\\nSize\nBand\\nSize\nPrice\nInstall\nSupport"}
 						className={textareaClass}
 					/>
 				</label>
@@ -2418,10 +2426,8 @@ const prepareSpecialCondition = (
 		next.excelTextRotationConfig = {
 			...next.excelTextRotationConfig,
 			expectedTexts: cleanTextareaLines(
-				next.excelTextRotationConfig.expectedTexts?.flatMap((text) =>
-					normalizeEscapedNewlines(text).split(/\r?\n/),
-				),
-			),
+				next.excelTextRotationConfig.expectedTexts,
+			).map(normalizeEscapedNewlines),
 		};
 	}
 
