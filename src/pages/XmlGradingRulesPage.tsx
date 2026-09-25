@@ -408,9 +408,10 @@ const specialConditionOptionsForSubject = (subject: string) => {
 };
 
 type SpecialConditionOption = (typeof specialConditionOptions)[number];
-type GroupedSpecialConditionOption =
-	| { type: "group"; label: string }
-	| { type: "option"; option: SpecialConditionOption };
+type SpecialConditionOptionGroup = {
+	label: string;
+	options: SpecialConditionOption[];
+};
 
 const specialConditionGroups: Array<{
 	label: string;
@@ -518,32 +519,23 @@ const specialConditionGroups: Array<{
 
 const groupSpecialConditionOptions = (
 	options: SpecialConditionOption[],
-): GroupedSpecialConditionOption[] => {
+): SpecialConditionOptionGroup[] => {
 	const remaining = new Set(options);
-	const grouped: GroupedSpecialConditionOption[] = [];
+	const grouped: SpecialConditionOptionGroup[] = [];
 
 	for (const group of specialConditionGroups) {
 		const groupOptions = options.filter(
 			(option) => remaining.has(option) && group.matches(option),
 		);
 		if (groupOptions.length === 0) continue;
-		grouped.push({ type: "group", label: group.label });
-		grouped.push(
-			...groupOptions.map((option) => ({ type: "option" as const, option })),
-		);
+		grouped.push({ label: group.label, options: groupOptions });
 		for (const option of groupOptions) {
 			remaining.delete(option);
 		}
 	}
 
 	if (remaining.size > 0) {
-		grouped.push({ type: "group", label: "Khác" });
-		grouped.push(
-			...Array.from(remaining).map((option) => ({
-				type: "option" as const,
-				option,
-			})),
-		);
+		grouped.push({ label: "Khác", options: Array.from(remaining) });
 	}
 
 	return grouped;
@@ -5414,31 +5406,15 @@ const XmlGradingRulesPage = () => {
 																													Không sử dụng
 																												</option>
 
-																												{groupedSpecialConditionOptions.map(
-																													(item) =>
-																														item.type ===
-																														"group" ? (
-																															<option
-																																key={`group-${item.label}`}
-																																disabled
-																															>
-																																{`──── ${item.label} ────`}
+																												{groupedSpecialConditionOptions.map((group) => (
+																													<optgroup key={group.label} label={group.label}>
+																														{group.options.map((option) => (
+																															<option key={option.value} value={option.value}>
+																																{option.label}
 																															</option>
-																														) : (
-																															<option
-																																key={
-																																	item.option
-																																		.value
-																																}
-																																value={
-																																	item.option
-																																		.value
-																																}
-																															>
-																																{`  ${item.option.label}`}
-																															</option>
-																														),
-																												)}
+																														))}
+																													</optgroup>
+																												))}
 																											</select>
 
 																											<svg
