@@ -423,102 +423,123 @@ const specialConditionGroups: Array<{
 	matches: (option: SpecialConditionOption) => boolean;
 }> = [
 	{
-		label: "Word - Nội dung và đoạn văn",
+		label: "Word - Thẻ File",
+		matches: (option) => option.value === "wordDocumentInspector",
+	},
+	{
+		label: "Word - Thẻ Home",
 		matches: (option) =>
 			[
-				"hyperlink",
-				"textBoxContainsText",
+				"pictureBullet",
 				"wordParagraphStyle",
 				"wordParagraphList",
 				"wordBulletStyle",
-				"wordBookmark",
-				"wordEndnote",
 			].includes(option.value),
 	},
 	{
-		label: "Word - Bảng",
+		label: "Word - Thẻ Insert",
+		matches: (option) =>
+			[
+				"insertedImage",
+				"hyperlink",
+				"wordTextToTable",
+				"wordBookmark",
+				"wordSmartArt",
+				"textBoxContainsText",
+			].includes(option.value),
+	},
+	{
+		label: "Word - Thẻ Design",
+		matches: (option) =>
+			["documentStyleSet", "pageBorder"].includes(option.value),
+	},
+	{
+		label: "Word - Thẻ Layout",
+		matches: (option) =>
+			["pageMargins", "sectionBreakBeforeText"].includes(option.value),
+	},
+	{
+		label: "Word - Thẻ References",
+		matches: (option) =>
+			["wordCustomToc", "wordEndnote"].includes(option.value),
+	},
+	{
+		label: "Word - Thẻ Review",
+		matches: (option) =>
+			["wordResolveComment", "wordCommentReply"].includes(option.value),
+	},
+	{
+		label: "Word - Thẻ View",
+		matches: (option) => option.value === "wordViewSetting",
+	},
+	{
+		label: "Word - Thẻ ngữ cảnh Bảng (Table Tools)",
 		matches: (option) =>
 			[
 				"convertTableToText",
-				"wordTextToTable",
 				"wordTableSort",
 				"wordTableAutoFit",
 			].includes(option.value),
 	},
 	{
-		label: "Word - Hình ảnh và đồ họa",
-		matches: (option) =>
-			["pictureBullet", "insertedImage", "pictureStyle", "wordSmartArt"].includes(
-				option.value,
-			),
+		label: "Word - Thẻ ngữ cảnh Hình ảnh (Picture Format)",
+		matches: (option) => option.value === "pictureStyle",
 	},
 	{
-		label: "Word - Bố cục và trang",
+		label: "Excel - Thẻ File",
 		matches: (option) =>
-			[
-				"pageMargins",
-				"pageBorder",
-				"sectionBreakBeforeText",
-				"documentStyleSet",
-				"wordCustomToc",
-			].includes(option.value),
+			["excelCompatibilityReport", "excelDocumentProperty"].includes(option.value),
 	},
 	{
-		label: "Word - Nhận xét, kiểm tra và thiết lập",
+		label: "Excel - Thẻ Home",
 		matches: (option) =>
 			[
-				"wordResolveComment",
-				"wordCommentReply",
-				"wordDocumentInspector",
-				"wordViewSetting",
-			].includes(option.value),
-	},
-	{
-		label: "Excel - Bảng và dữ liệu",
-		matches: (option) =>
-			[
-				"excelTableName",
+				"excelClearCellFormatting",
+				"excelMergedRange",
+				"excelIconSetConditionalFormatting",
+				"excelNoConditionalFormatting",
+				"excelNumberFormat",
+				"excelTextRotation",
 				"excelTextReplacement",
-				"excelMultiColumnSort",
-				"excelDataModelImport",
 			].includes(option.value),
 	},
 	{
-		label: "Excel - Công thức và vùng đặt tên",
-		matches: (option) =>
-			["excelDefinedName", "excelFormulaReferences"].includes(option.value),
+		label: "Excel - Thẻ Insert",
+		matches: (option) => option.value === "excelCellHyperlink",
 	},
 	{
-		label: "Excel - Biểu đồ",
-		matches: (option) =>
-			["excelChartDataRange", "excelChartStyle", "excelChartLegend"].includes(
-				option.value,
-			),
-	},
-	{
-		label: "Excel - Trang in và workbook",
+		label: "Excel - Thẻ Page Layout",
 		matches: (option) =>
 			[
 				"excelWorksheetPageSetup",
 				"excelPrintTitles",
-				"excelFreezePanes",
 				"excelPrintArea",
-				"excelDocumentProperty",
-				"excelCompatibilityReport",
 			].includes(option.value),
 	},
 	{
-		label: "Excel - Ô, định dạng và liên kết",
+		label: "Excel - Thẻ Formulas",
 		matches: (option) =>
-			[
-				"excelClearCellFormatting",
-				"excelIconSetConditionalFormatting",
-				"excelNumberFormat",
-				"excelNoConditionalFormatting",
-				"excelTextRotation",
-				"excelMergedRange",
-				"excelCellHyperlink",
-			].includes(option.value),
+			["excelDefinedName", "excelFormulaReferences"].includes(option.value),
+	},
+	{
+		label: "Excel - Thẻ Data",
+		matches: (option) =>
+			["excelDataModelImport", "excelMultiColumnSort"].includes(option.value),
+	},
+	{
+		label: "Excel - Thẻ View",
+		matches: (option) => option.value === "excelFreezePanes",
+	},
+	{
+		label: "Excel - Thẻ ngữ cảnh Bảng (Table Design)",
+		matches: (option) => option.value === "excelTableName",
+	},
+	{
+		label: "Excel - Thẻ ngữ cảnh Biểu đồ (Chart Design)",
+		matches: (option) =>
+			["excelChartDataRange", "excelChartStyle", "excelChartLegend"].includes(
+				option.value,
+			),
 	},
 ];
 
