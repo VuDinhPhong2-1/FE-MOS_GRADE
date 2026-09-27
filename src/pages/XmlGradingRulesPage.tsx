@@ -135,6 +135,11 @@ const specialConditionOptions: Array<{
 			"Kiểm tra ngắt phần đúng loại nằm ngay trước đoạn văn bản mục tiêu trong Word.",
 	},
 	{
+		value: "wordColumns",
+		label: "Chia cột",
+		description: "Kiểm tra số cột từ đoạn đầu đến hết đoạn cuối, không chia lấn ra ngoài phạm vi.",
+	},
+	{
 		value: "pictureStyle",
 		label: "Kiểu ảnh Word",
 		description:
@@ -456,7 +461,7 @@ const specialConditionGroups: Array<{
 	{
 		label: "Word - Thẻ Layout",
 		matches: (option) =>
-			["pageMargins", "sectionBreakBeforeText"].includes(option.value),
+			["pageMargins", "sectionBreakBeforeText", "wordColumns"].includes(option.value),
 	},
 	{
 		label: "Word - Thẻ References",
@@ -3850,6 +3855,18 @@ const XmlGradingRulesPage = () => {
 																													const value =
 																														e.target.value;
 
+                                    if (value === "wordColumns") {
+                                        updateTaskSpecialCondition(pi, ti, {
+                                            type: "wordColumns",
+                                            score: task.specialCondition?.score ?? 0,
+                                            feedback: task.specialCondition?.feedback ?? defaultSpecialConditionFeedback("wordColumns"),
+                                            wordColumnsConfig: task.specialCondition?.wordColumnsConfig ?? {
+                                                sourceFile: "word/document.xml", startText: "", endText: "",
+                                                startOccurrence: 1, endOccurrence: 1, expectedColumnCount: 2,
+                                            },
+                                        });
+                                        return;
+                                    }
 																													if (!value) {
 																														updateTaskSpecialCondition(
 																															pi,
@@ -6138,6 +6155,38 @@ const XmlGradingRulesPage = () => {
 																								</label>
 																							</div>
 																						)}
+                        {task.specialCondition?.type === "wordColumns" && (
+                            <div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
+                                <p className="mb-3 text-xs text-slate-600">Tính cả đoạn đầu và đoạn cuối. Mọi section trong phạm vi phải đúng số cột và không lấn sang đoạn trước/sau.</p>
+                                <div className="grid gap-3 md:grid-cols-2">
+                                    {([
+                                        ["startText", "Văn bản đoạn bắt đầu"],
+                                        ["endText", "Văn bản đoạn kết thúc"],
+                                        ["startOccurrence", "Lần xuất hiện đoạn đầu"],
+                                        ["endOccurrence", "Lần xuất hiện đoạn cuối"],
+                                        ["expectedColumnCount", "Số cột"],
+                                    ] as const).map(([field, label]) => (
+                                        <label key={field} className="text-xs font-semibold text-slate-600">
+                                            {label}
+                                            <input
+                                                className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2"
+                                                type={field.endsWith("Text") ? "text" : "number"}
+                                                min={field.endsWith("Text") ? undefined : 1}
+                                                value={task.specialCondition?.wordColumnsConfig?.[field] ?? ""}
+                                                onChange={(e) => updateTaskSpecialCondition(pi, ti, {
+                                                    ...task.specialCondition!,
+                                                    wordColumnsConfig: {
+                                                        startText: "", endText: "", expectedColumnCount: 2,
+                                                        ...task.specialCondition?.wordColumnsConfig,
+                                                        [field]: field.endsWith("Text") ? e.target.value : Number(e.target.value),
+                                                    },
+                                                })}
+                                            />
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
 																						{task.specialCondition?.type ===
 																							"sectionBreakBeforeText" && (
 																							<div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">

@@ -42,6 +42,7 @@ export type SpecialConditionType =
 	| "convertTableToText"
 	| "hyperlink"
 	| "sectionBreakBeforeText"
+	| "wordColumns"
 	| "pictureStyle"
 	| "textBoxContainsText"
 	| "pageMargins"
@@ -134,6 +135,15 @@ export interface HyperlinkConfig {
 	anchorTextBefore?: string;
 	url?: string;
 	caseSensitiveText?: boolean;
+}
+
+export interface WordColumnsConfig {
+	sourceFile?: string;
+	startText: string;
+	endText: string;
+	startOccurrence?: number;
+	endOccurrence?: number;
+	expectedColumnCount: number;
 }
 
 export interface SectionBreakBeforeTextConfig {
@@ -546,6 +556,7 @@ export interface SpecialCondition {
 	convertTableToTextConfig?: ConvertTableToTextConfig;
 	hyperlinkConfig?: HyperlinkConfig;
 	sectionBreakBeforeTextConfig?: SectionBreakBeforeTextConfig;
+	wordColumnsConfig?: WordColumnsConfig;
 	pictureStyleConfig?: PictureStyleConfig;
 	textBoxContainsTextConfig?: TextBoxContainsTextConfig;
 	pageMarginsConfig?: PageMarginsConfig;
