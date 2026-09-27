@@ -454,13 +454,12 @@ const specialConditionGroups: Array<{
 				"hyperlink",
 				"wordTextToTable",
 				"wordBookmark",
-				"wordSmartArt",
 				"textBoxContainsText",
 			].includes(option.value),
 	},
 	{
 		label: "Word - Thẻ SmartArt Design",
-		matches: (option) => option.value === "wordSmartArtColors",
+		matches: (option) => ["wordSmartArt", "wordSmartArtColors"].includes(option.value),
 	},
 	{
 		label: "Word - Thẻ Design",
@@ -7449,6 +7448,7 @@ const XmlGradingRulesPage = () => {
 																										"Text cần có",
 																										"Be Accountable and Transparent",
 																									],
+                                                ["expectedLastNodeText", "Nội dung ô cuối (khớp toàn bộ; SmartArt một cấp)", "Be Accountable and Transparent"],
 																									[
 																										"beforeText",
 																										"SmartArt đứng trước",

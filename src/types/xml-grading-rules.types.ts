@@ -325,6 +325,7 @@ export interface WordEndnoteConfig {
 }
 
 export interface WordSmartArtConfig {
+	expectedLastNodeText?: string;
 	sourceFile?: string;
 	dataFile?: string;
 	colorsFile?: string;
