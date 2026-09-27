@@ -3870,7 +3870,7 @@ const XmlGradingRulesPage = () => {
                                             score: task.specialCondition?.score ?? 0,
                                             feedback: task.specialCondition?.feedback ?? defaultSpecialConditionFeedback("wordSmartArtColors"),
                                             wordSmartArtColorsConfig: task.specialCondition?.wordSmartArtColorsConfig ?? {
-                                                colorsFile: "word/diagrams/colors1.xml", expectedColorStyle: "accent5_6",
+                                                colorsFile: "word/diagrams/colors1.xml", expectedColorStyle: "colorful5",
                                             },
                                         });
                                     }
@@ -6196,11 +6196,13 @@ const XmlGradingRulesPage = () => {
                                             },
                                         })}>
                                         <option value="">Chọn kiểu màu</option>
-                                        <option value="accent5_6">Colorful Range – Accent Colors 5 to 6</option>
+                                        <option value="colorful5">Colorful Range – Accent Colors 5 to 6</option>
                                         {task.specialCondition.wordSmartArtColorsConfig?.expectedColorStyle &&
-                                            task.specialCondition.wordSmartArtColorsConfig.expectedColorStyle !== "accent5_6" && (
+                                            task.specialCondition.wordSmartArtColorsConfig.expectedColorStyle !== "colorful5" && (
                                             <option value={task.specialCondition.wordSmartArtColorsConfig.expectedColorStyle}>
-                                                {task.specialCondition.wordSmartArtColorsConfig.expectedColorStyle}
+                                                {task.specialCondition.wordSmartArtColorsConfig.expectedColorStyle === "accent5_6"
+                                                    ? "Colorful Range – Accent Colors 5 to 6 (cấu hình cũ)"
+                                                    : task.specialCondition.wordSmartArtColorsConfig.expectedColorStyle}
                                             </option>
                                         )}
                                     </select>
