@@ -254,6 +254,11 @@ const specialConditionOptions: Array<{
 			"Kiểm tra SmartArt trong Word: màu, số node/shape, nội dung và vị trí tương đối trong tài liệu.",
 	},
 	{
+		value: "wordSmartArtColors",
+		label: "Đổi màu SmartArt (Change Colors)",
+		description: "Kiểm tra riêng kiểu màu SmartArt, không kiểm tra nội dung, số hình hoặc vị trí.",
+	},
+	{
 		value: "excelTableName",
 		label: "Tên bảng Excel",
 		description:
@@ -452,6 +457,10 @@ const specialConditionGroups: Array<{
 				"wordSmartArt",
 				"textBoxContainsText",
 			].includes(option.value),
+	},
+	{
+		label: "Word - Thẻ SmartArt Design",
+		matches: (option) => option.value === "wordSmartArtColors",
 	},
 	{
 		label: "Word - Thẻ Design",
@@ -3855,6 +3864,16 @@ const XmlGradingRulesPage = () => {
 																													const value =
 																														e.target.value;
 
+                                    if (value === "wordSmartArtColors") {
+                                        updateTaskSpecialCondition(pi, ti, {
+                                            type: "wordSmartArtColors",
+                                            score: task.specialCondition?.score ?? 0,
+                                            feedback: task.specialCondition?.feedback ?? defaultSpecialConditionFeedback("wordSmartArtColors"),
+                                            wordSmartArtColorsConfig: task.specialCondition?.wordSmartArtColorsConfig ?? {
+                                                colorsFile: "word/diagrams/colors1.xml", expectedColorStyle: "accent5_6",
+                                            },
+                                        });
+                                    }
                                     if (value === "wordColumns") {
                                         updateTaskSpecialCondition(pi, ti, {
                                             type: "wordColumns",
@@ -6155,6 +6174,40 @@ const XmlGradingRulesPage = () => {
 																								</label>
 																							</div>
 																						)}
+                        {task.specialCondition?.type === "wordSmartArtColors" && (
+                            <div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-2">
+                                <label className="text-xs font-semibold text-slate-600">
+                                    File màu SmartArt
+                                    <input className={inputClass}
+                                        value={task.specialCondition.wordSmartArtColorsConfig?.colorsFile ?? "word/diagrams/colors1.xml"}
+                                        onChange={(e) => updateTaskSpecialCondition(pi, ti, {
+                                            ...task.specialCondition!, wordSmartArtColorsConfig: {
+                                                ...task.specialCondition?.wordSmartArtColorsConfig, colorsFile: e.target.value,
+                                            },
+                                        })} />
+                                </label>
+                                <label className="text-xs font-semibold text-slate-600">
+                                    Kiểu màu (Change Colors)
+                                    <select className={inputClass}
+                                        value={task.specialCondition.wordSmartArtColorsConfig?.expectedColorStyle ?? ""}
+                                        onChange={(e) => updateTaskSpecialCondition(pi, ti, {
+                                            ...task.specialCondition!, wordSmartArtColorsConfig: {
+                                                ...task.specialCondition?.wordSmartArtColorsConfig, expectedColorStyle: e.target.value,
+                                            },
+                                        })}>
+                                        <option value="">Chọn kiểu màu</option>
+                                        <option value="accent5_6">Colorful Range – Accent Colors 5 to 6</option>
+                                        {task.specialCondition.wordSmartArtColorsConfig?.expectedColorStyle &&
+                                            task.specialCondition.wordSmartArtColorsConfig.expectedColorStyle !== "accent5_6" && (
+                                            <option value={task.specialCondition.wordSmartArtColorsConfig.expectedColorStyle}>
+                                                {task.specialCondition.wordSmartArtColorsConfig.expectedColorStyle}
+                                            </option>
+                                        )}
+                                    </select>
+                                </label>
+                                <p className="text-xs text-slate-600 md:col-span-2">Chỉ chấm kiểu màu. Nếu tài liệu có nhiều SmartArt, chọn đúng file colorsN.xml của đồ họa cần chấm.</p>
+                            </div>
+                        )}
                         {task.specialCondition?.type === "wordColumns" && (
                             <div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
                                 <p className="mb-3 text-xs text-slate-600">Tính cả đoạn đầu và đoạn cuối. Mọi section trong phạm vi phải đúng số cột và không lấn sang đoạn trước/sau.</p>
@@ -7230,6 +7283,34 @@ const XmlGradingRulesPage = () => {
 																						{task.specialCondition?.type ===
 																							"wordEndnote" && (
 																							<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-2">
+                            <label className="text-xs font-semibold text-slate-600">
+                                Định dạng số
+                                <select
+                                    className={inputClass}
+                                    value={task.specialCondition.wordEndnoteConfig?.expectedNumberFormat ?? ""}
+                                    onChange={(e) => updateTaskSpecialCondition(pi, ti, {
+                                        ...task.specialCondition!,
+                                        wordEndnoteConfig: {
+                                            ...task.specialCondition?.wordEndnoteConfig,
+                                            expectedNumberFormat: e.target.value,
+                                        },
+                                    })}
+                                >
+                                    <option value="">Không kiểm tra định dạng số</option>
+                                    <option value="decimal">1, 2, 3, …</option>
+                                    <option value="lowerLetter">a, b, c, …</option>
+                                    <option value="upperLetter">A, B, C, …</option>
+                                    <option value="lowerRoman">i, ii, iii, …</option>
+                                    <option value="upperRoman">I, II, III, …</option>
+                                    <option value="chicago">*, †, ‡, §, …</option>
+                                    {task.specialCondition.wordEndnoteConfig?.expectedNumberFormat &&
+                                        !["decimal", "lowerLetter", "upperLetter", "lowerRoman", "upperRoman", "chicago"].includes(task.specialCondition.wordEndnoteConfig.expectedNumberFormat) && (
+                                            <option value={task.specialCondition.wordEndnoteConfig.expectedNumberFormat}>
+                                                Giá trị đã lưu: {task.specialCondition.wordEndnoteConfig.expectedNumberFormat}
+                                            </option>
+                                        )}
+                                </select>
+                            </label>
 																								{[
 																									[
 																										"sourceFile",
@@ -7250,11 +7331,6 @@ const XmlGradingRulesPage = () => {
 																										"expectedText",
 																										"Nội dung endnote",
 																										"http://www.spj.org/index.asp",
-																									],
-																									[
-																										"expectedNumberFormat",
-																										"Định dạng số",
-																										"decimal",
 																									],
 																								].map(
 																									([
@@ -7344,6 +7420,7 @@ const XmlGradingRulesPage = () => {
 																						{task.specialCondition?.type ===
 																							"wordSmartArt" && (
 																							<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-2">
+
 																								{[
 																									[
 																										"sourceFile",

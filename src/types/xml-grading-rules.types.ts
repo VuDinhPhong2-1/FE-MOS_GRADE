@@ -62,6 +62,7 @@ export type SpecialConditionType =
 	| "wordViewSetting"
 	| "wordEndnote"
 	| "wordSmartArt"
+	| "wordSmartArtColors"
 	| "excelTableName"
 	| "excelWorksheetPageSetup"
 	| "excelClearCellFormatting"
@@ -576,6 +577,7 @@ export interface SpecialCondition {
 	wordViewSettingConfig?: WordViewSettingConfig;
 	wordEndnoteConfig?: WordEndnoteConfig;
 	wordSmartArtConfig?: WordSmartArtConfig;
+	wordSmartArtColorsConfig?: { colorsFile?: string; expectedColorStyle?: string };
 	excelTableNameConfig?: ExcelTableNameConfig;
 	excelWorksheetPageSetupConfig?: ExcelWorksheetPageSetupConfig;
 	excelClearCellFormattingConfig?: ExcelClearCellFormattingConfig;
