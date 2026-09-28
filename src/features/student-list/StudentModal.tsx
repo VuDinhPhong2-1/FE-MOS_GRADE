@@ -2,7 +2,6 @@ import {
 	Button,
 	Checkbox,
 	Dialog,
-	DialogBody,
 	DialogContent,
 	DialogDescription,
 	DialogFooter,
@@ -11,6 +10,7 @@ import {
 	DialogPortal,
 	DialogTitle,
 	Icon,
+	ScrollArea,
 	Select,
 	type SelectOption,
 	TextField,
@@ -251,7 +251,12 @@ const StudentModalComponent = ({
 						onSubmit={handleSubmit}
 						className="flex min-h-0 flex-1 flex-col"
 					>
-						<DialogBody className="flex flex-1 flex-col gap-4 overflow-y-auto px-6 py-4">
+						<ScrollArea
+							type="scroll"
+							orientation="vertical"
+							className="flex-1 min-h-0"
+							viewportClassName="flex flex-col gap-4 px-6 py-4"
+						>
 							{error && (
 								<div className="flex items-center gap-2 rounded-2xl bg-m3-error-container p-3 text-xs font-medium text-m3-on-error-container">
 									<Icon name="error" size={16} />
@@ -353,7 +358,7 @@ const StudentModalComponent = ({
 								fullWidth
 								className="pt-4"
 							/>
-						</DialogBody>
+						</ScrollArea>
 
 						<DialogFooter className="flex justify-end gap-2 px-6 py-4">
 							<Button

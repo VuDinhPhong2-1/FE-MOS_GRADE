@@ -14,6 +14,7 @@ import {
 	List,
 	ListItem,
 	ProgressIndicator,
+	ScrollArea,
 	TextField,
 } from "@bug-on/m3-expressive";
 import type React from "react";
@@ -131,7 +132,11 @@ export const HandoverModal: React.FC<HandoverModalProps> = ({
 										Không tìm thấy giáo viên nào phù hợp.
 									</div>
 								) : (
-									<div className="max-h-72 mt-2 overflow-y-auto pr-1">
+									<ScrollArea
+										type="scroll"
+										orientation="vertical"
+										className="max-h-72 mt-2 pr-1"
+									>
 										<List
 											variant="expressive"
 											listStyle="segmented"
@@ -199,7 +204,7 @@ export const HandoverModal: React.FC<HandoverModalProps> = ({
 												);
 											})}
 										</List>
-									</div>
+									</ScrollArea>
 								)}
 							</DialogBody>
 

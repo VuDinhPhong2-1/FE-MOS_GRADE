@@ -12,6 +12,7 @@ import {
 	DialogTitle,
 	Icon,
 	ProgressIndicator,
+	ScrollArea,
 } from "@bug-on/m3-expressive";
 import type { ComponentProps } from "react";
 import {
@@ -239,7 +240,12 @@ export const AttendanceModal = ({
 					)}
 
 					{/* Content */}
-					<div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4 sm:p-6">
+					<ScrollArea
+						type="scroll"
+						orientation="vertical"
+						className="min-h-0 flex-1"
+						viewportClassName="space-y-4 p-4 sm:p-6"
+					>
 						{attendanceLoading && (
 							<div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
 								<ProgressIndicator
@@ -344,7 +350,7 @@ export const AttendanceModal = ({
 								) : null}
 							</>
 						)}
-					</div>
+					</ScrollArea>
 
 					{/* Modal Footer */}
 					<DialogFooter className="gap-2 border-t border-m3-outline-variant/60 px-6 py-3 mt-0 bg-m3-surface-container-high">

@@ -13,6 +13,7 @@ import {
 	DialogTitle,
 	Icon,
 	IconButton,
+	ScrollArea,
 	Select,
 	type SelectOption,
 	TextField,
@@ -187,7 +188,12 @@ export const ScheduleFormModal = ({
 					</div>
 
 					<form onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col">
-						<div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4 sm:p-5">
+						<ScrollArea
+							type="scroll"
+							orientation="vertical"
+							className="min-h-0 flex-1"
+							viewportClassName="space-y-4 p-4 sm:p-5"
+						>
 							{/* Nhóm: Trường & Lớp học */}
 							<div className="rounded-3xl bg-m3-surface-container p-4 sm:p-5 text-m3-on-surface">
 								<div className="mb-3 flex items-center gap-2">
@@ -464,7 +470,7 @@ export const ScheduleFormModal = ({
 									</div>
 								)}
 							</div>
-						</div>
+						</ScrollArea>
 
 						{/* Modal Footer */}
 						<DialogFooter className="gap-2 border-t border-m3-outline-variant/60 px-6 py-3 mt-0">

@@ -153,6 +153,7 @@ src/
   - `src/features/class-list/components/HandoverModal.tsx`
 - **Agent**: `frontend-specialist`
 - **Skills**: `clean-code`, `frontend-design`
+- **Status**: [x] Đã hoàn thành
 - **Mô tả**:
   - Chuyển đổi vùng cuộn `DialogBody` (`overflow-y-auto`) hoặc div danh sách bên trong sang sử dụng `ScrollArea` với `type="scroll"` và `orientation="vertical"`.
   - Đảm bảo form validation, auto-focus của input và dropdown selects (Menu/Select) không bị clipping hay xung đột sự kiện cuộn.
@@ -170,6 +171,7 @@ src/
   - `src/components/layout/ProfileModal.tsx`
 - **Agent**: `frontend-specialist`
 - **Skills**: `clean-code`, `frontend-design`
+- **Status**: [x] Đã hoàn thành
 - **Mô tả**:
   - Thay thế `overflow-y-auto` trên `DialogBody` / div container bằng `ScrollArea` `type="scroll"`.
   - Căn chỉnh `viewportClassName` giữ nguyên padding form chuẩn (`px-6 py-4`).
