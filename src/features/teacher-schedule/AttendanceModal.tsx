@@ -244,8 +244,9 @@ export const AttendanceModal = ({
 						type="scroll"
 						orientation="vertical"
 						className="min-h-0 flex-1"
-						viewportClassName="space-y-4 p-4 sm:p-6"
+						viewportClassName="p-4 sm:p-6"
 					>
+						<div className="flex flex-col gap-4">
 						{attendanceLoading && (
 							<div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
 								<ProgressIndicator
@@ -350,6 +351,7 @@ export const AttendanceModal = ({
 								) : null}
 							</>
 						)}
+						</div>
 					</ScrollArea>
 
 					{/* Modal Footer */}

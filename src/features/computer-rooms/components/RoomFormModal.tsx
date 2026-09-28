@@ -80,7 +80,7 @@ export const RoomFormModal = ({
 				<DialogOverlay />
 				<DialogContent
 					hideCloseButton
-					className="flex max-h-[92vh] w-[calc(100%-2rem)] max-w-2xl flex-col overflow-hidden rounded-4xl bg-m3-surface-container-high p-0 text-m3-on-surface shadow-2xl"
+					className="flex max-h-[92vh] w-[calc(100%-2rem)] max-w-2xl flex-col overflow-hidden rounded-4xl bg-m3-surface-container-high p-0 text-m3-on-surface"
 				>
 					<form onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col">
 						{/* Header */}
@@ -107,8 +107,9 @@ export const RoomFormModal = ({
 							type="scroll"
 							orientation="vertical"
 							className="flex-1 min-h-0"
-							viewportClassName="px-6 py-4 space-y-5"
+							viewportClassName="px-6 py-4"
 						>
+							<div className="flex flex-col gap-5">
 							{/* Trường áp dụng nếu có nhiều hơn 1 trường */}
 							{schools.length > 1 && (
 								<div>
@@ -280,6 +281,7 @@ export const RoomFormModal = ({
 										showDividers={false}
 									/>
 								</div>
+							</div>
 							</div>
 						</ScrollArea>
 

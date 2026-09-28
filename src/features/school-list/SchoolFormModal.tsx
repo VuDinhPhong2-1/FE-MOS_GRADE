@@ -149,8 +149,9 @@ export const SchoolFormModal = ({
 							type="scroll"
 							orientation="vertical"
 							className="flex-1 min-h-0"
-							viewportClassName="flex flex-col gap-6 px-6 pt-4 pb-6 pr-5"
+							viewportClassName="px-6 pt-4 pb-6 pr-5"
 						>
+							<div className="flex flex-col gap-6">
 							<div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
 								<TextField
 									variant="outlined"
@@ -261,6 +262,7 @@ export const SchoolFormModal = ({
 								onChange={handleFieldChange("description")}
 								className="pt-4"
 							/>
+							</div>
 						</ScrollArea>
 
 						{/* Modal Footer */}

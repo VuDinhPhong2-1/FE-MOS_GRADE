@@ -255,8 +255,9 @@ const StudentModalComponent = ({
 							type="scroll"
 							orientation="vertical"
 							className="flex-1 min-h-0"
-							viewportClassName="flex flex-col gap-4 px-6 py-4"
+							viewportClassName="px-6 py-4"
 						>
+							<div className="flex flex-col gap-4">
 							{error && (
 								<div className="flex items-center gap-2 rounded-2xl bg-m3-error-container p-3 text-xs font-medium text-m3-on-error-container">
 									<Icon name="error" size={16} />
@@ -358,6 +359,7 @@ const StudentModalComponent = ({
 								fullWidth
 								className="pt-4"
 							/>
+							</div>
 						</ScrollArea>
 
 						<DialogFooter className="flex justify-end gap-2 px-6 py-4">

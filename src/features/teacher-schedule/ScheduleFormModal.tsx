@@ -192,8 +192,9 @@ export const ScheduleFormModal = ({
 							type="scroll"
 							orientation="vertical"
 							className="min-h-0 flex-1"
-							viewportClassName="space-y-4 p-4 sm:p-5"
+							viewportClassName="p-4 sm:p-5"
 						>
+							<div className="flex flex-col gap-4">
 							{/* Nhóm: Trường & Lớp học */}
 							<div className="rounded-3xl bg-m3-surface-container p-4 sm:p-5 text-m3-on-surface">
 								<div className="mb-3 flex items-center gap-2">
@@ -469,6 +470,7 @@ export const ScheduleFormModal = ({
 										/>
 									</div>
 								)}
+							</div>
 							</div>
 						</ScrollArea>
 

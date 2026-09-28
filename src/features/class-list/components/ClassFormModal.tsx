@@ -117,8 +117,9 @@ export const ClassFormModal: React.FC<ClassFormModalProps> = ({
 							type="scroll"
 							orientation="vertical"
 							className="flex-1 min-h-0"
-							viewportClassName="flex flex-col gap-4 px-6 pt-3 pb-6"
+							viewportClassName="px-6 pt-3 pb-6"
 						>
+							<div className="flex flex-col gap-4">
 							{formError && (
 								<div className="flex items-center gap-2 rounded-2xl bg-m3-error-container p-3 text-xs font-medium text-m3-on-error-container">
 									<Icon name="error" size={16} />
@@ -237,6 +238,7 @@ export const ClassFormModal: React.FC<ClassFormModalProps> = ({
 									/>
 								</div>
 							)}
+							</div>
 						</ScrollArea>
 
 						{/* Footer */}

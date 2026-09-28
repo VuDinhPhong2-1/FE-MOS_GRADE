@@ -128,8 +128,9 @@ const PasteStudentModalComponent = ({
 						type="scroll"
 						orientation="vertical"
 						className="flex-1 min-h-0"
-						viewportClassName="flex flex-col gap-4 px-6 py-4"
+						viewportClassName="px-6 py-4"
 					>
+						<div className="flex flex-col gap-4">
 						<p className="text-sm text-m3-on-surface-variant">
 							Copy trực tiếp 2 cột từ Excel theo thứ tự:{" "}
 							<strong className="text-m3-on-surface">Họ và tên đệm</strong>,{" "}
@@ -228,6 +229,7 @@ const PasteStudentModalComponent = ({
 								<span>{error}</span>
 							</div>
 						)}
+						</div>
 					</ScrollArea>
 
 					<DialogFooter className="flex justify-end gap-2 border-t border-m3-outline-variant/40 px-6 py-4">
