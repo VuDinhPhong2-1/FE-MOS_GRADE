@@ -20,14 +20,14 @@
 ---
 
 ## 3. Success Criteria
-- [ ] Khung layout chính (`Layout.tsx`) sử dụng `ScrollArea` với `type="scroll"`, tạo trải nghiệm cuộn đồng nhất cho tất cả các trang quản trị.
-- [ ] Component `DataTable.tsx` được nâng cấp hỗ trợ `ScrollArea` (`type="scroll"`) cho vùng dữ liệu bảng, giữ nguyên tính năng `stickyHeader` và responsive.
-- [ ] Toàn bộ các Modal / Dialog có nội dung dài (Body scroll) chuyển sang dùng `ScrollArea` (`type="scroll"`), loại bỏ hoàn toàn hiện tượng thanh cuộn native vỡ layout hay che mất viền bo góc `rounded-4xl` của Dialog.
-- [ ] Tất cả các vị trí đã có `ScrollArea` (`GradingView`, `TeacherListPanel`, `SchoolClassAssignmentPicker`) được chuẩn hóa bổ sung thuộc tính `type="scroll"` rõ ràng.
-- [ ] Các panel tính năng danh sách dài (`PermissionPanel`, `PortalDetailsSection`, `ClassAnalyticsPanel`, `MultiAssignmentSelector`, `ScoreboardContent`, `XmlGradingRulesPage`, `AssignmentManagementPage`, `LocalAgentCompactPanel`) được nâng cấp sang `ScrollArea` `type="scroll"`.
-- [ ] Thanh cuộn tự động ẩn khi người dùng ngừng tương tác và chỉ hiển thị khi đang cuộn (`type="scroll"`), thời gian trễ ẩn chuẩn ~600ms.
-- [ ] Tuân thủ chặt chẽ design tokens Material Design 3 trong `DESIGN.md` (màu track `bg-m3-surface-container`, màu thumb `bg-m3-on-surface/25 hover:bg-m3-on-surface/40`, bo góc full).
-- [ ] Đạt 100% Type-check (`tsc -b`), lint và build thành công không có lỗi hoặc cảnh báo.
+- [x] Khung layout chính (`Layout.tsx`) sử dụng `ScrollArea` với `type="scroll"`, tạo trải nghiệm cuộn đồng nhất cho tất cả các trang quản trị.
+- [x] Component `DataTable.tsx` được nâng cấp hỗ trợ `ScrollArea` (`type="scroll"`) cho vùng dữ liệu bảng, giữ nguyên tính năng `stickyHeader` và responsive.
+- [x] Toàn bộ các Modal / Dialog có nội dung dài (Body scroll) chuyển sang dùng `ScrollArea` (`type="scroll"`), loại bỏ hoàn toàn hiện tượng thanh cuộn native vỡ layout hay che mất viền bo góc `rounded-4xl` của Dialog.
+- [x] Tất cả các vị trí đã có `ScrollArea` (`GradingView`, `TeacherListPanel`, `SchoolClassAssignmentPicker`) được chuẩn hóa bổ sung thuộc tính `type="scroll"` rõ ràng.
+- [x] Các panel tính năng danh sách dài (`PermissionPanel`, `PortalDetailsSection`, `ClassAnalyticsPanel`, `MultiAssignmentSelector`, `ScoreboardContent`, `XmlGradingRulesPage`, `AssignmentManagementPage`, `LocalAgentCompactPanel`) được nâng cấp sang `ScrollArea` `type="scroll"`.
+- [x] Thanh cuộn tự động ẩn khi người dùng ngừng tương tác và chỉ hiển thị khi đang cuộn (`type="scroll"`), thời gian trễ ẩn chuẩn ~600ms.
+- [x] Tuân thủ chặt chẽ design tokens Material Design 3 trong `DESIGN.md` (màu track `bg-m3-surface-container`, màu thumb `bg-m3-on-surface/25 hover:bg-m3-on-surface/40`, bo góc full).
+- [x] Đạt 100% Type-check (`tsc -b`), lint và build thành công không có lỗi hoặc cảnh báo.
 
 ---
 
