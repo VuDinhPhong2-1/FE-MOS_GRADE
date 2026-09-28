@@ -63,7 +63,8 @@ const ClassAnalyticsPanelComponent = ({
 }: ClassAnalyticsPanelProps) => {
 	const { getAccessToken } = useAuth();
 
-	const [projectEndpoint, setProjectEndpoint] = useState<string>("");
+	const [selection, setSelection] = useState<{ classId: string; ids: string[] }>({ classId, ids: [] });
+	const assignmentIds = selection.classId === classId ? selection.ids : [];
 	const [top, setTop] = useState<number>(10);
 
 	const {
@@ -79,30 +80,10 @@ const ClassAnalyticsPanelComponent = ({
 		refetchWeakTasks,
 	} = useAnalyticsQueries({
 		classId,
-		projectEndpoint: projectEndpoint || undefined,
+		assignmentIds,
 		top,
 		getAccessToken,
 	});
-
-	const endpointOptions = useMemo(() => {
-		const values = assignments
-			.map((a) =>
-				(a.gradingApiEndpoint || "").replace(/^\/?grading\/?/i, "").trim(),
-			)
-			.filter((x) => !!x);
-		return Array.from(new Set(values));
-	}, [assignments]);
-
-	const endpointSelectOptions: SelectOption[] = useMemo(
-		() => [
-			{ value: "", label: "Tất cả dự án" },
-			...endpointOptions.map((ep) => ({
-				value: ep,
-				label: getProjectDisplayName(ep, undefined, assignments),
-			})),
-		],
-		[endpointOptions, assignments],
-	);
 
 	const gaugeData = useMemo(
 		() => (overview ? mapOverviewToGaugeData(overview) : []),
@@ -133,18 +114,6 @@ const ClassAnalyticsPanelComponent = ({
 					</div>
 
 					<div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-						<div className="w-full sm:w-48">
-							<Select
-								variant="outlined"
-								options={endpointSelectOptions}
-								value={projectEndpoint}
-								onChange={(val) => setProjectEndpoint(val)}
-								fullWidth
-								dense
-								colorVariant="vibrant"
-								showDividers={false}
-							/>
-						</div>
 						<div className="w-full sm:w-52">
 							<Select
 								variant="outlined"
@@ -291,9 +260,35 @@ const ClassAnalyticsPanelComponent = ({
 						)}
 					</div>
 					<div className="mb-3 text-[11px] text-m3-on-surface-variant">
-						Chỉ tính lỗi từ lần chấm gần nhất của từng học sinh trong bộ lọc
-						hiện tại. Phân tích chi tiết câu sai theo từng dự án.
+						{assignmentIds.length > 0
+							? "Chỉ tính lần chấm mới nhất của từng học sinh ở từng bài tập đã chọn. Học sinh chưa có kết quả không được tính vào tỷ lệ sai."
+							: "Tất cả dự án: tính lần chấm mới nhất của từng học sinh theo dự án (chế độ tổng hợp cũ)."}
+						{" "}Xếp hạng chung theo tỷ lệ sai, sau đó theo số học sinh sai. Bộ lọc không thay đổi bốn chỉ số tổng quan.
 					</div>
+					<details className="mb-4 rounded-xl border border-m3-outline-variant p-3">
+						<summary className="cursor-pointer text-sm font-medium">
+							{assignmentIds.length ? `Đã chọn ${assignmentIds.length} bài tập` : "Chọn bài tập (hiện xem tất cả dự án)"}
+						</summary>
+						<div className="mt-3 flex gap-4 text-sm">
+							<button type="button" onClick={() => setSelection({ classId, ids: assignments.map(a => a.id) })}>Chọn tất cả bài tập</button>
+							<button type="button" onClick={() => setSelection({ classId, ids: [] })}>Bỏ lọc</button>
+						</div>
+						<div className="mt-3 max-h-56 overflow-y-auto space-y-2">
+							{assignments.map(assignment => (
+								<label key={assignment.id} className="flex items-center gap-2 text-sm">
+									<input type="checkbox" checked={assignmentIds.includes(assignment.id)} onChange={event => {
+										const checked = event.target.checked;
+										setSelection(previous => {
+											const ids = previous.classId === classId ? previous.ids : [];
+											return { classId, ids: checked ? [...ids, assignment.id] : ids.filter(id => id !== assignment.id) };
+										});
+									}} />
+									{assignment.name}
+								</label>
+							))}
+							{assignments.length === 0 && <p className="text-sm">Lớp chưa có bài tập.</p>}
+						</div>
+					</details>
 
 					<div className="space-y-2.5">
 						{isWeakTasksLoading ? (
@@ -326,7 +321,7 @@ const ClassAnalyticsPanelComponent = ({
 								}`}
 							>
 								{weakTaskChartRows.map((row) => {
-									const projectName = getProjectDisplayName(
+									const projectName = (row.assignmentId ? assignments.find(a => a.id === row.assignmentId)?.name || row.assignmentId : undefined) || getProjectDisplayName(
 										row.projectEndpoint,
 										row.projectId,
 										assignments,
@@ -338,7 +333,7 @@ const ClassAnalyticsPanelComponent = ({
 
 									return (
 										<div
-											key={`${row.projectEndpoint || ""}_${row.projectId || ""}_${row.x}`}
+											key={`${row.assignmentId || ""}_${row.projectEndpoint || ""}_${row.projectId || ""}_${row.x}_${row.label}`}
 											className="rounded-xl border border-m3-outline-variant/60 bg-m3-surface-container-low/50 p-3 space-y-2 hover:bg-m3-surface-container-low transition-colors"
 										>
 											<div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between">

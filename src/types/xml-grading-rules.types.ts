@@ -43,6 +43,8 @@ export type SpecialConditionType =
 	| "hyperlink"
 	| "sectionBreakBeforeText"
 	| "wordColumns"
+	| "wordMoveText"
+	| "wordMoveSmartArt"
 	| "pictureStyle"
 	| "textBoxContainsText"
 	| "pageMargins"
@@ -325,6 +327,7 @@ export interface WordEndnoteConfig {
 }
 
 export interface WordSmartArtConfig {
+	expectedNodeTexts?: string[];
 	expectedLastNodeText?: string;
 	sourceFile?: string;
 	dataFile?: string;
@@ -559,6 +562,22 @@ export interface SpecialCondition {
 	hyperlinkConfig?: HyperlinkConfig;
 	sectionBreakBeforeTextConfig?: SectionBreakBeforeTextConfig;
 	wordColumnsConfig?: WordColumnsConfig;
+	wordMoveSmartArtConfig?: {
+		nodeText?: string;
+		afterText?: string;
+		beforeText?: string;
+		originalAfterText?: string;
+		originalBeforeText?: string;
+	};
+	wordMoveTextConfig?: {
+		expectedText?: string;
+		afterText?: string;
+		beforeText?: string;
+		originalAfterText?: string;
+		originalBeforeText?: string;
+		pasteMode?: "ignore" | "default" | "custom";
+		expectedParagraphStyle?: string;
+	};
 	pictureStyleConfig?: PictureStyleConfig;
 	textBoxContainsTextConfig?: TextBoxContainsTextConfig;
 	pageMarginsConfig?: PageMarginsConfig;

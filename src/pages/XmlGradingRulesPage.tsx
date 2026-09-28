@@ -140,6 +140,16 @@ const specialConditionOptions: Array<{
 		description: "Kiểm tra số cột từ đoạn đầu đến hết đoạn cuối, không chia lấn ra ngoài phạm vi.",
 	},
 	{
+		value: "wordMoveSmartArt",
+		label: "Di chuyển SmartArt (Cut/Paste)",
+		description: "Nhận diện bằng văn bản node, kiểm tra vị trí đích và bản sao SmartArt trong thân tài liệu.",
+	},
+	{
+		value: "wordMoveText",
+		label: "Di chuyển văn bản (Cut/Paste)",
+		description: "Kiểm tra vị trí mới, bản sao còn lại và style đầu ra sau Paste.",
+	},
+	{
 		value: "pictureStyle",
 		label: "Kiểu ảnh Word",
 		description:
@@ -442,6 +452,8 @@ const specialConditionGroups: Array<{
 			[
 				"pictureBullet",
 				"wordParagraphStyle",
+				"wordMoveText",
+				"wordMoveSmartArt",
 				"wordParagraphList",
 				"wordBulletStyle",
 			].includes(option.value),
@@ -3885,6 +3897,22 @@ const XmlGradingRulesPage = () => {
                                         });
                                         return;
                                     }
+                                    if (value === "wordMoveSmartArt") {
+                                        updateTaskSpecialCondition(pi, ti, {
+                                            type: "wordMoveSmartArt", score: task.specialCondition?.score ?? 0,
+                                            feedback: defaultSpecialConditionFeedback("wordMoveSmartArt"),
+                                            wordMoveSmartArtConfig: task.specialCondition?.wordMoveSmartArtConfig ?? { nodeText: "" },
+                                        });
+                                        return;
+                                    }
+                                    if (value === "wordMoveText") {
+                                        updateTaskSpecialCondition(pi, ti, {
+                                            type: "wordMoveText", score: task.specialCondition?.score ?? 0,
+                                            feedback: defaultSpecialConditionFeedback("wordMoveText"),
+                                            wordMoveTextConfig: task.specialCondition?.wordMoveTextConfig ?? { expectedText: "", pasteMode: "ignore" },
+                                        });
+                                        return;
+                                    }
 																													if (!value) {
 																														updateTaskSpecialCondition(
 																															pi,
@@ -6209,6 +6237,49 @@ const XmlGradingRulesPage = () => {
                                 <p className="text-xs text-slate-600 md:col-span-2">Chỉ chấm kiểu màu. Nếu tài liệu có nhiều SmartArt, chọn đúng file colorsN.xml của đồ họa cần chấm.</p>
                             </div>
                         )}
+                        {task.specialCondition?.type === "wordMoveSmartArt" && (
+                            <div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 p-4">
+                                <p className="text-xs text-slate-600">Nhập chính xác văn bản một node để nhận diện duy nhất SmartArt. Hỗ trợ In Line with Text và Floating trong đoạn riêng trực tiếp thuộc thân tài liệu. Với Floating, chấm vị trí đoạn neo, không phải vị trí hiển thị trên trang; không chấm số trang hay lịch sử Cut/Paste. Mốc phải duy nhất, liền kề; không bỏ qua đoạn trống hoặc bảng. Với số thứ tự tự động, chỉ nhập phần chữ (ví dụ Code of Ethics); nếu số được gõ trực tiếp thì nhập cả số.</p>
+                                {([
+                                    ["nodeText", "Văn bản một node trong SmartArt cần di chuyển"],
+                                    ["afterText", "Đích: nằm ngay sau đoạn"],
+                                    ["beforeText", "Đích: nằm ngay trước đoạn"],
+                                    ["originalAfterText", "Nguồn: trước đây nằm ngay sau đoạn (tùy chọn)"],
+                                    ["originalBeforeText", "Nguồn: trước đây nằm ngay trước đoạn (tùy chọn)"],
+                                ] as const).map(([field, label]) => (
+                                    <label key={field} className="text-xs font-medium">{label}
+                                        <input className="mt-1 w-full rounded-lg border p-2" value={task.specialCondition?.wordMoveSmartArtConfig?.[field] ?? ""}
+                                            onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, wordMoveSmartArtConfig: { ...task.specialCondition?.wordMoveSmartArtConfig, [field]: e.target.value } })} />
+                                    </label>
+                                ))}
+                            </div>
+                        )}
+                        {task.specialCondition?.type === "wordMoveText" && (
+                            <div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 p-4">
+                                <p className="text-xs text-slate-600">Một đoạn hoàn chỉnh, xuất hiện duy nhất. Mốc phải duy nhất và liền kề, không bỏ qua đoạn trống hoặc bảng. Paste chỉ kiểm tra style đầu ra, không xác định thao tác đã bấm.</p>
+                                {([
+                                    ["expectedText", "Nội dung đoạn cần di chuyển"],
+                                    ["afterText", "Đích: nằm ngay sau đoạn"],
+                                    ["beforeText", "Đích: nằm ngay trước đoạn"],
+                                    ["originalAfterText", "Nguồn: trước đây nằm ngay sau đoạn (tùy chọn)"],
+                                    ["originalBeforeText", "Nguồn: trước đây nằm ngay trước đoạn (tùy chọn)"],
+                                    ["expectedParagraphStyle", "Style ID đầu ra yêu cầu khi kiểm tra Paste"],
+                                ] as const).map(([field, label]) => (
+                                    <label key={field} className="text-xs font-medium">{label}
+                                        <input className="mt-1 w-full rounded-lg border p-2" value={task.specialCondition?.wordMoveTextConfig?.[field] ?? ""}
+                                            onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, wordMoveTextConfig: { ...task.specialCondition?.wordMoveTextConfig, [field]: e.target.value } })} />
+                                    </label>
+                                ))}
+                                <label className="text-xs font-medium">Yêu cầu Paste
+                                    <select className="mt-1 w-full rounded-lg border p-2" value={task.specialCondition.wordMoveTextConfig?.pasteMode ?? "ignore"}
+                                        onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, wordMoveTextConfig: { ...task.specialCondition?.wordMoveTextConfig, pasteMode: e.target.value as "ignore" | "default" | "custom" } })}>
+                                        <option value="ignore">Không kiểm tra định dạng</option>
+                                        <option value="default">Mặc định theo đề — kiểm tra style đầu ra đã khai báo</option>
+                                        <option value="custom">Khác mặc định — kiểm tra style đầu ra đã khai báo</option>
+                                    </select>
+                                </label>
+                            </div>
+                        )}
                         {task.specialCondition?.type === "wordColumns" && (
                             <div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
                                 <p className="mb-3 text-xs text-slate-600">Tính cả đoạn đầu và đoạn cuối. Mọi section trong phạm vi phải đúng số cột và không lấn sang đoạn trước/sau.</p>
@@ -7420,6 +7491,25 @@ const XmlGradingRulesPage = () => {
 																						)}
 																						{task.specialCondition?.type ===
 																							"wordSmartArt" && (
+                                                <>
+                                                <label className="mt-4 block text-xs font-semibold text-slate-600">
+                                                    Nội dung các ô theo thứ tự (mỗi dòng một ô)
+                                                    <textarea
+                                                        rows={5}
+                                                        value={(task.specialCondition.wordSmartArtConfig?.expectedNodeTexts ?? []).join("\n")}
+                                                        onChange={(e) => updateTaskSpecialCondition(pi, ti, {
+                                                            ...task.specialCondition!,
+                                                            type: "wordSmartArt",
+                                                            wordSmartArtConfig: {
+                                                                ...task.specialCondition?.wordSmartArtConfig,
+                                                                expectedNodeTexts: e.target.value === "" ? undefined : e.target.value.split("\n"),
+                                                            },
+                                                        })}
+                                                        placeholder={"Nội dung ô thứ 1\nNội dung ô thứ 2\nNội dung ô thứ 3"}
+                                                        className={inputClass}
+                                                    />
+                                                    <span className="mt-1 block font-normal">Nhập toàn bộ các ô của SmartArt một cấp theo thứ tự yêu cầu. Dòng 2 là ô thứ 2; không để dòng trống. Kiểm tra cả số ô và nội dung từng vị trí. Danh sách này thay thế yêu cầu ô cuối; để trống để giữ cách chấm cũ.</span>
+                                                </label>
 																							<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-2">
 
 																								{[
@@ -7448,7 +7538,7 @@ const XmlGradingRulesPage = () => {
 																										"Text cần có",
 																										"Be Accountable and Transparent",
 																									],
-                                                ["expectedLastNodeText", "Nội dung ô cuối (khớp toàn bộ; SmartArt một cấp)", "Be Accountable and Transparent"],
+                                                ["expectedLastNodeText", "Nội dung ô cuối (cũ; chỉ dùng khi chưa nhập danh sách thứ tự)", "Be Accountable and Transparent"],
 																									[
 																										"beforeText",
 																										"SmartArt đứng trước",
@@ -7581,9 +7671,10 @@ const XmlGradingRulesPage = () => {
 																									Phân biệt hoa/thường
 																								</label>
 																							</div>
+                                                </>
 																						)}
 																						{task.specialCondition?.type ===
-																							"textBoxContainsText" && (
+																							"wordDocumentInspector" && (
 																							<div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
 																								<div className="grid gap-3 md:grid-cols-2">
 																									<label className="text-xs font-semibold text-slate-600">

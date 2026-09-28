@@ -8,6 +8,7 @@ export interface ClassAnalyticsOverviewResponse {
 }
 
 export interface WeakTaskResponse {
+    assignmentId?: string | null;
 	taskId: string;
 	taskName: string;
 	projectEndpoint?: string;

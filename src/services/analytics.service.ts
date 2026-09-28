@@ -49,10 +49,12 @@ export const analyticsService = {
 		getAccessToken: (forceRefresh?: boolean) => Promise<string | null>,
 		projectEndpoint?: string,
 		top = 10,
+        assignmentIds: string[] = [],
 	): Promise<WeakTaskResponse[]> {
 		const params = new URLSearchParams();
 		if (projectEndpoint) params.set("projectEndpoint", projectEndpoint);
 		params.set("top", String(top));
+        for (const id of [...new Set(assignmentIds)].sort()) params.append("assignmentIds", id);
 
 		const response = await authFetch(
 			`${API_BASE_URL}/analytics/class/${classId}/weak-tasks?${params.toString()}`,

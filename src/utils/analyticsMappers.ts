@@ -14,6 +14,7 @@ export function mapOverviewToGaugeData(d: ClassAnalyticsOverviewResponse) {
 
 export function mapWeakTasksToBarChart(rows: WeakTaskResponse[]) {
 	return rows.map((r) => ({
+        assignmentId: r.assignmentId,
 		x: r.taskId,
 		y: r.failedRate,
 		label: r.taskName,
