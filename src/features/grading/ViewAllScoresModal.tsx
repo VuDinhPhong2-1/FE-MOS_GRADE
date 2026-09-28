@@ -5,6 +5,7 @@ import {
 	DialogPortal,
 	Icon,
 	IconButton,
+	ScrollArea,
 } from "@bug-on/m3-expressive";
 import type { FC } from "react";
 import ScoreboardActionToolbar from "./components/ScoreboardActionToolbar";
@@ -75,9 +76,14 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 			</div>
 
 			{/* Modal Body with ScoreboardContent */}
-			<div className="flex-1 overflow-auto px-2 pb-24 pt-3 sm:px-4 sm:pb-28 sm:pt-4 lg:px-5">
+			<ScrollArea
+				type="scroll"
+				orientation="vertical"
+				className="flex-1 min-h-0"
+				viewportClassName="px-2 pb-24 pt-3 sm:px-4 sm:pb-28 sm:pt-4 lg:px-5"
+			>
 				<ScoreboardContent state={state} hideInlineSearch />
-			</div>
+			</ScrollArea>
 
 			{/* FloatingActionToolbar hợp nhất: toggle cột, sort, xuất excel/pdf, search & quay lại */}
 			<ScoreboardActionToolbar

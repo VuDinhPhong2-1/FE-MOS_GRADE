@@ -1,24 +1,20 @@
 import { Button } from "@bug-on/m3-expressive/buttons";
 import { Icon } from "@bug-on/m3-expressive/core";
 import { LoadingIndicator } from "@bug-on/m3-expressive/feedback";
-import { Select, TextField } from "@bug-on/m3-expressive/forms";
+import { Select } from "@bug-on/m3-expressive/forms";
 import { Card, Text } from "@bug-on/m3-expressive/layout";
-import type React from "react";
 import type {
 	PublicPortalClass,
 	PublicPortalStudent,
 } from "../../../types/submission-portal.types";
 import { cn } from "../../../utils/utils";
-import { normalizeText } from "../utils/grading";
 
 export interface IdentitySectionProps {
 	classes: PublicPortalClass[];
 	classId: string;
 	onClassChange: (classId: string) => void;
-	studentSearch: string;
 	onStudentSearchChange: (search: string) => void;
 	filteredStudents: PublicPortalStudent[];
-	students?: PublicPortalStudent[];
 	studentId: string;
 	onStudentChange: (studentId: string) => void;
 	loadingStudents: boolean;
@@ -32,10 +28,8 @@ export const IdentitySection = ({
 	classes,
 	classId,
 	onClassChange,
-	studentSearch,
 	onStudentSearchChange,
 	filteredStudents,
-	students,
 	studentId,
 	onStudentChange,
 	loadingStudents,
@@ -54,43 +48,6 @@ export const IdentitySection = ({
 		value: s.id,
 	}));
 
-	const handleSearchKeyDown = (
-		e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>,
-	) => {
-		if (e.key === "Enter") {
-			// Bỏ qua nếu IME đang trong quá trình gõ (Unikey, EVKey, bộ gõ macOS)
-			if (e.nativeEvent.isComposing || e.keyCode === 229) {
-				return;
-			}
-			e.preventDefault();
-
-			const keyword = normalizeText(studentSearch);
-			if (!keyword) return;
-
-			// Sử dụng danh sách học sinh đầy đủ nếu có, hoặc danh sách đã lọc
-			const pool =
-				students && students.length > 0 ? students : filteredStudents;
-			const currentMatches = pool.filter((s) =>
-				normalizeText(s.fullName).includes(keyword),
-			);
-
-			if (currentMatches.length === 0) return;
-
-			// Ưu tiên 1: Tên khớp chính xác tuyệt đối
-			const exactMatch = currentMatches.find(
-				(s) => normalizeText(s.fullName) === keyword,
-			);
-			if (exactMatch) {
-				onStudentChange(exactMatch.id);
-				e.currentTarget.blur();
-				return;
-			}
-
-			// Ưu tiên 2: Chọn kết quả đầu tiên phù hợp
-			onStudentChange(currentMatches[0].id);
-			e.currentTarget.blur();
-		}
-	};
 
 	return (
 		<Card
@@ -152,7 +109,7 @@ export const IdentitySection = ({
 				</span>
 			</div>
 
-			<div className="grid gap-4 md:grid-cols-3">
+			<div className="grid gap-4 md:grid-cols-2">
 				<Select
 					variant="filled"
 					colorVariant="vibrant"
@@ -163,34 +120,29 @@ export const IdentitySection = ({
 					onChange={(value) => onClassChange(value)}
 				/>
 
-				<TextField
-					label="Tìm tên học sinh"
-					placeholder="Gõ một phần họ tên..."
-					value={studentSearch}
-					disabled={!classId}
-					onChange={(value) => onStudentSearchChange(value)}
-					onKeyDown={handleSearchKeyDown}
-					trailingIconMode={studentSearch ? "clear" : "none"}
-					supportingText={
-						studentSearch && !studentId && filteredStudents.length > 0
-							? "Nhấn Enter để chọn học sinh"
-							: undefined
-					}
-					leadingIcon={<Icon name="search" size={20} />}
-				/>
-
 				<Select
 					variant="filled"
 					colorVariant="vibrant"
 					label="Tên của bạn"
 					placeholder={
-						loadingStudents ? "Đang tải danh sách..." : "Chọn đúng tên"
+						loadingStudents
+							? "Đang tải danh sách..."
+							: !classId
+								? "Vui lòng chọn lớp trước"
+								: "Tìm hoặc chọn tên của bạn"
 					}
+					searchable
+					onSearchChange={(value) => onStudentSearchChange(value)}
+					emptyText="Không tìm thấy học sinh phù hợp"
+					leadingIcon={<Icon name="search" size={20} />}
 					options={studentOptions}
 					value={studentId}
 					disabled={!classId || loadingStudents}
 					loading={loadingStudents}
-					onChange={(value) => onStudentChange(value)}
+					onChange={(value) => {
+						onStudentChange(value);
+						onStudentSearchChange("");
+					}}
 				/>
 			</div>
 

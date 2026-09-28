@@ -1,7 +1,6 @@
 import {
 	Button,
 	Dialog,
-	DialogBody,
 	DialogContent,
 	DialogDescription,
 	DialogFooter,
@@ -10,6 +9,7 @@ import {
 	DialogPortal,
 	DialogTitle,
 	Icon,
+	ScrollArea,
 	Select,
 	type SelectOption,
 	Switch,
@@ -214,7 +214,12 @@ export const PortalFormDialog: React.FC<PortalFormDialogProps> = ({
 					</div>
 
 					{/* Modal Body */}
-					<DialogBody className="flex flex-1 flex-col gap-4 overflow-y-auto px-6 py-4">
+					<ScrollArea
+						type="scroll"
+						orientation="vertical"
+						className="flex-1 min-h-0"
+						viewportClassName="flex flex-col gap-4 px-6 py-4"
+					>
 						<div className="flex flex-col gap-4">
 							{/* Group 1: General Info */}
 							<div className="space-y-4 rounded-3xl bg-m3-surface-container p-4 sm:p-5 text-m3-on-surface">
@@ -338,7 +343,7 @@ export const PortalFormDialog: React.FC<PortalFormDialogProps> = ({
 								/>
 							)}
 						</div>
-					</DialogBody>
+					</ScrollArea>
 
 					{/* Modal Footer */}
 					<DialogFooter className="mt-0 flex justify-end gap-2 px-6 py-4">

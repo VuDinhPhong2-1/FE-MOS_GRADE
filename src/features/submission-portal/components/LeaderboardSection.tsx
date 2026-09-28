@@ -1,5 +1,5 @@
 import { LoadingIndicator } from "@bug-on/m3-expressive/feedback";
-import { Card, Text } from "@bug-on/m3-expressive/layout";
+import { Card, ScrollArea, Text } from "@bug-on/m3-expressive/layout";
 import {
 	createColumnHelper,
 	tableFeatures,
@@ -199,10 +199,16 @@ export const LeaderboardSection = ({
 							className={`flex flex-1 flex-col items-center justify-center bg-m3-tertiary-container p-4 text-center text-m3-on-tertiary-container ${item.heightClass}`}
 						>
 							<span className="text-8xl">{item.medal}</span>
-							<Text variant="title-lg" className="mt-2 font-bold">
+							<Text
+								variant="title-lg"
+								className="mt-2 font-bold text-m3-on-tertiary-container"
+							>
 								{item.row.studentName}
 							</Text>
-							<Text variant="body-md" className="text-m3-on-surface-variant">
+							<Text
+								variant="body-md"
+								className="text-m3-on-tertiary-container/90"
+							>
 								{formatScore(item.row.scoreValue)}/
 								{formatScore(item.row.maxScore)} điểm
 							</Text>
@@ -212,20 +218,29 @@ export const LeaderboardSection = ({
 			)}
 
 			<div className="mt-5">
-				<DataTable
-					table={table}
-					isLoading={loadingLeaderboard}
-					loadingAriaLabel="Đang tải bảng xếp hạng"
-					minWidthClassName="min-w-190 w-full"
-					banded
-					emptyState={
-						<TableEmptyState
-							icon="leaderboard"
-							title="Chưa có dữ liệu bảng xếp hạng"
-							description="Khi học sinh nộp bài và được chấm điểm, bảng xếp hạng sẽ hiển thị tại đây."
-						/>
-					}
-				/>
+				<ScrollArea
+					type="scroll"
+					orientation="both"
+					className="max-h-120 pr-1 rounded-2xl"
+				>
+					<DataTable
+						table={table}
+						isLoading={loadingLeaderboard}
+						loadingAriaLabel="Đang tải bảng xếp hạng"
+						minWidthClassName="min-w-190 w-full"
+						className="overflow-visible border-none shadow-none"
+						scrollContainerClassName="overflow-visible"
+						stickyHeader
+						banded
+						emptyState={
+							<TableEmptyState
+								icon="leaderboard"
+								title="Chưa có dữ liệu bảng xếp hạng"
+								description="Khi học sinh nộp bài và được chấm điểm, bảng xếp hạng sẽ hiển thị tại đây."
+							/>
+						}
+					/>
+				</ScrollArea>
 			</div>
 		</Card>
 	);

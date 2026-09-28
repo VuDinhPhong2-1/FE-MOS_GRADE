@@ -1,7 +1,6 @@
 import {
 	Button,
 	Dialog,
-	DialogBody,
 	DialogContent,
 	DialogDescription,
 	DialogFooter,
@@ -10,6 +9,7 @@ import {
 	DialogPortal,
 	DialogTitle,
 	Icon,
+	ScrollArea,
 	TextField,
 } from "@bug-on/m3-expressive";
 import { type FormEvent, useEffect, useState } from "react";
@@ -130,7 +130,13 @@ export const ProfileModal = ({
 						</div>
 
 						{/* Body */}
-						<DialogBody className="flex flex-1 flex-col gap-5 overflow-y-auto px-6 pt-2 pb-6 pr-5">
+						<ScrollArea
+							type="scroll"
+							orientation="vertical"
+							className="flex-1 min-h-0"
+							viewportClassName="px-6 pt-2 pb-6 pr-5"
+						>
+							<div className="flex flex-col gap-5">
 							{/* Avatar Preview & Profile Summary Card */}
 							<div className="flex items-center gap-4 rounded-xl bg-m3-surface-container p-3 mb-4 text-m3-on-surface">
 								<div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full bg-m3-surface-container-highest ring-2 ring-m3-outline-variant/30">
@@ -228,7 +234,8 @@ export const ProfileModal = ({
 								leadingIcon={<Icon name="image" />}
 								className="pt-2.5"
 							/>
-						</DialogBody>
+							</div>
+						</ScrollArea>
 
 						{/* Footer */}
 						<DialogFooter className="mt-0 flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-m3-outline-variant/30 px-6 py-4 sm:flex-row sm:space-x-0">

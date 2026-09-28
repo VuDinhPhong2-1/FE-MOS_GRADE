@@ -2,7 +2,6 @@ import {
 	Button,
 	Checkbox,
 	Dialog,
-	DialogBody,
 	DialogContent,
 	DialogDescription,
 	DialogFooter,
@@ -11,6 +10,7 @@ import {
 	DialogPortal,
 	DialogTitle,
 	Icon,
+	ScrollArea,
 	Select,
 	TextField,
 } from "@bug-on/m3-expressive";
@@ -113,7 +113,13 @@ export const ClassFormModal: React.FC<ClassFormModalProps> = ({
 
 					{/* Form */}
 					<form onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col">
-						<DialogBody className="flex flex-1 flex-col gap-4 overflow-y-auto px-6 pt-3 pb-6">
+						<ScrollArea
+							type="scroll"
+							orientation="vertical"
+							className="flex-1 min-h-0"
+							viewportClassName="px-6 pt-3 pb-6"
+						>
+							<div className="flex flex-col gap-4">
 							{formError && (
 								<div className="flex items-center gap-2 rounded-2xl bg-m3-error-container p-3 text-xs font-medium text-m3-on-error-container">
 									<Icon name="error" size={16} />
@@ -232,7 +238,8 @@ export const ClassFormModal: React.FC<ClassFormModalProps> = ({
 									/>
 								</div>
 							)}
-						</DialogBody>
+							</div>
+						</ScrollArea>
 
 						{/* Footer */}
 						<DialogFooter className="border-t border-m3-outline-variant/30 px-6 py-4">

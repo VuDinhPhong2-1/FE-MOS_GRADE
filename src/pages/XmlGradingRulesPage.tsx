@@ -1,4 +1,4 @@
-﻿import { Icon } from "@bug-on/m3-expressive";
+import { Icon, ScrollArea } from "@bug-on/m3-expressive";
 import type { ClipboardEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { showConfirm } from "../components/common";
@@ -94,7 +94,10 @@ const selectedExcelTextRotationPreset = (values?: number[]) => {
 const excelColumnReferencePattern = /^[A-Za-z]{1,3}$/;
 
 const normalizeEscapedNewlines = (value: string) =>
-	value.replace(/\\r\\n/g, "\n").replace(/\\n/g, "\n").replace(/\\r/g, "\n");
+	value
+		.replace(/\\r\\n/g, "\n")
+		.replace(/\\n/g, "\n")
+		.replace(/\\r/g, "\n");
 
 // Danh sách các loại điều kiện đặc biệt hỗ trợ theo từng Task.
 // Thêm loại mới chỉ cần bổ sung thêm 1 phần tử vào mảng này.
@@ -137,17 +140,20 @@ const specialConditionOptions: Array<{
 	{
 		value: "wordColumns",
 		label: "Chia cột",
-		description: "Kiểm tra số cột từ đoạn đầu đến hết đoạn cuối, không chia lấn ra ngoài phạm vi.",
+		description:
+			"Kiểm tra số cột từ đoạn đầu đến hết đoạn cuối, không chia lấn ra ngoài phạm vi.",
 	},
 	{
 		value: "wordMoveSmartArt",
 		label: "Di chuyển SmartArt (Cut/Paste)",
-		description: "Nhận diện bằng văn bản node, kiểm tra vị trí đích và bản sao SmartArt trong thân tài liệu.",
+		description:
+			"Nhận diện bằng văn bản node, kiểm tra vị trí đích và bản sao SmartArt trong thân tài liệu.",
 	},
 	{
 		value: "wordMoveText",
 		label: "Di chuyển văn bản (Cut/Paste)",
-		description: "Kiểm tra vị trí mới, bản sao còn lại và style đầu ra sau Paste.",
+		description:
+			"Kiểm tra vị trí mới, bản sao còn lại và style đầu ra sau Paste.",
 	},
 	{
 		value: "pictureStyle",
@@ -266,7 +272,8 @@ const specialConditionOptions: Array<{
 	{
 		value: "wordSmartArtColors",
 		label: "Đổi màu SmartArt (Change Colors)",
-		description: "Kiểm tra riêng kiểu màu SmartArt, không kiểm tra nội dung, số hình hoặc vị trí.",
+		description:
+			"Kiểm tra riêng kiểu màu SmartArt, không kiểm tra nội dung, số hình hoặc vị trí.",
 	},
 	{
 		value: "excelTableName",
@@ -471,7 +478,8 @@ const specialConditionGroups: Array<{
 	},
 	{
 		label: "Word - Thẻ SmartArt Design",
-		matches: (option) => ["wordSmartArt", "wordSmartArtColors"].includes(option.value),
+		matches: (option) =>
+			["wordSmartArt", "wordSmartArtColors"].includes(option.value),
 	},
 	{
 		label: "Word - Thẻ Design",
@@ -481,7 +489,9 @@ const specialConditionGroups: Array<{
 	{
 		label: "Word - Thẻ Layout",
 		matches: (option) =>
-			["pageMargins", "sectionBreakBeforeText", "wordColumns"].includes(option.value),
+			["pageMargins", "sectionBreakBeforeText", "wordColumns"].includes(
+				option.value,
+			),
 	},
 	{
 		label: "Word - Thẻ References",
@@ -500,11 +510,9 @@ const specialConditionGroups: Array<{
 	{
 		label: "Word - Thẻ ngữ cảnh Bảng (Table Tools)",
 		matches: (option) =>
-			[
-				"convertTableToText",
-				"wordTableSort",
-				"wordTableAutoFit",
-			].includes(option.value),
+			["convertTableToText", "wordTableSort", "wordTableAutoFit"].includes(
+				option.value,
+			),
 	},
 	{
 		label: "Word - Thẻ ngữ cảnh Hình ảnh (Picture Format)",
@@ -513,7 +521,9 @@ const specialConditionGroups: Array<{
 	{
 		label: "Excel - Thẻ File",
 		matches: (option) =>
-			["excelCompatibilityReport", "excelDocumentProperty"].includes(option.value),
+			["excelCompatibilityReport", "excelDocumentProperty"].includes(
+				option.value,
+			),
 	},
 	{
 		label: "Excel - Thẻ Home",
@@ -2221,7 +2231,8 @@ const ExcelProject02SpecialConditionEditor = ({
 					/>
 				</label>
 				<label className="text-xs font-semibold text-slate-600 md:col-span-2">
-					Tiêu đề cần xoay (mỗi dòng một tiêu đề, dùng {"\\\\n"} cho xuống dòng trong cùng tiêu đề)
+					Tiêu đề cần xoay (mỗi dòng một tiêu đề, dùng {"\\\\n"} cho xuống dòng
+					trong cùng tiêu đề)
 					<textarea
 						value={(
 							specialCondition.excelTextRotationConfig?.expectedTexts ?? []
@@ -2325,7 +2336,8 @@ const ExcelProject02SpecialConditionEditor = ({
 										const [name, direction] = line
 											.split("|")
 											.map((item) => item.trim());
-										const isColumnReference = excelColumnReferencePattern.test(name);
+										const isColumnReference =
+											excelColumnReferencePattern.test(name);
 
 										return {
 											...(isColumnReference
@@ -2965,9 +2977,15 @@ const XmlGradingRulesPage = () => {
 		if (!parsed) {
 			return (
 				<div className="mt-4 rounded-xl border border-slate-800 bg-slate-950 p-4 text-xs text-slate-100">
-					<pre className="max-h-96 overflow-auto font-mono text-slate-300">
-						{gradeJson}
-					</pre>
+					<ScrollArea
+						type="scroll"
+						orientation="both"
+						className="max-h-96"
+					>
+						<pre className="font-mono text-slate-300">
+							{gradeJson}
+						</pre>
+					</ScrollArea>
 				</div>
 			);
 		}
@@ -3035,9 +3053,15 @@ const XmlGradingRulesPage = () => {
 
 				{viewRawJson ? (
 					<div className="rounded-lg border border-slate-900 bg-slate-950 p-3 text-xs text-slate-100">
-						<pre className="max-h-96 overflow-auto font-mono">
-							{JSON.stringify(parsed, null, 2)}
-						</pre>
+						<ScrollArea
+							type="scroll"
+							orientation="both"
+							className="max-h-96"
+						>
+							<pre className="font-mono">
+								{JSON.stringify(parsed, null, 2)}
+							</pre>
+						</ScrollArea>
 					</div>
 				) : (
 					<>
@@ -3084,7 +3108,11 @@ const XmlGradingRulesPage = () => {
 						</div>
 
 						{/* BẢNG KẾT QUẢ CHẤM ĐIỂM CHI TIẾT */}
-						<div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+						<ScrollArea
+							type="scroll"
+							orientation="horizontal"
+							className="rounded-2xl border border-slate-200 bg-white shadow-sm"
+						>
 							<table className="w-full text-left text-xs text-slate-600">
 								<thead className="border-b border-slate-200 bg-slate-100/80 text-xs font-bold uppercase tracking-wider text-slate-700">
 									<tr className="h-12">
@@ -3213,7 +3241,7 @@ const XmlGradingRulesPage = () => {
 									)}
 								</tbody>
 							</table>
-						</div>
+						</ScrollArea>
 					</>
 				)}
 			</div>
@@ -3268,7 +3296,7 @@ const XmlGradingRulesPage = () => {
 		"inline-flex h-9 w-9 items-center justify-center rounded-full bg-m3-surface-container-high text-m3-on-surface-variant transition-colors hover:bg-m3-surface-container-highest hover:text-m3-on-surface shadow-xs";
 
 	return (
-		<div className="min-h-full space-y-5 bg-m3-surface pb-10">
+		<div className="min-h-full space-y-5 pb-10">
 			<div className="grid gap-5 xl:grid-cols-[292px_minmax(0,1fr)]">
 				{/* Sidebar */}
 				<aside className="h-fit rounded-3xl bg-m3-surface-container p-4 shadow-xs xl:sticky xl:top-24 mb-2">
@@ -3314,7 +3342,12 @@ const XmlGradingRulesPage = () => {
 						</select>
 					</div>
 
-					<div className="max-h-[calc(100vh-280px)] space-y-1 overflow-y-auto pr-1">
+					<ScrollArea
+						type="scroll"
+						orientation="vertical"
+						className="max-h-[calc(100vh-280px)] pr-1"
+						viewportClassName="space-y-1"
+					>
 						{ruleSets.map((item) => {
 							const isSelected = selected.id === item.id;
 							const isLoadingDetail = loadingRuleSetId === item.id;
@@ -3374,7 +3407,7 @@ const XmlGradingRulesPage = () => {
 								</p>
 							</div>
 						)}
-					</div>
+					</ScrollArea>
 				</aside>
 
 				{/* Main */}
@@ -3441,7 +3474,12 @@ const XmlGradingRulesPage = () => {
 						</div>
 
 						{/* Tabs */}
-						<div className="mt-5 flex gap-1 overflow-x-auto border-b border-m3-outline-variant/40">
+						<ScrollArea
+							type="scroll"
+							orientation="horizontal"
+							className="mt-5 border-b border-m3-outline-variant/40"
+							viewportClassName="flex gap-1"
+						>
 							{[
 								["editor", "Rules editor"],
 								["validation", "Validation"],
@@ -3475,7 +3513,7 @@ const XmlGradingRulesPage = () => {
 									)}
 								</button>
 							))}
-						</div>
+						</ScrollArea>
 					</section>
 
 					{activeTab === "editor" && (
@@ -3875,44 +3913,137 @@ const XmlGradingRulesPage = () => {
 																													const value =
 																														e.target.value;
 
-                                    if (value === "wordSmartArtColors") {
-                                        updateTaskSpecialCondition(pi, ti, {
-                                            type: "wordSmartArtColors",
-                                            score: task.specialCondition?.score ?? 0,
-                                            feedback: task.specialCondition?.feedback ?? defaultSpecialConditionFeedback("wordSmartArtColors"),
-                                            wordSmartArtColorsConfig: task.specialCondition?.wordSmartArtColorsConfig ?? {
-                                                colorsFile: "word/diagrams/colors1.xml", expectedColorStyle: "colorful5",
-                                            },
-                                        });
-                                    }
-                                    if (value === "wordColumns") {
-                                        updateTaskSpecialCondition(pi, ti, {
-                                            type: "wordColumns",
-                                            score: task.specialCondition?.score ?? 0,
-                                            feedback: task.specialCondition?.feedback ?? defaultSpecialConditionFeedback("wordColumns"),
-                                            wordColumnsConfig: task.specialCondition?.wordColumnsConfig ?? {
-                                                sourceFile: "word/document.xml", startText: "", endText: "",
-                                                startOccurrence: 1, endOccurrence: 1, expectedColumnCount: 2,
-                                            },
-                                        });
-                                        return;
-                                    }
-                                    if (value === "wordMoveSmartArt") {
-                                        updateTaskSpecialCondition(pi, ti, {
-                                            type: "wordMoveSmartArt", score: task.specialCondition?.score ?? 0,
-                                            feedback: defaultSpecialConditionFeedback("wordMoveSmartArt"),
-                                            wordMoveSmartArtConfig: task.specialCondition?.wordMoveSmartArtConfig ?? { nodeText: "" },
-                                        });
-                                        return;
-                                    }
-                                    if (value === "wordMoveText") {
-                                        updateTaskSpecialCondition(pi, ti, {
-                                            type: "wordMoveText", score: task.specialCondition?.score ?? 0,
-                                            feedback: defaultSpecialConditionFeedback("wordMoveText"),
-                                            wordMoveTextConfig: task.specialCondition?.wordMoveTextConfig ?? { expectedText: "", pasteMode: "ignore" },
-                                        });
-                                        return;
-                                    }
+																													if (
+																														value ===
+																														"wordSmartArtColors"
+																													) {
+																														updateTaskSpecialCondition(
+																															pi,
+																															ti,
+																															{
+																																type: "wordSmartArtColors",
+																																score:
+																																	task
+																																		.specialCondition
+																																		?.score ??
+																																	0,
+																																feedback:
+																																	task
+																																		.specialCondition
+																																		?.feedback ??
+																																	defaultSpecialConditionFeedback(
+																																		"wordSmartArtColors",
+																																	),
+																																wordSmartArtColorsConfig:
+																																	task
+																																		.specialCondition
+																																		?.wordSmartArtColorsConfig ?? {
+																																		colorsFile:
+																																			"word/diagrams/colors1.xml",
+																																		expectedColorStyle:
+																																			"colorful5",
+																																	},
+																															},
+																														);
+																													}
+																													if (
+																														value ===
+																														"wordColumns"
+																													) {
+																														updateTaskSpecialCondition(
+																															pi,
+																															ti,
+																															{
+																																type: "wordColumns",
+																																score:
+																																	task
+																																		.specialCondition
+																																		?.score ??
+																																	0,
+																																feedback:
+																																	task
+																																		.specialCondition
+																																		?.feedback ??
+																																	defaultSpecialConditionFeedback(
+																																		"wordColumns",
+																																	),
+																																wordColumnsConfig:
+																																	task
+																																		.specialCondition
+																																		?.wordColumnsConfig ?? {
+																																		sourceFile:
+																																			"word/document.xml",
+																																		startText:
+																																			"",
+																																		endText: "",
+																																		startOccurrence: 1,
+																																		endOccurrence: 1,
+																																		expectedColumnCount: 2,
+																																	},
+																															},
+																														);
+																														return;
+																													}
+																													if (
+																														value ===
+																														"wordMoveSmartArt"
+																													) {
+																														updateTaskSpecialCondition(
+																															pi,
+																															ti,
+																															{
+																																type: "wordMoveSmartArt",
+																																score:
+																																	task
+																																		.specialCondition
+																																		?.score ??
+																																	0,
+																																feedback:
+																																	defaultSpecialConditionFeedback(
+																																		"wordMoveSmartArt",
+																																	),
+																																wordMoveSmartArtConfig:
+																																	task
+																																		.specialCondition
+																																		?.wordMoveSmartArtConfig ?? {
+																																		nodeText:
+																																			"",
+																																	},
+																															},
+																														);
+																														return;
+																													}
+																													if (
+																														value ===
+																														"wordMoveText"
+																													) {
+																														updateTaskSpecialCondition(
+																															pi,
+																															ti,
+																															{
+																																type: "wordMoveText",
+																																score:
+																																	task
+																																		.specialCondition
+																																		?.score ??
+																																	0,
+																																feedback:
+																																	defaultSpecialConditionFeedback(
+																																		"wordMoveText",
+																																	),
+																																wordMoveTextConfig:
+																																	task
+																																		.specialCondition
+																																		?.wordMoveTextConfig ?? {
+																																		expectedText:
+																																			"",
+																																		pasteMode:
+																																			"ignore",
+																																	},
+																															},
+																														);
+																														return;
+																													}
 																													if (!value) {
 																														updateTaskSpecialCondition(
 																															pi,
@@ -5079,7 +5210,8 @@ const XmlGradingRulesPage = () => {
 																																					descending: false,
 																																				},
 																																				{
-																																	column: "C",
+																																					column:
+																																						"C",
 																																					descending: false,
 																																				},
 																																			],
@@ -5506,15 +5638,33 @@ const XmlGradingRulesPage = () => {
 																													Không sử dụng
 																												</option>
 
-																												{groupedSpecialConditionOptions.map((group) => (
-																													<optgroup key={group.label} label={group.label}>
-																														{group.options.map((option) => (
-																															<option key={option.value} value={option.value}>
-																																{option.label}
-																															</option>
-																														))}
-																													</optgroup>
-																												))}
+																												{groupedSpecialConditionOptions.map(
+																													(group) => (
+																														<optgroup
+																															key={group.label}
+																															label={
+																																group.label
+																															}
+																														>
+																															{group.options.map(
+																																(option) => (
+																																	<option
+																																		key={
+																																			option.value
+																																		}
+																																		value={
+																																			option.value
+																																		}
+																																	>
+																																		{
+																																			option.label
+																																		}
+																																	</option>
+																																),
+																															)}
+																														</optgroup>
+																													),
+																												)}
 																											</select>
 
 																											<svg
@@ -6201,117 +6351,400 @@ const XmlGradingRulesPage = () => {
 																								</label>
 																							</div>
 																						)}
-                        {task.specialCondition?.type === "wordSmartArtColors" && (
-                            <div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-2">
-                                <label className="text-xs font-semibold text-slate-600">
-                                    File màu SmartArt
-                                    <input className={inputClass}
-                                        value={task.specialCondition.wordSmartArtColorsConfig?.colorsFile ?? "word/diagrams/colors1.xml"}
-                                        onChange={(e) => updateTaskSpecialCondition(pi, ti, {
-                                            ...task.specialCondition!, wordSmartArtColorsConfig: {
-                                                ...task.specialCondition?.wordSmartArtColorsConfig, colorsFile: e.target.value,
-                                            },
-                                        })} />
-                                </label>
-                                <label className="text-xs font-semibold text-slate-600">
-                                    Kiểu màu (Change Colors)
-                                    <select className={inputClass}
-                                        value={task.specialCondition.wordSmartArtColorsConfig?.expectedColorStyle ?? ""}
-                                        onChange={(e) => updateTaskSpecialCondition(pi, ti, {
-                                            ...task.specialCondition!, wordSmartArtColorsConfig: {
-                                                ...task.specialCondition?.wordSmartArtColorsConfig, expectedColorStyle: e.target.value,
-                                            },
-                                        })}>
-                                        <option value="">Chọn kiểu màu</option>
-                                        <option value="colorful5">Colorful Range – Accent Colors 5 to 6</option>
-                                        {task.specialCondition.wordSmartArtColorsConfig?.expectedColorStyle &&
-                                            task.specialCondition.wordSmartArtColorsConfig.expectedColorStyle !== "colorful5" && (
-                                            <option value={task.specialCondition.wordSmartArtColorsConfig.expectedColorStyle}>
-                                                {task.specialCondition.wordSmartArtColorsConfig.expectedColorStyle === "accent5_6"
-                                                    ? "Colorful Range – Accent Colors 5 to 6 (cấu hình cũ)"
-                                                    : task.specialCondition.wordSmartArtColorsConfig.expectedColorStyle}
-                                            </option>
-                                        )}
-                                    </select>
-                                </label>
-                                <p className="text-xs text-slate-600 md:col-span-2">Chỉ chấm kiểu màu. Nếu tài liệu có nhiều SmartArt, chọn đúng file colorsN.xml của đồ họa cần chấm.</p>
-                            </div>
-                        )}
-                        {task.specialCondition?.type === "wordMoveSmartArt" && (
-                            <div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 p-4">
-                                <p className="text-xs text-slate-600">Nhập chính xác văn bản một node để nhận diện duy nhất SmartArt. Hỗ trợ In Line with Text và Floating trong đoạn riêng trực tiếp thuộc thân tài liệu. Với Floating, chấm vị trí đoạn neo, không phải vị trí hiển thị trên trang; không chấm số trang hay lịch sử Cut/Paste. Mốc phải duy nhất, liền kề; không bỏ qua đoạn trống hoặc bảng. Với số thứ tự tự động, chỉ nhập phần chữ (ví dụ Code of Ethics); nếu số được gõ trực tiếp thì nhập cả số.</p>
-                                {([
-                                    ["nodeText", "Văn bản một node trong SmartArt cần di chuyển"],
-                                    ["afterText", "Đích: nằm ngay sau đoạn"],
-                                    ["beforeText", "Đích: nằm ngay trước đoạn"],
-                                    ["originalAfterText", "Nguồn: trước đây nằm ngay sau đoạn (tùy chọn)"],
-                                    ["originalBeforeText", "Nguồn: trước đây nằm ngay trước đoạn (tùy chọn)"],
-                                ] as const).map(([field, label]) => (
-                                    <label key={field} className="text-xs font-medium">{label}
-                                        <input className="mt-1 w-full rounded-lg border p-2" value={task.specialCondition?.wordMoveSmartArtConfig?.[field] ?? ""}
-                                            onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, wordMoveSmartArtConfig: { ...task.specialCondition?.wordMoveSmartArtConfig, [field]: e.target.value } })} />
-                                    </label>
-                                ))}
-                            </div>
-                        )}
-                        {task.specialCondition?.type === "wordMoveText" && (
-                            <div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 p-4">
-                                <p className="text-xs text-slate-600">Một đoạn hoàn chỉnh, xuất hiện duy nhất. Mốc phải duy nhất và liền kề, không bỏ qua đoạn trống hoặc bảng. Paste chỉ kiểm tra style đầu ra, không xác định thao tác đã bấm.</p>
-                                {([
-                                    ["expectedText", "Nội dung đoạn cần di chuyển"],
-                                    ["afterText", "Đích: nằm ngay sau đoạn"],
-                                    ["beforeText", "Đích: nằm ngay trước đoạn"],
-                                    ["originalAfterText", "Nguồn: trước đây nằm ngay sau đoạn (tùy chọn)"],
-                                    ["originalBeforeText", "Nguồn: trước đây nằm ngay trước đoạn (tùy chọn)"],
-                                    ["expectedParagraphStyle", "Style ID đầu ra yêu cầu khi kiểm tra Paste"],
-                                ] as const).map(([field, label]) => (
-                                    <label key={field} className="text-xs font-medium">{label}
-                                        <input className="mt-1 w-full rounded-lg border p-2" value={task.specialCondition?.wordMoveTextConfig?.[field] ?? ""}
-                                            onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, wordMoveTextConfig: { ...task.specialCondition?.wordMoveTextConfig, [field]: e.target.value } })} />
-                                    </label>
-                                ))}
-                                <label className="text-xs font-medium">Yêu cầu Paste
-                                    <select className="mt-1 w-full rounded-lg border p-2" value={task.specialCondition.wordMoveTextConfig?.pasteMode ?? "ignore"}
-                                        onChange={(e) => updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, wordMoveTextConfig: { ...task.specialCondition?.wordMoveTextConfig, pasteMode: e.target.value as "ignore" | "default" | "custom" } })}>
-                                        <option value="ignore">Không kiểm tra định dạng</option>
-                                        <option value="default">Mặc định theo đề — kiểm tra style đầu ra đã khai báo</option>
-                                        <option value="custom">Khác mặc định — kiểm tra style đầu ra đã khai báo</option>
-                                    </select>
-                                </label>
-                            </div>
-                        )}
-                        {task.specialCondition?.type === "wordColumns" && (
-                            <div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
-                                <p className="mb-3 text-xs text-slate-600">Tính cả đoạn đầu và đoạn cuối. Mọi section trong phạm vi phải đúng số cột và không lấn sang đoạn trước/sau.</p>
-                                <div className="grid gap-3 md:grid-cols-2">
-                                    {([
-                                        ["startText", "Văn bản đoạn bắt đầu"],
-                                        ["endText", "Văn bản đoạn kết thúc"],
-                                        ["startOccurrence", "Lần xuất hiện đoạn đầu"],
-                                        ["endOccurrence", "Lần xuất hiện đoạn cuối"],
-                                        ["expectedColumnCount", "Số cột"],
-                                    ] as const).map(([field, label]) => (
-                                        <label key={field} className="text-xs font-semibold text-slate-600">
-                                            {label}
-                                            <input
-                                                className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2"
-                                                type={field.endsWith("Text") ? "text" : "number"}
-                                                min={field.endsWith("Text") ? undefined : 1}
-                                                value={task.specialCondition?.wordColumnsConfig?.[field] ?? ""}
-                                                onChange={(e) => updateTaskSpecialCondition(pi, ti, {
-                                                    ...task.specialCondition!,
-                                                    wordColumnsConfig: {
-                                                        startText: "", endText: "", expectedColumnCount: 2,
-                                                        ...task.specialCondition?.wordColumnsConfig,
-                                                        [field]: field.endsWith("Text") ? e.target.value : Number(e.target.value),
-                                                    },
-                                                })}
-                                            />
-                                        </label>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
+																						{task.specialCondition?.type ===
+																							"wordSmartArtColors" && (
+																							<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-2">
+																								<label className="text-xs font-semibold text-slate-600">
+																									File màu SmartArt
+																									<input
+																										className={inputClass}
+																										value={
+																											task.specialCondition
+																												.wordSmartArtColorsConfig
+																												?.colorsFile ??
+																											"word/diagrams/colors1.xml"
+																										}
+																										onChange={(e) =>
+																											updateTaskSpecialCondition(
+																												pi,
+																												ti,
+																												{
+																													...task.specialCondition!,
+																													wordSmartArtColorsConfig:
+																														{
+																															...task
+																																.specialCondition
+																																?.wordSmartArtColorsConfig,
+																															colorsFile:
+																																e.target.value,
+																														},
+																												},
+																											)
+																										}
+																									/>
+																								</label>
+																								<label className="text-xs font-semibold text-slate-600">
+																									Kiểu màu (Change Colors)
+																									<select
+																										className={inputClass}
+																										value={
+																											task.specialCondition
+																												.wordSmartArtColorsConfig
+																												?.expectedColorStyle ??
+																											""
+																										}
+																										onChange={(e) =>
+																											updateTaskSpecialCondition(
+																												pi,
+																												ti,
+																												{
+																													...task.specialCondition!,
+																													wordSmartArtColorsConfig:
+																														{
+																															...task
+																																.specialCondition
+																																?.wordSmartArtColorsConfig,
+																															expectedColorStyle:
+																																e.target.value,
+																														},
+																												},
+																											)
+																										}
+																									>
+																										<option value="">
+																											Chọn kiểu màu
+																										</option>
+																										<option value="colorful5">
+																											Colorful Range – Accent
+																											Colors 5 to 6
+																										</option>
+																										{task.specialCondition
+																											.wordSmartArtColorsConfig
+																											?.expectedColorStyle &&
+																											task.specialCondition
+																												.wordSmartArtColorsConfig
+																												.expectedColorStyle !==
+																												"colorful5" && (
+																												<option
+																													value={
+																														task
+																															.specialCondition
+																															.wordSmartArtColorsConfig
+																															.expectedColorStyle
+																													}
+																												>
+																													{task.specialCondition
+																														.wordSmartArtColorsConfig
+																														.expectedColorStyle ===
+																													"accent5_6"
+																														? "Colorful Range – Accent Colors 5 to 6 (cấu hình cũ)"
+																														: task
+																																.specialCondition
+																																.wordSmartArtColorsConfig
+																																.expectedColorStyle}
+																												</option>
+																											)}
+																									</select>
+																								</label>
+																								<p className="text-xs text-slate-600 md:col-span-2">
+																									Chỉ chấm kiểu màu. Nếu tài
+																									liệu có nhiều SmartArt, chọn
+																									đúng file colorsN.xml của đồ
+																									họa cần chấm.
+																								</p>
+																							</div>
+																						)}
+																						{task.specialCondition?.type ===
+																							"wordMoveSmartArt" && (
+																							<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 p-4">
+																								<p className="text-xs text-slate-600">
+																									Nhập chính xác văn bản một
+																									node để nhận diện duy nhất
+																									SmartArt. Hỗ trợ In Line with
+																									Text và Floating trong đoạn
+																									riêng trực tiếp thuộc thân tài
+																									liệu. Với Floating, chấm vị
+																									trí đoạn neo, không phải vị
+																									trí hiển thị trên trang; không
+																									chấm số trang hay lịch sử
+																									Cut/Paste. Mốc phải duy nhất,
+																									liền kề; không bỏ qua đoạn
+																									trống hoặc bảng. Với số thứ tự
+																									tự động, chỉ nhập phần chữ (ví
+																									dụ Code of Ethics); nếu số
+																									được gõ trực tiếp thì nhập cả
+																									số.
+																								</p>
+																								{(
+																									[
+																										[
+																											"nodeText",
+																											"Văn bản một node trong SmartArt cần di chuyển",
+																										],
+																										[
+																											"afterText",
+																											"Đích: nằm ngay sau đoạn",
+																										],
+																										[
+																											"beforeText",
+																											"Đích: nằm ngay trước đoạn",
+																										],
+																										[
+																											"originalAfterText",
+																											"Nguồn: trước đây nằm ngay sau đoạn (tùy chọn)",
+																										],
+																										[
+																											"originalBeforeText",
+																											"Nguồn: trước đây nằm ngay trước đoạn (tùy chọn)",
+																										],
+																									] as const
+																								).map(([field, label]) => (
+																									<label
+																										key={field}
+																										className="text-xs font-medium"
+																									>
+																										{label}
+																										<input
+																											className="mt-1 w-full rounded-lg border p-2"
+																											value={
+																												task.specialCondition
+																													?.wordMoveSmartArtConfig?.[
+																													field
+																												] ?? ""
+																											}
+																											onChange={(e) =>
+																												updateTaskSpecialCondition(
+																													pi,
+																													ti,
+																													{
+																														...task.specialCondition!,
+																														wordMoveSmartArtConfig:
+																															{
+																																...task
+																																	.specialCondition
+																																	?.wordMoveSmartArtConfig,
+																																[field]:
+																																	e.target
+																																		.value,
+																															},
+																													},
+																												)
+																											}
+																										/>
+																									</label>
+																								))}
+																							</div>
+																						)}
+																						{task.specialCondition?.type ===
+																							"wordMoveText" && (
+																							<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 p-4">
+																								<p className="text-xs text-slate-600">
+																									Một đoạn hoàn chỉnh, xuất hiện
+																									duy nhất. Mốc phải duy nhất và
+																									liền kề, không bỏ qua đoạn
+																									trống hoặc bảng. Paste chỉ
+																									kiểm tra style đầu ra, không
+																									xác định thao tác đã bấm.
+																								</p>
+																								{(
+																									[
+																										[
+																											"expectedText",
+																											"Nội dung đoạn cần di chuyển",
+																										],
+																										[
+																											"afterText",
+																											"Đích: nằm ngay sau đoạn",
+																										],
+																										[
+																											"beforeText",
+																											"Đích: nằm ngay trước đoạn",
+																										],
+																										[
+																											"originalAfterText",
+																											"Nguồn: trước đây nằm ngay sau đoạn (tùy chọn)",
+																										],
+																										[
+																											"originalBeforeText",
+																											"Nguồn: trước đây nằm ngay trước đoạn (tùy chọn)",
+																										],
+																										[
+																											"expectedParagraphStyle",
+																											"Style ID đầu ra yêu cầu khi kiểm tra Paste",
+																										],
+																									] as const
+																								).map(([field, label]) => (
+																									<label
+																										key={field}
+																										className="text-xs font-medium"
+																									>
+																										{label}
+																										<input
+																											className="mt-1 w-full rounded-lg border p-2"
+																											value={
+																												task.specialCondition
+																													?.wordMoveTextConfig?.[
+																													field
+																												] ?? ""
+																											}
+																											onChange={(e) =>
+																												updateTaskSpecialCondition(
+																													pi,
+																													ti,
+																													{
+																														...task.specialCondition!,
+																														wordMoveTextConfig:
+																															{
+																																...task
+																																	.specialCondition
+																																	?.wordMoveTextConfig,
+																																[field]:
+																																	e.target
+																																		.value,
+																															},
+																													},
+																												)
+																											}
+																										/>
+																									</label>
+																								))}
+																								<label className="text-xs font-medium">
+																									Yêu cầu Paste
+																									<select
+																										className="mt-1 w-full rounded-lg border p-2"
+																										value={
+																											task.specialCondition
+																												.wordMoveTextConfig
+																												?.pasteMode ?? "ignore"
+																										}
+																										onChange={(e) =>
+																											updateTaskSpecialCondition(
+																												pi,
+																												ti,
+																												{
+																													...task.specialCondition!,
+																													wordMoveTextConfig: {
+																														...task
+																															.specialCondition
+																															?.wordMoveTextConfig,
+																														pasteMode: e.target
+																															.value as
+																															| "ignore"
+																															| "default"
+																															| "custom",
+																													},
+																												},
+																											)
+																										}
+																									>
+																										<option value="ignore">
+																											Không kiểm tra định dạng
+																										</option>
+																										<option value="default">
+																											Mặc định theo đề — kiểm
+																											tra style đầu ra đã khai
+																											báo
+																										</option>
+																										<option value="custom">
+																											Khác mặc định — kiểm tra
+																											style đầu ra đã khai báo
+																										</option>
+																									</select>
+																								</label>
+																							</div>
+																						)}
+																						{task.specialCondition?.type ===
+																							"wordColumns" && (
+																							<div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
+																								<p className="mb-3 text-xs text-slate-600">
+																									Tính cả đoạn đầu và đoạn cuối.
+																									Mọi section trong phạm vi phải
+																									đúng số cột và không lấn sang
+																									đoạn trước/sau.
+																								</p>
+																								<div className="grid gap-3 md:grid-cols-2">
+																									{(
+																										[
+																											[
+																												"startText",
+																												"Văn bản đoạn bắt đầu",
+																											],
+																											[
+																												"endText",
+																												"Văn bản đoạn kết thúc",
+																											],
+																											[
+																												"startOccurrence",
+																												"Lần xuất hiện đoạn đầu",
+																											],
+																											[
+																												"endOccurrence",
+																												"Lần xuất hiện đoạn cuối",
+																											],
+																											[
+																												"expectedColumnCount",
+																												"Số cột",
+																											],
+																										] as const
+																									).map(([field, label]) => (
+																										<label
+																											key={field}
+																											className="text-xs font-semibold text-slate-600"
+																										>
+																											{label}
+																											<input
+																												className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2"
+																												type={
+																													field.endsWith("Text")
+																														? "text"
+																														: "number"
+																												}
+																												min={
+																													field.endsWith("Text")
+																														? undefined
+																														: 1
+																												}
+																												value={
+																													task.specialCondition
+																														?.wordColumnsConfig?.[
+																														field
+																													] ?? ""
+																												}
+																												onChange={(e) =>
+																													updateTaskSpecialCondition(
+																														pi,
+																														ti,
+																														{
+																															...task.specialCondition!,
+																															wordColumnsConfig:
+																																{
+																																	startText: "",
+																																	endText: "",
+																																	expectedColumnCount: 2,
+																																	...task
+																																		.specialCondition
+																																		?.wordColumnsConfig,
+																																	[field]:
+																																		field.endsWith(
+																																			"Text",
+																																		)
+																																			? e.target
+																																					.value
+																																			: Number(
+																																					e
+																																						.target
+																																						.value,
+																																				),
+																																},
+																														},
+																													)
+																												}
+																											/>
+																										</label>
+																									))}
+																								</div>
+																							</div>
+																						)}
 																						{task.specialCondition?.type ===
 																							"sectionBreakBeforeText" && (
 																							<div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
@@ -7355,34 +7788,89 @@ const XmlGradingRulesPage = () => {
 																						{task.specialCondition?.type ===
 																							"wordEndnote" && (
 																							<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-2">
-                            <label className="text-xs font-semibold text-slate-600">
-                                Định dạng số
-                                <select
-                                    className={inputClass}
-                                    value={task.specialCondition.wordEndnoteConfig?.expectedNumberFormat ?? ""}
-                                    onChange={(e) => updateTaskSpecialCondition(pi, ti, {
-                                        ...task.specialCondition!,
-                                        wordEndnoteConfig: {
-                                            ...task.specialCondition?.wordEndnoteConfig,
-                                            expectedNumberFormat: e.target.value,
-                                        },
-                                    })}
-                                >
-                                    <option value="">Không kiểm tra định dạng số</option>
-                                    <option value="decimal">1, 2, 3, …</option>
-                                    <option value="lowerLetter">a, b, c, …</option>
-                                    <option value="upperLetter">A, B, C, …</option>
-                                    <option value="lowerRoman">i, ii, iii, …</option>
-                                    <option value="upperRoman">I, II, III, …</option>
-                                    <option value="chicago">*, †, ‡, §, …</option>
-                                    {task.specialCondition.wordEndnoteConfig?.expectedNumberFormat &&
-                                        !["decimal", "lowerLetter", "upperLetter", "lowerRoman", "upperRoman", "chicago"].includes(task.specialCondition.wordEndnoteConfig.expectedNumberFormat) && (
-                                            <option value={task.specialCondition.wordEndnoteConfig.expectedNumberFormat}>
-                                                Giá trị đã lưu: {task.specialCondition.wordEndnoteConfig.expectedNumberFormat}
-                                            </option>
-                                        )}
-                                </select>
-                            </label>
+																								<label className="text-xs font-semibold text-slate-600">
+																									Định dạng số
+																									<select
+																										className={inputClass}
+																										value={
+																											task.specialCondition
+																												.wordEndnoteConfig
+																												?.expectedNumberFormat ??
+																											""
+																										}
+																										onChange={(e) =>
+																											updateTaskSpecialCondition(
+																												pi,
+																												ti,
+																												{
+																													...task.specialCondition!,
+																													wordEndnoteConfig: {
+																														...task
+																															.specialCondition
+																															?.wordEndnoteConfig,
+																														expectedNumberFormat:
+																															e.target.value,
+																													},
+																												},
+																											)
+																										}
+																									>
+																										<option value="">
+																											Không kiểm tra định dạng
+																											số
+																										</option>
+																										<option value="decimal">
+																											1, 2, 3, …
+																										</option>
+																										<option value="lowerLetter">
+																											a, b, c, …
+																										</option>
+																										<option value="upperLetter">
+																											A, B, C, …
+																										</option>
+																										<option value="lowerRoman">
+																											i, ii, iii, …
+																										</option>
+																										<option value="upperRoman">
+																											I, II, III, …
+																										</option>
+																										<option value="chicago">
+																											*, †, ‡, §, …
+																										</option>
+																										{task.specialCondition
+																											.wordEndnoteConfig
+																											?.expectedNumberFormat &&
+																											![
+																												"decimal",
+																												"lowerLetter",
+																												"upperLetter",
+																												"lowerRoman",
+																												"upperRoman",
+																												"chicago",
+																											].includes(
+																												task.specialCondition
+																													.wordEndnoteConfig
+																													.expectedNumberFormat,
+																											) && (
+																												<option
+																													value={
+																														task
+																															.specialCondition
+																															.wordEndnoteConfig
+																															.expectedNumberFormat
+																													}
+																												>
+																													Giá trị đã lưu:{" "}
+																													{
+																														task
+																															.specialCondition
+																															.wordEndnoteConfig
+																															.expectedNumberFormat
+																													}
+																												</option>
+																											)}
+																									</select>
+																								</label>
 																								{[
 																									[
 																										"sourceFile",
@@ -7491,128 +7979,18 @@ const XmlGradingRulesPage = () => {
 																						)}
 																						{task.specialCondition?.type ===
 																							"wordSmartArt" && (
-                                                <>
-                                                <label className="mt-4 block text-xs font-semibold text-slate-600">
-                                                    Nội dung các ô theo thứ tự (mỗi dòng một ô)
-                                                    <textarea
-                                                        rows={5}
-                                                        value={(task.specialCondition.wordSmartArtConfig?.expectedNodeTexts ?? []).join("\n")}
-                                                        onChange={(e) => updateTaskSpecialCondition(pi, ti, {
-                                                            ...task.specialCondition!,
-                                                            type: "wordSmartArt",
-                                                            wordSmartArtConfig: {
-                                                                ...task.specialCondition?.wordSmartArtConfig,
-                                                                expectedNodeTexts: e.target.value === "" ? undefined : e.target.value.split("\n"),
-                                                            },
-                                                        })}
-                                                        placeholder={"Nội dung ô thứ 1\nNội dung ô thứ 2\nNội dung ô thứ 3"}
-                                                        className={inputClass}
-                                                    />
-                                                    <span className="mt-1 block font-normal">Nhập toàn bộ các ô của SmartArt một cấp theo thứ tự yêu cầu. Dòng 2 là ô thứ 2; không để dòng trống. Kiểm tra cả số ô và nội dung từng vị trí. Danh sách này thay thế yêu cầu ô cuối; để trống để giữ cách chấm cũ.</span>
-                                                </label>
-																							<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-2">
-
-																								{[
-																									[
-																										"sourceFile",
-																										"File nguồn",
-																										"word/document.xml",
-																									],
-																									[
-																										"dataFile",
-																										"SmartArt data file",
-																										"word/diagrams/data1.xml",
-																									],
-																									[
-																										"colorsFile",
-																										"SmartArt colors file",
-																										"word/diagrams/colors1.xml",
-																									],
-																									[
-																										"expectedColorStyle",
-																										"Color style",
-																										"accent5_6",
-																									],
-																									[
-																										"expectedText",
-																										"Text cần có",
-																										"Be Accountable and Transparent",
-																									],
-                                                ["expectedLastNodeText", "Nội dung ô cuối (cũ; chỉ dùng khi chưa nhập danh sách thứ tự)", "Be Accountable and Transparent"],
-																									[
-																										"beforeText",
-																										"SmartArt đứng trước",
-																										"1 Code of Ethics",
-																									],
-																									[
-																										"afterText",
-																										"SmartArt đứng sau",
-																										"",
-																									],
-																								].map(
-																									([
-																										field,
-																										label,
-																										placeholder,
-																									]) => (
-																										<label
-																											key={field}
-																											className="text-xs font-semibold text-slate-600"
-																										>
-																											{label}
-																											<input
-																												value={
-																													(
-																														task
-																															.specialCondition
-																															?.wordSmartArtConfig as
-																															| Record<
-																																	string,
-																																	| string
-																																	| undefined
-																															  >
-																															| undefined
-																													)?.[field] ?? ""
-																												}
-																												onChange={(e) =>
-																													updateTaskSpecialCondition(
-																														pi,
-																														ti,
-																														{
-																															...task.specialCondition!,
-																															type: "wordSmartArt",
-																															wordSmartArtConfig:
-																																{
-																																	...(task
-																																		.specialCondition
-																																		?.wordSmartArtConfig ??
-																																		{}),
-																																	[field]:
-																																		e.target
-																																			.value,
-																																},
-																														},
-																													)
-																												}
-																												placeholder={
-																													placeholder
-																												}
-																												className={inputClass}
-																											/>
-																										</label>
-																									),
-																								)}
-																								<label className="text-xs font-semibold text-slate-600">
-																									Số shape/node
-																									<input
-																										type="number"
-																										min={1}
-																										value={
+																							<>
+																								<label className="mt-4 block text-xs font-semibold text-slate-600">
+																									Nội dung các ô theo thứ tự
+																									(mỗi dòng một ô)
+																									<textarea
+																										rows={5}
+																										value={(
 																											task.specialCondition
 																												.wordSmartArtConfig
-																												?.expectedShapeCount ??
-																											""
-																										}
+																												?.expectedNodeTexts ??
+																											[]
+																										).join("\n")}
 																										onChange={(e) =>
 																											updateTaskSpecialCondition(
 																												pi,
@@ -7621,57 +7999,205 @@ const XmlGradingRulesPage = () => {
 																													...task.specialCondition!,
 																													type: "wordSmartArt",
 																													wordSmartArtConfig: {
-																														...(task
+																														...task
 																															.specialCondition
-																															?.wordSmartArtConfig ??
-																															{}),
-																														expectedShapeCount:
-																															e.target.value
-																																? Number(
-																																		e.target
-																																			.value,
-																																	)
-																																: undefined,
+																															?.wordSmartArtConfig,
+																														expectedNodeTexts:
+																															e.target.value ===
+																															""
+																																? undefined
+																																: e.target.value.split(
+																																		"\n",
+																																	),
 																													},
 																												},
 																											)
 																										}
-																										placeholder="4"
+																										placeholder={
+																											"Nội dung ô thứ 1\nNội dung ô thứ 2\nNội dung ô thứ 3"
+																										}
 																										className={inputClass}
 																									/>
+																									<span className="mt-1 block font-normal">
+																										Nhập toàn bộ các ô của
+																										SmartArt một cấp theo thứ tự
+																										yêu cầu. Dòng 2 là ô thứ 2;
+																										không để dòng trống. Kiểm
+																										tra cả số ô và nội dung từng
+																										vị trí. Danh sách này thay
+																										thế yêu cầu ô cuối; để trống
+																										để giữ cách chấm cũ.
+																									</span>
 																								</label>
-																								<label className="flex items-center gap-2 text-xs font-medium text-slate-600">
-																									<input
-																										type="checkbox"
-																										checked={
-																											task.specialCondition
-																												.wordSmartArtConfig
-																												?.caseSensitive ?? false
-																										}
-																										onChange={(e) =>
-																											updateTaskSpecialCondition(
-																												pi,
-																												ti,
-																												{
-																													...task.specialCondition!,
-																													type: "wordSmartArt",
-																													wordSmartArtConfig: {
-																														...(task
-																															.specialCondition
-																															?.wordSmartArtConfig ??
-																															{}),
-																														caseSensitive:
-																															e.target.checked,
+																								<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-2">
+																									{[
+																										[
+																											"sourceFile",
+																											"File nguồn",
+																											"word/document.xml",
+																										],
+																										[
+																											"dataFile",
+																											"SmartArt data file",
+																											"word/diagrams/data1.xml",
+																										],
+																										[
+																											"colorsFile",
+																											"SmartArt colors file",
+																											"word/diagrams/colors1.xml",
+																										],
+																										[
+																											"expectedColorStyle",
+																											"Color style",
+																											"accent5_6",
+																										],
+																										[
+																											"expectedText",
+																											"Text cần có",
+																											"Be Accountable and Transparent",
+																										],
+																										[
+																											"expectedLastNodeText",
+																											"Nội dung ô cuối (cũ; chỉ dùng khi chưa nhập danh sách thứ tự)",
+																											"Be Accountable and Transparent",
+																										],
+																										[
+																											"beforeText",
+																											"SmartArt đứng trước",
+																											"1 Code of Ethics",
+																										],
+																										[
+																											"afterText",
+																											"SmartArt đứng sau",
+																											"",
+																										],
+																									].map(
+																										([
+																											field,
+																											label,
+																											placeholder,
+																										]) => (
+																											<label
+																												key={field}
+																												className="text-xs font-semibold text-slate-600"
+																											>
+																												{label}
+																												<input
+																													value={
+																														(
+																															task
+																																.specialCondition
+																																?.wordSmartArtConfig as
+																																| Record<
+																																		string,
+																																		| string
+																																		| undefined
+																																  >
+																																| undefined
+																														)?.[field] ?? ""
+																													}
+																													onChange={(e) =>
+																														updateTaskSpecialCondition(
+																															pi,
+																															ti,
+																															{
+																																...task.specialCondition!,
+																																type: "wordSmartArt",
+																																wordSmartArtConfig:
+																																	{
+																																		...(task
+																																			.specialCondition
+																																			?.wordSmartArtConfig ??
+																																			{}),
+																																		[field]:
+																																			e.target
+																																				.value,
+																																	},
+																															},
+																														)
+																													}
+																													placeholder={
+																														placeholder
+																													}
+																													className={inputClass}
+																												/>
+																											</label>
+																										),
+																									)}
+																									<label className="text-xs font-semibold text-slate-600">
+																										Số shape/node
+																										<input
+																											type="number"
+																											min={1}
+																											value={
+																												task.specialCondition
+																													.wordSmartArtConfig
+																													?.expectedShapeCount ??
+																												""
+																											}
+																											onChange={(e) =>
+																												updateTaskSpecialCondition(
+																													pi,
+																													ti,
+																													{
+																														...task.specialCondition!,
+																														type: "wordSmartArt",
+																														wordSmartArtConfig:
+																															{
+																																...(task
+																																	.specialCondition
+																																	?.wordSmartArtConfig ??
+																																	{}),
+																																expectedShapeCount:
+																																	e.target.value
+																																		? Number(
+																																				e.target
+																																					.value,
+																																			)
+																																		: undefined,
+																															},
 																													},
-																												},
-																											)
-																										}
-																										className="h-4 w-4 accent-blue-600"
-																									/>
-																									Phân biệt hoa/thường
-																								</label>
-																							</div>
-                                                </>
+																												)
+																											}
+																											placeholder="4"
+																											className={inputClass}
+																										/>
+																									</label>
+																									<label className="flex items-center gap-2 text-xs font-medium text-slate-600">
+																										<input
+																											type="checkbox"
+																											checked={
+																												task.specialCondition
+																													.wordSmartArtConfig
+																													?.caseSensitive ??
+																												false
+																											}
+																											onChange={(e) =>
+																												updateTaskSpecialCondition(
+																													pi,
+																													ti,
+																													{
+																														...task.specialCondition!,
+																														type: "wordSmartArt",
+																														wordSmartArtConfig:
+																															{
+																																...(task
+																																	.specialCondition
+																																	?.wordSmartArtConfig ??
+																																	{}),
+																																caseSensitive:
+																																	e.target
+																																		.checked,
+																															},
+																													},
+																												)
+																											}
+																											className="h-4 w-4 accent-blue-600"
+																										/>
+																										Phân biệt hoa/thường
+																									</label>
+																								</div>
+																							</>
 																						)}
 																						{task.specialCondition?.type ===
 																							"wordDocumentInspector" && (

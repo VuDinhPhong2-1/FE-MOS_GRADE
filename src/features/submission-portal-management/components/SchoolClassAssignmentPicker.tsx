@@ -148,7 +148,11 @@ export const SchoolClassAssignmentPicker: React.FC<
 						)}
 
 						{!loadingClasses && selectedSchoolId && classes.length > 0 && (
-							<ScrollArea className="max-h-60 pr-1 space-y-1">
+							<ScrollArea
+								type="scroll"
+								orientation="vertical"
+								className="max-h-60 pr-1 space-y-1"
+							>
 								{classes.map((cls) => {
 									const isChecked = selectedClassIds.includes(cls.id);
 									return (
@@ -231,7 +235,11 @@ export const SchoolClassAssignmentPicker: React.FC<
 						{!loadingAssignments &&
 							selectedClassIds.length > 0 &&
 							assignments.length > 0 && (
-								<ScrollArea className="max-h-60 pr-1 space-y-2">
+								<ScrollArea
+									type="scroll"
+									orientation="vertical"
+									className="max-h-60 pr-1 space-y-2"
+								>
 									{assignments.map((assignment) => {
 										const isChecked = selectedAssignmentIds.includes(
 											assignment.id,

@@ -8,6 +8,7 @@ import {
 	DialogOverlay,
 	DialogPortal,
 	DialogTitle,
+	ScrollArea,
 	Select,
 	type SelectOption,
 	TextField,
@@ -79,7 +80,7 @@ export const RoomFormModal = ({
 				<DialogOverlay />
 				<DialogContent
 					hideCloseButton
-					className="flex max-h-[92vh] w-[calc(100%-2rem)] max-w-2xl flex-col overflow-hidden rounded-4xl bg-m3-surface-container-high p-0 text-m3-on-surface shadow-2xl"
+					className="flex max-h-[92vh] w-[calc(100%-2rem)] max-w-2xl flex-col overflow-hidden rounded-4xl bg-m3-surface-container-high p-0 text-m3-on-surface"
 				>
 					<form onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col">
 						{/* Header */}
@@ -102,7 +103,13 @@ export const RoomFormModal = ({
 						</div>
 
 						{/* Form Scroll Area */}
-						<div className="flex-1 overflow-y-auto px-6 py-4 space-y-5">
+						<ScrollArea
+							type="scroll"
+							orientation="vertical"
+							className="flex-1 min-h-0"
+							viewportClassName="px-6 py-4"
+						>
+							<div className="flex flex-col gap-5">
 							{/* Trường áp dụng nếu có nhiều hơn 1 trường */}
 							{schools.length > 1 && (
 								<div>
@@ -275,7 +282,8 @@ export const RoomFormModal = ({
 									/>
 								</div>
 							</div>
-						</div>
+							</div>
+						</ScrollArea>
 
 						{/* Footer */}
 						<DialogFooter className="gap-2 border-t border-m3-outline-variant/60 px-6 py-3 mt-0">

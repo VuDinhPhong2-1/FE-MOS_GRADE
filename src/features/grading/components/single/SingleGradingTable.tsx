@@ -1,3 +1,4 @@
+import { ScrollArea } from "@bug-on/m3-expressive";
 import {
 	createColumnHelper,
 	tableFeatures,
@@ -117,9 +118,8 @@ export const SingleGradingTable: React.FC<SingleGradingTableProps> = ({
 
 	return (
 		<section
-			data-student-scroll-container="true"
 			aria-label="Bang cham diem hoc sinh"
-			className="max-h-[60vh] overflow-auto rounded-2xl bg-m3-surface shadow-xs border border-m3-outline-variant/30"
+			className="rounded-2xl bg-m3-surface shadow-xs border border-m3-outline-variant/30 overflow-hidden"
 			onDragOver={(event) => {
 				event.preventDefault();
 				event.dataTransfer.dropEffect = "copy";
@@ -128,7 +128,17 @@ export const SingleGradingTable: React.FC<SingleGradingTableProps> = ({
 				event.preventDefault();
 			}}
 		>
-			<table className="min-w-full divide-y divide-m3-outline-variant/30">
+			<ScrollArea
+				type="scroll"
+				orientation="both"
+				className="max-h-[60vh] w-full"
+				viewportProps={
+					{
+						"data-student-scroll-container": "true",
+					} as React.ComponentPropsWithoutRef<"div">
+				}
+			>
+				<table className="min-w-full divide-y divide-m3-outline-variant/30">
 				<caption className="caption-top px-4 py-3 text-left text-sm font-semibold text-m3-on-surface border-b border-m3-outline-variant/20">
 					Bảng chấm điểm học sinh ({gradingStudents.length} học sinh)
 				</caption>
@@ -194,6 +204,7 @@ export const SingleGradingTable: React.FC<SingleGradingTableProps> = ({
 					})}
 				</tbody>
 			</table>
+			</ScrollArea>
 		</section>
 	);
 };

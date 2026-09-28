@@ -1,4 +1,4 @@
-import { Button, Checkbox, Icon, TextField } from "@bug-on/m3-expressive";
+import { Button, Checkbox, Icon, ScrollArea, TextField } from "@bug-on/m3-expressive";
 import {
 	columnPinningFeature,
 	columnSizingFeature,
@@ -179,13 +179,20 @@ export const ScoreboardContent: React.FC<ScoreboardContentProps> = ({
 										<summary className="inline-flex cursor-pointer items-center gap-1 rounded-full bg-m3-error-container px-2 py-0.5 font-semibold text-m3-on-error-container hover:bg-m3-error-container/80">
 											{errors.length} lỗi
 										</summary>
-										<ul className="mt-1 max-h-24 list-inside list-disc overflow-auto rounded bg-m3-error-container/30 p-2 text-[11px] text-m3-on-error-container">
-											{Array.from(new Set(errors)).map((errorItem) => (
-												<li key={`${row.id}-${assignment.id}-${errorItem}`}>
-													{errorItem}
-												</li>
-											))}
-										</ul>
+										<ScrollArea
+											type="scroll"
+											orientation="vertical"
+											className="mt-1 max-h-24 rounded bg-m3-error-container/30 text-[11px] text-m3-on-error-container"
+											viewportClassName="p-2"
+										>
+											<ul className="list-inside list-disc">
+												{Array.from(new Set(errors)).map((errorItem) => (
+													<li key={`${row.id}-${assignment.id}-${errorItem}`}>
+														{errorItem}
+													</li>
+												))}
+											</ul>
+										</ScrollArea>
 									</details>
 								)}
 							</div>
@@ -606,9 +613,11 @@ export const ScoreboardContent: React.FC<ScoreboardContentProps> = ({
 					</span>
 				</div>
 
-				<div
-					ref={tableContainerRef}
-					className={`${tableMaxHeightClassName} overflow-auto`}
+				<ScrollArea
+					viewportRef={tableContainerRef}
+					type="scroll"
+					orientation="both"
+					className={tableMaxHeightClassName}
 				>
 					<table className="w-full min-w-max border-separate border-spacing-0 text-sm text-m3-on-surface">
 						<thead>
@@ -721,7 +730,7 @@ export const ScoreboardContent: React.FC<ScoreboardContentProps> = ({
 							)}
 						</tbody>
 					</table>
-				</div>
+				</ScrollArea>
 			</div>
 		</div>
 	);

@@ -3,6 +3,7 @@ import {
 	Icon,
 	IconButton,
 	ProgressIndicator,
+	ScrollArea,
 	Select,
 	type SelectOption,
 } from "@bug-on/m3-expressive";
@@ -273,7 +274,12 @@ const ClassAnalyticsPanelComponent = ({
 							<button type="button" onClick={() => setSelection({ classId, ids: assignments.map(a => a.id) })}>Chọn tất cả bài tập</button>
 							<button type="button" onClick={() => setSelection({ classId, ids: [] })}>Bỏ lọc</button>
 						</div>
-						<div className="mt-3 max-h-56 overflow-y-auto space-y-2">
+						<ScrollArea
+							type="scroll"
+							orientation="vertical"
+							className="mt-3 max-h-56 pr-1"
+							viewportClassName="space-y-2"
+						>
 							{assignments.map(assignment => (
 								<label key={assignment.id} className="flex items-center gap-2 text-sm">
 									<input type="checkbox" checked={assignmentIds.includes(assignment.id)} onChange={event => {
@@ -287,7 +293,7 @@ const ClassAnalyticsPanelComponent = ({
 								</label>
 							))}
 							{assignments.length === 0 && <p className="text-sm">Lớp chưa có bài tập.</p>}
-						</div>
+						</ScrollArea>
 					</details>
 
 					<div className="space-y-2.5">

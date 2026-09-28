@@ -210,7 +210,8 @@ export const MultiGradingTable: React.FC<MultiGradingTableProps> = ({
 			<DataTable
 				table={table}
 				data-student-scroll-container="true"
-				className="max-h-[62vh] overflow-auto rounded-2xl border-none shadow-none bg-m3-surface"
+				className="rounded-2xl border-none shadow-none bg-m3-surface"
+				scrollContainerClassName="max-h-[62vh]"
 				minWidthClassName="min-w-full"
 				tableClassName="border-collapse"
 				headerRowClassName="sticky top-0 z-20 bg-m3-surface-container-high shadow-none"

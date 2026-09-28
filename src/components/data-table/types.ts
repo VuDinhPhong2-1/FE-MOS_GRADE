@@ -60,8 +60,8 @@ export interface DataTableProps<
 	 */
 	banded?: boolean;
 	/**
-	 * Class cho container bao quanh bảng (thẻ div cuộn).
-	 * Dùng để giới hạn chiều cao và bật cuộn dọc, ví dụ: "max-h-120 overflow-y-auto".
+	 * Class cho container bao quanh bảng (thẻ div/ScrollArea cuộn).
+	 * Dùng để giới hạn chiều cao và bật cuộn dọc, ví dụ: "max-h-120".
 	 */
 	scrollContainerClassName?: string;
 	/**
@@ -69,6 +69,21 @@ export interface DataTableProps<
 	 * @default false
 	 */
 	stickyHeader?: boolean;
+	/**
+	 * Sử dụng ScrollArea từ @bug-on/m3-expressive thay vì thanh cuộn native của trình duyệt.
+	 * @default true
+	 */
+	useScrollArea?: boolean;
+	/**
+	 * Cơ chế hiển thị thanh cuộn trong ScrollArea.
+	 * @default "scroll"
+	 */
+	scrollType?: "scroll" | "hover" | "always" | "none";
+	/**
+	 * Hướng cuộn của ScrollArea.
+	 * Mặc định tự động nhận diện: "both" nếu scrollContainerClassName có max-h/h-, ngược lại "horizontal".
+	 */
+	scrollOrientation?: "vertical" | "horizontal" | "both";
 	"data-student-scroll-container"?: string | boolean;
 }
 

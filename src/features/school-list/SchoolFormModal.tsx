@@ -1,7 +1,6 @@
 import {
 	Button,
 	Dialog,
-	DialogBody,
 	DialogContent,
 	DialogDescription,
 	DialogFooter,
@@ -10,6 +9,7 @@ import {
 	DialogPortal,
 	DialogTitle,
 	Icon,
+	ScrollArea,
 	TextField,
 } from "@bug-on/m3-expressive";
 import {
@@ -145,8 +145,13 @@ export const SchoolFormModal = ({
 							</DialogHeader>
 						</div>
 
-						{/* Modal Body */}
-						<DialogBody className="flex flex-1 flex-col gap-6 overflow-y-auto px-6 pt-4 pb-6 pr-5">
+						<ScrollArea
+							type="scroll"
+							orientation="vertical"
+							className="flex-1 min-h-0"
+							viewportClassName="px-6 pt-4 pb-6 pr-5"
+						>
+							<div className="flex flex-col gap-6">
 							<div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
 								<TextField
 									variant="outlined"
@@ -257,7 +262,8 @@ export const SchoolFormModal = ({
 								onChange={handleFieldChange("description")}
 								className="pt-4"
 							/>
-						</DialogBody>
+							</div>
+						</ScrollArea>
 
 						{/* Modal Footer */}
 						<DialogFooter className="mt-0 flex shrink-0 items-center justify-end gap-2.5 border-t border-m3-outline-variant/30 px-6 py-4">

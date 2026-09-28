@@ -739,7 +739,11 @@ const GradingView = () => {
 					</Card>
 
 					{/* Bug Notes List Scroll Area */}
-					<ScrollArea className="max-h-115 pr-2">
+					<ScrollArea
+						type="scroll"
+						orientation="vertical"
+						className="max-h-115 pr-2"
+					>
 						<div className="space-y-3">
 							{isLoadingBugNotes && (
 								<div className="flex items-center justify-center rounded-m3-lg bg-m3-surface-container-low p-8 text-center">

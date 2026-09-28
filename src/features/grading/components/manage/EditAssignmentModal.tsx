@@ -2,7 +2,6 @@ import {
 	Button,
 	Checkbox,
 	Dialog,
-	DialogBody,
 	DialogContent,
 	DialogDescription,
 	DialogFooter,
@@ -12,6 +11,7 @@ import {
 	DialogTitle,
 	Icon,
 	ProgressIndicator,
+	ScrollArea,
 	Select,
 	TextField,
 } from "@bug-on/m3-expressive";
@@ -84,7 +84,12 @@ export const EditAssignmentModal: React.FC<EditAssignmentModalProps> = ({
 					</div>
 
 					{/* Body */}
-					<DialogBody className="space-y-4 px-6 py-4 max-h-[75vh] overflow-y-auto">
+					<ScrollArea
+						type="scroll"
+						orientation="vertical"
+						className="max-h-[75vh] flex-1 min-h-0"
+						viewportClassName="space-y-4 px-6 py-4"
+					>
 						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 							<TextField
 								variant="outlined"
@@ -195,7 +200,7 @@ export const EditAssignmentModal: React.FC<EditAssignmentModalProps> = ({
 								/>
 							</div>
 						</div>
-					</DialogBody>
+					</ScrollArea>
 
 					{/* Footer */}
 					<DialogFooter className="flex items-center justify-end gap-2 border-t border-m3-outline-variant/20 px-6 py-4 bg-m3-surface-container-high/50">

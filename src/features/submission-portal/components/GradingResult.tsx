@@ -1,6 +1,6 @@
 import { Icon } from "@bug-on/m3-expressive/core";
 import { ProgressIndicator } from "@bug-on/m3-expressive/feedback";
-import { Card, Text } from "@bug-on/m3-expressive/layout";
+import { Card, ScrollArea, Text } from "@bug-on/m3-expressive/layout";
 import type { PublicPortalSubmitResult } from "../../../types/submission-portal.types";
 import { formatDateTime } from "../utils/formatters";
 import {
@@ -79,64 +79,72 @@ export const GradingResult = ({
 					<Text variant="title-sm" className="font-bold text-m3-error mb-2">
 						Các câu cần sửa:
 					</Text>
-					{failedTaskResults.map((task, index) => {
-						const errors = uniqueNonEmpty(task.errors);
-						const fixes = uniqueNonEmpty(task.fixActions);
-						const taskKey = [
-							task.taskId,
-							task.taskName,
-							errors.join("|"),
-							fixes.join("|"),
-						]
-							.filter(Boolean)
-							.join("-");
+					<ScrollArea
+						type="scroll"
+						orientation="vertical"
+						className="max-h-80 pr-2"
+					>
+						<div className="space-y-2">
+							{failedTaskResults.map((task, index) => {
+								const errors = uniqueNonEmpty(task.errors);
+								const fixes = uniqueNonEmpty(task.fixActions);
+								const taskKey = [
+									task.taskId,
+									task.taskName,
+									errors.join("|"),
+									fixes.join("|"),
+								]
+									.filter(Boolean)
+									.join("-");
 
-						return (
-							<Card
-								key={taskKey}
-								variant="outlined"
-								className="border-m3-error-container rounded-m3-sm p-3"
-							>
-								<div className="flex items-center justify-between">
-									<Text
-										variant="label-lg"
-										className="font-bold text-m3-on-surface"
+								return (
+									<Card
+										key={taskKey}
+										variant="outlined"
+										className="border-m3-error-container rounded-m3-sm p-3"
 									>
-										{getTaskLabel(task, index)}
-									</Text>
-									{typeof task.score === "number" &&
-										typeof task.maxScore === "number" && (
+										<div className="flex items-center justify-between">
 											<Text
-												variant="body-sm"
-												className="font-semibold text-m3-on-surface-variant"
+												variant="label-lg"
+												className="font-bold text-m3-on-surface"
 											>
-												({task.score}/{task.maxScore} điểm)
+												{getTaskLabel(task, index)}
 											</Text>
-										)}
-								</div>
+											{typeof task.score === "number" &&
+												typeof task.maxScore === "number" && (
+													<Text
+														variant="body-sm"
+														className="font-semibold text-m3-on-surface-variant"
+													>
+														({task.score}/{task.maxScore} điểm)
+													</Text>
+												)}
+										</div>
 
-								{errors.map((error) => (
-									<Text
-										key={error}
-										variant="body-sm"
-										className="mt-1.5 text-m3-error"
-									>
-										<span className="font-bold">Câu sai:</span> {error}
-									</Text>
-								))}
+										{errors.map((error) => (
+											<Text
+												key={error}
+												variant="body-sm"
+												className="mt-1.5 text-m3-error"
+											>
+												<span className="font-bold">Câu sai:</span> {error}
+											</Text>
+										))}
 
-								{fixes.map((fix) => (
-									<Text
-										key={fix}
-										variant="body-sm"
-										className="mt-1 text-m3-primary"
-									>
-										<span className="font-bold">Cách khắc phục:</span> {fix}
-									</Text>
-								))}
-							</Card>
-						);
-					})}
+										{fixes.map((fix) => (
+											<Text
+												key={fix}
+												variant="body-sm"
+												className="mt-1 text-m3-primary"
+											>
+												<span className="font-bold">Cách khắc phục:</span> {fix}
+											</Text>
+										))}
+									</Card>
+								);
+							})}
+						</div>
+					</ScrollArea>
 				</div>
 			)}
 
@@ -145,11 +153,19 @@ export const GradingResult = ({
 					<Text variant="title-sm" className="font-bold text-m3-error">
 						Các câu cần sửa:
 					</Text>
-					{fallbackErrors.map((error, index) => (
-						<Text key={error} variant="body-sm" className="text-m3-error">
-							<span className="font-bold">Câu sai {index + 1}:</span> {error}
-						</Text>
-					))}
+					<ScrollArea
+						type="scroll"
+						orientation="vertical"
+						className="max-h-80 pr-2"
+					>
+						<div className="space-y-1">
+							{fallbackErrors.map((error, index) => (
+								<Text key={error} variant="body-sm" className="text-m3-error">
+									<span className="font-bold">Câu sai {index + 1}:</span> {error}
+								</Text>
+							))}
+						</div>
+					</ScrollArea>
 				</div>
 			)}
 
@@ -176,11 +192,17 @@ export const GradingResult = ({
 							Cảnh báo cần lưu ý
 						</Text>
 					</div>
-					<ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
-						{result.alerts.map((alert) => (
-							<li key={alert}>{alert}</li>
-						))}
-					</ul>
+					<ScrollArea
+						type="scroll"
+						orientation="vertical"
+						className="max-h-36 pr-2"
+					>
+						<ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
+							{result.alerts.map((alert) => (
+								<li key={alert}>{alert}</li>
+							))}
+						</ul>
+					</ScrollArea>
 				</Card>
 			)}
 		</Card>
