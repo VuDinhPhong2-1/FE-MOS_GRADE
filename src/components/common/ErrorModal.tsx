@@ -1,4 +1,4 @@
-import { Icon } from "@bug-on/m3-expressive";
+import { Icon, ScrollArea } from "@bug-on/m3-expressive";
 import { useEffect, useState } from "react";
 import { type NotifyPayload, notifyEventName } from "../../utils/notify";
 
@@ -38,7 +38,12 @@ const ErrorModal: React.FC = () => {
 				onClick={() => setOpen(false)}
 			/>
 
-			<div className="relative w-[min(94vw,720px)] max-h-[86vh] overflow-auto rounded-4xl bg-m3-surface-container-high p-6 text-m3-on-surface shadow-2xl transition-all">
+			<ScrollArea
+				type="scroll"
+				orientation="vertical"
+				className="relative w-[min(94vw,720px)] max-h-[86vh] rounded-4xl bg-m3-surface-container-high text-m3-on-surface shadow-2xl transition-all"
+				viewportClassName="p-6"
+			>
 				<div className="flex items-start gap-3.5">
 					<div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-m3-error-container text-m3-on-error-container">
 						<Icon name="error" className="text-2xl" />
@@ -131,7 +136,7 @@ const ErrorModal: React.FC = () => {
 						</div>
 					</div>
 				</div>
-			</div>
+			</ScrollArea>
 		</div>
 	);
 };

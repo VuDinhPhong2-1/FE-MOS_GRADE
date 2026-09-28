@@ -1,4 +1,4 @@
-import { Card } from "@bug-on/m3-expressive";
+import { Card, ScrollArea } from "@bug-on/m3-expressive";
 import type {
 	Cell,
 	CellData,
@@ -42,6 +42,9 @@ export function DataTable<
 	bodyClassName = "",
 	scrollContainerClassName = "",
 	stickyHeader = false,
+	useScrollArea = true,
+	scrollType = "scroll",
+	scrollOrientation,
 	onRowClick,
 	getRowClassName,
 	renderRow,
@@ -68,11 +71,28 @@ export function DataTable<
 		? table.getVisibleLeafColumns().length
 		: table.getAllLeafColumns().length;
 
-	const content = (
-		<div className={cn("overflow-x-auto", scrollContainerClassName)}>
-			<table
-				className={`border-collapse text-left ${minWidthClassName} ${tableClassName}`}
-			>
+	const isExternalScroll =
+		!useScrollArea || scrollContainerClassName?.includes("overflow-visible");
+
+	const determinedOrientation =
+		scrollOrientation ??
+		(scrollContainerClassName &&
+		(scrollContainerClassName.includes("max-h-") ||
+			scrollContainerClassName.includes("h-") ||
+			scrollContainerClassName.includes("overflow-y"))
+			? "both"
+			: "horizontal");
+
+	const cleanedContainerClassName = scrollContainerClassName
+		? scrollContainerClassName
+				.replace(/\boverflow-(?:[xy]-)?auto\b/g, "")
+				.trim()
+		: "";
+
+	const tableElement = (
+		<table
+			className={`border-collapse text-left ${minWidthClassName} ${tableClassName}`}
+		>
 				<thead>
 					{headerGroups.map((headerGroup) => (
 						<tr
@@ -229,7 +249,20 @@ export function DataTable<
 					)}
 				</tbody>
 			</table>
+	);
+
+	const content = isExternalScroll ? (
+		<div className={cn("overflow-x-auto", scrollContainerClassName)}>
+			{tableElement}
 		</div>
+	) : (
+		<ScrollArea
+			type={scrollType}
+			orientation={determinedOrientation}
+			className={cn("w-full", cleanedContainerClassName)}
+		>
+			{tableElement}
+		</ScrollArea>
 	);
 
 	return (

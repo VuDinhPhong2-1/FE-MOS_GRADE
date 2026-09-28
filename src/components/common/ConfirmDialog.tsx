@@ -8,6 +8,7 @@ import {
 	DialogPortal,
 	DialogTitle,
 	Icon,
+	ScrollArea,
 } from "@bug-on/m3-expressive";
 import type React from "react";
 import {
@@ -140,9 +141,15 @@ export const ConfirmDialogProvider: React.FC<{ children: React.ReactNode }> = ({
 								</div>
 							</div>
 
-							<div className="max-h-[60vh] overflow-y-auto pr-1 text-sm leading-relaxed text-m3-on-surface-variant whitespace-pre-wrap">
-								{options?.message}
-							</div>
+							<ScrollArea
+								type="scroll"
+								orientation="vertical"
+								className="max-h-[60vh] pr-1"
+							>
+								<div className="text-sm leading-relaxed text-m3-on-surface-variant whitespace-pre-wrap">
+									{options?.message}
+								</div>
+							</ScrollArea>
 
 							<DialogFooter className="mt-2 flex shrink-0 items-center justify-end gap-2.5 border-t border-m3-outline-variant/30 pt-4">
 								<Button
