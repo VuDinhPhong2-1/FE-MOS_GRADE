@@ -1,4 +1,10 @@
-import { Button, Card, Icon, ProgressIndicator } from "@bug-on/m3-expressive";
+import {
+	Button,
+	Card,
+	Icon,
+	ProgressIndicator,
+	ScrollArea,
+} from "@bug-on/m3-expressive";
 import { memo } from "react";
 import { PermissionItem } from "./PermissionItem";
 import type { PermissionPanelProps } from "./types";
@@ -79,7 +85,11 @@ export const PermissionPanel = memo(function PermissionPanel({
 				</div>
 			</div>
 
-			<div className="max-h-140 overflow-y-auto pr-1">
+			<ScrollArea
+				type="scroll"
+				orientation="vertical"
+				className="max-h-140 pr-1"
+			>
 				<div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
 					{permissionCatalog.map((permission) => (
 						<PermissionItem
@@ -91,7 +101,7 @@ export const PermissionPanel = memo(function PermissionPanel({
 						/>
 					))}
 				</div>
-			</div>
+			</ScrollArea>
 
 			<div className="flex justify-end pt-2 border-t border-m3-outline-variant/30">
 				<Button

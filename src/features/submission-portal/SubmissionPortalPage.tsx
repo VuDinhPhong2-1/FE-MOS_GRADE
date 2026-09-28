@@ -35,7 +35,7 @@ export const SubmissionPortalPage = () => {
 		loadLeaderboard,
 	} = usePortalData(token);
 
-	const { studentSearch, setStudentSearch, filteredStudents } =
+	const { setStudentSearch, filteredStudents } =
 		useStudentFilter(students);
 
 	const {
@@ -121,10 +121,8 @@ export const SubmissionPortalPage = () => {
 								classes={info.classes}
 								classId={classId}
 								onClassChange={setClassId}
-								studentSearch={studentSearch}
 								onStudentSearchChange={setStudentSearch}
 								filteredStudents={filteredStudents}
-								students={students}
 								studentId={studentId}
 								onStudentChange={setStudentId}
 								loadingStudents={loadingStudents}

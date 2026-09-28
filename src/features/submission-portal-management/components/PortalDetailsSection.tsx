@@ -1,4 +1,10 @@
-import { Button, Card, Icon, LoadingIndicator } from "@bug-on/m3-expressive";
+import {
+	Button,
+	Card,
+	Icon,
+	LoadingIndicator,
+	ScrollArea,
+} from "@bug-on/m3-expressive";
 import type React from "react";
 import type {
 	SubmissionAlert,
@@ -68,7 +74,12 @@ export const PortalDetailsSection: React.FC<PortalDetailsSectionProps> = ({
 				)}
 
 				{/* Alerts List */}
-				<div className="space-y-3 overflow-y-auto max-h-150 pr-1">
+				<ScrollArea
+					type="scroll"
+					orientation="vertical"
+					className="max-h-150 pr-1"
+					viewportClassName="space-y-3"
+				>
 					{alerts.map((alert) => (
 						<AlertCard key={alert.id} alert={alert} />
 					))}
@@ -84,7 +95,7 @@ export const PortalDetailsSection: React.FC<PortalDetailsSectionProps> = ({
 							</span>
 						</Card>
 					)}
-				</div>
+				</ScrollArea>
 			</Card>
 
 			{/* Right Column: Submission Logs Table */}

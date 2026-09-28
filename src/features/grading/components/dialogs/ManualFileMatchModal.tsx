@@ -1,7 +1,6 @@
 import {
 	Button,
 	Dialog,
-	DialogBody,
 	DialogContent,
 	DialogDescription,
 	DialogFooter,
@@ -12,6 +11,7 @@ import {
 	Icon,
 	IconButton,
 	ProgressIndicator,
+	ScrollArea,
 	Select,
 } from "@bug-on/m3-expressive";
 import type React from "react";
@@ -76,7 +76,12 @@ export const ManualFileMatchModal: React.FC<ManualFileMatchModalProps> = ({
 					</div>
 
 					{/* Body */}
-					<DialogBody className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
+					<ScrollArea
+						type="scroll"
+						orientation="vertical"
+						className="flex-1 min-h-0"
+						viewportClassName="px-6 py-4 space-y-3"
+					>
 						<div className="rounded-2xl border border-m3-outline-variant/20 overflow-hidden shadow-2xs bg-m3-surface-container text-m3-on-surface">
 							<table className="min-w-full divide-y divide-m3-outline-variant/20 bg-m3-surface-container">
 								<thead className="bg-m3-surface-container-high">
@@ -174,7 +179,7 @@ export const ManualFileMatchModal: React.FC<ManualFileMatchModalProps> = ({
 								</tbody>
 							</table>
 						</div>
-					</DialogBody>
+					</ScrollArea>
 
 					{/* Footer */}
 					<DialogFooter className="flex items-center justify-between border-t border-m3-outline-variant/20 px-6 py-4 bg-m3-surface-container-high/50">

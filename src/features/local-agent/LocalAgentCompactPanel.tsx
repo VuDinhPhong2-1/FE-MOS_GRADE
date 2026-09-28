@@ -1,4 +1,4 @@
-import { Icon, ProgressIndicator } from "@bug-on/m3-expressive";
+import { Icon, ProgressIndicator, ScrollArea } from "@bug-on/m3-expressive";
 import type { LocalAgentState } from "../../types/local-agent.types";
 
 type LocalAgentCompactPanelProps = {
@@ -111,27 +111,42 @@ export function LocalAgentCompactPanel({
 						<div className="border-b border-slate-200 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
 							Project instructions
 						</div>
-						<div className="max-h-48 overflow-y-auto whitespace-pre-wrap px-3 py-2 text-sm text-slate-700">
+						<ScrollArea
+							type="scroll"
+							orientation="vertical"
+							className="max-h-48 whitespace-pre-wrap text-sm text-slate-700"
+							viewportClassName="px-3 py-2"
+						>
 							{state.instructionsText?.trim() ||
 								"Chưa có file đề bài cho project hiện tại."}
-						</div>
+						</ScrollArea>
 					</div>
 
 					<div className="mt-3 min-h-0 rounded-lg border border-slate-200 bg-white">
 						<div className="border-b border-slate-200 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
 							Help
 						</div>
-						<div className="max-h-40 overflow-y-auto whitespace-pre-wrap px-3 py-2 text-sm text-slate-700">
+						<ScrollArea
+							type="scroll"
+							orientation="vertical"
+							className="max-h-40 whitespace-pre-wrap text-sm text-slate-700"
+							viewportClassName="px-3 py-2"
+						>
 							{state.helpText?.trim() ||
 								"Chưa có file help cho project hiện tại."}
-						</div>
+						</ScrollArea>
 					</div>
 
 					<div className="mt-3 min-h-0 rounded-lg border border-slate-200 bg-white">
 						<div className="border-b border-slate-200 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
 							Task list
 						</div>
-						<div className="max-h-56 overflow-y-auto px-3 py-2">
+						<ScrollArea
+							type="scroll"
+							orientation="vertical"
+							className="max-h-56"
+							viewportClassName="px-3 py-2"
+						>
 							{taskItems.length === 0 ? (
 								<p className="text-sm text-slate-500">Chưa có task snapshot.</p>
 							) : (
@@ -158,7 +173,7 @@ export function LocalAgentCompactPanel({
 									))}
 								</ul>
 							)}
-						</div>
+						</ScrollArea>
 					</div>
 				</div>
 

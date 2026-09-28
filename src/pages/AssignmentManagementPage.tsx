@@ -3,6 +3,7 @@ import {
 	Icon,
 	LoadingIndicator,
 	ProgressIndicator,
+	ScrollArea,
 } from "@bug-on/m3-expressive";
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { showConfirm } from "../components/common";
@@ -1192,7 +1193,12 @@ const AssignmentManagementPage = ({
 										</label>
 									</div>
 
-									<div className="mt-2 max-h-56 overflow-auto rounded-2xl border border-m3-outline-variant/60 bg-m3-surface p-3">
+									<ScrollArea
+										type="scroll"
+										orientation="vertical"
+										className="mt-2 max-h-56 rounded-2xl border border-m3-outline-variant/60 bg-m3-surface"
+										viewportClassName="p-3"
+									>
 										{isLoadingStudents ? (
 											<div className="flex items-center gap-2 text-xs text-m3-on-surface-variant">
 												<LoadingIndicator
@@ -1225,7 +1231,7 @@ const AssignmentManagementPage = ({
 												))}
 											</div>
 										)}
-									</div>
+									</ScrollArea>
 								</div>
 							</div>
 
@@ -1234,7 +1240,12 @@ const AssignmentManagementPage = ({
 									<span className="text-xs font-bold text-m3-on-surface-variant">
 										Bài tập đưa vào ca thi
 									</span>
-									<div className="mt-2 max-h-56 overflow-auto rounded-2xl border border-m3-outline-variant/60 bg-m3-surface p-3">
+									<ScrollArea
+										type="scroll"
+										orientation="vertical"
+										className="mt-2 max-h-56 rounded-2xl border border-m3-outline-variant/60 bg-m3-surface"
+										viewportClassName="p-3"
+									>
 										{isLoadingAssignments ? (
 											<div className="flex items-center gap-2 text-xs text-m3-on-surface-variant">
 												<ProgressIndicator
@@ -1284,7 +1295,7 @@ const AssignmentManagementPage = ({
 												))}
 											</div>
 										)}
-									</div>
+									</ScrollArea>
 								</div>
 
 								<label className="inline-flex items-center gap-2 text-xs text-m3-on-surface-variant">
@@ -1460,7 +1471,11 @@ const AssignmentManagementPage = ({
 									</p>
 								</div>
 							) : (
-								<div className="max-h-110 overflow-auto rounded-2xl border border-m3-outline-variant/30 bg-m3-surface-container">
+								<ScrollArea
+									type="scroll"
+									orientation="both"
+									className="max-h-110 rounded-2xl border border-m3-outline-variant/30 bg-m3-surface-container"
+								>
 									<table className="min-w-full table-fixed divide-y divide-m3-outline-variant/40 text-sm">
 										<thead className="sticky top-0 z-10 bg-m3-surface-container-high text-left text-xs font-bold uppercase tracking-wider text-m3-on-surface-variant">
 											<tr className="h-12 border-b border-m3-outline-variant/60 bg-m3-surface-container-high">
@@ -1613,7 +1628,7 @@ const AssignmentManagementPage = ({
 											))}
 										</tbody>
 									</table>
-								</div>
+								</ScrollArea>
 							)}
 						</div>
 					</details>
@@ -1911,7 +1926,11 @@ const AssignmentManagementPage = ({
 												Phần này chưa có project khả dụng để tạo nhanh.
 											</div>
 										) : (
-											<div className="max-h-72 overflow-auto rounded-2xl border border-m3-outline-variant/30 bg-m3-surface-container">
+											<ScrollArea
+												type="scroll"
+												orientation="both"
+												className="max-h-72 rounded-2xl border border-m3-outline-variant/30 bg-m3-surface-container"
+											>
 												<table className="min-w-full divide-y divide-m3-outline-variant/30 text-xs">
 													<thead className="sticky top-0 z-10 bg-m3-surface-container-high text-left text-xs font-bold uppercase tracking-wider text-m3-on-surface-variant">
 														<tr className="h-12 border-b border-m3-outline-variant/60 bg-m3-surface-container-high">
@@ -1982,7 +2001,7 @@ const AssignmentManagementPage = ({
 														))}
 													</tbody>
 												</table>
-											</div>
+											</ScrollArea>
 										)}
 
 										<div className="border-t border-m3-outline-variant/40 p-3">

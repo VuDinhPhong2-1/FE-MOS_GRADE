@@ -260,6 +260,13 @@ export function DataTable<
 			type={scrollType}
 			orientation={determinedOrientation}
 			className={cn("w-full", cleanedContainerClassName)}
+			viewportProps={
+				dataStudentScrollContainer
+					? ({
+							"data-student-scroll-container": dataStudentScrollContainer,
+						} as React.ComponentPropsWithoutRef<"div">)
+					: undefined
+			}
 		>
 			{tableElement}
 		</ScrollArea>

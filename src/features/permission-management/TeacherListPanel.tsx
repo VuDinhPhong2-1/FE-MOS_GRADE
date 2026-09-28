@@ -55,7 +55,11 @@ export const TeacherListPanel = memo(function TeacherListPanel({
 					Không tìm thấy giáo viên nào phù hợp.
 				</div>
 			) : (
-				<ScrollArea className="max-h-130 pr-1">
+				<ScrollArea
+					type="scroll"
+					orientation="vertical"
+					className="max-h-130 pr-1"
+				>
 					<List
 						variant="expressive"
 						listStyle="segmented"

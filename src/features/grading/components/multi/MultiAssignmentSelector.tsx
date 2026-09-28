@@ -1,4 +1,4 @@
-import { Card, Chip, Icon, LoadingIndicator } from "@bug-on/m3-expressive";
+import { Card, Chip, Icon, LoadingIndicator, ScrollArea } from "@bug-on/m3-expressive";
 import type React from "react";
 import type { Assignment } from "../../../../types/assignment.types";
 import {
@@ -82,7 +82,12 @@ export const MultiAssignmentSelector: React.FC<
 			)}
 
 			{/* Assignment card list */}
-			<div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-2.5 max-h-60 overflow-y-auto pr-1">
+			<ScrollArea
+				type="scroll"
+				orientation="vertical"
+				className="mt-4 max-h-60 pr-1"
+				viewportClassName="grid grid-cols-1 md:grid-cols-2 gap-2.5"
+			>
 				{filteredAutoAssignments.length === 0 ? (
 					<div className="col-span-full py-8 text-center text-xs text-m3-on-surface-variant">
 						Không tìm thấy bài tập nào phù hợp với bộ lọc
@@ -142,7 +147,7 @@ export const MultiAssignmentSelector: React.FC<
 						);
 					})
 				)}
-			</div>
+			</ScrollArea>
 		</div>
 	);
 };

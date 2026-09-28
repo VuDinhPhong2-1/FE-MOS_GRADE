@@ -190,6 +190,7 @@ src/
   - `src/features/submission-portal-management/components/SchoolClassAssignmentPicker.tsx`
 - **Agent**: `frontend-specialist`
 - **Skills**: `clean-code`
+- **Status**: [x] Đã hoàn thành
 - **Mô tả**:
   - Bổ sung tường minh thuộc tính `type="scroll"` và `orientation="vertical"` vào các thẻ `<ScrollArea>` hiện có.
   - Chuẩn hóa `scrollbarSize={8}` hoặc mặc định, đảm bảo đồng bộ styling thanh cuộn.
@@ -204,6 +205,7 @@ src/
   - `src/features/student-list/ClassAnalyticsPanel.tsx`
 - **Agent**: `frontend-specialist`
 - **Skills**: `clean-code`, `frontend-design`
+- **Status**: [x] Đã hoàn thành
 - **Mô tả**:
   - Thay thế các div có `max-h-... overflow-y-auto` bằng `ScrollArea` `type="scroll"`.
 - **INPUT**: Các panel hiển thị danh sách với `overflow-y-auto`
@@ -221,6 +223,7 @@ src/
   - `src/features/grading/components/ScoreboardContent.tsx`
 - **Agent**: `frontend-specialist`
 - **Skills**: `clean-code`, `frontend-design`
+- **Status**: [x] Đã hoàn thành
 - **Mô tả**:
   - Thay thế vùng cuộn danh sách lỗi, bảng chấm điểm nhiều bài thi (`MultiGradingTable`), danh sách chọn bài thi (`MultiAssignmentSelector`), và modal tổng hợp điểm (`ViewAllScoresModal`).
 - **INPUT**: Các bảng chấm và danh sách bài tập dùng `overflow-auto`
@@ -234,6 +237,7 @@ src/
   - `src/features/local-agent/LocalAgentCompactPanel.tsx`
 - **Agent**: `frontend-specialist`
 - **Skills**: `clean-code`, `frontend-design`
+- **Status**: [x] Đã hoàn thành
 - **Mô tả**:
   - Trong `AssignmentManagementPage.tsx`: Thay các danh sách bài thi/lớp học gán (`max-h-56 overflow-auto`, `max-h-110 overflow-auto`) bằng `ScrollArea type="scroll"`.
   - Trong `XmlGradingRulesPage.tsx`: Thay các khối xem trước XML (`pre max-h-96 overflow-auto`) và cây danh mục quy tắc bằng `ScrollArea type="scroll" orientation="both"`.
@@ -246,10 +250,10 @@ src/
 
 ## 7. Phase X: Final Verification Checklist
 
-- [ ] **Design Token Check**: Đảm bảo tất cả ScrollArea tuân thủ token MD3 (`bg-m3-surface-container`, `rounded-full` cho thumb, không hardcode màu tím hay màu lạ).
-- [ ] **Scroll Behavior Consistency**: Mọi nơi đều dùng `type="scroll"`, scrollbar ẩn khi không cuộn và hiện mượt mà khi cuộn.
-- [ ] **Responsive & Mobile Touch**: Hoạt động mượt trên cả cảm ứng điện thoại/tablet và con lăn chuột desktop.
-- [ ] **Accessibility & Keyboard Navigation**: Cho phép điều hướng bằng phím mũi tên, PgUp/PgDown trong vùng cuộn.
-- [ ] **TypeScript Check**: `tsc -b` thực thi thành công không có lỗi type nào.
-- [ ] **Build Check**: `bun run build` hoàn thành nhanh chóng, bundle tối ưu.
-- [ ] **Runtime Check**: Dev server chạy trơn tru trên `http://localhost:5173`.
+- [x] **Design Token Check**: Đảm bảo tất cả ScrollArea tuân thủ token MD3 (`bg-m3-surface-container`, `rounded-full` cho thumb, không hardcode màu tím hay màu lạ).
+- [x] **Scroll Behavior Consistency**: Mọi nơi đều dùng `type="scroll"`, scrollbar ẩn khi không cuộn và hiện mượt mà khi cuộn.
+- [x] **Responsive & Mobile Touch**: Hoạt động mượt trên cả cảm ứng điện thoại/tablet và con lăn chuột desktop.
+- [x] **Accessibility & Keyboard Navigation**: Cho phép điều hướng bằng phím mũi tên, PgUp/PgDown trong vùng cuộn.
+- [x] **TypeScript Check**: `tsc -b` thực thi thành công không có lỗi type nào.
+- [x] **Build Check**: `bun run build` hoàn thành nhanh chóng, bundle tối ưu.
+- [x] **Runtime Check**: Dev server chạy trơn tru trên `http://localhost:5173`.
