@@ -4066,7 +4066,7 @@ const XmlGradingRulesPage = () => {
 																																	defaultSpecialConditionFeedback(value as SpecialConditionType),
 																															};
 																															const configs = {
-																				wordCommentReplyConfig: { commentsFile: "word/comments.xml", commentsExtendedFile: "word/commentsExtended.xml", parentCommentIndex: 1, parentCommentText: "", expectedReplyText: "", caseSensitive: false },
+												wordCommentReplyConfig: { commentsFile: "word/comments.xml", commentsExtendedFile: "word/commentsExtended.xml", parentCommentText: "", expectedReplyText: "", caseSensitive: false },
 																																wordDocumentInspectorConfig: { sourceFile: "word/document.xml", requireNoHeaders: true, requireNoFooters: true, requireNoWatermarks: true, preserveDocumentProperties: true, preserveCustomXml: true },
 																																wordParagraphStyleConfig: { sourceFile: "word/document.xml", targetText: "", expectedStyle: "Heading 2", caseSensitive: false },
 																																wordTableAutoFitConfig: { sourceFile: "word/document.xml", tableIndex: 1, anchorText: "", autoFitType: "contents" },
