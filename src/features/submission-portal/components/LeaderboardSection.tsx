@@ -172,7 +172,7 @@ export const LeaderboardSection = ({
 	return (
 		<Card
 			variant="filled"
-			className="bg-m3-surface-container-lowest p-5 text-m3-on-surface"
+			className="bg-m3-surface-container-lowest p-5 rounded-m3-xl text-m3-on-surface"
 		>
 			<Text variant="headline-sm" className="font-black">
 				Bảng xếp hạng{selectedClass ? ` - ${selectedClass.name}` : ""}

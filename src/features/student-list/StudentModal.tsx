@@ -258,107 +258,103 @@ const StudentModalComponent = ({
 							viewportClassName="px-6 py-4"
 						>
 							<div className="flex flex-col gap-4">
-							{error && (
-								<div className="flex items-center gap-2 rounded-2xl bg-m3-error-container p-3 text-xs font-medium text-m3-on-error-container">
-									<Icon name="error" size={16} />
-									<span>{error}</span>
+								{error && (
+									<div className="flex items-center gap-2 rounded-2xl bg-m3-error-container p-3 text-xs font-medium text-m3-on-error-container">
+										<Icon name="error" size={16} />
+										<span>{error}</span>
+									</div>
+								)}
+
+								<TextField
+									variant="outlined"
+									label="Họ và tên đệm"
+									placeholder="VD: Nguyễn Văn"
+									value={form.middleName}
+									onChange={(val) => {
+										if (error) setError("");
+										setForm((prev) => ({ ...prev, middleName: val }));
+									}}
+									disabled={isSubmitting}
+									fullWidth
+									className="pt-2"
+								/>
+
+								<TextField
+									required
+									variant="outlined"
+									label="Tên"
+									placeholder="VD: An"
+									value={form.firstName}
+									onChange={(val) => {
+										if (error) setError("");
+										setForm((prev) => ({ ...prev, firstName: val }));
+									}}
+									disabled={isSubmitting}
+									fullWidth
+								/>
+
+								<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+									<Select
+										variant="outlined"
+										label="Trạng thái"
+										options={STATUS_OPTIONS}
+										value={form.status}
+										onChange={(val) => {
+											if (error) setError("");
+											setForm((prev) => ({ ...prev, status: val }));
+										}}
+										disabled={isSubmitting}
+										fullWidth
+										menuVariant="expressive"
+										showDividers={false}
+										colorVariant="standard"
+									/>
+
+									<Select
+										variant="outlined"
+										label="Xếp loại"
+										options={COMPETENCY_OPTIONS}
+										value={form.competencyLevel}
+										onChange={(val) => {
+											if (error) setError("");
+											setForm((prev) => ({
+												...prev,
+												competencyLevel: val as CompetencyLevel,
+											}));
+										}}
+										disabled={isSubmitting}
+										fullWidth
+										menuVariant="expressive"
+										showDividers={false}
+										colorVariant="vibrant"
+									/>
 								</div>
-							)}
 
-							<TextField
-								variant="outlined"
-								label="Họ và tên đệm"
-								placeholder="VD: Nguyễn Văn"
-								value={form.middleName}
-								onChange={(val) => {
-									if (error) setError("");
-									setForm((prev) => ({ ...prev, middleName: val }));
-								}}
-								disabled={isSubmitting}
-								fullWidth
-								className="pt-2"
-							/>
-
-							<TextField
-								required
-								variant="outlined"
-								label="Tên"
-								placeholder="VD: An"
-								value={form.firstName}
-								onChange={(val) => {
-									if (error) setError("");
-									setForm((prev) => ({ ...prev, firstName: val }));
-								}}
-								disabled={isSubmitting}
-								fullWidth
-								className="pt-4"
-							/>
-
-							<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-								<Select
-									variant="outlined"
-									label="Trạng thái"
-									options={STATUS_OPTIONS}
-									value={form.status}
-									onChange={(val) => {
+								<Checkbox
+									checked={form.thi}
+									onCheckedChange={(checked) => {
 										if (error) setError("");
-										setForm((prev) => ({ ...prev, status: val }));
+										setForm((prev) => ({ ...prev, thi: checked }));
 									}}
 									disabled={isSubmitting}
-									fullWidth
-									menuVariant="expressive"
-									showDividers={false}
-									colorVariant="standard"
-									className="pt-4"
+									label="Học sinh dự thi"
 								/>
 
-								<Select
+								<TextField
+									type="textarea"
+									rows={3}
 									variant="outlined"
-									label="Xếp loại"
-									options={COMPETENCY_OPTIONS}
-									value={form.competencyLevel}
+									label="Ghi chú"
+									placeholder="Nhận xét thêm về học sinh..."
+									value={form.notes}
 									onChange={(val) => {
 										if (error) setError("");
-										setForm((prev) => ({
-											...prev,
-											competencyLevel: val as CompetencyLevel,
-										}));
+										setForm((prev) => ({ ...prev, notes: val }));
 									}}
 									disabled={isSubmitting}
+									maxLength={500}
 									fullWidth
-									menuVariant="expressive"
-									showDividers={false}
-									colorVariant="vibrant"
-									className="pt-4"
 								/>
-							</div>
-
-							<Checkbox
-								checked={form.thi}
-								onCheckedChange={(checked) => {
-									if (error) setError("");
-									setForm((prev) => ({ ...prev, thi: checked }));
-								}}
-								disabled={isSubmitting}
-								label="Học sinh dự thi"
-							/>
-
-							<TextField
-								type="textarea"
-								rows={3}
-								variant="outlined"
-								label="Ghi chú"
-								placeholder="Nhận xét thêm về học sinh..."
-								value={form.notes}
-								onChange={(val) => {
-									if (error) setError("");
-									setForm((prev) => ({ ...prev, notes: val }));
-								}}
-								disabled={isSubmitting}
-								maxLength={500}
-								fullWidth
-								className="pt-4"
-							/>
 							</div>
 						</ScrollArea>
 

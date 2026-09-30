@@ -82,9 +82,10 @@ export const GradingResult = ({
 					<ScrollArea
 						type="scroll"
 						orientation="vertical"
-						className="max-h-80 pr-2"
+						scrollbarSize={8}
+						className="max-h-80 overflow-hidden rounded-m3-md"
 					>
-						<div className="space-y-2">
+						<div className="space-y-2 p-0.5">
 							{failedTaskResults.map((task, index) => {
 								const errors = uniqueNonEmpty(task.errors);
 								const fixes = uniqueNonEmpty(task.fixActions);
@@ -135,7 +136,7 @@ export const GradingResult = ({
 											<Text
 												key={fix}
 												variant="body-sm"
-												className="mt-1 text-m3-primary"
+												className="mt-1 text-green-700/80"
 											>
 												<span className="font-bold">Cách khắc phục:</span> {fix}
 											</Text>
@@ -156,12 +157,14 @@ export const GradingResult = ({
 					<ScrollArea
 						type="scroll"
 						orientation="vertical"
-						className="max-h-80 pr-2"
+						scrollbarSize={8}
+						className="max-h-80 overflow-hidden rounded-m3-md"
 					>
-						<div className="space-y-1">
+						<div className="p-0.5 space-y-1">
 							{fallbackErrors.map((error, index) => (
 								<Text key={error} variant="body-sm" className="text-m3-error">
-									<span className="font-bold">Câu sai {index + 1}:</span> {error}
+									<span className="font-bold">Câu sai {index + 1}:</span>{" "}
+									{error}
 								</Text>
 							))}
 						</div>

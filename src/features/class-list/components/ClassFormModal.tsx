@@ -120,124 +120,120 @@ export const ClassFormModal: React.FC<ClassFormModalProps> = ({
 							viewportClassName="px-6 pt-3 pb-6"
 						>
 							<div className="flex flex-col gap-4">
-							{formError && (
-								<div className="flex items-center gap-2 rounded-2xl bg-m3-error-container p-3 text-xs font-medium text-m3-on-error-container">
-									<Icon name="error" size={16} />
-									<span>{formError}</span>
-								</div>
-							)}
-
-							<TextField
-								variant="outlined"
-								label="Tên lớp"
-								required
-								placeholder="VD: Lớp 10A1"
-								value={formData.name}
-								onChange={(val) => {
-									if (formError) setFormError("");
-									setFormData((prev) => ({ ...prev, name: val }));
-								}}
-								disabled={isSubmitting}
-								leadingIcon={<Icon name="class" />}
-								fullWidth
-								className="pt-2"
-							/>
-
-							<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-								<Select
-									variant="outlined"
-									label="Khối"
-									options={GRADE_OPTIONS}
-									value={formData.grade || ""}
-									onChange={(val) => {
-										if (formError) setFormError("");
-										setFormData((prev) => ({ ...prev, grade: val }));
-									}}
-									disabled={isSubmitting}
-									fullWidth
-									className="pt-4"
-									menuVariant="expressive"
-									showDividers={false}
-									colorVariant="standard"
-								/>
+								{formError && (
+									<div className="flex items-center gap-2 rounded-2xl bg-m3-error-container p-3 text-xs font-medium text-m3-on-error-container">
+										<Icon name="error" size={16} />
+										<span>{formError}</span>
+									</div>
+								)}
 
 								<TextField
-									required
 									variant="outlined"
-									label="Sĩ số tối đa"
-									placeholder="VD: 45"
-									type="number"
-									value={
-										formData.maxStudents !== undefined
-											? String(formData.maxStudents)
-											: ""
-									}
+									label="Tên lớp"
+									required
+									placeholder="VD: Lớp 10A1"
+									value={formData.name}
 									onChange={(val) => {
 										if (formError) setFormError("");
-										setFormData((prev) => ({
-											...prev,
-											maxStudents: val ? parseInt(val, 10) : undefined,
-										}));
+										setFormData((prev) => ({ ...prev, name: val }));
 									}}
 									disabled={isSubmitting}
-									leadingIcon={<Icon name="group" />}
+									leadingIcon={<Icon name="class" />}
 									fullWidth
-									className="pt-4"
+									className="pt-2"
 								/>
-							</div>
 
-							<TextField
-								variant="outlined"
-								label="Năm học"
-								placeholder="VD: 2026 - 2027"
-								value={formData.academicYear || ""}
-								onChange={(val) => {
-									if (formError) setFormError("");
-									setFormData((prev) => ({ ...prev, academicYear: val }));
-								}}
-								disabled={isSubmitting}
-								leadingIcon={<Icon name="calendar_today" />}
-								fullWidth
-								className="pt-4"
-							/>
+								<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+									<Select
+										variant="outlined"
+										label="Khối"
+										options={GRADE_OPTIONS}
+										value={formData.grade || ""}
+										onChange={(val) => {
+											if (formError) setFormError("");
+											setFormData((prev) => ({ ...prev, grade: val }));
+										}}
+										disabled={isSubmitting}
+										fullWidth
+										menuVariant="expressive"
+										showDividers={false}
+										colorVariant="standard"
+									/>
 
-							<div className="flex items-center gap-2.5 rounded-2xl p-3 text-xs text-m3-on-surface">
-								<Icon
-									name="info"
-									className="mt-0.5 shrink-0 text-base text-m3-primary"
-								/>
-								<span>
-									{attendanceSpreadsheetId
-										? "Google Sheet của lớp sẽ tự lấy theo cấu hình của Trường. Chỉ cần cấu hình tại màn hình Quản lý trường."
-										: "Trường chưa cấu hình Google Sheet. Vui lòng vào Quản lý trường để thêm Spreadsheet ID."}
-								</span>
-							</div>
-
-							<TextField
-								variant="outlined"
-								label="Mô tả"
-								placeholder="Mô tả về lớp học..."
-								value={formData.description || ""}
-								onChange={(val) => {
-									if (formError) setFormError("");
-									setFormData((prev) => ({ ...prev, description: val }));
-								}}
-								disabled={isSubmitting}
-								leadingIcon={<Icon name="notes" />}
-								fullWidth
-								className="pt-4"
-							/>
-
-							{editingClass && (
-								<div className="pt-1">
-									<Checkbox
-										id="editIsActiveClass"
-										checked={isActive}
-										onCheckedChange={(checked) => setIsActive(checked)}
-										label="Lớp đang hoạt động"
+									<TextField
+										required
+										variant="outlined"
+										label="Sĩ số tối đa"
+										placeholder="VD: 45"
+										type="number"
+										value={
+											formData.maxStudents !== undefined
+												? String(formData.maxStudents)
+												: ""
+										}
+										onChange={(val) => {
+											if (formError) setFormError("");
+											setFormData((prev) => ({
+												...prev,
+												maxStudents: val ? parseInt(val, 10) : undefined,
+											}));
+										}}
+										disabled={isSubmitting}
+										leadingIcon={<Icon name="group" />}
+										fullWidth
 									/>
 								</div>
-							)}
+
+								<TextField
+									variant="outlined"
+									label="Năm học"
+									placeholder="VD: 2026 - 2027"
+									value={formData.academicYear || ""}
+									onChange={(val) => {
+										if (formError) setFormError("");
+										setFormData((prev) => ({ ...prev, academicYear: val }));
+									}}
+									disabled={isSubmitting}
+									leadingIcon={<Icon name="calendar_today" />}
+									fullWidth
+								/>
+
+								<div className="flex items-center gap-2.5 rounded-2xl p-3 text-xs text-m3-on-surface">
+									<Icon
+										name="info"
+										className="mt-0.5 shrink-0 text-base text-m3-primary"
+									/>
+									<span>
+										{attendanceSpreadsheetId
+											? "Google Sheet của lớp sẽ tự lấy theo cấu hình của Trường. Chỉ cần cấu hình tại màn hình Quản lý trường."
+											: "Trường chưa cấu hình Google Sheet. Vui lòng vào Quản lý trường để thêm Spreadsheet ID."}
+									</span>
+								</div>
+
+								<TextField
+									variant="outlined"
+									label="Mô tả"
+									placeholder="Mô tả về lớp học..."
+									value={formData.description || ""}
+									onChange={(val) => {
+										if (formError) setFormError("");
+										setFormData((prev) => ({ ...prev, description: val }));
+									}}
+									disabled={isSubmitting}
+									leadingIcon={<Icon name="notes" />}
+									fullWidth
+								/>
+
+								{editingClass && (
+									<div className="pt-1">
+										<Checkbox
+											id="editIsActiveClass"
+											checked={isActive}
+											onCheckedChange={(checked) => setIsActive(checked)}
+											label="Lớp đang hoạt động"
+										/>
+									</div>
+								)}
 							</div>
 						</ScrollArea>
 

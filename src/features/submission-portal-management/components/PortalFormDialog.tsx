@@ -60,8 +60,12 @@ interface PortalFormDialogProps {
 	loadingClasses?: boolean;
 	loadingAssignments?: boolean;
 	onSchoolChange?: (schoolId: string) => void;
+	onClassChange?: (classId: string) => void;
+	onAssignmentChange?: (assignmentId: string) => void;
 	onToggleClass?: (classId: string) => void;
 	onToggleAssignment?: (assignmentId: string) => void;
+	onSelectAllAssignments?: (allIds: string[]) => void;
+	onClearAssignments?: () => void;
 }
 
 export const PortalFormDialog: React.FC<PortalFormDialogProps> = ({
@@ -95,8 +99,12 @@ export const PortalFormDialog: React.FC<PortalFormDialogProps> = ({
 	loadingClasses = false,
 	loadingAssignments = false,
 	onSchoolChange = () => {},
+	onClassChange = () => {},
+	onAssignmentChange = () => {},
 	onToggleClass = () => {},
 	onToggleAssignment = () => {},
+	onSelectAllAssignments = () => {},
+	onClearAssignments = () => {},
 }) => {
 	const scoringOptions: SelectOption[] = useMemo(
 		() => [
@@ -183,6 +191,23 @@ export const PortalFormDialog: React.FC<PortalFormDialogProps> = ({
 		isSubmitting: loading,
 	});
 
+	// Enable create button only when required fields are fully selected and not loading
+	const canSubmitCreate = useMemo(() => {
+		return Boolean(
+			title.trim() &&
+				selectedSchoolId &&
+				selectedClassIds.length > 0 &&
+				selectedAssignmentIds.length > 0 &&
+				!loading,
+		);
+	}, [
+		title,
+		selectedSchoolId,
+		selectedClassIds,
+		selectedAssignmentIds,
+		loading,
+	]);
+
 	return (
 		<Dialog
 			open={open}
@@ -192,7 +217,7 @@ export const PortalFormDialog: React.FC<PortalFormDialogProps> = ({
 				<DialogOverlay />
 				<DialogContent
 					hideCloseButton
-					className={`flex max-h-[92vh] w-[calc(100%-2rem)] flex-col overflow-hidden rounded-4xl bg-m3-surface-container-high p-0 text-m3-on-surface shadow-2xl ${
+					className={`flex max-h-[92vh] w-[calc(100%-2rem)] flex-col overflow-hidden rounded-4xl bg-m3-surface-container p-0 text-m3-on-surface ${
 						isCreate ? "max-w-4xl" : "max-w-xl"
 					}`}
 				>
@@ -222,7 +247,7 @@ export const PortalFormDialog: React.FC<PortalFormDialogProps> = ({
 					>
 						<div className="flex flex-col gap-4">
 							{/* Group 1: General Info */}
-							<div className="space-y-4 rounded-3xl bg-m3-surface-container p-4 sm:p-5 text-m3-on-surface">
+							<div className="space-y-4 rounded-3xl bg-m3-surface-container-lowest p-4 sm:p-5 text-m3-on-surface">
 								<div className="flex items-center gap-2">
 									<Icon name="info" className="text-base text-m3-primary" />
 									<h4 className="text-sm font-bold text-m3-on-surface">
@@ -269,7 +294,7 @@ export const PortalFormDialog: React.FC<PortalFormDialogProps> = ({
 								<TextField
 									variant="outlined"
 									type="textarea"
-									label="Mô tả / Hướng dẫn học sinh"
+									label="Mô tả"
 									placeholder="Nhập ghi chú hoặc hướng dẫn cho học sinh khi vào cổng nộp..."
 									value={description}
 									onChange={(val) => setDescription(val)}
@@ -280,7 +305,7 @@ export const PortalFormDialog: React.FC<PortalFormDialogProps> = ({
 							</div>
 
 							{/* Group 2: Display & Leaderboard Preferences */}
-							<div className="space-y-3 rounded-3xl bg-m3-surface-container p-4 sm:p-5 text-m3-on-surface">
+							<div className="space-y-3 rounded-3xl bg-m3-surface-container-lowest p-4 sm:p-5 text-m3-on-surface">
 								<div className="flex items-center gap-2">
 									<Icon name="tune" className="text-base text-m3-primary" />
 									<h4 className="text-sm font-bold text-m3-on-surface">
@@ -338,8 +363,12 @@ export const PortalFormDialog: React.FC<PortalFormDialogProps> = ({
 									loadingClasses={loadingClasses}
 									loadingAssignments={loadingAssignments}
 									onSchoolChange={onSchoolChange}
+									onClassChange={onClassChange}
+									onAssignmentChange={onAssignmentChange}
 									onToggleClass={onToggleClass}
 									onToggleAssignment={onToggleAssignment}
+									onSelectAllAssignments={onSelectAllAssignments}
+									onClearAssignments={onClearAssignments}
 								/>
 							)}
 						</div>
@@ -361,6 +390,7 @@ export const PortalFormDialog: React.FC<PortalFormDialogProps> = ({
 								type="button"
 								colorStyle="filled"
 								loading={loading}
+								disabled={!canSubmitCreate}
 								icon={<Icon name="add" />}
 								onClick={onSubmitCreate}
 							>

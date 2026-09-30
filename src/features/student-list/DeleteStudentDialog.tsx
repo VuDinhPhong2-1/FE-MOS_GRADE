@@ -47,7 +47,7 @@ const DeleteStudentDialogComponent = ({
 				>
 					<div className="flex flex-col gap-4">
 						<div className="flex items-center gap-3">
-							<div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-m3-error-container text-m3-error">
+							<div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-m3-error-container text-m3-on-error-container">
 								<Icon name="delete_forever" className="text-2xl" />
 							</div>
 							<div>
@@ -71,7 +71,7 @@ const DeleteStudentDialogComponent = ({
 								: "Dữ liệu học sinh cùng điểm số và thông tin liên quan sẽ bị xóa hoàn toàn khỏi lớp học."}
 						</p>
 
-						<DialogFooter className="mt-2 flex shrink-0 items-center justify-end gap-2.5 border-t border-m3-outline-variant/30 pt-4">
+						<DialogFooter className="mt-2 flex shrink-0 items-center justify-end gap-2.5 pt-4">
 							<Button
 								colorStyle="text"
 								type="button"

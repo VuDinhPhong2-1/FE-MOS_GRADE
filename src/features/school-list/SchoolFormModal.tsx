@@ -152,116 +152,108 @@ export const SchoolFormModal = ({
 							viewportClassName="px-6 pt-4 pb-6 pr-5"
 						>
 							<div className="flex flex-col gap-6">
-							<div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+								<div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+									<TextField
+										variant="outlined"
+										label="Tên trường"
+										placeholder="VD: Trường THPT Chu Văn An"
+										required
+										disabled={isSubmitting}
+										fullWidth
+										leadingIcon={<Icon name="apartment" />}
+										value={formData.name}
+										onChange={handleFieldChange("name")}
+									/>
+
+									<TextField
+										variant="outlined"
+										label="Mã trường"
+										placeholder="VD: CVA-HN"
+										required
+										disabled={isSubmitting}
+										fullWidth
+										leadingIcon={<Icon name="tag" />}
+										value={formData.code}
+										onChange={handleFieldChange("code")}
+									/>
+								</div>
+
+								<div>
+									<TextField
+										variant="outlined"
+										label="ID Google Sheet"
+										placeholder="Dán Spreadsheet ID hoặc link Google Sheet"
+										disabled={isSubmitting || !isAdmin}
+										fullWidth
+										leadingIcon={<Icon name="table_chart" />}
+										value={formData.attendanceSpreadsheetId || ""}
+										onChange={handleFieldChange("attendanceSpreadsheetId")}
+										supportingText={
+											isAdmin
+												? "Mỗi trường có 1 Google Sheet riêng. Lớp học mới tạo sẽ tự động kế thừa."
+												: "Chỉ tài khoản Admin mới có quyền cập nhật Spreadsheet ID."
+										}
+									/>
+								</div>
+
 								<TextField
 									variant="outlined"
-									label="Tên trường"
-									placeholder="VD: Trường THPT Chu Văn An"
-									required
+									label="Địa chỉ"
+									placeholder="VD: Số 10 Thụy Khuê, Tây Hồ, Hà Nội"
 									disabled={isSubmitting}
 									fullWidth
-									leadingIcon={<Icon name="apartment" />}
-									value={formData.name}
-									onChange={handleFieldChange("name")}
-									className="pt-4"
+									leadingIcon={<Icon name="location_on" />}
+									value={formData.address || ""}
+									onChange={handleFieldChange("address")}
 								/>
+
+								<div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+									<TextField
+										variant="outlined"
+										type="tel"
+										label="Số điện thoại"
+										placeholder="VD: 024-38234567"
+										disabled={isSubmitting}
+										fullWidth
+										leadingIcon={<Icon name="call" />}
+										value={formData.phoneNumber || ""}
+										onChange={handleFieldChange("phoneNumber")}
+									/>
+									<TextField
+										variant="outlined"
+										type="email"
+										label="Email"
+										placeholder="VD: lienhe@cva.edu.vn"
+										disabled={isSubmitting}
+										fullWidth
+										leadingIcon={<Icon name="mail" />}
+										value={formData.email || ""}
+										onChange={handleFieldChange("email")}
+									/>
+								</div>
 
 								<TextField
 									variant="outlined"
-									label="Mã trường"
-									placeholder="VD: CVA-HN"
-									required
+									type="url"
+									label="Website"
+									placeholder="VD: https://thptchuvanan.edu.vn"
 									disabled={isSubmitting}
 									fullWidth
-									leadingIcon={<Icon name="tag" />}
-									value={formData.code}
-									onChange={handleFieldChange("code")}
-									className="pt-4"
+									leadingIcon={<Icon name="language" />}
+									value={formData.website || ""}
+									onChange={handleFieldChange("website")}
 								/>
-							</div>
 
-							<div>
 								<TextField
 									variant="outlined"
-									label="Spreadsheet ID Google Sheet (Điểm danh / Kết quả)"
-									placeholder="Dán Spreadsheet ID hoặc link Google Sheet"
-									disabled={isSubmitting || !isAdmin}
-									fullWidth
-									leadingIcon={<Icon name="table_chart" />}
-									value={formData.attendanceSpreadsheetId || ""}
-									onChange={handleFieldChange("attendanceSpreadsheetId")}
-									supportingText={
-										isAdmin
-											? "Mỗi trường có 1 Google Sheet riêng. Lớp học mới tạo sẽ tự động kế thừa."
-											: "Chỉ tài khoản Admin mới có quyền cập nhật Spreadsheet ID."
-									}
-									className="pt-4"
-								/>
-							</div>
-
-							<TextField
-								variant="outlined"
-								label="Địa chỉ"
-								placeholder="VD: Số 10 Thụy Khuê, Tây Hồ, Hà Nội"
-								disabled={isSubmitting}
-								fullWidth
-								leadingIcon={<Icon name="location_on" />}
-								value={formData.address || ""}
-								onChange={handleFieldChange("address")}
-								className="pt-4"
-							/>
-
-							<div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-								<TextField
-									variant="outlined"
-									type="tel"
-									label="Số điện thoại"
-									placeholder="VD: 024-38234567"
+									label="Mô tả ghi chú"
+									placeholder="Thông tin ghi chú thêm về trường..."
 									disabled={isSubmitting}
 									fullWidth
-									leadingIcon={<Icon name="call" />}
-									value={formData.phoneNumber || ""}
-									onChange={handleFieldChange("phoneNumber")}
-									className="pt-4"
+									leadingIcon={<Icon name="notes" />}
+									value={formData.description || ""}
+									onChange={handleFieldChange("description")}
 								/>
-								<TextField
-									variant="outlined"
-									type="email"
-									label="Email liên hệ"
-									placeholder="VD: lienhe@cva.edu.vn"
-									disabled={isSubmitting}
-									fullWidth
-									leadingIcon={<Icon name="mail" />}
-									value={formData.email || ""}
-									onChange={handleFieldChange("email")}
-									className="pt-4"
-								/>
-							</div>
-
-							<TextField
-								variant="outlined"
-								type="url"
-								label="Website"
-								placeholder="VD: https://thptchuvanan.edu.vn"
-								disabled={isSubmitting}
-								fullWidth
-								leadingIcon={<Icon name="language" />}
-								value={formData.website || ""}
-								onChange={handleFieldChange("website")}
-								className="pt-4"
-							/>
-
-							<TextField
-								variant="outlined"
-								label="Mô tả ghi chú"
-								placeholder="Thông tin ghi chú thêm về trường..."
-								disabled={isSubmitting}
-								fullWidth
-								leadingIcon={<Icon name="notes" />}
-								value={formData.description || ""}
-								onChange={handleFieldChange("description")}
-								className="pt-4"
-							/>
 							</div>
 						</ScrollArea>
 

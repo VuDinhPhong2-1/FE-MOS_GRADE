@@ -1,13 +1,17 @@
 import {
-	Checkbox,
+	Button,
 	Icon,
+	List,
+	ListItem,
 	LoadingIndicator,
 	ScrollArea,
 	Select,
 	type SelectOption,
+	Text,
+	TextField,
 } from "@bug-on/m3-expressive";
 import type React from "react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { Assignment } from "../../../types/assignment.types";
 import type { Class } from "../../../types/class.types";
 import type { School } from "../../../types/school.types";
@@ -20,14 +24,18 @@ interface SchoolClassAssignmentPickerProps {
 	selectedSchoolId: string;
 	selectedClassIds: string[];
 	selectedAssignmentIds: string[];
-	selectedSchoolName: string;
-	selectedClassNames: string;
-	classNameById: Map<string, string>;
+	selectedSchoolName?: string;
+	selectedClassNames?: string;
+	classNameById?: Map<string, string>;
 	loadingClasses: boolean;
 	loadingAssignments: boolean;
 	onSchoolChange: (schoolId: string) => void;
-	onToggleClass: (classId: string) => void;
-	onToggleAssignment: (assignmentId: string) => void;
+	onClassChange?: (classId: string) => void;
+	onAssignmentChange?: (assignmentId: string) => void;
+	onToggleClass?: (classId: string) => void;
+	onToggleAssignment?: (assignmentId: string) => void;
+	onSelectAllAssignments?: (allIds: string[]) => void;
+	onClearAssignments?: () => void;
 }
 
 export const SchoolClassAssignmentPicker: React.FC<
@@ -39,280 +47,455 @@ export const SchoolClassAssignmentPicker: React.FC<
 	selectedSchoolId,
 	selectedClassIds,
 	selectedAssignmentIds,
-	selectedSchoolName,
-	selectedClassNames,
+	selectedSchoolName = "",
+	selectedClassNames = "",
 	classNameById,
 	loadingClasses,
 	loadingAssignments,
 	onSchoolChange,
+	onClassChange,
+	onAssignmentChange,
 	onToggleClass,
 	onToggleAssignment,
+	onSelectAllAssignments,
+	onClearAssignments,
 }) => {
+	const selectedClassId = selectedClassIds[0] || "";
+	const [searchQuery, setSearchQuery] = useState("");
+
+	const handleClassSelect = (val: string) => {
+		if (onClassChange) {
+			onClassChange(val);
+		} else if (onToggleClass) {
+			onToggleClass(val);
+		}
+	};
+
+	const handleAssignmentToggle = (assignmentId: string) => {
+		if (onToggleAssignment) {
+			onToggleAssignment(assignmentId);
+		} else if (onAssignmentChange) {
+			onAssignmentChange(assignmentId);
+		}
+	};
+
+	// 1. School options
 	const schoolOptions: SelectOption[] = useMemo(
 		() => [
 			{ value: "", label: "Chọn trường học..." },
 			...schools.map((school) => ({
 				value: school.id,
-				label: `${school.name}${school.code ? ` (${school.code})` : ""}`,
+				label: school.name,
 			})),
 		],
 		[schools],
 	);
 
+	// 2. Class options
+	const classOptions: SelectOption[] = useMemo(
+		() => [
+			{ value: "", label: "Chọn lớp học..." },
+			...classes.map((cls) => ({
+				value: cls.id,
+				label: cls.name,
+			})),
+		],
+		[classes],
+	);
+
+	// Filter assignments locally by search query
+	const filteredAssignments = useMemo(() => {
+		if (!searchQuery.trim()) return assignments;
+		const q = searchQuery.toLowerCase().trim();
+		return assignments.filter(
+			(a) =>
+				a.name.toLowerCase().includes(q) ||
+				Boolean(a.subject?.toLowerCase().includes(q)),
+		);
+	}, [assignments, searchQuery]);
+
+	const handleSelectAllFiltered = () => {
+		const targetIds = filteredAssignments.map((a) => a.id);
+		if (onSelectAllAssignments) {
+			// Combine already selected with filtered target IDs
+			const combined = Array.from(
+				new Set([...selectedAssignmentIds, ...targetIds]),
+			);
+			onSelectAllAssignments(combined);
+		} else {
+			for (const id of targetIds) {
+				if (!selectedAssignmentIds.includes(id)) {
+					onToggleAssignment?.(id);
+				}
+			}
+		}
+	};
+
+	const handleClearAll = () => {
+		if (onClearAssignments) {
+			onClearAssignments();
+		} else {
+			for (const id of selectedAssignmentIds) {
+				onToggleAssignment?.(id);
+			}
+		}
+	};
+
+	// Check whether all steps are completed
+	const isStepComplete = Boolean(
+		selectedSchoolId && selectedClassId && selectedAssignmentIds.length > 0,
+	);
+
 	return (
-		<div className="space-y-4 rounded-3xl bg-m3-surface-container p-4 sm:p-5 text-m3-on-surface">
+		<div className="space-y-4 rounded-3xl bg-m3-surface-container-lowest p-4 sm:p-5 text-m3-on-surface">
 			{/* Section Header */}
 			<div className="flex flex-wrap items-center justify-between gap-2">
-				<div className="flex items-start gap-2">
-					<Icon
-						name="hub"
-						className="mt-0.5 text-base text-m3-primary shrink-0"
-					/>
+				<div className="flex items-start gap-2.5">
+					<div className="mt-0.5 flex h-7 w-7 items-center justify-center rounded-xl bg-m3-primary/10 text-m3-primary shrink-0">
+						<Icon name="hub" className="text-lg" />
+					</div>
 					<div>
 						<h4 className="text-sm font-bold text-m3-on-surface">
 							3. Phạm vi áp dụng (Trường, Lớp, Bài tập)
 						</h4>
 						<p className="text-xs text-m3-on-surface-variant">
-							Chọn trường trước, sau đó chọn một hoặc nhiều lớp để tải các bài
-							tập chấm tự động đã tạo.
+							Chọn trường trước, sau đó chọn lớp và tích chọn một hoặc nhiều bài
+							tập chấm tự động.
 						</p>
 					</div>
 				</div>
-				<div className="flex items-center gap-2 text-xs font-semibold text-m3-primary">
-					<span>Đã chọn:</span>
-					<span className="rounded-m3-full bg-m3-primary/10 px-2.5 py-0.5">
-						{selectedClassIds.length} lớp
-					</span>
-					<span className="rounded-m3-full bg-m3-primary/10 px-2.5 py-0.5">
-						{selectedAssignmentIds.length} bài tập
+				<div className="flex items-center gap-1.5 text-xs font-semibold">
+					<span
+						className={`inline-flex items-center gap-1 rounded-m3-full px-2.5 py-1 transition-colors ${
+							isStepComplete
+								? "bg-m3-primary/15 text-m3-primary font-bold"
+								: "bg-m3-surface-container-high text-m3-on-surface-variant"
+						}`}
+					>
+						<Icon
+							name={isStepComplete ? "check_circle" : "pending"}
+							className="text-sm"
+						/>
+						{isStepComplete
+							? `Đã chọn: ${selectedAssignmentIds.length} bài tập`
+							: "Đang thiết lập"}
 					</span>
 				</div>
 			</div>
 
-			<div className="grid gap-4 lg:grid-cols-3">
-				{/* Column 1: School Selection */}
-				<div className="space-y-2">
-					<span className="text-xs font-bold uppercase tracking-wider text-m3-on-surface-variant">
-						1. Trường học
-					</span>
+			{/* Column Layout: Step 1 (School) -> Step 2 (Class) -> Step 3 (Assignment Direct Checkboxes) */}
+			<div className="flex flex-col gap-4">
+				{/* Step 1: School Selector */}
+				<div className="space-y-3">
+					<div className="flex items-center justify-between">
+						<label
+							htmlFor="portal-select-school"
+							className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-m3-on-surface-variant"
+						>
+							<span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-m3-primary text-[10px] text-m3-on-primary">
+								1
+							</span>
+							Trường học
+						</label>
+						{selectedSchoolName && (
+							<span className="text-[11px] font-medium text-m3-primary truncate max-w-50">
+								{selectedSchoolName}
+							</span>
+						)}
+					</div>
 
 					<Select
-						variant="outlined"
-						label="Chọn trường"
+						id="portal-select-school"
+						variant="filled"
+						label="Chọn trường học"
 						options={schoolOptions}
 						value={selectedSchoolId}
 						onChange={(val) => onSchoolChange(val)}
 						searchable
 						fullWidth
+						placeholder="Tìm hoặc chọn trường học..."
+						emptyText="Không tìm thấy trường học nào"
+					/>
+				</div>
+
+				{/* Step 2: Class Selector */}
+				<div className="space-y-3">
+					<div className="flex items-center justify-between">
+						<label
+							htmlFor="portal-select-class"
+							className={`flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider ${
+								!selectedSchoolId
+									? "text-m3-on-surface-variant/50"
+									: "text-m3-on-surface-variant"
+							}`}
+						>
+							<span
+								className={`flex h-4.5 w-4.5 items-center justify-center rounded-full text-[10px] ${
+									!selectedSchoolId
+										? "bg-m3-surface-container-highest text-m3-on-surface-variant/60"
+										: "bg-m3-primary text-m3-on-primary"
+								}`}
+							>
+								2
+							</span>
+							Lớp học
+						</label>
+						{selectedClassNames && selectedSchoolId && (
+							<span className="text-[11px] font-medium text-m3-primary truncate max-w-50">
+								{selectedClassNames}
+							</span>
+						)}
+					</div>
+
+					<Select
+						id="portal-select-class"
+						variant="filled"
+						label="Chọn lớp học"
+						options={classOptions}
+						value={selectedClassId}
+						onChange={(val) => handleClassSelect(val)}
+						searchable
+						loading={loadingClasses}
+						disabled={
+							!selectedSchoolId || loadingClasses || classes.length === 0
+						}
+						fullWidth
+						placeholder={
+							!selectedSchoolId
+								? "Vui lòng chọn trường trước"
+								: loadingClasses
+									? "Đang tải danh sách lớp..."
+									: classes.length === 0
+										? "Trường chưa có lớp học nào"
+										: "Tìm hoặc chọn lớp học..."
+						}
+						emptyText="Không tìm thấy lớp học nào"
 					/>
 
-					{selectedSchoolName ? (
-						<p className="text-xs text-m3-on-surface-variant">
-							Đang chọn:{" "}
-							<span className="font-semibold text-m3-on-surface">
-								{selectedSchoolName}
-							</span>
+					{/* Supporting Helper / Notice */}
+					{!selectedSchoolId && (
+						<p className="flex items-center gap-1.5 text-[11px] text-m3-on-surface-variant/70 pl-1">
+							<Icon name="lock" className="text-xs" />
+							Chọn trường học ở bước 1 để mở khóa chọn lớp.
 						</p>
-					) : (
-						<div className="rounded-2xl bg-m3-surface-container-high p-3 text-xs text-m3-on-surface-variant">
-							Vui lòng chọn trường để hệ thống hiển thị danh sách lớp học tương
-							ứng.
+					)}
+					{selectedSchoolId && !loadingClasses && classes.length === 0 && (
+						<div className="flex items-center gap-2 rounded-2xl bg-m3-surface-container-high p-2.5 text-xs text-m3-on-surface-variant">
+							<Icon name="info" className="text-base text-m3-error shrink-0" />
+							<span>Trường này chưa có lớp nào đang hoạt động.</span>
 						</div>
 					)}
 				</div>
 
-				{/* Column 2: Class Selection */}
-				<div className="space-y-2">
-					<div className="flex items-center justify-between">
-						<span className="text-xs font-bold uppercase tracking-wider text-m3-on-surface-variant">
-							2. Danh sách lớp
-						</span>
-						{selectedClassIds.length > 0 && (
-							<span className="text-xs text-m3-primary font-bold">
-								{selectedClassIds.length} đã chọn
-							</span>
-						)}
-					</div>
-
-					<div className="rounded-2xl bg-m3-surface-container-high p-2">
-						{loadingClasses && (
-							<div className="flex flex-col items-center justify-center p-4 space-y-2">
-								<LoadingIndicator
-									size={20}
-									aria-label="Đang tải danh sách lớp"
-								/>
-								<span className="text-xs text-m3-on-surface-variant">
-									Đang tải danh sách lớp...
-								</span>
-							</div>
-						)}
-
-						{!loadingClasses && selectedSchoolId && classes.length > 0 && (
-							<ScrollArea
-								type="scroll"
-								orientation="vertical"
-								className="max-h-60 pr-1 space-y-1"
+				{/* Step 3: Direct Interactive Checkbox Assignment List */}
+				<div className="space-y-3">
+					<div className="flex flex-wrap items-center justify-between gap-1.5">
+						<label
+							htmlFor="portal-assignment-search"
+							className={`flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider ${
+								!selectedClassId
+									? "text-m3-on-surface-variant/50"
+									: "text-m3-on-surface-variant"
+							}`}
+						>
+							<span
+								className={`flex h-4.5 w-4.5 items-center justify-center rounded-full text-[10px] ${
+									!selectedClassId
+										? "bg-m3-surface-container-highest text-m3-on-surface-variant/60"
+										: "bg-m3-primary text-m3-on-primary"
+								}`}
 							>
-								{classes.map((cls) => {
-									const isChecked = selectedClassIds.includes(cls.id);
-									return (
-										<div
-											key={cls.id}
-											className={`flex items-center gap-3 rounded-xl p-2 transition-colors ${
-												isChecked
-													? "bg-m3-primary/10"
-													: "hover:bg-m3-surface-container-highest"
-											}`}
-										>
-											<Checkbox
-												id={`class-pick-${cls.id}`}
-												checked={isChecked}
-												onCheckedChange={() => onToggleClass(cls.id)}
-											/>
-											<label
-												htmlFor={`class-pick-${cls.id}`}
-												className="cursor-pointer text-sm font-semibold text-m3-on-surface select-none grow"
-											>
-												{cls.name}
-											</label>
-										</div>
-									);
-								})}
-							</ScrollArea>
-						)}
-
-						{!selectedSchoolId && (
-							<div className="flex flex-col items-center justify-center p-6 text-center space-y-2 text-m3-on-surface-variant">
-								<Icon name="school" className="text-2xl opacity-40" />
-								<p className="text-xs">
-									Vui lòng chọn trường ở bước 1 để hiển thị lớp.
-								</p>
-							</div>
-						)}
-
-						{selectedSchoolId && !loadingClasses && classes.length === 0 && (
-							<div className="flex flex-col items-center justify-center p-6 text-center space-y-2 text-m3-on-surface-variant">
-								<Icon name="groups" className="text-2xl opacity-40" />
-								<p className="text-xs">
-									Chưa có lớp nào đang hoạt động trong trường đã chọn.
-								</p>
-							</div>
-						)}
-					</div>
-				</div>
-
-				{/* Column 3: Auto-grading Assignments */}
-				<div className="space-y-2">
-					<div className="flex items-center justify-between">
-						<span className="text-xs font-bold uppercase tracking-wider text-m3-on-surface-variant">
-							3. Bài tập chấm tự động
-						</span>
-						{selectedAssignmentIds.length > 0 && (
-							<span className="text-xs text-m3-primary font-bold">
-								{selectedAssignmentIds.length} đã chọn
+								3
 							</span>
-						)}
+							Bài tập chấm tự động
+						</label>
 					</div>
-					{selectedClassNames && (
-						<p className="text-[11px] text-m3-on-surface-variant truncate">
-							Lớp: {selectedClassNames}
-						</p>
+
+					{/* Loading State */}
+					{loadingAssignments && (
+						<div className="flex flex-col items-center justify-center rounded-2xl bg-m3-surface-container-high p-6 space-y-2">
+							<LoadingIndicator
+								size={32}
+								aria-label="Đang tải danh sách bài tập"
+							/>
+							<span className="text-xs text-m3-on-surface-variant">
+								Đang tải bài tập chấm tự động...
+							</span>
+						</div>
 					)}
 
-					<div className="rounded-2xl bg-m3-surface-container-high p-2">
-						{loadingAssignments && (
-							<div className="flex flex-col items-center justify-center p-4 space-y-2">
-								<LoadingIndicator
-									size={20}
-									aria-label="Đang tải bài tập chấm tự động"
+					{/* Step 3 Locked: No School or No Class selected */}
+					{!loadingAssignments && !selectedSchoolId && (
+						<div className="flex items-center gap-2 rounded-2xl bg-m3-surface-container-high p-3 text-xs text-m3-on-surface-variant">
+							<Icon name="lock" className="text-base opacity-60 shrink-0" />
+							<span>Vui lòng chọn trường ở bước 1 để hiển thị lớp.</span>
+						</div>
+					)}
+
+					{!loadingAssignments && selectedSchoolId && !selectedClassId && (
+						<div className="flex items-center gap-2 rounded-2xl bg-m3-surface-container-high p-3 text-xs text-m3-on-surface-variant">
+							<Icon name="lock" className="text-base opacity-60 shrink-0" />
+							<span>
+								Vui lòng chọn lớp học ở bước 2 để xem danh sách bài tập.
+							</span>
+						</div>
+					)}
+
+					{/* Empty State: Class has no auto-grading assignments */}
+					{!loadingAssignments &&
+						selectedClassId &&
+						assignments.length === 0 && (
+							<div className="flex items-start gap-2.5 rounded-xl bg-m3-tertiary-container/30 p-3 text-xs text-m3-on-tertiary-container">
+								<Icon
+									name="warning"
+									className="mt-0.5 text-base text-m3-tertiary shrink-0"
 								/>
-								<span className="text-xs text-m3-on-surface-variant">
-									Đang tải bài tập...
-								</span>
+								<div className="space-y-0.5">
+									<p className="font-bold">Lớp chưa có bài tập chấm tự động</p>
+									<p className="text-[11px] opacity-80">
+										Lớp đã chọn chưa có bài tập chấm tự động có API endpoint.
+										Hãy tạo bài tập ở trang Chấm điểm của lớp trước.
+									</p>
+								</div>
 							</div>
 						)}
 
-						{!loadingAssignments &&
-							selectedClassIds.length > 0 &&
-							assignments.length > 0 && (
+					{/* Active Checkbox List with Search Input */}
+					{!loadingAssignments && selectedClassId && assignments.length > 0 && (
+						<div className="space-y-2 rounded-2xl bg-m3-surface-container-high/60 px-3 pt-3 pb-0">
+							<div className="flex flex-row gap-3 justify-between items-center">
+								{/* Search Filter Input (only show when more than 3 assignments) */}
+								{assignments.length > 3 && (
+									<TextField
+										id="portal-assignment-search"
+										variant="filled"
+										placeholder="Tìm kiếm bài tập"
+										value={searchQuery}
+										dense
+										onChange={(val) => setSearchQuery(val)}
+										leadingIcon={<Icon name="search" />}
+										trailingIconMode={searchQuery ? "clear" : "none"}
+										className="w-1/2"
+									/>
+								)}
+								{/* Quick action buttons & counter */}
+								{selectedClassId && assignments.length > 0 && (
+									<div className="flex items-center gap-2 text-xs">
+										<Text
+											variant="label-sm"
+											className="text-m3-on-surface-variant w-full"
+										>
+											Đã chọn:{" "}
+											<span className="font-bold text-m3-primary">
+												{selectedAssignmentIds.length}
+											</span>
+											/{assignments.length}
+										</Text>
+										<Button
+											colorStyle="filled"
+											onClick={handleSelectAllFiltered}
+											fullWidth
+										>
+											Chọn tất cả
+										</Button>
+										{selectedAssignmentIds.length > 0 && (
+											<Button
+												colorStyle="outlined"
+												onClick={handleClearAll}
+												fullWidth
+											>
+												Bỏ chọn
+											</Button>
+										)}
+									</div>
+								)}
+							</div>
+
+							{/* Scrollable Checkbox List using MD3 Expressive Segmented List */}
+							{filteredAssignments.length > 0 ? (
 								<ScrollArea
 									type="scroll"
 									orientation="vertical"
-									className="max-h-60 pr-1 space-y-2"
+									scrollbarSize={8}
+									className="max-h-60 overflow-hidden rounded-t-m3-md"
 								>
-									{assignments.map((assignment) => {
-										const isChecked = selectedAssignmentIds.includes(
-											assignment.id,
-										);
-										return (
-											<div
-												key={assignment.id}
-												className={`flex items-start gap-2.5 rounded-m3-sm p-2.5 transition-colors ${
-													isChecked
-														? "bg-m3-primary/10"
-														: "hover:bg-m3-surface-container-high"
-												}`}
-											>
-												<Checkbox
-													id={`assign-pick-${assignment.id}`}
-													checked={isChecked}
-													onCheckedChange={() =>
-														onToggleAssignment(assignment.id)
+									<List
+										variant="expressive"
+										listStyle="segmented"
+										selectionMode="multi-select"
+										value={selectedAssignmentIds}
+										outerRadius={12}
+										innerRadius={2}
+										onChange={(val) => {
+											const newIds = Array.isArray(val) ? val : [val];
+											if (onSelectAllAssignments) {
+												onSelectAllAssignments(newIds);
+											} else {
+												for (const id of newIds) {
+													if (!selectedAssignmentIds.includes(id)) {
+														handleAssignmentToggle(id);
 													}
-													className="mt-0.5"
+												}
+												for (const id of selectedAssignmentIds) {
+													if (!newIds.includes(id)) {
+														handleAssignmentToggle(id);
+													}
+												}
+											}
+										}}
+										className="w-full pb-3"
+									>
+										{filteredAssignments.map((assignment) => {
+											const isChecked = selectedAssignmentIds.includes(
+												assignment.id,
+											);
+											return (
+												<ListItem
+													key={assignment.id}
+													value={assignment.id}
+													interactive
+													selected={isChecked}
+													leadingType="checkbox"
+													headline={
+														<div className="flex items-center gap-2 flex-wrap">
+															<span className="font-bold text-xs text-m3-on-surface">
+																{assignment.name}
+															</span>
+															<span className="rounded-m3-full bg-m3-primary/10 px-2 py-0.5 text-[10px] font-semibold text-m3-primary shrink-0">
+																{subjectBadge(assignment.subject)}
+															</span>
+														</div>
+													}
+													supportingText={
+														<div className="flex items-center gap-2 flex-wrap text-[11px] text-m3-on-surface-variant">
+															<span>Tối đa {assignment.maxScore} điểm</span>
+															{assignment.gradingApiEndpoint && (
+																<span className="font-mono text-[10px] opacity-70">
+																	• Auto-grade
+																</span>
+															)}
+															{classNameById && assignment.classId && (
+																<span className="opacity-70">
+																	• Lớp{" "}
+																	{classNameById.get(assignment.classId) ||
+																		"--"}
+																</span>
+															)}
+														</div>
+													}
+													supportingTextLines={1}
 												/>
-												<label
-													htmlFor={`assign-pick-${assignment.id}`}
-													className="cursor-pointer text-xs select-none grow"
-												>
-													<span className="block font-bold text-m3-on-surface">
-														{assignment.name}
-													</span>
-													<span className="text-m3-on-surface-variant">
-														Lớp {classNameById.get(assignment.classId) || "--"}{" "}
-														• {subjectBadge(assignment.subject)} •{" "}
-														{assignment.maxScore} điểm
-													</span>
-													{assignment.gradingApiEndpoint && (
-														<span className="block truncate font-mono text-[11px] opacity-60">
-															API: {assignment.gradingApiEndpoint}
-														</span>
-													)}
-												</label>
-											</div>
-										);
-									})}
+											);
+										})}
+									</List>
 								</ScrollArea>
-							)}
-
-						{!selectedSchoolId && (
-							<div className="flex flex-col items-center justify-center p-6 text-center space-y-2 text-m3-on-surface-variant">
-								<Icon name="assignment" className="text-2xl opacity-40" />
-								<p className="text-xs">Vui lòng chọn trường trước.</p>
-							</div>
-						)}
-
-						{selectedSchoolId && selectedClassIds.length === 0 && (
-							<div className="flex flex-col items-center justify-center p-6 text-center space-y-2 text-m3-on-surface-variant">
-								<Icon name="checklist" className="text-2xl opacity-40" />
-								<p className="text-xs">
-									Vui lòng chọn ít nhất 1 lớp ở bước 2 để xem bài tập.
-								</p>
-							</div>
-						)}
-
-						{!loadingAssignments &&
-							selectedClassIds.length > 0 &&
-							assignments.length === 0 && (
-								<div className="rounded-m3-sm bg-m3-tertiary-container text-m3-on-tertiary-container p-3 text-xs space-y-1">
-									<p className="font-bold">Chưa có bài tập chấm tự động</p>
-									<p>
-										Các lớp đã chọn chưa có bài tập chấm tự động. Hãy tạo bài
-										tập ở trang Chấm điểm của lớp trước.
-									</p>
+							) : (
+								<div className="p-4 text-center text-xs text-m3-on-surface-variant">
+									Không tìm thấy bài tập nào khớp với từ khóa "{searchQuery}".
 								</div>
 							)}
-					</div>
+						</div>
+					)}
 				</div>
 			</div>
 		</div>

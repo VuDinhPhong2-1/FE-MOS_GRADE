@@ -134,6 +134,15 @@ export const usePortalFilters = () => {
 		assignmentCacheRef.current.clear();
 	}, []);
 
+	const handleClassChange = useCallback((classId: string) => {
+		setSelectedClassIds(classId ? [classId] : []);
+		setSelectedAssignmentIds([]);
+	}, []);
+
+	const handleAssignmentChange = useCallback((assignmentId: string) => {
+		setSelectedAssignmentIds(assignmentId ? [assignmentId] : []);
+	}, []);
+
 	const toggleClass = useCallback((classId: string) => {
 		setSelectedClassIds((prev) =>
 			prev.includes(classId)
@@ -148,6 +157,14 @@ export const usePortalFilters = () => {
 				? prev.filter((id) => id !== assignmentId)
 				: [...prev, assignmentId],
 		);
+	}, []);
+
+	const selectAllAssignments = useCallback((allIds: string[]) => {
+		setSelectedAssignmentIds(allIds);
+	}, []);
+
+	const clearAssignments = useCallback(() => {
+		setSelectedAssignmentIds([]);
 	}, []);
 
 	const resetFilters = useCallback(() => {
@@ -199,8 +216,12 @@ export const usePortalFilters = () => {
 		loadingAssignments,
 		loadSchools,
 		handleSchoolChange,
+		handleClassChange,
+		handleAssignmentChange,
 		toggleClass,
 		toggleAssignment,
+		selectAllAssignments,
+		clearAssignments,
 		resetFilters,
 		setSelectedSchoolId,
 		setSelectedClassIds,

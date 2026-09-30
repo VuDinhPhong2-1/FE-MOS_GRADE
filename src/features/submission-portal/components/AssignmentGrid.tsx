@@ -37,7 +37,7 @@ export const AssignmentGrid = ({
 		return (
 			<Card
 				variant="filled"
-				className="flex flex-col items-center justify-center bg-m3-surface-container-low p-10 text-center text-m3-on-surface"
+				className="flex flex-col items-center justify-center bg-m3-surface-container-low p-10 text-center rounded-m3-xl text-m3-on-surface"
 			>
 				<Icon name="inbox" size={48} className="text-m3-on-surface-variant" />
 				<Text variant="title-lg" className="mt-3 font-bold">

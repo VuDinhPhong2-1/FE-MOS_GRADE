@@ -35,8 +35,7 @@ export const SubmissionPortalPage = () => {
 		loadLeaderboard,
 	} = usePortalData(token);
 
-	const { setStudentSearch, filteredStudents } =
-		useStudentFilter(students);
+	const { setStudentSearch, filteredStudents } = useStudentFilter(students);
 
 	const {
 		files,
@@ -74,7 +73,7 @@ export const SubmissionPortalPage = () => {
 			<div className="flex min-h-screen items-center justify-center bg-m3-surface-container p-6 text-m3-on-surface">
 				<Card
 					variant="filled"
-					className="max-w-md bg-m3-error-container p-8 text-center text-m3-on-error-container"
+					className="max-w-md bg-m3-error-container p-8 text-center text-m3-on-error-container rounded-m3-xl"
 				>
 					<Icon name="error" size={48} className="mx-auto text-m3-error" />
 					<Text variant="headline-sm" className="mt-3 font-bold">
@@ -97,12 +96,11 @@ export const SubmissionPortalPage = () => {
 				assignmentsCount={info.assignments.length}
 				maxSubmissionsPerStudent={info.maxSubmissionsPerStudent}
 			/>
-
 			<main className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-10">
 				{message && (
 					<Card
 						variant="filled"
-						className="flex items-center gap-2 bg-m3-error-container p-4 text-m3-on-error-container"
+						className="flex items-center gap-2 bg-m3-error-container p-4 text-m3-on-error-container rounded-m3-xl"
 					>
 						<Icon name="info" size={20} />
 						<Text variant="body-md" className="text-m3-on-error-container">

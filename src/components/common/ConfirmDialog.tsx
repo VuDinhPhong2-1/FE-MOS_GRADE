@@ -123,7 +123,7 @@ export const ConfirmDialogProvider: React.FC<{ children: React.ReactNode }> = ({
 								<div
 									className={`flex size-12 shrink-0 items-center justify-center rounded-2xl ${
 										isDestructive
-											? "bg-m3-error-container text-m3-error"
+											? "bg-m3-error-container text-m3-on-error-container"
 											: "bg-m3-primary-container text-m3-primary"
 									}`}
 								>

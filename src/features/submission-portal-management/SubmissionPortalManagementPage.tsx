@@ -135,8 +135,12 @@ export const SubmissionPortalManagementPage = () => {
 				loadingClasses={filters.loadingClasses}
 				loadingAssignments={filters.loadingAssignments}
 				onSchoolChange={filters.handleSchoolChange}
+				onClassChange={filters.handleClassChange}
+				onAssignmentChange={filters.handleAssignmentChange}
 				onToggleClass={filters.toggleClass}
 				onToggleAssignment={filters.toggleAssignment}
+				onSelectAllAssignments={filters.selectAllAssignments}
+				onClearAssignments={filters.clearAssignments}
 			/>
 		</main>
 	);

@@ -131,104 +131,104 @@ const PasteStudentModalComponent = ({
 						viewportClassName="px-6 py-4"
 					>
 						<div className="flex flex-col gap-4">
-						<p className="text-sm text-m3-on-surface-variant">
-							Copy trực tiếp 2 cột từ Excel theo thứ tự:{" "}
-							<strong className="text-m3-on-surface">Họ và tên đệm</strong>,{" "}
-							<strong className="text-m3-on-surface">Tên</strong>, rồi dán vào ô
-							bên dưới.
-						</p>
+							<p className="text-sm text-m3-on-surface-variant">
+								Copy trực tiếp 2 cột từ Excel theo thứ tự:{" "}
+								<strong className="text-m3-on-surface">Họ và tên đệm</strong>,{" "}
+								<strong className="text-m3-on-surface">Tên</strong>, rồi dán vào
+								ô bên dưới.
+							</p>
 
-						<div onPaste={handlePasteCapture} className="w-full">
-							<TextField
-								ref={textFieldRef}
-								type="textarea"
-								rows={12}
-								variant="outlined"
-								scrollAreaType="none"
-								placeholder={"Ví dụ:\nNinh Hoàng\tAnh\nNguyễn Phan\tAnh"}
-								value={pasteInput}
-								onChange={(val) => {
-									if (error) setError("");
-									setPasteInput(val);
-								}}
-								fullWidth
-								className="pt-2"
-							/>
-						</div>
-
-						{/* Nút Dán từ bộ nhớ tạm khi chưa có dữ liệu và Khối nhận diện khi đã có dữ liệu */}
-						<AnimatePresence mode="wait" initial={false}>
-							{!pasteInput.trim() ? (
-								<motion.div
-									key="clipboard-action"
-									initial={{ opacity: 0, y: -6 }}
-									animate={{ opacity: 1, y: 0 }}
-									exit={{ opacity: 0, y: -6 }}
-									transition={{ duration: 0.2, ease: "easeOut" }}
-									className="flex items-center justify-start"
-								>
-									<Button
-										type="button"
-										colorStyle="tonal"
-										icon={<Icon name="content_paste" />}
-										onClick={handlePasteFromClipboard}
-										disabled={readOnly}
-										className="cursor-pointer"
-									>
-										Dán từ bộ nhớ tạm
-									</Button>
-								</motion.div>
-							) : (
-								<motion.div
-									key="recognition-info"
-									initial={{ opacity: 0, y: 6 }}
-									animate={{ opacity: 1, y: 0 }}
-									exit={{ opacity: 0, y: 6 }}
-									transition={{ duration: 0.2, ease: "easeOut" }}
-									className="flex items-center justify-between rounded-2xl bg-m3-surface-container px-3.5 py-2.5 text-xs"
-								>
-									<div className="flex items-center gap-2 text-m3-on-surface">
-										<Icon
-											name="check_circle"
-											size={18}
-											className="text-m3-primary"
-										/>
-										<span>
-											Đã nhận diện:{" "}
-											<strong className="font-semibold text-m3-primary">
-												{parsedStudents.length}
-											</strong>{" "}
-											học sinh
-											{parsedRows.length > parsedStudents.length && (
-												<span className="text-m3-on-surface-variant">
-													{" "}
-													({parsedRows.length} dòng dữ liệu)
-												</span>
-											)}
-										</span>
-									</div>
-									<Button
-										type="button"
-										colorStyle="text"
-										size="xs"
-										onClick={() => {
-											setPasteInput("");
-											setError("");
-										}}
-										className="text-m3-error hover:bg-m3-error-container/40 cursor-pointer"
-									>
-										Xóa tất cả
-									</Button>
-								</motion.div>
-							)}
-						</AnimatePresence>
-
-						{error && (
-							<div className="flex items-center gap-2 rounded-2xl bg-m3-error-container p-3 text-xs font-medium text-m3-on-error-container">
-								<Icon name="error" size={16} />
-								<span>{error}</span>
+							<div onPaste={handlePasteCapture} className="w-full">
+								<TextField
+									ref={textFieldRef}
+									type="textarea"
+									rows={12}
+									variant="outlined"
+									scrollAreaType="none"
+									placeholder={"Ví dụ:\nNinh Hoàng\tAnh\nNguyễn Phan\tAnh"}
+									value={pasteInput}
+									onChange={(val) => {
+										if (error) setError("");
+										setPasteInput(val);
+									}}
+									fullWidth
+									className="pt-2"
+								/>
 							</div>
-						)}
+
+							{/* Nút Dán từ bộ nhớ tạm khi chưa có dữ liệu và Khối nhận diện khi đã có dữ liệu */}
+							<AnimatePresence mode="wait" initial={false}>
+								{!pasteInput.trim() ? (
+									<motion.div
+										key="clipboard-action"
+										initial={{ opacity: 0, y: -6 }}
+										animate={{ opacity: 1, y: 0 }}
+										exit={{ opacity: 0, y: -6 }}
+										transition={{ duration: 0.2, ease: "easeOut" }}
+										className="flex items-center justify-start"
+									>
+										<Button
+											type="button"
+											colorStyle="tonal"
+											icon={<Icon name="content_paste" />}
+											onClick={handlePasteFromClipboard}
+											disabled={readOnly}
+											className="cursor-pointer"
+										>
+											Dán từ bộ nhớ tạm
+										</Button>
+									</motion.div>
+								) : (
+									<motion.div
+										key="recognition-info"
+										initial={{ opacity: 0, y: 6 }}
+										animate={{ opacity: 1, y: 0 }}
+										exit={{ opacity: 0, y: 6 }}
+										transition={{ duration: 0.2, ease: "easeOut" }}
+										className="flex items-center justify-between rounded-m3-full bg-m3-surface-container px-3 py-2.5 text-xs"
+									>
+										<div className="flex items-center gap-2 text-m3-on-surface">
+											<Icon
+												name="check_circle"
+												size={18}
+												className="text-m3-primary ml-1"
+											/>
+											<span>
+												Đã nhận diện:{" "}
+												<strong className="font-semibold text-m3-primary">
+													{parsedStudents.length}
+												</strong>{" "}
+												học sinh
+												{parsedRows.length > parsedStudents.length && (
+													<span className="text-m3-on-surface-variant">
+														{" "}
+														({parsedRows.length} dòng dữ liệu)
+													</span>
+												)}
+											</span>
+										</div>
+										<Button
+											type="button"
+											colorStyle="text"
+											size="xs"
+											onClick={() => {
+												setPasteInput("");
+												setError("");
+											}}
+											className="text-m3-error hover:bg-m3-error-container/40 cursor-pointer"
+										>
+											Xóa tất cả
+										</Button>
+									</motion.div>
+								)}
+							</AnimatePresence>
+
+							{error && (
+								<div className="flex items-center gap-2 rounded-2xl bg-m3-error-container p-3 text-xs font-medium text-m3-on-error-container">
+									<Icon name="error" size={16} />
+									<span>{error}</span>
+								</div>
+							)}
 						</div>
 					</ScrollArea>
 

@@ -64,7 +64,10 @@ const ClassAnalyticsPanelComponent = ({
 }: ClassAnalyticsPanelProps) => {
 	const { getAccessToken } = useAuth();
 
-	const [selection, setSelection] = useState<{ classId: string; ids: string[] }>({ classId, ids: [] });
+	const [selection, setSelection] = useState<{
+		classId: string;
+		ids: string[];
+	}>({ classId, ids: [] });
 	const assignmentIds = selection.classId === classId ? selection.ids : [];
 	const [top, setTop] = useState<number>(10);
 
@@ -115,7 +118,7 @@ const ClassAnalyticsPanelComponent = ({
 					</div>
 
 					<div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-						<div className="w-full sm:w-52">
+						<div className="w-max">
 							<Select
 								variant="outlined"
 								options={TOP_OPTIONS}
@@ -263,16 +266,31 @@ const ClassAnalyticsPanelComponent = ({
 					<div className="mb-3 text-[11px] text-m3-on-surface-variant">
 						{assignmentIds.length > 0
 							? "Chỉ tính lần chấm mới nhất của từng học sinh ở từng bài tập đã chọn. Học sinh chưa có kết quả không được tính vào tỷ lệ sai."
-							: "Tất cả dự án: tính lần chấm mới nhất của từng học sinh theo dự án (chế độ tổng hợp cũ)."}
-						{" "}Xếp hạng chung theo tỷ lệ sai, sau đó theo số học sinh sai. Bộ lọc không thay đổi bốn chỉ số tổng quan.
+							: "Tất cả dự án: tính lần chấm mới nhất của từng học sinh theo dự án (chế độ tổng hợp cũ)."}{" "}
+						Xếp hạng chung theo tỷ lệ sai, sau đó theo số học sinh sai. Bộ lọc
+						không thay đổi bốn chỉ số tổng quan.
 					</div>
 					<details className="mb-4 rounded-xl border border-m3-outline-variant p-3">
 						<summary className="cursor-pointer text-sm font-medium">
-							{assignmentIds.length ? `Đã chọn ${assignmentIds.length} bài tập` : "Chọn bài tập (hiện xem tất cả dự án)"}
+							{assignmentIds.length
+								? `Đã chọn ${assignmentIds.length} bài tập`
+								: "Chọn bài tập (hiện xem tất cả dự án)"}
 						</summary>
 						<div className="mt-3 flex gap-4 text-sm">
-							<button type="button" onClick={() => setSelection({ classId, ids: assignments.map(a => a.id) })}>Chọn tất cả bài tập</button>
-							<button type="button" onClick={() => setSelection({ classId, ids: [] })}>Bỏ lọc</button>
+							<button
+								type="button"
+								onClick={() =>
+									setSelection({ classId, ids: assignments.map((a) => a.id) })
+								}
+							>
+								Chọn tất cả bài tập
+							</button>
+							<button
+								type="button"
+								onClick={() => setSelection({ classId, ids: [] })}
+							>
+								Bỏ lọc
+							</button>
 						</div>
 						<ScrollArea
 							type="scroll"
@@ -280,19 +298,34 @@ const ClassAnalyticsPanelComponent = ({
 							className="mt-3 max-h-56 pr-1"
 							viewportClassName="space-y-2"
 						>
-							{assignments.map(assignment => (
-								<label key={assignment.id} className="flex items-center gap-2 text-sm">
-									<input type="checkbox" checked={assignmentIds.includes(assignment.id)} onChange={event => {
-										const checked = event.target.checked;
-										setSelection(previous => {
-											const ids = previous.classId === classId ? previous.ids : [];
-											return { classId, ids: checked ? [...ids, assignment.id] : ids.filter(id => id !== assignment.id) };
-										});
-									}} />
+							{assignments.map((assignment) => (
+								<label
+									key={assignment.id}
+									className="flex items-center gap-2 text-sm"
+								>
+									<input
+										type="checkbox"
+										checked={assignmentIds.includes(assignment.id)}
+										onChange={(event) => {
+											const checked = event.target.checked;
+											setSelection((previous) => {
+												const ids =
+													previous.classId === classId ? previous.ids : [];
+												return {
+													classId,
+													ids: checked
+														? [...ids, assignment.id]
+														: ids.filter((id) => id !== assignment.id),
+												};
+											});
+										}}
+									/>
 									{assignment.name}
 								</label>
 							))}
-							{assignments.length === 0 && <p className="text-sm">Lớp chưa có bài tập.</p>}
+							{assignments.length === 0 && (
+								<p className="text-sm">Lớp chưa có bài tập.</p>
+							)}
 						</ScrollArea>
 					</details>
 
@@ -327,11 +360,16 @@ const ClassAnalyticsPanelComponent = ({
 								}`}
 							>
 								{weakTaskChartRows.map((row) => {
-									const projectName = (row.assignmentId ? assignments.find(a => a.id === row.assignmentId)?.name || row.assignmentId : undefined) || getProjectDisplayName(
-										row.projectEndpoint,
-										row.projectId,
-										assignments,
-									);
+									const projectName =
+										(row.assignmentId
+											? assignments.find((a) => a.id === row.assignmentId)
+													?.name || row.assignmentId
+											: undefined) ||
+										getProjectDisplayName(
+											row.projectEndpoint,
+											row.projectId,
+											assignments,
+										);
 									const hasDifferentLabel =
 										row.label &&
 										row.label.trim().toLowerCase() !==

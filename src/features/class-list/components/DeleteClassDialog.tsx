@@ -42,7 +42,7 @@ export const DeleteClassDialog: React.FC<DeleteClassDialogProps> = ({
 				>
 					<div className="flex flex-col gap-4">
 						<div className="flex items-center gap-3">
-							<div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-m3-error-container text-m3-error">
+							<div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-m3-error-container text-m3-on-error-container">
 								<Icon name="delete_forever" className="text-2xl" />
 							</div>
 							<div>

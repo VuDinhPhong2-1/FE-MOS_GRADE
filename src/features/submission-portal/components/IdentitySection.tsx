@@ -48,11 +48,10 @@ export const IdentitySection = ({
 		value: s.id,
 	}));
 
-
 	return (
 		<Card
 			variant="filled"
-			className="flex flex-col gap-4 bg-m3-surface-container-lowest p-5 text-m3-on-surface"
+			className="flex flex-col gap-4 bg-m3-surface-container-lowest p-5 text-m3-on-surface rounded-m3-xl"
 		>
 			<div className="flex flex-wrap items-center gap-2">
 				<span
@@ -178,11 +177,20 @@ export const IdentitySection = ({
 					className="flex items-center justify-between gap-2 bg-m3-tertiary-container rounded-m3-md p-4 text-m3-on-tertiary-container flex-row"
 				>
 					<div className="flex items-center gap-2">
-						<Icon name="account_circle" size={24} className="text-m3-primary" />
-						<Text variant="body-lg">
+						<Icon
+							name="account_circle"
+							size={24}
+							className="text-m3-on-tertiary-container"
+						/>
+						<Text variant="body-lg" className="text-m3-on-tertiary-container">
 							Đang nộp bài cho{" "}
-							<span className="font-bold">{selectedStudent.fullName}</span> —
-							lớp <span className="font-bold">{selectedClass?.name}</span>
+							<span className="font-bold text-m3-on-tertiary-container">
+								{selectedStudent.fullName}
+							</span>{" "}
+							— lớp{" "}
+							<span className="font-bold text-m3-on-tertiary-container">
+								{selectedClass?.name}
+							</span>
 						</Text>
 					</div>
 					<Button

@@ -82,7 +82,7 @@ const variantStyles: Record<
 	},
 	error: {
 		icon: "error",
-		iconContainerClass: "bg-m3-error-container text-m3-error",
+		iconContainerClass: "bg-m3-error-container text-m3-on-error-container",
 		titleClass: "text-m3-error",
 		defaultTitle: "Đã xảy ra lỗi",
 	},

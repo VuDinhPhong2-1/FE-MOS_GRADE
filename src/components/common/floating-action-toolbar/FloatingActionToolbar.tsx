@@ -1,15 +1,17 @@
 import {
 	FAB,
-	FAST_SPATIAL_SPRING,
-	HorizontalFloatingToolbar,
 	Icon,
 	IconButton,
 	PlainTooltip,
+	TooltipBox,
+} from "@bug-on/m3-expressive";
+import {
+	FAST_SPATIAL_SPRING,
+	HorizontalFloatingToolbar,
 	Search,
 	ToolbarIconButton,
 	type ToolbarIconButtonVariant,
-	TooltipBox,
-} from "@bug-on/m3-expressive";
+} from "@bug-on/m3-expressive/navigation";
 import { AnimatePresence, motion } from "motion/react";
 import {
 	type MouseEvent,
@@ -195,6 +197,7 @@ const FloatingActionToolbarComponent = ({
 				disableLayoutAnimation={true}
 				contentPadding="4px 8px"
 				className={cn(
+					"bg-m3-primary-container/50 backdrop-blur-sm border border-white/20",
 					"[&>div]:overflow-hidden!",
 					isSearchActive ? "p-1" : "px-2",
 					toolbarClassName,
