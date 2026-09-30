@@ -13,6 +13,23 @@ import type {
 import { authFetch } from "./auth-fetch";
 
 const jsonHeaders = { "Content-Type": "application/json" };
+const deviceIdStorageKey = "mos_submission_portal_device_id";
+
+const getDeviceId = () => {
+	try {
+		const existing = window.localStorage.getItem(deviceIdStorageKey);
+		if (existing) return existing;
+
+		const deviceId =
+			typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+				? crypto.randomUUID()
+				: `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+		window.localStorage.setItem(deviceIdStorageKey, deviceId);
+		return deviceId;
+	} catch {
+		return undefined;
+	}
+};
 
 const errorMessage = async (response: Response, fallback: string) => {
 	try {
@@ -141,9 +158,14 @@ export const submissionPortalService = {
 		body.append("studentId", studentId);
 		body.append("assignmentId", assignmentId);
 		body.append("file", file);
+		const deviceId = getDeviceId();
 		const res = await fetch(
 			`${API_BASE_URL}/public/portals/${token}/grade-and-submit`,
-			{ method: "POST", body },
+			{
+				method: "POST",
+				body,
+				headers: deviceId ? { "X-Device-Id": deviceId } : undefined,
+			},
 		);
 		if (!res.ok) throw new Error(await errorMessage(res, "Không thể nộp bài"));
 		return res.json() as Promise<PublicPortalSubmitResult>;

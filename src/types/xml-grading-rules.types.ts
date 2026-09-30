@@ -283,6 +283,8 @@ export interface WordCommentReplyConfig {
 	commentsFile?: string;
 	commentsExtendedFile?: string;
 	parentCommentText?: string;
+	/** Thứ tự 1-based của comment trong word/comments.xml; ưu tiên hơn parentCommentText. */
+	parentCommentIndex?: number;
 	expectedReplyText?: string;
 	caseSensitive?: boolean;
 }

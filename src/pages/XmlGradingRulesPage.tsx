@@ -463,6 +463,7 @@ const specialConditionGroups: Array<{
 				"wordMoveSmartArt",
 				"wordParagraphList",
 				"wordBulletStyle",
+				"wordViewSetting",
 			].includes(option.value),
 	},
 	{
@@ -502,10 +503,6 @@ const specialConditionGroups: Array<{
 		label: "Word - Thẻ Review",
 		matches: (option) =>
 			["wordResolveComment", "wordCommentReply"].includes(option.value),
-	},
-	{
-		label: "Word - Thẻ View",
-		matches: (option) => option.value === "wordViewSetting",
 	},
 	{
 		label: "Word - Thẻ ngữ cảnh Bảng (Table Tools)",
@@ -4054,6 +4051,36 @@ const XmlGradingRulesPage = () => {
 																													}
 
 																													if (
+																															[
+																																"wordCommentReply",
+																																"wordDocumentInspector",
+																																"wordParagraphStyle",
+																																"wordTableAutoFit",
+																																"wordViewSetting",
+																															].includes(value)
+																														) {
+																															const base = {
+																																score: task.specialCondition?.score ?? 0,
+																																feedback:
+																																	task.specialCondition?.feedback ??
+																																	defaultSpecialConditionFeedback(value as SpecialConditionType),
+																															};
+																															const configs = {
+																				wordCommentReplyConfig: { commentsFile: "word/comments.xml", commentsExtendedFile: "word/commentsExtended.xml", parentCommentIndex: 1, parentCommentText: "", expectedReplyText: "", caseSensitive: false },
+																																wordDocumentInspectorConfig: { sourceFile: "word/document.xml", requireNoHeaders: true, requireNoFooters: true, requireNoWatermarks: true, preserveDocumentProperties: true, preserveCustomXml: true },
+																																wordParagraphStyleConfig: { sourceFile: "word/document.xml", targetText: "", expectedStyle: "Heading 2", caseSensitive: false },
+																																wordTableAutoFitConfig: { sourceFile: "word/document.xml", tableIndex: 1, anchorText: "", autoFitType: "contents" },
+																																wordViewSettingConfig: { settingsFile: "word/settings.xml", settingElement: "showParagraphMarks", expectedEnabled: true, allowMissingAsPass: true },
+																															};
+																															updateTaskSpecialCondition(pi, ti, {
+																																type: value as SpecialConditionType,
+																																...base,
+																																...configs,
+																															});
+																															return;
+																														}
+
+																													if (
 																														value ===
 																														"pictureBullet"
 																													) {
@@ -5870,11 +5897,50 @@ const XmlGradingRulesPage = () => {
 																								)}
 
 																								{/* Picture Bullet configuration */}
-																								{task.specialCondition?.type ===
+																												{[
+																													"wordCommentReply",
+																													"wordDocumentInspector",
+																													"wordParagraphStyle",
+																													"wordTableAutoFit",
+																													"wordViewSetting",
+																												].includes(task.specialCondition?.type ?? "") && (
+																													<div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
+																														<p className="text-xs font-semibold text-slate-700">
+																															Cấu hình {specialConditionOptions.find((option) => option.value === task.specialCondition?.type)?.label}
+																														</p>
+																														<p className="mt-1 text-[11px] text-slate-500">
+																															Điền các trường theo biểu mẫu JSON. Các cấu hình mặc định phù hợp với Word Project 06 đã được tạo sẵn khi chọn loại điều kiện.
+																														</p>
+																														<textarea
+																															key={task.specialCondition?.type}
+																															defaultValue={JSON.stringify(
+																																task.specialCondition?.type === "wordCommentReply" ? task.specialCondition.wordCommentReplyConfig :
+																																task.specialCondition?.type === "wordDocumentInspector" ? task.specialCondition.wordDocumentInspectorConfig :
+																																task.specialCondition?.type === "wordParagraphStyle" ? task.specialCondition.wordParagraphStyleConfig :
+																																task.specialCondition?.type === "wordTableAutoFit" ? task.specialCondition.wordTableAutoFitConfig :
+																																task.specialCondition?.wordViewSettingConfig,
+																															null,
+																															2,
+																														)}
+																															onBlur={(e) => {
+																																try {
+																																	const config = JSON.parse(e.target.value);
+																																	const configKey = `${task.specialCondition?.type}Config`;
+																																	updateTaskSpecialCondition(pi, ti, { ...task.specialCondition!, [configKey]: config } as SpecialCondition);
+																																} catch {
+																																	// Giữ nội dung đang nhập cho đến khi JSON hợp lệ.
+																																}
+																															}}
+																															rows={8}
+																															className={`${inputClass} mt-3 font-mono text-xs`}
+																														/>
+																													</div>
+																												)}
+																												{task.specialCondition?.type ===
 																									"pictureBullet" && (
 																									<PictureBulletEditor
 																										config={
-																											task.specialCondition
+																															task.specialCondition!
 																												.config
 																										}
 																										getAccessToken={
@@ -8199,363 +8265,7 @@ const XmlGradingRulesPage = () => {
 																								</div>
 																							</>
 																						)}
-																						{task.specialCondition?.type ===
-																							"wordDocumentInspector" && (
-																							<div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
-																								<div className="grid gap-3 md:grid-cols-2">
-																									<label className="text-xs font-semibold text-slate-600">
-																										File nguồn
-																										<input
-																											value={
-																												task.specialCondition
-																													.textBoxContainsTextConfig
-																													?.sourceFile ??
-																												"word/document.xml"
-																											}
-																											onChange={(e) => {
-																												const currentConfig =
-																													task.specialCondition
-																														?.textBoxContainsTextConfig ??
-																													{};
-																												updateTaskSpecialCondition(
-																													pi,
-																													ti,
-																													{
-																														...task.specialCondition!,
-																														type: "textBoxContainsText",
-																														textBoxContainsTextConfig:
-																															{
-																																...currentConfig,
-																																sourceFile:
-																																	e.target
-																																		.value,
-																															},
-																													},
-																												);
-																											}}
-																											placeholder="word/document.xml"
-																											className={inputClass}
-																										/>
-																									</label>
-																									<label className="text-xs font-semibold text-slate-600">
-																										Chế độ so khớp
-																										<select
-																											value={
-																												task.specialCondition
-																													.textBoxContainsTextConfig
-																													?.matchMode ?? "exact"
-																											}
-																											onChange={(e) => {
-																												const currentConfig =
-																													task.specialCondition
-																														?.textBoxContainsTextConfig ??
-																													{};
-																												updateTaskSpecialCondition(
-																													pi,
-																													ti,
-																													{
-																														...task.specialCondition!,
-																														type: "textBoxContainsText",
-																														textBoxContainsTextConfig:
-																															{
-																																...currentConfig,
-																																matchMode: e
-																																	.target
-																																	.value as
-																																	| "exact"
-																																	| "contains",
-																															},
-																													},
-																												);
-																											}}
-																											className={inputClass}
-																										>
-																											<option value="exact">
-																												Đúng nguyên đoạn
-																											</option>
-																											<option value="contains">
-																												Chỉ cần chứa đoạn này
-																											</option>
-																										</select>
-																									</label>
-																									<label className="text-xs font-semibold text-slate-600 md:col-span-2">
-																										Văn bản yêu cầu
-																										<textarea
-																											value={
-																												task.specialCondition
-																													.textBoxContainsTextConfig
-																													?.expectedText ?? ""
-																											}
-																											onChange={(e) => {
-																												const currentConfig =
-																													task.specialCondition
-																														?.textBoxContainsTextConfig ??
-																													{};
-																												updateTaskSpecialCondition(
-																													pi,
-																													ti,
-																													{
-																														...task.specialCondition!,
-																														type: "textBoxContainsText",
-																														textBoxContainsTextConfig:
-																															{
-																																...currentConfig,
-																																expectedText:
-																																	e.target
-																																		.value,
-																															},
-																													},
-																												);
-																											}}
-																											placeholder="Nhập nguyên đoạn văn bắt đầu bằng Note:"
-																											rows={5}
-																											className={inputClass}
-																										/>
-																									</label>
-																									<label className="text-xs font-semibold text-slate-600">
-																										Lần xuất hiện mục tiêu
-																										<input
-																											type="number"
-																											min={1}
-																											step={1}
-																											value={
-																												task.specialCondition
-																													.textBoxContainsTextConfig
-																													?.targetOccurrence ??
-																												1
-																											}
-																											onChange={(e) => {
-																												const currentConfig =
-																													task.specialCondition
-																														?.textBoxContainsTextConfig ??
-																													{};
-																												updateTaskSpecialCondition(
-																													pi,
-																													ti,
-																													{
-																														...task.specialCondition!,
-																														type: "textBoxContainsText",
-																														textBoxContainsTextConfig:
-																															{
-																																...currentConfig,
-																																targetOccurrence:
-																																	e.target.value
-																																		? Number(
-																																				e.target
-																																					.value,
-																																			)
-																																		: undefined,
-																															},
-																													},
-																												);
-																											}}
-																											className={inputClass}
-																										/>
-																									</label>
-																								</div>
-																								<div className="mt-3 grid gap-3 md:grid-cols-3">
-																									<label className="flex items-center gap-2 text-xs font-medium text-slate-600">
-																										<input
-																											type="checkbox"
-																											checked={
-																												task.specialCondition
-																													.textBoxContainsTextConfig
-																													?.caseSensitive ??
-																												false
-																											}
-																											onChange={(e) => {
-																												const currentConfig =
-																													task.specialCondition
-																														?.textBoxContainsTextConfig ??
-																													{};
-																												updateTaskSpecialCondition(
-																													pi,
-																													ti,
-																													{
-																														...task.specialCondition!,
-																														type: "textBoxContainsText",
-																														textBoxContainsTextConfig:
-																															{
-																																...currentConfig,
-																																caseSensitive:
-																																	e.target
-																																		.checked,
-																															},
-																													},
-																												);
-																											}}
-																											className="h-4 w-4 accent-blue-600"
-																										/>
-																										Phân biệt hoa/thường
-																									</label>
-																									<label className="flex items-center gap-2 text-xs font-medium text-slate-600">
-																										<input
-																											type="checkbox"
-																											checked={
-																												task.specialCondition
-																													.textBoxContainsTextConfig
-																													?.requireDefaultPaste ??
-																												true
-																											}
-																											onChange={(e) => {
-																												const currentConfig =
-																													task.specialCondition
-																														?.textBoxContainsTextConfig ??
-																													{};
-																												updateTaskSpecialCondition(
-																													pi,
-																													ti,
-																													{
-																														...task.specialCondition!,
-																														type: "textBoxContainsText",
-																														textBoxContainsTextConfig:
-																															{
-																																...currentConfig,
-																																requireDefaultPaste:
-																																	e.target
-																																		.checked,
-																															},
-																													},
-																												);
-																											}}
-																											className="h-4 w-4 accent-blue-600"
-																										/>
-																										Bắt paste mặc định
-																									</label>
-																									<label className="flex items-center gap-2 text-xs font-medium text-slate-600">
-																										<input
-																											type="checkbox"
-																											checked={
-																												task.specialCondition
-																													.textBoxContainsTextConfig
-																													?.requireRemovedFromBody ??
-																												true
-																											}
-																											onChange={(e) => {
-																												const currentConfig =
-																													task.specialCondition
-																														?.textBoxContainsTextConfig ??
-																													{};
-																												updateTaskSpecialCondition(
-																													pi,
-																													ti,
-																													{
-																														...task.specialCondition!,
-																														type: "textBoxContainsText",
-																														textBoxContainsTextConfig:
-																															{
-																																...currentConfig,
-																																requireRemovedFromBody:
-																																	e.target
-																																		.checked,
-																															},
-																													},
-																												);
-																											}}
-																											className="h-4 w-4 accent-blue-600"
-																										/>
-																										Không còn ngoài hộp văn bản
-																									</label>
-																								</div>
-																								<label className="mt-3 block text-xs font-semibold text-slate-600">
-																									Run properties cấm khi bắt
-																									paste mặc định
-																									<textarea
-																										value={(
-																											task.specialCondition
-																												.textBoxContainsTextConfig
-																												?.forbiddenRunProperties ??
-																											[]
-																										).join("\n")}
-																										onChange={(e) => {
-																											const currentConfig =
-																												task.specialCondition
-																													?.textBoxContainsTextConfig ??
-																												{};
-																											updateTaskSpecialCondition(
-																												pi,
-																												ti,
-																												{
-																													...task.specialCondition!,
-																													type: "textBoxContainsText",
-																													textBoxContainsTextConfig:
-																														{
-																															...currentConfig,
-																															forbiddenRunProperties:
-																																e.target.value
-																																	.split(
-																																		/\r?\n/,
-																																	)
-																																	.map((line) =>
-																																		line.trim(),
-																																	)
-																																	.filter(
-																																		Boolean,
-																																	),
-																														},
-																												},
-																											);
-																										}}
-																										rows={5}
-																										placeholder={
-																											"Để trống nếu không có dấu hiệu XML sai ổn định"
-																										}
-																										className={inputClass}
-																									/>
-																								</label>
-																								<label className="mt-3 block text-xs font-semibold text-slate-600">
-																									Màu chữ cấm khi bắt paste mặc
-																									định
-																									<textarea
-																										value={(
-																											task.specialCondition
-																												.textBoxContainsTextConfig
-																												?.forbiddenTextColors ?? [
-																												"FFFFFF",
-																												"background1",
-																												"bg1",
-																												"lt1",
-																											]
-																										).join("\n")}
-																										onChange={(e) => {
-																											const currentConfig =
-																												task.specialCondition
-																													?.textBoxContainsTextConfig ??
-																												{};
-																											updateTaskSpecialCondition(
-																												pi,
-																												ti,
-																												{
-																													...task.specialCondition!,
-																													type: "textBoxContainsText",
-																													textBoxContainsTextConfig:
-																														{
-																															...currentConfig,
-																															forbiddenTextColors:
-																																e.target.value
-																																	.split(
-																																		/\r?\n/,
-																																	)
-																																	.map((line) =>
-																																		line.trim(),
-																																	)
-																																	.filter(
-																																		Boolean,
-																																	),
-																														},
-																												},
-																											);
-																										}}
-																										rows={4}
-																										placeholder={
-																											"FFFFFF\nbackground1\nbg1\nlt1"
-																										}
-																										className={inputClass}
-																									/>
-																								</label>
-																							</div>
-																						)}
-																						{task.specialCondition?.type ===
+																								{task.specialCondition?.type ===
 																							"wordTableSort" && (
 																							<div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
 																								<div className="grid gap-3 md:grid-cols-3">
