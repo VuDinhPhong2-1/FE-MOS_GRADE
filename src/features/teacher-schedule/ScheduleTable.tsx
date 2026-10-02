@@ -8,6 +8,7 @@ import {
 import {
 	createColumnHelper,
 	rowSelectionFeature,
+	Subscribe,
 	tableFeatures,
 	useTable,
 } from "@tanstack/react-table";
@@ -43,6 +44,16 @@ export interface ScheduleTableProps {
 	hideSelectionBar?: boolean;
 }
 
+interface ScheduleTableMeta {
+	selectionDisabled: boolean;
+	resolveSchoolNameForSchedule: (item: ScheduleItem) => string;
+	onToggleSelectAll: () => void;
+	onToggleSelectSchedule: (scheduleId: string) => void;
+	onOpenAttendance: (item: ScheduleItem) => void;
+	onOpenEdit: (item: ScheduleItem) => void;
+	onDeleteSchedule: (item: ScheduleItem) => void;
+}
+
 const features = tableFeatures({
 	rowSelectionFeature,
 });
@@ -56,7 +67,7 @@ export const ScheduleTable = ({
 	todayYmd,
 	nowMinutesInDay,
 	selectedScheduleIds,
-	areAllSchedulesSelected,
+	areAllSchedulesSelected: _areAllSchedulesSelected,
 	resolveSchoolNameForSchedule,
 	onToggleSelectAll,
 	onToggleSelectSchedule,
@@ -81,29 +92,53 @@ export const ScheduleTable = ({
 			helper.columns([
 				helper.display({
 					id: "select",
-					header: () => (
-						<div className="flex justify-center" data-no-row-click="true">
-							<Checkbox
-								checked={areAllSchedulesSelected}
-								onCheckedChange={onToggleSelectAll}
-								disabled={loading || schedules.length === 0}
-								aria-label="Chọn tất cả lịch trong tuần"
-							/>
-						</div>
-					),
+					header: ({ table }) => {
+						const meta = table.options.meta as ScheduleTableMeta | undefined;
+						return (
+							<div className="flex justify-center" data-no-row-click="true">
+								<Subscribe
+									source={table.atoms.rowSelection}
+									selector={() => table.getIsAllRowsSelected()}
+								>
+									{(allSelected) => (
+										<Checkbox
+											checked={allSelected}
+											onCheckedChange={meta?.onToggleSelectAll}
+											disabled={meta?.selectionDisabled}
+											aria-label="Chọn tất cả lịch trong tuần"
+										/>
+									)}
+								</Subscribe>
+							</div>
+						);
+					},
 					meta: {
 						className: "w-12 text-center",
 						align: "center",
 					},
-					cell: ({ row }) => (
-						<div className="flex justify-center" data-no-row-click="true">
-							<Checkbox
-								checked={Boolean(rowSelection[row.original.id])}
-								onCheckedChange={() => onToggleSelectSchedule(row.original.id)}
-								aria-label={`Chọn lịch ${row.original.subject} - ${row.original.className}`}
-							/>
-						</div>
-					),
+					cell: ({ row, table }) => {
+						const meta = table.options.meta as ScheduleTableMeta | undefined;
+						return (
+							<div className="flex justify-center" data-no-row-click="true">
+								<Subscribe
+									source={row.table.atoms.rowSelection}
+									selector={(selection) =>
+										Boolean(selection?.[row.original.id])
+									}
+								>
+									{(isSelected) => (
+										<Checkbox
+											checked={isSelected}
+											onCheckedChange={() =>
+												meta?.onToggleSelectSchedule(row.original.id)
+											}
+											aria-label={`Chọn lịch ${row.original.subject} - ${row.original.className}`}
+										/>
+									)}
+								</Subscribe>
+							</div>
+						);
+					},
 				}),
 				helper.display({
 					id: "status",
@@ -213,15 +248,20 @@ export const ScheduleTable = ({
 					meta: {
 						className: "whitespace-nowrap",
 					},
-					cell: ({ row }) => (
-						<span className="text-m3-on-surface-variant">
-							{resolveSchoolNameForSchedule(row.original) || (
-								<span className="text-m3-on-surface-variant/40">
-									Chưa gán trường
-								</span>
-							)}
-						</span>
-					),
+					cell: ({ row, table }) => {
+						const meta = table.options.meta as ScheduleTableMeta | undefined;
+						const schoolName =
+							meta?.resolveSchoolNameForSchedule(row.original) ?? "";
+						return (
+							<span className="text-m3-on-surface-variant">
+								{schoolName || (
+									<span className="text-m3-on-surface-variant/40">
+										Chưa gán trường
+									</span>
+								)}
+							</span>
+						);
+					},
 				}),
 				helper.accessor("roomName", {
 					header: "Phòng",
@@ -250,59 +290,71 @@ export const ScheduleTable = ({
 						className: "text-right",
 						align: "right",
 					},
-					cell: ({ row }) => (
-						<div className="flex justify-end" data-no-row-click="true">
-							<ButtonDistribute
-								mode="dynamic"
-								size="sm"
-								weights={[2, 2, 1]}
-								gap={4}
-								expandRatio={0.1}
-							>
-								<IconButton
-									aria-label="Điểm danh"
+					cell: ({ row, table }) => {
+						const meta = table.options.meta as ScheduleTableMeta | undefined;
+						return (
+							<div className="flex justify-end" data-no-row-click="true">
+								<ButtonDistribute
+									mode="dynamic"
 									size="sm"
-									onClick={(event) => {
-										event.stopPropagation();
-										onOpenAttendance(row.original);
-									}}
+									weights={[2, 2, 1]}
+									gap={4}
+									expandRatio={0.1}
 								>
-									<Icon name="fact_check" size={20} />
-								</IconButton>
-								<IconButton
-									aria-label="Chỉnh sửa"
-									size="sm"
-									onClick={(event) => {
-										event.stopPropagation();
-										onOpenEdit(row.original);
-									}}
-								>
-									<Icon name="edit" size={20} />
-								</IconButton>
-								<IconButton
-									aria-label="Xóa"
-									colorStyle="standard"
-									size="sm"
-									className="border-m3-error/30! text-m3-error! hover:bg-m3-error-container/20!"
-									onClick={(event) => {
-										event.stopPropagation();
-										onDeleteSchedule(row.original);
-									}}
-								>
-									<Icon name="delete" size={20} />
-								</IconButton>
-							</ButtonDistribute>
-						</div>
-					),
+									<IconButton
+										aria-label="Điểm danh"
+										size="sm"
+										onClick={(event) => {
+											event.stopPropagation();
+											meta?.onOpenAttendance(row.original);
+										}}
+									>
+										<Icon name="fact_check" size={20} />
+									</IconButton>
+									<IconButton
+										aria-label="Chỉnh sửa"
+										size="sm"
+										onClick={(event) => {
+											event.stopPropagation();
+											meta?.onOpenEdit(row.original);
+										}}
+									>
+										<Icon name="edit" size={20} />
+									</IconButton>
+									<IconButton
+										aria-label="Xóa"
+										colorStyle="standard"
+										size="sm"
+										className="border-m3-error/30! text-m3-error! hover:bg-m3-error-container/20!"
+										onClick={(event) => {
+											event.stopPropagation();
+											meta?.onDeleteSchedule(row.original);
+										}}
+									>
+										<Icon name="delete" size={20} />
+									</IconButton>
+								</ButtonDistribute>
+							</div>
+						);
+					},
 				}),
 			]),
+		[todayYmd, nowMinutesInDay],
+	);
+
+	const tableMeta = useMemo<ScheduleTableMeta>(
+		() => ({
+			selectionDisabled: loading || schedules.length === 0,
+			resolveSchoolNameForSchedule,
+			onToggleSelectAll,
+			onToggleSelectSchedule,
+			onOpenAttendance,
+			onOpenEdit,
+			onDeleteSchedule,
+		}),
 		[
 			loading,
 			schedules.length,
-			areAllSchedulesSelected,
-			rowSelection,
-			todayYmd,
-			nowMinutesInDay,
 			resolveSchoolNameForSchedule,
 			onToggleSelectAll,
 			onToggleSelectSchedule,
@@ -320,13 +372,14 @@ export const ScheduleTable = ({
 		state: {
 			rowSelection,
 		},
+		meta: tableMeta,
 		enableRowSelection: true,
 	});
 
 	return (
-		<>
+		<div className="flex-1 min-h-0 flex flex-col gap-3 overflow-hidden">
 			{!hideSelectionBar && selectedScheduleIds.length > 0 && (
-				<section className="overflow-hidden rounded-2xl bg-m3-surface-container p-4 shadow-xs">
+				<section className="shrink-0 overflow-hidden rounded-2xl bg-m3-surface-container p-4 shadow-xs">
 					<div className="flex flex-col gap-3 rounded-2xl border border-m3-primary/30 bg-m3-primary/10 px-4 py-3 text-sm text-m3-on-surface sm:flex-row sm:items-center sm:justify-between">
 						<p>
 							Đã chọn <strong>{selectedScheduleIds.length}</strong> lịch dạy
@@ -363,7 +416,10 @@ export const ScheduleTable = ({
 				table={table}
 				isLoading={loading}
 				loadingAriaLabel="Đang tải lịch dạy..."
-				minWidthClassName="min-w-full text-sm"
+				stickyHeader={true}
+				className="flex-1 min-h-0 flex flex-col overflow-hidden"
+				scrollContainerClassName="flex-1 min-h-0"
+				minWidthClassName="min-w-[1080px] w-full text-sm"
 				onRowClick={(row, event) => {
 					if ((event.target as HTMLElement).closest("[data-no-row-click]")) {
 						return;
@@ -388,7 +444,7 @@ export const ScheduleTable = ({
 					/>
 				}
 				footerSlot={
-					<div className="border-t border-m3-outline-variant/60 bg-m3-surface-container-high/40 px-4 py-2.5 text-xs text-m3-on-surface-variant">
+					<div className="shrink-0 border-t border-m3-outline-variant/60 bg-m3-surface-container-high/40 px-4 py-2.5 text-xs text-m3-on-surface-variant">
 						Mẹo: bấm vào dòng lịch hoặc nút{" "}
 						<span className="font-semibold text-m3-primary">Điểm danh</span> để
 						mở điểm danh. Tick checkbox để chọn nhiều lịch rồi xóa/sao chép cùng
@@ -396,6 +452,6 @@ export const ScheduleTable = ({
 					</div>
 				}
 			/>
-		</>
+		</div>
 	);
 };

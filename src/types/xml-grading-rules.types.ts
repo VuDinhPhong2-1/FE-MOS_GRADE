@@ -599,7 +599,10 @@ export interface SpecialCondition {
 	wordViewSettingConfig?: WordViewSettingConfig;
 	wordEndnoteConfig?: WordEndnoteConfig;
 	wordSmartArtConfig?: WordSmartArtConfig;
-	wordSmartArtColorsConfig?: { colorsFile?: string; expectedColorStyle?: string };
+	wordSmartArtColorsConfig?: {
+		colorsFile?: string;
+		expectedColorStyle?: string;
+	};
 	excelTableNameConfig?: ExcelTableNameConfig;
 	excelWorksheetPageSetupConfig?: ExcelWorksheetPageSetupConfig;
 	excelClearCellFormattingConfig?: ExcelClearCellFormattingConfig;

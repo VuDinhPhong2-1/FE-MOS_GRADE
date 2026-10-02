@@ -137,103 +137,104 @@ export const ProfileModal = ({
 							viewportClassName="px-6 pt-2 pb-6 pr-5"
 						>
 							<div className="flex flex-col gap-5">
-							{/* Avatar Preview & Profile Summary Card */}
-							<div className="flex items-center gap-4 rounded-xl bg-m3-surface-container p-3 mb-4 text-m3-on-surface">
-								<div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full bg-m3-surface-container-highest ring-2 ring-m3-outline-variant/30">
-									{form.avatar ? (
-										<img
-											src={form.avatar}
-											alt={form.fullName || user.username}
-											className="h-full w-full object-cover"
-											onError={(e) => {
-												(e.currentTarget as HTMLElement).style.display = "none";
-											}}
-										/>
-									) : (
-										<div className="grid h-full w-full place-items-center text-m3-primary">
-											<Icon name="account_circle" size={40} />
+								{/* Avatar Preview & Profile Summary Card */}
+								<div className="flex items-center gap-4 rounded-xl bg-m3-surface-container p-3 mb-4 text-m3-on-surface">
+									<div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full bg-m3-surface-container-highest ring-2 ring-m3-outline-variant/30">
+										{form.avatar ? (
+											<img
+												src={form.avatar}
+												alt={form.fullName || user.username}
+												className="h-full w-full object-cover"
+												onError={(e) => {
+													(e.currentTarget as HTMLElement).style.display =
+														"none";
+												}}
+											/>
+										) : (
+											<div className="grid h-full w-full place-items-center text-m3-primary">
+												<Icon name="account_circle" size={40} />
+											</div>
+										)}
+									</div>
+									<div className="min-w-0 flex-1">
+										<div className="truncate text-sm font-bold text-m3-on-surface">
+											{form.fullName || user.fullName || user.username}
 										</div>
-									)}
-								</div>
-								<div className="min-w-0 flex-1">
-									<div className="truncate text-sm font-bold text-m3-on-surface">
-										{form.fullName || user.fullName || user.username}
-									</div>
-									<div className="truncate text-xs text-m3-on-surface-variant">
-										{user.email || "Chưa có email"}
-									</div>
-									<div className="mt-1 inline-flex items-center gap-1 rounded-md bg-m3-primary/10 px-2 py-0.5 text-[11px] font-semibold text-m3-primary">
-										<Icon name="verified_user" className="text-xs" />
-										<span>{user.role || "Người dùng"}</span>
+										<div className="truncate text-xs text-m3-on-surface-variant">
+											{user.email || "Chưa có email"}
+										</div>
+										<div className="mt-1 inline-flex items-center gap-1 rounded-md bg-m3-primary/10 px-2 py-0.5 text-[11px] font-semibold text-m3-primary">
+											<Icon name="verified_user" className="text-xs" />
+											<span>{user.role || "Người dùng"}</span>
+										</div>
 									</div>
 								</div>
-							</div>
 
-							<TextField
-								variant="outlined"
-								label="Tên đăng nhập"
-								readOnly
-								fullWidth
-								value={user.username}
-								supportingText="Tên tài khoản không thể thay đổi"
-								leadingIcon={<Icon name="person" />}
-								className="pt-2.5"
-							/>
+								<TextField
+									variant="outlined"
+									label="Tên đăng nhập"
+									readOnly
+									fullWidth
+									value={user.username}
+									supportingText="Tên tài khoản không thể thay đổi"
+									leadingIcon={<Icon name="person" />}
+									className="pt-2.5"
+								/>
 
-							<TextField
-								variant="outlined"
-								label="Thư điện tử"
-								readOnly
-								fullWidth
-								value={user.email || ""}
-								supportingText="Địa chỉ thư điện tử định danh"
-								leadingIcon={<Icon name="mail" />}
-								className="pt-2.5"
-							/>
+								<TextField
+									variant="outlined"
+									label="Thư điện tử"
+									readOnly
+									fullWidth
+									value={user.email || ""}
+									supportingText="Địa chỉ thư điện tử định danh"
+									leadingIcon={<Icon name="mail" />}
+									className="pt-2.5"
+								/>
 
-							<TextField
-								variant="outlined"
-								label="Họ và tên"
-								placeholder="Ví dụ: Vũ Đình Phong"
-								fullWidth
-								maxLength={120}
-								value={form.fullName}
-								onChange={(value: string) =>
-									setForm((prev) => ({ ...prev, fullName: value }))
-								}
-								leadingIcon={<Icon name="badge" />}
-								className="pt-2.5"
-							/>
+								<TextField
+									variant="outlined"
+									label="Họ và tên"
+									placeholder="Ví dụ: Vũ Đình Phong"
+									fullWidth
+									maxLength={120}
+									value={form.fullName}
+									onChange={(value: string) =>
+										setForm((prev) => ({ ...prev, fullName: value }))
+									}
+									leadingIcon={<Icon name="badge" />}
+									className="pt-2.5"
+								/>
 
-							<TextField
-								variant="outlined"
-								type="tel"
-								label="Số điện thoại"
-								placeholder="Ví dụ: 0909xxxxxx"
-								fullWidth
-								maxLength={25}
-								value={form.phoneNumber}
-								onChange={(value: string) =>
-									setForm((prev) => ({ ...prev, phoneNumber: value }))
-								}
-								leadingIcon={<Icon name="call" />}
-								className="pt-2.5"
-							/>
+								<TextField
+									variant="outlined"
+									type="tel"
+									label="Số điện thoại"
+									placeholder="Ví dụ: 0909xxxxxx"
+									fullWidth
+									maxLength={25}
+									value={form.phoneNumber}
+									onChange={(value: string) =>
+										setForm((prev) => ({ ...prev, phoneNumber: value }))
+									}
+									leadingIcon={<Icon name="call" />}
+									className="pt-2.5"
+								/>
 
-							<TextField
-								variant="outlined"
-								label="Ảnh đại diện (URL)"
-								placeholder="https://..."
-								fullWidth
-								maxLength={500}
-								value={form.avatar}
-								onChange={(value: string) => {
-									setForm((prev) => ({ ...prev, avatar: value }));
-									if (onAvatarPreview) onAvatarPreview(value || "");
-								}}
-								leadingIcon={<Icon name="image" />}
-								className="pt-2.5"
-							/>
+								<TextField
+									variant="outlined"
+									label="Ảnh đại diện (URL)"
+									placeholder="https://..."
+									fullWidth
+									maxLength={500}
+									value={form.avatar}
+									onChange={(value: string) => {
+										setForm((prev) => ({ ...prev, avatar: value }));
+										if (onAvatarPreview) onAvatarPreview(value || "");
+									}}
+									leadingIcon={<Icon name="image" />}
+									className="pt-2.5"
+								/>
 							</div>
 						</ScrollArea>
 

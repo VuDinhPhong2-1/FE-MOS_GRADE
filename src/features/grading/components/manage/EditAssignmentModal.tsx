@@ -35,7 +35,8 @@ interface EditAssignmentModalProps {
 
 const GRADING_TYPE_OPTIONS = [
 	{ value: "auto", label: "Tự động" },
-	{ value: "manual", label: "Thủ công" },
+	{ value: "manual", label: "Thủ công (file)" },
+	{ value: "paper", label: "Không nộp file (Giấy, Miệng...)" },
 ];
 
 export const EditAssignmentModal: React.FC<EditAssignmentModalProps> = ({
@@ -136,9 +137,9 @@ export const EditAssignmentModal: React.FC<EditAssignmentModalProps> = ({
 								onChange={(val) =>
 									onFormChange((prev) => ({
 										...prev,
-										gradingType: val as "auto" | "manual",
+										gradingType: val as "auto" | "manual" | "paper",
 										gradingApiEndpoint:
-											val === "manual" ? "" : prev.gradingApiEndpoint,
+											val !== "auto" ? "" : prev.gradingApiEndpoint,
 									}))
 								}
 								disabled={
@@ -160,7 +161,7 @@ export const EditAssignmentModal: React.FC<EditAssignmentModalProps> = ({
 									}))
 								}
 								disabled={
-									assignmentEditForm.gradingType === "manual" ||
+									assignmentEditForm.gradingType !== "auto" ||
 									Boolean(editingAssignment.isLockedForPublication) ||
 									assignmentSubmitLoading
 								}

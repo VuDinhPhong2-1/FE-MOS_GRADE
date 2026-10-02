@@ -78,12 +78,12 @@ export const ManualFileMatchModal: React.FC<ManualFileMatchModalProps> = ({
 					{/* Body */}
 					<ScrollArea
 						type="scroll"
-						orientation="vertical"
+						orientation="both"
 						className="flex-1 min-h-0"
 						viewportClassName="px-6 py-4 space-y-3"
 					>
 						<div className="rounded-2xl border border-m3-outline-variant/20 overflow-hidden shadow-2xs bg-m3-surface-container text-m3-on-surface">
-							<table className="min-w-full divide-y divide-m3-outline-variant/20 bg-m3-surface-container">
+							<table className="min-w-175 w-full divide-y divide-m3-outline-variant/20 bg-m3-surface-container">
 								<thead className="bg-m3-surface-container-high">
 									<tr className="h-12 border-b border-m3-outline-variant/60 bg-m3-surface-container-high">
 										<th className="h-12 px-3 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-m3-on-surface-variant align-middle">

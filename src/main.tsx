@@ -13,10 +13,12 @@ import {
 } from "./components/common";
 import { queryClient } from "./lib/queryClient";
 import { installAlertInterceptor } from "./utils/notify";
+import { installOverlayScrollFix } from "./utils/scrollFix";
 import "./index.css";
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 installAlertInterceptor();
+installOverlayScrollFix();
 
 // Ignore noisy browser-extension selection errors (not from app source code).
 window.addEventListener("error", (event) => {

@@ -69,3 +69,8 @@ td {
 		display: none;
 	}
 }
+
+/* Ensure M3 Snackbar notifications always appear above modal dialogs (z-50) and dialog overlays */
+section[aria-label="Snackbar notifications"] {
+	z-index: 12000 !important;
+}

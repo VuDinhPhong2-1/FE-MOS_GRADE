@@ -1,4 +1,10 @@
-import { Button, Checkbox, Icon, ScrollArea, TextField } from "@bug-on/m3-expressive";
+import {
+	Button,
+	Checkbox,
+	Icon,
+	ScrollArea,
+	TextField,
+} from "@bug-on/m3-expressive";
 import {
 	columnPinningFeature,
 	columnSizingFeature,
@@ -12,6 +18,7 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import type React from "react";
 import { useMemo, useRef } from "react";
 import { notify } from "../../../utils/notify";
+import { cn } from "../../../utils/utils";
 import type { ScoreboardState } from "../hooks/useScoreboardState";
 import { getShortAssignmentName } from "../utils/gradingUtils";
 import {
@@ -55,19 +62,27 @@ interface PinnableColumn {
 const getCommonPinningStyles = (
 	column: PinnableColumn,
 	isHeader = false,
-): React.CSSProperties | undefined => {
+): React.CSSProperties => {
 	const isPinned = column.getIsPinned();
-	if (!isPinned) return undefined;
+	const size = column.getSize();
+
+	if (isPinned) {
+		return {
+			position: "sticky",
+			insetInlineStart:
+				isPinned === "start" ? `${column.getStart("start")}px` : undefined,
+			insetInlineEnd:
+				isPinned === "end" ? `${column.getAfter("end")}px` : undefined,
+			width: `${size}px`,
+			minWidth: `${size}px`,
+			maxWidth: `${size}px`,
+			zIndex: isHeader ? 50 : 30,
+		};
+	}
+
 	return {
-		position: "sticky",
-		insetInlineStart:
-			isPinned === "start" ? `${column.getStart("start")}px` : undefined,
-		insetInlineEnd:
-			isPinned === "end" ? `${column.getAfter("end")}px` : undefined,
-		width: `${column.getSize()}px`,
-		minWidth: `${column.getSize()}px`,
-		maxWidth: `${column.getSize()}px`,
-		zIndex: isHeader ? 50 : 30,
+		width: `${size}px`,
+		minWidth: `${size}px`,
 	};
 };
 
@@ -350,6 +365,58 @@ export const ScoreboardContent: React.FC<ScoreboardContentProps> = ({
 			);
 		}
 
+		// Cột Điểm cộng
+		cols.push(
+			helper.accessor("bonusPoints", {
+				id: "bonusPoints",
+				header: () => (
+					<span className="text-right text-xs font-bold uppercase tracking-wide text-m3-primary">
+						Điểm cộng
+					</span>
+				),
+				size: 110,
+				cell: (info) => {
+					const val = info.getValue() || 0;
+					return (
+						<div className="text-right">
+							<span
+								className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${
+									val > 0
+										? "bg-m3-primary-container text-m3-on-primary-container"
+										: "bg-m3-surface-container text-m3-on-surface-variant/70"
+								}`}
+							>
+								{val > 0 ? `+${formatScore(val)}` : formatScore(val)}
+							</span>
+						</div>
+					);
+				},
+			}),
+		);
+
+		// Cột Tổng tổng hợp
+		cols.push(
+			helper.accessor("grandTotalScore", {
+				id: "grandTotalScore",
+				header: () => (
+					<span className="text-right text-xs font-bold uppercase tracking-wide text-m3-primary">
+						Tổng tổng hợp
+					</span>
+				),
+				size: 130,
+				cell: (info) => {
+					const val = info.getValue() || 0;
+					return (
+						<div className="text-right">
+							<span className="inline-flex rounded-full bg-m3-primary text-m3-on-primary px-3 py-1 text-xs font-black shadow-xs">
+								{formatScore(val)}
+							</span>
+						</div>
+					);
+				},
+			}),
+		);
+
 		// Cột Tỷ lệ đạt OTTH
 		if (state.showOtthPercentageColumn) {
 			cols.push(
@@ -492,10 +559,10 @@ export const ScoreboardContent: React.FC<ScoreboardContentProps> = ({
 			: 0;
 
 	return (
-		<div className="flex flex-1 flex-col">
+		<div className="flex flex-1 flex-col min-h-0">
 			{/* Controls Panel - Gọn gàng, responsive unified flex bar */}
 			{!hideControls && (
-				<div className="mb-3 rounded-2xl bg-m3-surface-container p-3 sm:p-4 text-m3-on-surface">
+				<div className="mb-3 shrink-0 rounded-2xl bg-m3-surface-container p-3 sm:p-4 text-m3-on-surface">
 					<div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
 						{/* Cụm bộ lọc bên trái */}
 						<div className="flex flex-wrap items-center gap-2.5 shrink-0">
@@ -604,9 +671,9 @@ export const ScoreboardContent: React.FC<ScoreboardContentProps> = ({
 			{/* Score Table Container - Không border, không shadow */}
 			<div
 				id="score-table"
-				className="relative overflow-hidden rounded-2xl bg-m3-surface text-m3-on-surface"
+				className="relative flex flex-1 flex-col min-h-0 overflow-hidden rounded-2xl bg-m3-surface text-m3-on-surface"
 			>
-				<div className="flex items-center justify-between bg-m3-surface-container-high px-4 py-2.5 text-sm font-semibold text-m3-on-surface">
+				<div className="flex items-center justify-between bg-m3-surface-container-high px-4 py-2.5 text-sm font-semibold text-m3-on-surface shrink-0">
 					<span>Bảng điểm lớp {state.titleClassName}</span>
 					<span className="text-xs font-medium text-m3-on-surface-variant">
 						Nhấn badge lỗi để xem chi tiết
@@ -615,9 +682,9 @@ export const ScoreboardContent: React.FC<ScoreboardContentProps> = ({
 
 				<ScrollArea
 					viewportRef={tableContainerRef}
-					type="scroll"
+					type="always"
 					orientation="both"
-					className={tableMaxHeightClassName}
+					className={cn("w-full flex-1 min-h-0", tableMaxHeightClassName)}
 				>
 					<table className="w-full min-w-max border-separate border-spacing-0 text-sm text-m3-on-surface">
 						<thead>
@@ -678,7 +745,7 @@ export const ScoreboardContent: React.FC<ScoreboardContentProps> = ({
 										key={row.id}
 										data-index={virtualRow.index}
 										ref={rowVirtualizer.measureElement}
-										className={`${rowBgClass} transition-colors hover:bg-m3-surface-container-high/60`}
+										className={`${rowBgClass} group transition-colors hover:bg-m3-surface-container-high/60`}
 									>
 										{row.getVisibleCells().map((cell) => {
 											const pinningStyle = getCommonPinningStyles(
@@ -692,7 +759,9 @@ export const ScoreboardContent: React.FC<ScoreboardContentProps> = ({
 													key={cell.id}
 													style={pinningStyle}
 													className={`px-3 py-3 align-middle ${
-														isPinned ? `${rowBgClass} z-30` : ""
+														isPinned
+															? `${rowBgClass} group-hover:bg-m3-surface-container-high/60 z-30`
+															: ""
 													}`}
 												>
 													{flexRender(

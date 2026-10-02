@@ -13,7 +13,7 @@ export interface Assignment {
 	isLockedForPublication?: boolean;
 	isPublishable?: boolean;
 	publishBlockReason?: string;
-	gradingType: "auto" | "manual";
+	gradingType: "auto" | "manual" | "paper";
 	gradingApiEndpoint?: string;
 	createdBy?: string;
 	createdByName?: string;
@@ -35,7 +35,7 @@ export interface CreateAssignmentRequest {
 	subject: "excel" | "word" | "ppt";
 	examType: "otth" | "onthi" | "gmetrix";
 	projectCode?: string;
-	gradingType: "auto" | "manual";
+	gradingType: "auto" | "manual" | "paper";
 	gradingApiEndpoint?: string;
 }
 
@@ -47,7 +47,7 @@ export interface UpdateAssignmentRequest {
 	subject?: "excel" | "word" | "ppt";
 	examType?: "otth" | "onthi" | "gmetrix";
 	projectCode?: string;
-	gradingType?: "auto" | "manual";
+	gradingType?: "auto" | "manual" | "paper";
 	gradingApiEndpoint?: string;
 }
 

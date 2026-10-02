@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
+import { bonusPointService } from "../../../services/bonus-point.service";
 import { computerRoomService } from "../../../services/computer-room.service";
 import { scheduleService } from "../../../services/schedule.service";
 import type { ComputerRoom } from "../../../types/computer-room.types";
@@ -94,6 +95,10 @@ export const useAttendancePanel = ({
 	const [attendanceKeyword, setAttendanceKeyword] = useState("");
 	const [attendanceNameSortDirection, setAttendanceNameSortDirection] =
 		useState<"none" | "asc" | "desc">("none");
+	const [bonusDraft, setBonusDraft] = useState<
+		Record<string, { points: number; reason: string; category: string }>
+	>({});
+	const [bonusSaving, setBonusSaving] = useState(false);
 
 	const hasRoomSnapshot = useMemo(
 		() => Boolean(attendanceData?.computerRoom),
@@ -162,6 +167,8 @@ export const useAttendancePanel = ({
 		setReportsDraft(emptyReportsPayload());
 		setAttendanceTab("attendance");
 		setAttendanceKeyword("");
+		setBonusDraft({});
+		setBonusSaving(false);
 	}, [attendanceSaving]);
 
 	const toggleAttendanceStatus = useCallback((studentId: string) => {
@@ -434,6 +441,77 @@ export const useAttendancePanel = ({
 		return resolveSchoolNameForSchedule(fakeSchedule);
 	}, [attendanceData, resolveSchoolNameForSchedule]);
 
+	const updateBonusDraft = useCallback(
+		(
+			studentId: string,
+			updates: Partial<{ points: number; reason: string; category: string }>,
+		) => {
+			setBonusDraft((prev) => ({
+				...prev,
+				[studentId]: {
+					points:
+						updates.points !== undefined
+							? updates.points
+							: (prev[studentId]?.points ?? 0),
+					reason:
+						updates.reason !== undefined
+							? updates.reason
+							: (prev[studentId]?.reason ?? ""),
+					category:
+						updates.category !== undefined
+							? updates.category
+							: (prev[studentId]?.category ?? "participation"),
+				},
+			}));
+		},
+		[],
+	);
+
+	const handleSaveBonuses = useCallback(async () => {
+		if (!attendanceData || !attendanceData.classId) {
+			notify.warning("Không tìm thấy thông tin lớp học.");
+			return;
+		}
+
+		const itemsToSave = Object.entries(bonusDraft)
+			.filter(([_, item]) => item.points !== 0 || item.reason.trim() !== "")
+			.map(([studentId, item]) => ({
+				studentId,
+				points: item.points,
+				category: item.category || "participation",
+				reason: item.reason.trim() || undefined,
+			}));
+
+		if (itemsToSave.length === 0) {
+			notify.warning("Chưa có học sinh nào được nhập điểm cộng.");
+			return;
+		}
+
+		setBonusSaving(true);
+		try {
+			await bonusPointService.bulkCreate(
+				{
+					classId: attendanceData.classId,
+					date: attendanceData.date,
+					scheduleId: attendanceData.scheduleId,
+					items: itemsToSave,
+				},
+				getAccessToken,
+			);
+
+			notify.success(
+				`Đã lưu điểm cộng cho ${itemsToSave.length} học sinh thành công!`,
+			);
+			setBonusDraft({});
+		} catch (error) {
+			notify.error(
+				error instanceof Error ? error.message : "Không thể lưu điểm cộng.",
+			);
+		} finally {
+			setBonusSaving(false);
+		}
+	}, [attendanceData, bonusDraft, getAccessToken]);
+
 	return {
 		attendanceOpen,
 		attendanceLoading,
@@ -453,6 +531,10 @@ export const useAttendancePanel = ({
 		attendanceStats,
 		hasUnsavedAttendanceChanges,
 		filteredAttendanceStudents,
+		bonusDraft,
+		bonusSaving,
+		updateBonusDraft,
+		handleSaveBonuses,
 		openAttendance,
 		closeAttendance,
 		toggleAttendanceStatus,

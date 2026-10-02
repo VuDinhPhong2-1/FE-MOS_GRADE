@@ -138,72 +138,72 @@ export const SingleGradingTable: React.FC<SingleGradingTableProps> = ({
 					} as React.ComponentPropsWithoutRef<"div">
 				}
 			>
-				<table className="min-w-full divide-y divide-m3-outline-variant/30">
-				<caption className="caption-top px-4 py-3 text-left text-sm font-semibold text-m3-on-surface border-b border-m3-outline-variant/20">
-					Bảng chấm điểm học sinh ({gradingStudents.length} học sinh)
-				</caption>
-				<thead className="sticky top-0 z-10 bg-m3-surface-container-high shadow-xs">
-					{table.getHeaderGroups().map((headerGroup) => (
-						<tr
-							key={headerGroup.id}
-							className="h-12 border-b border-m3-outline-variant/60 bg-m3-surface-container-high text-xs font-bold uppercase tracking-wider text-m3-on-surface-variant"
-						>
-							{headerGroup.headers.map((header) => (
-								<th
-									key={header.id}
-									className={
-										header.column.columnDef.meta?.headerClassName ||
-										"h-12 px-4 py-3.5 align-middle text-xs font-bold text-m3-on-surface-variant uppercase tracking-wider"
-									}
-								>
-									{header.isPlaceholder ? null : (
-										<table.FlexRender header={header} />
-									)}
-								</th>
-							))}
-						</tr>
-					))}
-				</thead>
-				<tbody className="divide-y divide-m3-outline-variant/20 bg-m3-surface-container">
-					{table.getRowModel().rows.map((row, index) => {
-						const student = row.original;
-						const state = studentGradingStates.get(student.id);
-						const persistedScore = singlePersistedScores.get(student.id);
-						const canUndoSingle =
-							singleUndoSnapshots.has(student.id) ||
-							Boolean(
-								state?.studentFile ||
-									state?.gradingResult ||
-									state?.error ||
-									state?.manualScore !== null,
-							);
+				<table className="min-w-175 w-full divide-y divide-m3-outline-variant/30">
+					<caption className="caption-top px-4 py-3 text-left text-sm font-semibold text-m3-on-surface border-b border-m3-outline-variant/20">
+						Bảng chấm điểm học sinh ({gradingStudents.length} học sinh)
+					</caption>
+					<thead className="sticky top-0 z-10 bg-m3-surface-container-high shadow-xs">
+						{table.getHeaderGroups().map((headerGroup) => (
+							<tr
+								key={headerGroup.id}
+								className="h-12 border-b border-m3-outline-variant/60 bg-m3-surface-container-high text-xs font-bold uppercase tracking-wider text-m3-on-surface-variant"
+							>
+								{headerGroup.headers.map((header) => (
+									<th
+										key={header.id}
+										className={
+											header.column.columnDef.meta?.headerClassName ||
+											"h-12 px-4 py-3.5 align-middle text-xs font-bold text-m3-on-surface-variant uppercase tracking-wider"
+										}
+									>
+										{header.isPlaceholder ? null : (
+											<table.FlexRender header={header} />
+										)}
+									</th>
+								))}
+							</tr>
+						))}
+					</thead>
+					<tbody className="divide-y divide-m3-outline-variant/20 bg-m3-surface-container">
+						{table.getRowModel().rows.map((row, index) => {
+							const student = row.original;
+							const state = studentGradingStates.get(student.id);
+							const persistedScore = singlePersistedScores.get(student.id);
+							const canUndoSingle =
+								singleUndoSnapshots.has(student.id) ||
+								Boolean(
+									state?.studentFile ||
+										state?.gradingResult ||
+										state?.error ||
+										state?.manualScore !== null,
+								);
 
-						return (
-							<SingleGradingTableRow
-								key={student.id}
-								student={student}
-								index={index}
-								state={state}
-								persistedScore={persistedScore}
-								selectedAssignmentData={selectedAssignmentData}
-								canUndoSingle={canUndoSingle}
-								isDragOver={singleDragOverStudentId === student.id}
-								isUndoing={undoingSingleStudentId === student.id}
-								isHighlighted={highlightedStudentId === student.id}
-								onRowRef={(node) => {
-									if (node) rowRefs.current?.set(student.id, node);
-									else rowRefs.current?.delete(student.id);
-								}}
-								onFileChange={onFileChange}
-								onDragOver={onDragOver}
-								onDragLeave={onDragLeave}
-								onDrop={onDrop}
-								onUndo={onUndo}
-							/>
-						);
-					})}
-				</tbody>
-			</table>
+							return (
+								<SingleGradingTableRow
+									key={student.id}
+									student={student}
+									index={index}
+									state={state}
+									persistedScore={persistedScore}
+									selectedAssignmentData={selectedAssignmentData}
+									canUndoSingle={canUndoSingle}
+									isDragOver={singleDragOverStudentId === student.id}
+									isUndoing={undoingSingleStudentId === student.id}
+									isHighlighted={highlightedStudentId === student.id}
+									onRowRef={(node) => {
+										if (node) rowRefs.current?.set(student.id, node);
+										else rowRefs.current?.delete(student.id);
+									}}
+									onFileChange={onFileChange}
+									onDragOver={onDragOver}
+									onDragLeave={onDragLeave}
+									onDrop={onDrop}
+									onUndo={onUndo}
+								/>
+							);
+						})}
+					</tbody>
+				</table>
 			</ScrollArea>
 		</section>
 	);

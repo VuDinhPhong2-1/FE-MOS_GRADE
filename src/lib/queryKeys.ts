@@ -20,14 +20,19 @@ export const queryKeys = {
 		all: ["analytics"] as const,
 		classOverview: (classId: string) =>
 			[...queryKeys.analytics.all, "class-overview", classId] as const,
-		weakTasks: (classId: string, projectEndpoint?: string, top?: number, assignmentIds: string[] = []) =>
+		weakTasks: (
+			classId: string,
+			projectEndpoint?: string,
+			top?: number,
+			assignmentIds: string[] = [],
+		) =>
 			[
 				...queryKeys.analytics.all,
 				"weak-tasks",
 				classId,
 				projectEndpoint || "all",
 				top ?? 10,
-                [...new Set(assignmentIds)].sort(),
+				[...new Set(assignmentIds)].sort(),
 			] as const,
 	},
 };
