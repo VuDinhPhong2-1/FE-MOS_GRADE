@@ -168,6 +168,7 @@ export const ScheduleFormModal = ({
 				<DialogOverlay />
 				<DialogContent
 					hideCloseButton
+					onOpenAutoFocus={(e) => e.preventDefault()}
 					className="flex max-h-[90vh] w-[calc(100%-2rem)] max-w-2xl flex-col overflow-hidden rounded-4xl bg-m3-surface-container-high p-0 text-m3-on-surface shadow-2xl"
 				>
 					{/* Modal Header */}
@@ -195,282 +196,291 @@ export const ScheduleFormModal = ({
 							viewportClassName="p-4 sm:p-5"
 						>
 							<div className="flex flex-col gap-4">
-							{/* Nhóm: Trường & Lớp học */}
-							<div className="rounded-3xl bg-m3-surface-container p-4 sm:p-5 text-m3-on-surface">
-								<div className="mb-3 flex items-center gap-2">
-									<Icon name="domain" className="text-base text-m3-primary" />
-									<h4 className="text-sm font-bold text-m3-on-surface">
-										Trường &amp; lớp học
-									</h4>
+								{/* Nhóm: Trường & Lớp học */}
+								<div className="rounded-3xl bg-m3-surface-container p-4 sm:p-5 text-m3-on-surface">
+									<div className="mb-3 flex items-center gap-2">
+										<Icon name="domain" className="text-base text-m3-primary" />
+										<h4 className="text-sm font-bold text-m3-on-surface">
+											Trường &amp; lớp học
+										</h4>
+									</div>
+									<div className="grid gap-3 sm:grid-cols-2">
+										<Select
+											variant="outlined"
+											label="Trường học"
+											options={schoolOptions}
+											value={form.schoolId}
+											onChange={(val) => onSchoolChange(val)}
+											searchable
+											placeholder="Chọn trường"
+											required
+										/>
+
+										<Select
+											variant="outlined"
+											label="Lớp có sẵn"
+											options={classOptions}
+											value={form.classId}
+											onChange={(val) => {
+												const matched = classesBySelectedSchool.find(
+													(c) => c.id === val,
+												);
+												onClassChange(
+													val,
+													matched?.name || form.className,
+													matched?.schoolId || form.schoolId,
+												);
+											}}
+											searchable
+											placeholder="Chọn lớp"
+											disabled={!form.schoolId}
+											supportingText={
+												!form.schoolId
+													? "Vui lòng chọn trường trước"
+													: undefined
+											}
+										/>
+
+										<div className="sm:col-span-2">
+											<TextField
+												variant="outlined"
+												label="Tên lớp hiển thị"
+												value={form.className}
+												onChange={(val) => onFormChange("className", val)}
+												placeholder="Ví dụ: 11A11"
+												required
+												fullWidth
+											/>
+										</div>
+									</div>
 								</div>
-								<div className="grid gap-3 sm:grid-cols-2">
-									<Select
-										variant="outlined"
-										label="Trường học"
-										options={schoolOptions}
-										value={form.schoolId}
-										onChange={(val) => onSchoolChange(val)}
-										searchable
-										placeholder="Chọn trường"
-										required
-									/>
 
-									<Select
-										variant="outlined"
-										label="Lớp có sẵn"
-										options={classOptions}
-										value={form.classId}
-										onChange={(val) => {
-											const matched = classesBySelectedSchool.find(
-												(c) => c.id === val,
-											);
-											onClassChange(
-												val,
-												matched?.name || form.className,
-												matched?.schoolId || form.schoolId,
-											);
-										}}
-										searchable
-										placeholder="Chọn lớp"
-										disabled={!form.schoolId}
-										supportingText={
-											!form.schoolId ? "Vui lòng chọn trường trước" : undefined
-										}
-									/>
-
-									<div className="sm:col-span-2">
+								{/* Nhóm: Môn học & phòng */}
+								<div className="rounded-3xl bg-m3-surface-container p-4 sm:p-5 text-m3-on-surface">
+									<div className="mb-3 flex items-center gap-2">
+										<Icon
+											name="desktop_windows"
+											className="text-base text-m3-primary"
+										/>
+										<h4 className="text-sm font-bold text-m3-on-surface">
+											Môn học &amp; phòng dạy
+										</h4>
+									</div>
+									<div className="grid gap-3 sm:grid-cols-2">
 										<TextField
 											variant="outlined"
-											label="Tên lớp hiển thị"
-											value={form.className}
-											onChange={(val) => onFormChange("className", val)}
-											placeholder="Ví dụ: 11A11"
+											label="Môn học"
+											value={form.subject}
+											onChange={(val) => onFormChange("subject", val)}
+											placeholder="Ví dụ: Tin học"
 											required
+											fullWidth
+										/>
+
+										<TextField
+											variant="outlined"
+											label="Tiết mấy"
+											value={form.periodLabel}
+											onChange={(val) => onFormChange("periodLabel", val)}
+											placeholder="Ví dụ: Tiết 1-2"
+											fullWidth
+										/>
+
+										<Select
+											variant="outlined"
+											label="Phòng máy cấu hình sẵn"
+											options={roomOptions}
+											value={form.roomId}
+											onChange={(val) => {
+												const matched = computerRooms.find((r) => r.id === val);
+												onRoomChange(val, matched?.name || form.roomName);
+											}}
+											searchable
+											loading={computerRoomsLoading}
+											placeholder="Chọn phòng máy"
+											disabled={!form.schoolId || computerRoomsLoading}
+										/>
+
+										<TextField
+											variant="outlined"
+											label="Phòng học / phòng máy"
+											value={form.roomName}
+											onChange={(val) => {
+												onFormChange("roomName", val);
+												if (form.roomId) {
+													onFormChange("roomId", "");
+												}
+											}}
+											placeholder={
+												form.roomId
+													? "Đã lấy theo phòng cấu hình"
+													: "Ví dụ: P.Máy 03"
+											}
+											disabled={Boolean(form.roomId)}
+											supportingText={
+												form.roomId
+													? "Đã liên kết phòng máy từ danh mục"
+													: undefined
+											}
 											fullWidth
 										/>
 									</div>
 								</div>
-							</div>
 
-							{/* Nhóm: Môn học & phòng */}
-							<div className="rounded-3xl bg-m3-surface-container p-4 sm:p-5 text-m3-on-surface">
-								<div className="mb-3 flex items-center gap-2">
-									<Icon
-										name="desktop_windows"
-										className="text-base text-m3-primary"
-									/>
-									<h4 className="text-sm font-bold text-m3-on-surface">
-										Môn học &amp; phòng dạy
-									</h4>
-								</div>
-								<div className="grid gap-3 sm:grid-cols-2">
-									<TextField
-										variant="outlined"
-										label="Môn học"
-										value={form.subject}
-										onChange={(val) => onFormChange("subject", val)}
-										placeholder="Ví dụ: Tin học"
-										required
-										fullWidth
-									/>
-
-									<TextField
-										variant="outlined"
-										label="Tiết mấy"
-										value={form.periodLabel}
-										onChange={(val) => onFormChange("periodLabel", val)}
-										placeholder="Ví dụ: Tiết 1-2"
-										fullWidth
-									/>
-
-									<Select
-										variant="outlined"
-										label="Phòng máy cấu hình sẵn"
-										options={roomOptions}
-										value={form.roomId}
-										onChange={(val) => {
-											const matched = computerRooms.find((r) => r.id === val);
-											onRoomChange(val, matched?.name || form.roomName);
-										}}
-										searchable
-										loading={computerRoomsLoading}
-										placeholder="Chọn phòng máy"
-										disabled={!form.schoolId || computerRoomsLoading}
-									/>
-
-									<TextField
-										variant="outlined"
-										label="Phòng học / phòng máy"
-										value={form.roomName}
-										onChange={(val) => {
-											onFormChange("roomName", val);
-											if (form.roomId) {
-												onFormChange("roomId", "");
-											}
-										}}
-										placeholder={
-											form.roomId
-												? "Đã lấy theo phòng cấu hình"
-												: "Ví dụ: P.Máy 03"
-										}
-										disabled={Boolean(form.roomId)}
-										supportingText={
-											form.roomId
-												? "Đã liên kết phòng máy từ danh mục"
-												: undefined
-										}
-										fullWidth
-									/>
-								</div>
-							</div>
-
-							{/* Nhóm: Thời gian */}
-							<div className="rounded-3xl bg-m3-surface-container p-4 sm:p-5 text-m3-on-surface">
-								<div className="mb-3 flex items-center gap-2">
-									<Icon name="schedule" className="text-base text-m3-primary" />
-									<h4 className="text-sm font-bold text-m3-on-surface">
-										Thời gian
-									</h4>
-								</div>
-								<div className="grid gap-3 sm:grid-cols-3">
-									{/* Ngày dạy */}
-									<TextField
-										variant="outlined"
-										label="Ngày dạy"
-										value={form.date ? formatDateViFromYmd(form.date) : ""}
-										readOnly
-										required
-										fullWidth
-										className="cursor-pointer"
-										onFocus={(e) => {
-											e.target.blur();
-											setDatePickerOpen(true);
-										}}
-										onKeyDown={(e) => {
-											if (e.key === "Enter" || e.key === " ") {
-												e.preventDefault();
+								{/* Nhóm: Thời gian */}
+								<div className="rounded-3xl bg-m3-surface-container p-4 sm:p-5 text-m3-on-surface">
+									<div className="mb-3 flex items-center gap-2">
+										<Icon
+											name="schedule"
+											className="text-base text-m3-primary"
+										/>
+										<h4 className="text-sm font-bold text-m3-on-surface">
+											Thời gian
+										</h4>
+									</div>
+									<div className="grid gap-3 sm:grid-cols-3">
+										{/* Ngày dạy */}
+										<TextField
+											variant="outlined"
+											label="Ngày dạy"
+											value={form.date ? formatDateViFromYmd(form.date) : ""}
+											readOnly
+											required
+											fullWidth
+											className="cursor-pointer"
+											onFocus={(e) => {
+												e.target.blur();
 												setDatePickerOpen(true);
+											}}
+											onKeyDown={(e) => {
+												if (e.key === "Enter" || e.key === " ") {
+													e.preventDefault();
+													setDatePickerOpen(true);
+												}
+											}}
+											leadingIcon={
+												<Icon name="calendar_today" className="text-base" />
 											}
-										}}
-										leadingIcon={
-											<Icon name="calendar_today" className="text-base" />
-										}
-										trailingIconMode="custom"
-										trailingIcon={
-											<IconButton
-												type="button"
-												aria-label="Chọn ngày dạy"
-												size="xs"
-												colorStyle="standard"
-												onClick={() => setDatePickerOpen(true)}
-											>
-												<Icon name="edit_calendar" className="text-sm" />
-											</IconButton>
-										}
-									/>
+											trailingIconMode="custom"
+											trailingIcon={
+												<IconButton
+													type="button"
+													aria-label="Chọn ngày dạy"
+													size="xs"
+													colorStyle="standard"
+													onClick={() => setDatePickerOpen(true)}
+												>
+													<Icon name="edit_calendar" className="text-sm" />
+												</IconButton>
+											}
+										/>
 
-									{/* Giờ bắt đầu */}
-									<TextField
-										variant="outlined"
-										label="Giờ bắt đầu"
-										value={form.startTime}
-										readOnly
-										required
-										fullWidth
-										className="cursor-pointer"
-										onFocus={(e) => {
-											e.target.blur();
-											setStartTimePickerOpen(true);
-										}}
-										onKeyDown={(e) => {
-											if (e.key === "Enter" || e.key === " ") {
-												e.preventDefault();
+										{/* Giờ bắt đầu */}
+										<TextField
+											variant="outlined"
+											label="Giờ bắt đầu"
+											value={form.startTime}
+											readOnly
+											required
+											fullWidth
+											className="cursor-pointer"
+											onFocus={(e) => {
+												e.target.blur();
 												setStartTimePickerOpen(true);
+											}}
+											onKeyDown={(e) => {
+												if (e.key === "Enter" || e.key === " ") {
+													e.preventDefault();
+													setStartTimePickerOpen(true);
+												}
+											}}
+											leadingIcon={
+												<Icon name="schedule" className="text-base" />
 											}
-										}}
-										leadingIcon={<Icon name="schedule" className="text-base" />}
-										trailingIconMode="custom"
-										trailingIcon={
-											<IconButton
-												type="button"
-												aria-label="Chọn giờ bắt đầu"
-												size="xs"
-												colorStyle="standard"
-												onClick={() => setStartTimePickerOpen(true)}
-											>
-												<Icon name="more_time" className="text-sm" />
-											</IconButton>
-										}
-									/>
+											trailingIconMode="custom"
+											trailingIcon={
+												<IconButton
+													type="button"
+													aria-label="Chọn giờ bắt đầu"
+													size="xs"
+													colorStyle="standard"
+													onClick={() => setStartTimePickerOpen(true)}
+												>
+													<Icon name="more_time" className="text-sm" />
+												</IconButton>
+											}
+										/>
 
-									{/* Giờ kết thúc */}
-									<TextField
-										variant="outlined"
-										label="Giờ kết thúc"
-										value={form.endTime}
-										readOnly
-										required
-										fullWidth
-										className="cursor-pointer"
-										onFocus={(e) => {
-											e.target.blur();
-											setEndTimePickerOpen(true);
-										}}
-										onKeyDown={(e) => {
-											if (e.key === "Enter" || e.key === " ") {
-												e.preventDefault();
+										{/* Giờ kết thúc */}
+										<TextField
+											variant="outlined"
+											label="Giờ kết thúc"
+											value={form.endTime}
+											readOnly
+											required
+											fullWidth
+											className="cursor-pointer"
+											onFocus={(e) => {
+												e.target.blur();
 												setEndTimePickerOpen(true);
+											}}
+											onKeyDown={(e) => {
+												if (e.key === "Enter" || e.key === " ") {
+													e.preventDefault();
+													setEndTimePickerOpen(true);
+												}
+											}}
+											leadingIcon={
+												<Icon name="alarm_on" className="text-base" />
 											}
-										}}
-										leadingIcon={<Icon name="alarm_on" className="text-base" />}
-										trailingIconMode="custom"
-										trailingIcon={
-											<IconButton
-												type="button"
-												aria-label="Chọn giờ kết thúc"
-												size="xs"
-												colorStyle="standard"
-												onClick={() => setEndTimePickerOpen(true)}
-											>
-												<Icon name="more_time" className="text-sm" />
-											</IconButton>
-										}
-									/>
-								</div>
-							</div>
-
-							{/* Nhóm: Ghi chú & trạng thái */}
-							<div className="rounded-3xl bg-m3-surface-container p-4 sm:p-5 text-m3-on-surface">
-								<div className="mb-3 flex items-center gap-2">
-									<Icon name="chat" className="text-base text-m3-primary" />
-									<h4 className="text-sm font-bold text-m3-on-surface">
-										Ghi chú
-									</h4>
-								</div>
-								<TextField
-									variant="outlined"
-									label="Ghi chú thêm"
-									type="textarea"
-									rows={3}
-									autoResize
-									value={form.notes}
-									onChange={(val) => onFormChange("notes", val)}
-									placeholder="Ghi chú thêm về buổi học..."
-									fullWidth
-								/>
-
-								{editing && (
-									<div className="mt-3">
-										<Checkbox
-											checked={form.isActive}
-											onCheckedChange={(checked) =>
-												onFormChange("isActive", checked)
+											trailingIconMode="custom"
+											trailingIcon={
+												<IconButton
+													type="button"
+													aria-label="Chọn giờ kết thúc"
+													size="xs"
+													colorStyle="standard"
+													onClick={() => setEndTimePickerOpen(true)}
+												>
+													<Icon name="more_time" className="text-sm" />
+												</IconButton>
 											}
-											label="Lịch đang hoạt động"
 										/>
 									</div>
-								)}
-							</div>
+								</div>
+
+								{/* Nhóm: Ghi chú & trạng thái */}
+								<div className="rounded-3xl bg-m3-surface-container p-4 sm:p-5 text-m3-on-surface">
+									<div className="mb-3 flex items-center gap-2">
+										<Icon name="chat" className="text-base text-m3-primary" />
+										<h4 className="text-sm font-bold text-m3-on-surface">
+											Ghi chú
+										</h4>
+									</div>
+									<TextField
+										variant="outlined"
+										label="Ghi chú thêm"
+										type="textarea"
+										rows={3}
+										autoResize
+										value={form.notes}
+										onChange={(val) => onFormChange("notes", val)}
+										placeholder="Ghi chú thêm về buổi học..."
+										fullWidth
+									/>
+
+									{editing && (
+										<div className="mt-3">
+											<Checkbox
+												checked={form.isActive}
+												onCheckedChange={(checked) =>
+													onFormChange("isActive", checked)
+												}
+												label="Lịch đang hoạt động"
+											/>
+										</div>
+									)}
+								</div>
 							</div>
 						</ScrollArea>
 

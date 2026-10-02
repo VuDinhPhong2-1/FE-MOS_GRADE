@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { showConfirm } from "../../../components/common";
 import { classService } from "../../../services/class.service";
 import { computerRoomService } from "../../../services/computer-room.service";
@@ -16,22 +16,53 @@ import {
 	toYmd,
 } from "../utils";
 
+interface CacheEntry<T> {
+	data: T | null;
+	loadedAt: number;
+}
+
+const classesCache: CacheEntry<Class[]> = { data: null, loadedAt: 0 };
+const schoolsCache: CacheEntry<School[]> = { data: null, loadedAt: 0 };
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 phút
+
+export const invalidateScheduleCache = () => {
+	classesCache.data = null;
+	classesCache.loadedAt = 0;
+	schoolsCache.data = null;
+	schoolsCache.loadedAt = 0;
+};
+
 interface UseScheduleDataProps {
 	getAccessToken: () => Promise<string | null>;
 }
 
 export const useScheduleData = ({ getAccessToken }: UseScheduleDataProps) => {
+	const getAccessTokenRef = useRef(getAccessToken);
+	useEffect(() => {
+		getAccessTokenRef.current = getAccessToken;
+	});
+	const getToken = useCallback(() => getAccessTokenRef.current(), []);
+
 	const [weekStart, setWeekStart] = useState<string>(() =>
 		toYmd(getWeekStart(new Date())),
 	);
 	const [schedules, setSchedules] = useState<ScheduleItem[]>([]);
-	const [classes, setClasses] = useState<Class[]>([]);
-	const [schools, setSchools] = useState<School[]>([]);
+	const [classes, setClasses] = useState<Class[]>(
+		() => classesCache.data ?? [],
+	);
+	const [schools, setSchools] = useState<School[]>(
+		() => schoolsCache.data ?? [],
+	);
 	const [computerRooms, setComputerRooms] = useState<ComputerRoom[]>([]);
 	const [computerRoomsLoading, setComputerRoomsLoading] = useState(false);
 	const [loading, setLoading] = useState(false);
 	const [copying, setCopying] = useState(false);
 	const [selectedScheduleIds, setSelectedScheduleIds] = useState<string[]>([]);
+
+	const schedulesRef = useRef(schedules);
+	useEffect(() => {
+		schedulesRef.current = schedules;
+	}, [schedules]);
 
 	const weekEnd = useMemo(() => {
 		const start = new Date(`${weekStart}T00:00:00`);
@@ -44,7 +75,7 @@ export const useScheduleData = ({ getAccessToken }: UseScheduleDataProps) => {
 			setLoading(true);
 			const response = await scheduleService.getWeekSchedules(
 				weekStart,
-				getAccessToken,
+				getToken,
 			);
 			setSchedules(response.data || []);
 		} catch (error) {
@@ -54,25 +85,54 @@ export const useScheduleData = ({ getAccessToken }: UseScheduleDataProps) => {
 		} finally {
 			setLoading(false);
 		}
-	}, [weekStart, getAccessToken]);
+	}, [weekStart, getToken]);
 
-	const loadClasses = useCallback(async () => {
-		try {
-			const items = await classService.getAllClasses(getAccessToken, true);
-			setClasses(items);
-		} catch {
-			// Không chặn màn hình nếu danh sách lớp lỗi
-		}
-	}, [getAccessToken]);
+	const loadClasses = useCallback(
+		async (force = false) => {
+			const now = Date.now();
+			if (
+				!force &&
+				classesCache.data &&
+				now - classesCache.loadedAt < CACHE_TTL_MS
+			) {
+				setClasses(classesCache.data);
+				return;
+			}
+			try {
+				const items = await classService.getAllClasses(getToken, true);
+				classesCache.data = items;
+				classesCache.loadedAt = Date.now();
+				setClasses(items);
+			} catch {
+				// Không chặn màn hình nếu danh sách lớp lỗi
+			}
+		},
+		[getToken],
+	);
 
-	const loadSchools = useCallback(async () => {
-		try {
-			const items = await schoolService.getSchools(getAccessToken);
-			setSchools(items.filter((item) => item.isActive !== false));
-		} catch {
-			// Không chặn màn hình nếu danh sách trường lỗi
-		}
-	}, [getAccessToken]);
+	const loadSchools = useCallback(
+		async (force = false) => {
+			const now = Date.now();
+			if (
+				!force &&
+				schoolsCache.data &&
+				now - schoolsCache.loadedAt < CACHE_TTL_MS
+			) {
+				setSchools(schoolsCache.data);
+				return;
+			}
+			try {
+				const items = await schoolService.getSchools(getToken);
+				const activeSchools = items.filter((item) => item.isActive !== false);
+				schoolsCache.data = activeSchools;
+				schoolsCache.loadedAt = Date.now();
+				setSchools(activeSchools);
+			} catch {
+				// Không chặn màn hình nếu danh sách trường lỗi
+			}
+		},
+		[getToken],
+	);
 
 	const loadComputerRoomsForForm = useCallback(
 		async (schoolId: string) => {
@@ -84,7 +144,7 @@ export const useScheduleData = ({ getAccessToken }: UseScheduleDataProps) => {
 				setComputerRoomsLoading(true);
 				const rows = await computerRoomService.getBySchool(
 					schoolId,
-					getAccessToken,
+					getToken,
 					false,
 				);
 				setComputerRooms(rows);
@@ -99,7 +159,7 @@ export const useScheduleData = ({ getAccessToken }: UseScheduleDataProps) => {
 				setComputerRoomsLoading(false);
 			}
 		},
-		[getAccessToken],
+		[getToken],
 	);
 
 	useEffect(() => {
@@ -151,12 +211,14 @@ export const useScheduleData = ({ getAccessToken }: UseScheduleDataProps) => {
 	}, []);
 
 	const toggleSelectAllSchedules = useCallback(() => {
-		if (areAllSchedulesSelected) {
-			setSelectedScheduleIds([]);
-			return;
-		}
-		setSelectedScheduleIds(schedules.map((item) => item.id));
-	}, [areAllSchedulesSelected, schedules]);
+		setSelectedScheduleIds((prev) => {
+			const current = schedulesRef.current;
+			if (current.length > 0 && prev.length === current.length) {
+				return [];
+			}
+			return current.map((item) => item.id);
+		});
+	}, []);
 
 	const handleDeleteSchedule = useCallback(
 		async (item: ScheduleItem) => {
@@ -168,7 +230,7 @@ export const useScheduleData = ({ getAccessToken }: UseScheduleDataProps) => {
 			});
 			if (!confirmed) return;
 			try {
-				await scheduleService.delete(item.id, getAccessToken);
+				await scheduleService.delete(item.id, getToken);
 				notify.success("Đã xóa lịch dạy");
 				await loadSchedules();
 			} catch (error) {
@@ -177,7 +239,7 @@ export const useScheduleData = ({ getAccessToken }: UseScheduleDataProps) => {
 				);
 			}
 		},
-		[getAccessToken, loadSchedules],
+		[getToken, loadSchedules],
 	);
 
 	const handleDeleteSelected = useCallback(async () => {
@@ -196,7 +258,7 @@ export const useScheduleData = ({ getAccessToken }: UseScheduleDataProps) => {
 
 		const results = await Promise.allSettled(
 			selectedSchedules.map((item) =>
-				scheduleService.delete(item.id, getAccessToken),
+				scheduleService.delete(item.id, getToken),
 			),
 		);
 		const deleted = results.filter(
@@ -216,7 +278,7 @@ export const useScheduleData = ({ getAccessToken }: UseScheduleDataProps) => {
 		}
 
 		notify.error("Không thể xóa các lịch đã chọn");
-	}, [selectedSchedules, getAccessToken, loadSchedules]);
+	}, [selectedSchedules, getToken, loadSchedules]);
 
 	const copySchedulesToNextWeek = useCallback(
 		async (sourceSchedules: ScheduleItem[], sourceLabel: string) => {
@@ -243,7 +305,7 @@ export const useScheduleData = ({ getAccessToken }: UseScheduleDataProps) => {
 
 				const nextWeekResponse = await scheduleService.getWeekSchedules(
 					nextWeekStart,
-					getAccessToken,
+					getToken,
 				);
 				const existingKeys = new Set(
 					(nextWeekResponse.data || []).map((item) =>
@@ -302,7 +364,7 @@ export const useScheduleData = ({ getAccessToken }: UseScheduleDataProps) => {
 								endTime: item.endTime,
 								notes: item.notes || undefined,
 							},
-							getAccessToken,
+							getToken,
 						);
 						existingKeys.add(targetKey);
 						created++;
@@ -339,7 +401,7 @@ export const useScheduleData = ({ getAccessToken }: UseScheduleDataProps) => {
 				setCopying(false);
 			}
 		},
-		[copying, weekStart, getAccessToken],
+		[copying, weekStart, getToken],
 	);
 
 	const handleCopyToNextWeek = useCallback(async () => {

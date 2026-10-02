@@ -134,6 +134,10 @@ const TeacherSchedule = () => {
 		attendanceStats,
 		hasUnsavedAttendanceChanges,
 		filteredAttendanceStudents,
+		bonusDraft,
+		bonusSaving,
+		updateBonusDraft,
+		handleSaveBonuses,
 		openAttendance,
 		closeAttendance,
 		toggleAttendanceStatus,
@@ -381,12 +385,39 @@ const TeacherSchedule = () => {
 					</strong>
 				</span>
 			),
+			disablePageScroll: true,
 		},
 		[weekStart, weekEnd],
 	);
 
+	const handleClearSelection = useCallback(() => {
+		setSelectedScheduleIds([]);
+	}, [setSelectedScheduleIds]);
+
+	const handleDeleteSelectedCallback = useCallback(() => {
+		void handleDeleteSelected();
+	}, [handleDeleteSelected]);
+
+	const handleCopySelectedCallback = useCallback(() => {
+		void handleCopySelectedToNextWeek();
+	}, [handleCopySelectedToNextWeek]);
+
+	const handleOpenAttendanceCallback = useCallback(
+		(item: ScheduleItem) => {
+			void openAttendance(item);
+		},
+		[openAttendance],
+	);
+
+	const handleDeleteScheduleCallback = useCallback(
+		(item: ScheduleItem) => {
+			void handleDeleteSchedule(item);
+		},
+		[handleDeleteSchedule],
+	);
+
 	return (
-		<div className="min-h-full space-y-5 pb-20 sm:pb-18">
+		<div className="h-full flex-1 min-h-0 flex flex-col overflow-hidden p-3.5 sm:p-5 pb-24 sm:pb-24 lg:pb-22">
 			{/* Bảng lịch dạy */}
 			<ScheduleTable
 				schedules={schedules}
@@ -399,20 +430,12 @@ const TeacherSchedule = () => {
 				resolveSchoolNameForSchedule={resolveSchoolNameForSchedule}
 				onToggleSelectAll={toggleSelectAllSchedules}
 				onToggleSelectSchedule={toggleScheduleSelection}
-				onClearSelection={() => setSelectedScheduleIds([])}
-				onDeleteSelected={() => {
-					void handleDeleteSelected();
-				}}
-				onCopySelected={() => {
-					void handleCopySelectedToNextWeek();
-				}}
-				onOpenAttendance={(item) => {
-					void openAttendance(item);
-				}}
+				onClearSelection={handleClearSelection}
+				onDeleteSelected={handleDeleteSelectedCallback}
+				onCopySelected={handleCopySelectedCallback}
+				onOpenAttendance={handleOpenAttendanceCallback}
 				onOpenEdit={openEdit}
-				onDeleteSchedule={(item) => {
-					void handleDeleteSchedule(item);
-				}}
+				onDeleteSchedule={handleDeleteScheduleCallback}
 				hideSelectionBar={true}
 			/>
 
@@ -449,6 +472,12 @@ const TeacherSchedule = () => {
 				}}
 				onSyncToGoogleSheet={() => {
 					void handleSyncAttendanceToGoogleSheet();
+				}}
+				bonusDraft={bonusDraft}
+				bonusSaving={bonusSaving}
+				onUpdateBonus={updateBonusDraft}
+				onSaveBonus={() => {
+					void handleSaveBonuses();
 				}}
 			/>
 

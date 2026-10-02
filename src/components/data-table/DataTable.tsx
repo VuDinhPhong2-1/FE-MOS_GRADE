@@ -44,7 +44,17 @@ export function DataTable<
 	stickyHeader = false,
 	useScrollArea = true,
 	scrollType = "scroll",
-	scrollOrientation,
+	scrollOrientation = "both",
+	scrollbarSize = 8,
+	scrollHideDelay = 600,
+	thumbClassName,
+	trackClassName,
+	cornerClassName,
+	verticalScrollbarProps,
+	horizontalScrollbarProps,
+	viewportRef,
+	viewportClassName,
+	viewportProps,
 	onRowClick,
 	getRowClassName,
 	renderRow,
@@ -74,18 +84,11 @@ export function DataTable<
 	const isExternalScroll =
 		!useScrollArea || scrollContainerClassName?.includes("overflow-visible");
 
-	const determinedOrientation =
-		scrollOrientation ??
-		(scrollContainerClassName &&
-		(scrollContainerClassName.includes("max-h-") ||
-			scrollContainerClassName.includes("h-") ||
-			scrollContainerClassName.includes("overflow-y"))
-			? "both"
-			: "horizontal");
+	const determinedOrientation = scrollOrientation ?? "both";
 
 	const cleanedContainerClassName = scrollContainerClassName
 		? scrollContainerClassName
-				.replace(/\boverflow-(?:[xy]-)?auto\b/g, "")
+				.replace(/\boverflow-(?:[xy]-)?(?:auto|scroll|hidden)\b/g, "")
 				.trim()
 		: "";
 
@@ -93,18 +96,80 @@ export function DataTable<
 		<table
 			className={`border-collapse text-left ${minWidthClassName} ${tableClassName}`}
 		>
-				<thead>
-					{headerGroups.map((headerGroup) => (
-						<tr
-							key={headerGroup.id}
-							className={cn(
-								"h-12 border-b border-m3-outline-variant/60 bg-m3-surface-container-high text-xs font-bold uppercase tracking-wider text-m3-on-surface-variant",
-								stickyHeader && "sticky top-0 z-10",
-								headerRowClassName,
-							)}
-						>
-							{headerGroup.headers.map((header) => {
-								const meta = header.column.columnDef.meta as
+			<thead>
+				{headerGroups.map((headerGroup) => (
+					<tr
+						key={headerGroup.id}
+						className={cn(
+							"h-12 border-b border-m3-outline-variant/60 bg-m3-surface-container-high text-xs font-bold uppercase tracking-wider text-m3-on-surface-variant",
+							stickyHeader && "sticky top-0 z-10",
+							headerRowClassName,
+						)}
+					>
+						{headerGroup.headers.map((header) => {
+							const meta = header.column.columnDef.meta as
+								| DataTableColumnMeta
+								| undefined;
+							const align = meta?.align;
+							const alignClass =
+								align === "center"
+									? "text-center"
+									: align === "right"
+										? "text-right"
+										: "text-left";
+
+							const widthClass = meta?.headerClassName
+								? meta.headerClassName
+								: (meta?.className
+										?.split(" ")
+										.filter(
+											(c) =>
+												c.startsWith("w-") ||
+												c.startsWith("min-w-") ||
+												c.startsWith("max-w-") ||
+												c === "truncate",
+										)
+										.join(" ") ?? "");
+
+							return (
+								<th
+									key={header.id}
+									colSpan={header.colSpan}
+									className={cn(
+										"h-12 px-6 py-3.5 align-middle text-xs font-bold uppercase tracking-wider text-m3-on-surface-variant",
+										stickyHeader &&
+											"sticky top-0 z-10 bg-m3-surface-container-high",
+										alignClass,
+										widthClass,
+									)}
+								>
+									{header.isPlaceholder ? null : (
+										<table.FlexRender header={header} />
+									)}
+								</th>
+							);
+						})}
+					</tr>
+				))}
+			</thead>
+			<tbody
+				className={`divide-y divide-m3-outline-variant/40 text-sm ${bodyClassName}`}
+			>
+				{rows.length === 0 ? (
+					<tr>
+						<td colSpan={visibleColCount || 1} className="p-0">
+							{emptyState}
+						</td>
+					</tr>
+				) : (
+					rows.map((row: Row<TFeatures, TData>, index: number) => {
+						const cells = hasVisibleRowCells(row)
+							? row.getVisibleCells()
+							: (row.getAllCells() as Array<Cell<TFeatures, TData, CellData>>);
+
+						const defaultCells = cells.map(
+							(cell: Cell<TFeatures, TData, CellData>) => {
+								const meta = cell.column.columnDef.meta as
 									| DataTableColumnMeta
 									| undefined;
 								const align = meta?.align;
@@ -115,158 +180,107 @@ export function DataTable<
 											? "text-right"
 											: "text-left";
 
-								const widthClass = meta?.headerClassName
-									? meta.headerClassName
-									: (meta?.className
-											?.split(" ")
-											.filter(
-												(c) =>
-													c.startsWith("w-") ||
-													c.startsWith("min-w-") ||
-													c.startsWith("max-w-") ||
-													c === "truncate",
-											)
-											.join(" ") ?? "");
+								const renderedContent = <table.FlexRender cell={cell} />;
 
 								return (
-									<th
-										key={header.id}
-										colSpan={header.colSpan}
-										className={cn(
-											"h-12 px-6 py-3.5 align-middle text-xs font-bold uppercase tracking-wider text-m3-on-surface-variant",
-											stickyHeader &&
-												"sticky top-0 z-10 bg-m3-surface-container-high",
-											alignClass,
-											widthClass,
-										)}
+									<td
+										key={cell.id}
+										className={`px-6 py-4 ${alignClass} ${
+											meta?.cellClassName || meta?.className || ""
+										}`}
 									>
-										{header.isPlaceholder ? null : (
-											<table.FlexRender header={header} />
-										)}
-									</th>
+										{renderCell
+											? renderCell(cell, renderedContent)
+											: renderedContent}
+									</td>
 								);
-							})}
-						</tr>
-					))}
-				</thead>
-				<tbody
-					className={`divide-y divide-m3-outline-variant/40 text-sm ${bodyClassName}`}
-				>
-					{rows.length === 0 ? (
-						<tr>
-							<td colSpan={visibleColCount || 1} className="p-0">
-								{emptyState}
-							</td>
-						</tr>
-					) : (
-						rows.map((row: Row<TFeatures, TData>, index: number) => {
-							const cells = hasVisibleRowCells(row)
-								? row.getVisibleCells()
-								: (row.getAllCells() as Array<
-										Cell<TFeatures, TData, CellData>
-									>);
+							},
+						);
 
-							const defaultCells = cells.map(
-								(cell: Cell<TFeatures, TData, CellData>) => {
-									const meta = cell.column.columnDef.meta as
-										| DataTableColumnMeta
-										| undefined;
-									const align = meta?.align;
-									const alignClass =
-										align === "center"
-											? "text-center"
-											: align === "right"
-												? "text-right"
-												: "text-left";
-
-									const renderedContent = <table.FlexRender cell={cell} />;
-
-									return (
-										<td
-											key={cell.id}
-											className={`px-6 py-4 ${alignClass} ${
-												meta?.cellClassName || meta?.className || ""
-											}`}
-										>
-											{renderCell
-												? renderCell(cell, renderedContent)
-												: renderedContent}
-										</td>
-									);
-								},
+						if (renderRow) {
+							return (
+								<Fragment key={row.id}>
+									{renderRow(row, index, defaultCells)}
+								</Fragment>
 							);
+						}
 
-							if (renderRow) {
-								return (
-									<Fragment key={row.id}>
-										{renderRow(row, index, defaultCells)}
-									</Fragment>
+						const isClickable = Boolean(onRowClick);
+						const customRowClass = getRowClassName
+							? getRowClassName(row, index)
+							: "";
+						const bandedClass = banded
+							? index % 2 === 1
+								? "bg-m3-surface-container-high"
+								: "bg-transparent"
+							: "";
+
+						const handleKeyDown = (
+							e: React.KeyboardEvent<HTMLTableRowElement>,
+						) => {
+							if (onRowClick && (e.key === "Enter" || e.key === " ")) {
+								e.preventDefault();
+								// Trigger row click for keyboard navigation
+								onRowClick(
+									row,
+									e as unknown as React.MouseEvent<HTMLTableRowElement>,
 								);
 							}
+						};
 
-							const isClickable = Boolean(onRowClick);
-							const customRowClass = getRowClassName
-								? getRowClassName(row, index)
-								: "";
-							const bandedClass = banded
-								? index % 2 === 1
-									? "bg-m3-surface-container-high"
-									: "bg-transparent"
-								: "";
-
-							const handleKeyDown = (
-								e: React.KeyboardEvent<HTMLTableRowElement>,
-							) => {
-								if (onRowClick && (e.key === "Enter" || e.key === " ")) {
-									e.preventDefault();
-									// Trigger row click for keyboard navigation
-									onRowClick(
-										row,
-										e as unknown as React.MouseEvent<HTMLTableRowElement>,
-									);
-								}
-							};
-
-							return (
-								<tr
-									key={row.id}
-									tabIndex={isClickable ? 0 : undefined}
-									onKeyDown={isClickable ? handleKeyDown : undefined}
-									onClick={onRowClick ? (e) => onRowClick(row, e) : undefined}
-									className={cn(
-										"transition-colors",
-										bandedClass,
-										isClickable
-											? "cursor-pointer hover:bg-m3-surface-container-high/60 focus-within:bg-m3-primary/5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-m3-primary"
-											: "hover:bg-m3-surface-container-high/35",
-										customRowClass,
-									)}
-								>
-									{defaultCells}
-								</tr>
-							);
-						})
-					)}
-				</tbody>
-			</table>
+						return (
+							<tr
+								key={row.id}
+								tabIndex={isClickable ? 0 : undefined}
+								onKeyDown={isClickable ? handleKeyDown : undefined}
+								onClick={onRowClick ? (e) => onRowClick(row, e) : undefined}
+								className={cn(
+									"transition-colors",
+									bandedClass,
+									isClickable
+										? "cursor-pointer hover:bg-m3-surface-container-high/60 focus-within:bg-m3-primary/5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-m3-primary"
+										: "hover:bg-m3-surface-container-high/35",
+									customRowClass,
+								)}
+							>
+								{defaultCells}
+							</tr>
+						);
+					})
+				)}
+			</tbody>
+		</table>
 	);
 
+	const mergedViewportProps =
+		dataStudentScrollContainer || viewportProps
+			? ({
+					...(dataStudentScrollContainer
+						? { "data-student-scroll-container": dataStudentScrollContainer }
+						: {}),
+					...viewportProps,
+				} as React.ComponentPropsWithoutRef<"div">)
+			: undefined;
+
 	const content = isExternalScroll ? (
-		<div className={cn("overflow-x-auto", scrollContainerClassName)}>
+		<div className={cn("overflow-auto", scrollContainerClassName)}>
 			{tableElement}
 		</div>
 	) : (
 		<ScrollArea
 			type={scrollType}
 			orientation={determinedOrientation}
+			scrollbarSize={scrollbarSize}
+			scrollHideDelay={scrollHideDelay}
+			thumbClassName={thumbClassName}
+			trackClassName={trackClassName}
+			cornerClassName={cornerClassName}
+			verticalScrollbarProps={verticalScrollbarProps}
+			horizontalScrollbarProps={horizontalScrollbarProps}
+			viewportRef={viewportRef}
+			viewportClassName={viewportClassName}
+			viewportProps={mergedViewportProps}
 			className={cn("w-full", cleanedContainerClassName)}
-			viewportProps={
-				dataStudentScrollContainer
-					? ({
-							"data-student-scroll-container": dataStudentScrollContainer,
-						} as React.ComponentPropsWithoutRef<"div">)
-					: undefined
-			}
 		>
 			{tableElement}
 		</ScrollArea>

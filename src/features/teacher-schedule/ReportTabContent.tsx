@@ -1,4 +1,10 @@
-import { Button, Icon, Select, TextField } from "@bug-on/m3-expressive";
+import {
+	Button,
+	ButtonDistribute,
+	Icon,
+	Select,
+	TextField,
+} from "@bug-on/m3-expressive";
 import { useEffect, useMemo, useState } from "react";
 import type {
 	ScheduleAttendanceResponse,
@@ -715,7 +721,8 @@ export const ReportTabContent = ({
 				? "Báo cáo chuyên môn"
 				: "Báo cáo cuối buổi";
 
-	const handleCopyReport = async () => {
+	const handleCopyReport = async (e?: React.MouseEvent) => {
+		e?.stopPropagation();
 		try {
 			await navigator.clipboard.writeText(activeReportText);
 			notify.success("Đã sao chép nội dung báo cáo");
@@ -725,41 +732,59 @@ export const ReportTabContent = ({
 	};
 
 	const reportActions = (
-		<div className="flex flex-wrap items-center justify-end gap-2">
+		<ButtonDistribute
+			className="w-full"
+			size="sm"
+			mode="dynamic"
+			weights={[2, 1, 1]}
+			gap={4}
+			expandRatio={0.2}
+		>
 			<Button
 				type="button"
-				colorStyle="tonal"
-				size="xs"
-				icon={<Icon name="visibility" className="text-base" />}
-				onClick={() => setPreviewOpen((current) => !current)}
-			>
-				{previewOpen ? "Ẩn xem trước" : "Xem trước"}
-			</Button>
-			<Button
-				type="button"
-				colorStyle="tonal"
-				size="xs"
+				colorStyle="filled"
+				size="sm"
 				icon={<Icon name="content_copy" className="text-base" />}
 				onClick={handleCopyReport}
+				fullWidth
 			>
 				Sao chép Zalo
 			</Button>
 			<Button
 				type="button"
-				colorStyle="filled"
-				size="xs"
+				colorStyle="tertiary"
+				size="sm"
+				icon={<Icon name="visibility" className="text-base" />}
+				onClick={(e) => {
+					e.stopPropagation();
+					setPreviewOpen((current) => !current);
+				}}
+				fullWidth
+			>
+				{previewOpen ? "Ẩn xem trước" : "Xem trước"}
+			</Button>
+			<Button
+				type="button"
+				colorStyle="outlined"
+				size="sm"
 				icon={<Icon name="print" className="text-base" />}
-				onClick={() => printPlainReport(activeReportTitle, activeReportText)}
+				onClick={(e) => {
+					e.stopPropagation();
+					printPlainReport(activeReportTitle, activeReportText);
+				}}
+				fullWidth
 			>
 				In báo cáo
 			</Button>
-		</div>
+		</ButtonDistribute>
 	);
 
 	const reportPreview = previewOpen ? (
-		<pre className="whitespace-pre-wrap rounded-2xl bg-m3-surface-container-low p-4 text-sm leading-6 text-m3-on-surface">
-			{activeReportText}
-		</pre>
+		<div className="rounded-2xl border border-m3-outline-variant/30 bg-m3-surface-container-low p-4">
+			<pre className="whitespace-pre-wrap font-sans text-xs leading-relaxed text-m3-on-surface sm:text-sm select-all">
+				{activeReportText}
+			</pre>
+		</div>
 	) : null;
 
 	useEffect(() => {
@@ -834,14 +859,19 @@ export const ReportTabContent = ({
 		<>
 			{activeStep === "startLesson" && (
 				<div className="pt-3">
-					<div className="space-y-4 rounded-3xl bg-m3-surface-container-high p-4 sm:p-5 shadow-xs">
-						<div className="flex items-center gap-2">
-							<Icon name="description" className="text-base text-m3-primary" />
-							<h4 className="font-bold text-m3-primary">
-								BÁO CÁO ĐẦU BUỔI DẠY
-							</h4>
+					<div className="space-y-4 rounded-3xl bg-m3-surface-container-lowest p-4 sm:p-5 shadow-xs">
+						<div className="flex items-center gap-2 justify-between">
+							<div className="flex gap-1 items-center flex-row w-full">
+								<Icon
+									name="description"
+									className="text-base text-m3-primary"
+								/>
+								<h4 className="font-bold text-m3-primary">
+									BÁO CÁO ĐẦU BUỔI DẠY
+								</h4>
+							</div>
+							{reportActions}
 						</div>
-						{reportActions}
 						{reportPreview}
 						{hasRoomSnapshot && (
 							<p className="text-xs text-m3-primary/80">
@@ -970,7 +1000,7 @@ export const ReportTabContent = ({
 
 			{activeStep === "professional" && (
 				<div className="pt-3">
-					<div className="space-y-4 rounded-3xl bg-m3-surface-container-high p-4 sm:p-5 shadow-xs">
+					<div className="space-y-4 rounded-3xl bg-m3-surface-container-lowest p-4 sm:p-5 shadow-xs">
 						<div className="flex items-center gap-2">
 							<Icon name="menu_book" className="text-base text-m3-secondary" />
 							<h4 className="font-bold text-m3-secondary">
@@ -1071,7 +1101,7 @@ export const ReportTabContent = ({
 
 			{activeStep === "endLesson" && (
 				<div className="pt-3">
-					<div className="space-y-4 rounded-3xl bg-m3-surface-container-high p-4 sm:p-5 shadow-xs">
+					<div className="space-y-4 rounded-3xl bg-m3-surface-container-lowest p-4 sm:p-5 shadow-xs">
 						<div className="flex items-center gap-2">
 							<Icon name="assignment" className="text-base text-m3-tertiary" />
 							<h4 className="font-bold text-m3-tertiary">

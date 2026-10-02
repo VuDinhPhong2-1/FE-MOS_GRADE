@@ -6,7 +6,7 @@ import {
 	tableFeatures,
 	useTable,
 } from "@tanstack/react-table";
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 import {
 	DataTable,
 	SortableHeader,
@@ -38,6 +38,113 @@ export interface AttendanceTabContentProps {
 	onUpdateNote: (studentId: string, note: string) => void;
 	onSyncToGoogleSheet: () => void;
 }
+
+interface AttendanceTableMeta {
+	attendanceDraft: Record<string, AttendanceDraftState>;
+	onToggleStatus: (studentId: string) => void;
+	onUpdateNote: (studentId: string, note: string) => void;
+}
+
+const AttendanceStatusCell = memo(function AttendanceStatusCell({
+	studentId,
+	status,
+	onToggle,
+}: {
+	studentId: string;
+	status: AttendanceStatus;
+	onToggle: (studentId: string) => void;
+}) {
+	const isAbsent = status === "Absent";
+	return (
+		<Button
+			colorStyle={isAbsent ? "outlined" : "tonal"}
+			size="sm"
+			className={isAbsent ? "border-m3-error/50! text-m3-error!" : ""}
+			onClick={() => onToggle(studentId)}
+		>
+			{isAbsent ? "Vắng" : "Có mặt"}
+		</Button>
+	);
+});
+
+const AttendanceNoteCell = memo(function AttendanceNoteCell({
+	studentId,
+	note,
+	onUpdateNote,
+}: {
+	studentId: string;
+	note: string;
+	onUpdateNote: (studentId: string, note: string) => void;
+}) {
+	return (
+		<TextField
+			dense
+			variant="outlined"
+			value={note}
+			onChange={(val) => onUpdateNote(studentId, val)}
+			placeholder="Ghi chú..."
+			fullWidth
+			className="min-w-56"
+		/>
+	);
+});
+
+const StudentAttendanceMobileCard = memo(function StudentAttendanceMobileCard({
+	student,
+	index,
+	draft,
+	onToggleStatus,
+	onUpdateNote,
+}: {
+	student: ScheduleAttendanceStudent;
+	index: number;
+	draft?: AttendanceDraftState;
+	onToggleStatus: (studentId: string) => void;
+	onUpdateNote: (studentId: string, note: string) => void;
+}) {
+	const isAbsent = draft?.status === "Absent";
+	return (
+		<Card
+			variant="filled"
+			className={`rounded-2xl p-3.5 transition-colors ${
+				isAbsent
+					? "bg-m3-error-container/25 text-m3-on-error-container"
+					: "bg-m3-surface-container text-m3-on-surface"
+			}`}
+		>
+			<div className="flex items-start justify-between gap-3">
+				<div>
+					<p className="text-xs text-m3-on-surface-variant">#{index + 1}</p>
+					<p className="font-semibold text-m3-on-surface">
+						{student.middleName} {student.firstName}
+					</p>
+					<p className="text-xs text-m3-on-surface-variant">
+						Trạng thái học sinh: {student.studentStatus || "-"}
+					</p>
+				</div>
+				<Button
+					colorStyle={isAbsent ? "outlined" : "filled"}
+					size="sm"
+					className={isAbsent ? "border-m3-error! text-m3-error!" : ""}
+					onClick={() => onToggleStatus(student.studentId)}
+				>
+					{isAbsent ? "Vắng" : "Có mặt"}
+				</Button>
+			</div>
+
+			<div className="mt-2.5">
+				<TextField
+					dense
+					variant="filled"
+					value={draft?.note ?? ""}
+					onChange={(val) => onUpdateNote(student.studentId, val)}
+					placeholder="Ghi chú..."
+					className="w-full"
+				/>
+			</div>
+		</Card>
+	);
+});
 
 const features = tableFeatures({
 	rowSortingFeature,
@@ -114,21 +221,17 @@ export const AttendanceTabContent = ({
 					meta: {
 						className: "px-3 py-2.5",
 					},
-					cell: ({ row }) => {
-						const draft = attendanceDraft[row.original.studentId] ?? {
-							status: "Present" as AttendanceStatus,
-							note: "",
-						};
-						const isAbsent = draft.status === "Absent";
+					cell: ({ row, table }) => {
+						const meta = table.options.meta as AttendanceTableMeta | undefined;
+						const status =
+							meta?.attendanceDraft[row.original.studentId]?.status ??
+							"Present";
 						return (
-							<Button
-								colorStyle={isAbsent ? "outlined" : "tonal"}
-								size="xs"
-								className={isAbsent ? "border-m3-error/50! text-m3-error!" : ""}
-								onClick={() => onToggleStatus(row.original.studentId)}
-							>
-								{isAbsent ? "Vắng" : "Có mặt"}
-							</Button>
+							<AttendanceStatusCell
+								studentId={row.original.studentId}
+								status={status}
+								onToggle={meta?.onToggleStatus ?? (() => {})}
+							/>
 						);
 					},
 				}),
@@ -138,24 +241,29 @@ export const AttendanceTabContent = ({
 					meta: {
 						className: "px-3 py-1.5",
 					},
-					cell: ({ row }) => {
-						const draft = attendanceDraft[row.original.studentId] ?? {
-							status: "Present" as AttendanceStatus,
-							note: "",
-						};
+					cell: ({ row, table }) => {
+						const meta = table.options.meta as AttendanceTableMeta | undefined;
+						const note =
+							meta?.attendanceDraft[row.original.studentId]?.note ?? "";
 						return (
-							<TextField
-								dense
-								variant="filled"
-								value={draft.note}
-								onChange={(val) => onUpdateNote(row.original.studentId, val)}
-								placeholder="Ghi chú..."
-								className="w-full min-w-56"
+							<AttendanceNoteCell
+								studentId={row.original.studentId}
+								note={note}
+								onUpdateNote={meta?.onUpdateNote ?? (() => {})}
 							/>
 						);
 					},
 				}),
 			]),
+		[],
+	);
+
+	const tableMeta = useMemo<AttendanceTableMeta>(
+		() => ({
+			attendanceDraft,
+			onToggleStatus,
+			onUpdateNote,
+		}),
 		[attendanceDraft, onToggleStatus, onUpdateNote],
 	);
 
@@ -164,6 +272,7 @@ export const AttendanceTabContent = ({
 		columns,
 		data: filteredAttendanceStudents,
 		getRowId: (row) => row.studentId,
+		meta: tableMeta,
 	});
 
 	const nameColumn = table.getColumn("name");
@@ -189,11 +298,11 @@ export const AttendanceTabContent = ({
 						: "⇅";
 
 	return (
-		<div className="space-y-4 pt-3">
-			<div className="grid gap-3 sm:grid-cols-2">
+		<div className="space-y-4 pt-4">
+			<div className="grid gap-2 sm:grid-cols-2">
 				<Card
 					variant="filled"
-					className="rounded-2xl bg-m3-primary-container px-4 py-3 text-sm text-m3-on-primary-container"
+					className="bg-m3-primary-container px-4 py-3 text-sm text-m3-on-primary-container"
 				>
 					<span className="flex items-center gap-2 font-medium">
 						<Icon
@@ -207,7 +316,7 @@ export const AttendanceTabContent = ({
 				</Card>
 				<Card
 					variant="filled"
-					className="rounded-2xl bg-m3-error-container px-4 py-3 text-sm text-m3-on-error-container"
+					className="bg-m3-error-container px-4 py-3 text-sm text-m3-on-error-container"
 				>
 					<span className="flex items-center gap-2 font-medium">
 						<Icon
@@ -297,54 +406,15 @@ export const AttendanceTabContent = ({
 			<div className="space-y-2.5 md:hidden">
 				{table.getRowModel().rows.map((row, index) => {
 					const student = row.original;
-					const draft = attendanceDraft[student.studentId] ?? {
-						status: "Present" as AttendanceStatus,
-						note: "",
-					};
-					const isAbsent = draft.status === "Absent";
 					return (
-						<Card
+						<StudentAttendanceMobileCard
 							key={student.studentId}
-							variant="filled"
-							className={`rounded-2xl p-3.5 transition-colors ${
-								isAbsent
-									? "bg-m3-error-container/25 text-m3-on-error-container"
-									: "bg-m3-surface-container text-m3-on-surface"
-							}`}
-						>
-							<div className="flex items-start justify-between gap-3">
-								<div>
-									<p className="text-xs text-m3-on-surface-variant">
-										#{index + 1}
-									</p>
-									<p className="font-semibold text-m3-on-surface">
-										{student.middleName} {student.firstName}
-									</p>
-									<p className="text-xs text-m3-on-surface-variant">
-										Trạng thái học sinh: {student.studentStatus || "-"}
-									</p>
-								</div>
-								<Button
-									colorStyle={isAbsent ? "outlined" : "filled"}
-									size="sm"
-									className={isAbsent ? "border-m3-error! text-m3-error!" : ""}
-									onClick={() => onToggleStatus(student.studentId)}
-								>
-									{isAbsent ? "Vắng" : "Có mặt"}
-								</Button>
-							</div>
-
-							<div className="mt-2.5">
-								<TextField
-									dense
-									variant="filled"
-									value={draft.note}
-									onChange={(val) => onUpdateNote(student.studentId, val)}
-									placeholder="Ghi chú..."
-									className="w-full"
-								/>
-							</div>
-						</Card>
+							student={student}
+							index={index}
+							draft={attendanceDraft[student.studentId]}
+							onToggleStatus={onToggleStatus}
+							onUpdateNote={onUpdateNote}
+						/>
 					);
 				})}
 
@@ -364,7 +434,9 @@ export const AttendanceTabContent = ({
 					table={table}
 					isLoading={attendanceLoading}
 					loadingAriaLabel="Đang tải danh sách điểm danh..."
-					minWidthClassName="min-w-full text-sm"
+					minWidthClassName="min-w-175 w-full text-sm"
+					scrollContainerClassName="max-h-[60vh]"
+					stickyHeader
 					getRowClassName={(row) => {
 						const draft = attendanceDraft[row.original.studentId] ?? {
 							status: "Present" as AttendanceStatus,

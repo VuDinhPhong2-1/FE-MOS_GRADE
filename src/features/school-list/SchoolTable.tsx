@@ -147,7 +147,9 @@ export const SchoolTable = memo(function SchoolTable({
 			table={table}
 			isLoading={isLoading}
 			loadingAriaLabel="Đang tải dữ liệu trường học"
-			minWidthClassName="min-w-140 w-full"
+			minWidthClassName="min-w-175 w-full"
+			scrollContainerClassName="max-h-[70vh]"
+			stickyHeader
 			onRowClick={(row) => onSelectSchool(row.original)}
 			getRowClassName={() => "group"}
 			emptyState={

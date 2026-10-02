@@ -10,7 +10,7 @@ import type {
 interface UseAnalyticsQueriesOptions {
 	classId: string;
 	projectEndpoint?: string;
-    assignmentIds?: string[];
+	assignmentIds?: string[];
 	top?: number;
 	getAccessToken: (forceRefresh?: boolean) => Promise<string | null>;
 }
@@ -18,7 +18,7 @@ interface UseAnalyticsQueriesOptions {
 export const useAnalyticsQueries = ({
 	classId,
 	projectEndpoint,
-    assignmentIds = [],
+	assignmentIds = [],
 	top = 10,
 	getAccessToken,
 }: UseAnalyticsQueriesOptions) => {
@@ -45,14 +45,19 @@ export const useAnalyticsQueries = ({
 
 	// Query: Weak Tasks (phụ thuộc vào filter projectEndpoint và top)
 	const weakTasksQuery = useQuery({
-		queryKey: queryKeys.analytics.weakTasks(classId, projectEndpoint, top, assignmentIds),
+		queryKey: queryKeys.analytics.weakTasks(
+			classId,
+			projectEndpoint,
+			top,
+			assignmentIds,
+		),
 		queryFn: async (): Promise<WeakTaskResponse[]> => {
 			return analyticsService.getWeakTasks(
 				classId,
 				getAccessTokenRef.current,
 				projectEndpoint || undefined,
 				top,
-                assignmentIds,
+				assignmentIds,
 			);
 		},
 		enabled: Boolean(classId),

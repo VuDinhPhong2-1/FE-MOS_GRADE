@@ -35,7 +35,7 @@ import type { StudentResponse } from "../types/student.types";
 
 type SubjectCode = "excel" | "word" | "ppt";
 type ExamTypeCode = "otth" | "onthi" | "gmetrix";
-type GradingTypeCode = "auto" | "manual";
+type GradingTypeCode = "auto" | "manual" | "paper";
 
 interface AssignmentFormState {
 	name: string;
@@ -82,6 +82,7 @@ const examTypeLabels: Record<ExamTypeCode, string> = {
 const gradingTypeLabels: Record<GradingTypeCode, string> = {
 	auto: "Tự động",
 	manual: "Thủ công",
+	paper: "Bài kiểm tra giấy",
 };
 
 const quickPracticeOptions = ASSIGNMENT_PRESET_OPTIONS;

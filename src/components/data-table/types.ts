@@ -1,4 +1,10 @@
 import type {
+	ScrollAreaOrientation,
+	ScrollAreaProps,
+	ScrollAreaScrollbarProps,
+	ScrollAreaType,
+} from "@bug-on/m3-expressive";
+import type {
 	Cell,
 	CellData,
 	Header,
@@ -76,14 +82,63 @@ export interface DataTableProps<
 	useScrollArea?: boolean;
 	/**
 	 * Cơ chế hiển thị thanh cuộn trong ScrollArea.
+	 * - "scroll": Hiển thị khi đang cuộn (mặc định)
+	 * - "hover": Hiển thị khi hover chuột
+	 * - "always": Luôn luôn hiển thị
+	 * - "none": Ẩn thanh cuộn tùy biến, giữ hành vi cuộn gốc
 	 * @default "scroll"
 	 */
-	scrollType?: "scroll" | "hover" | "always" | "none";
+	scrollType?: ScrollAreaType;
 	/**
 	 * Hướng cuộn của ScrollArea.
-	 * Mặc định tự động nhận diện: "both" nếu scrollContainerClassName có max-h/h-, ngược lại "horizontal".
+	 * - "both": Hỗ trợ cuộn cả ngang và dọc khi nội dung tràn khung nhìn (mặc định cho bảng)
+	 * - "horizontal": Chỉ cuộn ngang
+	 * - "vertical": Chỉ cuộn dọc
+	 * @default "both"
 	 */
-	scrollOrientation?: "vertical" | "horizontal" | "both";
+	scrollOrientation?: ScrollAreaOrientation;
+	/**
+	 * Độ dày của thanh cuộn tính theo pixel (chiều rộng cho thanh dọc, chiều cao cho thanh ngang).
+	 * @default 8
+	 */
+	scrollbarSize?: number;
+	/**
+	 * Thời gian chờ (ms) trước khi ẩn thanh cuộn khi scrollType là "scroll" hoặc "hover".
+	 * @default 600
+	 */
+	scrollHideDelay?: number;
+	/**
+	 * Class Tailwind CSS bổ sung cho phần con trượt (thumb) của thanh cuộn.
+	 */
+	thumbClassName?: string;
+	/**
+	 * Class Tailwind CSS bổ sung cho rãnh trượt (track) của thanh cuộn.
+	 */
+	trackClassName?: string;
+	/**
+	 * Class CSS cho góc giao nhau (corner) khi cả 2 thanh cuộn ngang và dọc cùng hiển thị.
+	 */
+	cornerClassName?: string;
+	/**
+	 * Cấu hình chi tiết riêng cho thanh cuộn dọc.
+	 */
+	verticalScrollbarProps?: Omit<ScrollAreaScrollbarProps, "orientation">;
+	/**
+	 * Cấu hình chi tiết riêng cho thanh cuộn ngang.
+	 */
+	horizontalScrollbarProps?: Omit<ScrollAreaScrollbarProps, "orientation">;
+	/**
+	 * Ref trỏ tới phần tử Viewport cuộn bên trong của Radix ScrollArea.
+	 */
+	viewportRef?: React.Ref<HTMLDivElement>;
+	/**
+	 * Class CSS bổ sung cho phần tử Viewport cuộn bên trong.
+	 */
+	viewportClassName?: string;
+	/**
+	 * Props tùy biến chuyển tiếp trực tiếp vào Viewport của Radix ScrollArea.
+	 */
+	viewportProps?: ScrollAreaProps["viewportProps"];
 	"data-student-scroll-container"?: string | boolean;
 }
 

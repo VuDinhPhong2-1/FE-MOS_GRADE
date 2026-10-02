@@ -271,7 +271,7 @@ export const CreateAssignmentPanel: React.FC<CreateAssignmentPanelProps> = ({
 					</div>
 				) : (
 					<div className="overflow-x-auto rounded-xl bg-m3-surface-container overflow-hidden">
-						<table className="min-w-full divide-y divide-m3-outline-variant/20">
+						<table className="min-w-140 w-full divide-y divide-m3-outline-variant/20">
 							<thead className="bg-m3-surface-container-high">
 								<tr className="h-12 border-b border-m3-outline-variant/60">
 									<th className="h-12 px-4 py-3 text-center text-xs font-bold uppercase tracking-wider text-m3-on-surface-variant w-14 align-middle">

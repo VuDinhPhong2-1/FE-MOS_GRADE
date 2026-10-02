@@ -1,5 +1,5 @@
 import { LoadingIndicator } from "@bug-on/m3-expressive/feedback";
-import { Card, ScrollArea, Text } from "@bug-on/m3-expressive/layout";
+import { Card, Text } from "@bug-on/m3-expressive/layout";
 import {
 	createColumnHelper,
 	tableFeatures,
@@ -218,29 +218,23 @@ export const LeaderboardSection = ({
 			)}
 
 			<div className="mt-5">
-				<ScrollArea
-					type="scroll"
-					orientation="both"
-					className="max-h-120 pr-1 rounded-2xl"
-				>
-					<DataTable
-						table={table}
-						isLoading={loadingLeaderboard}
-						loadingAriaLabel="Đang tải bảng xếp hạng"
-						minWidthClassName="min-w-190 w-full"
-						className="overflow-visible border-none shadow-none"
-						scrollContainerClassName="overflow-visible"
-						stickyHeader
-						banded
-						emptyState={
-							<TableEmptyState
-								icon="leaderboard"
-								title="Chưa có dữ liệu bảng xếp hạng"
-								description="Khi học sinh nộp bài và được chấm điểm, bảng xếp hạng sẽ hiển thị tại đây."
-							/>
-						}
-					/>
-				</ScrollArea>
+				<DataTable
+					table={table}
+					isLoading={loadingLeaderboard}
+					loadingAriaLabel="Đang tải bảng xếp hạng"
+					minWidthClassName="min-w-190 w-full"
+					className="border-none shadow-none"
+					scrollContainerClassName="max-h-120"
+					stickyHeader
+					banded
+					emptyState={
+						<TableEmptyState
+							icon="leaderboard"
+							title="Chưa có dữ liệu bảng xếp hạng"
+							description="Khi học sinh nộp bài và được chấm điểm, bảng xếp hạng sẽ hiển thị tại đây."
+						/>
+					}
+				/>
 			</div>
 		</Card>
 	);

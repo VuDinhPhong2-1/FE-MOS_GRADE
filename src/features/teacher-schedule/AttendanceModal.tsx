@@ -27,7 +27,9 @@ import type {
 	ScheduleReportsPayload,
 	ScheduleStartLessonReport,
 } from "../../types/schedule.types";
+import { cn } from "../../utils/utils";
 import { AttendanceTabContent } from "./AttendanceTabContent";
+import { BonusTabContent } from "./BonusTabContent";
 import { ReportTabContent } from "./ReportTabContent";
 import type { AttendanceDraftState, AttendancePanelTab } from "./types";
 import { formatDateViFromYmd, parseApiDateToLocalYmd } from "./utils";
@@ -70,10 +72,20 @@ interface AttendanceModalProps {
 	) => void;
 	onSaveAttendance: () => void;
 	onSyncToGoogleSheet: () => void;
+	bonusDraft?: Record<
+		string,
+		{ points: number; reason: string; category: string }
+	>;
+	onUpdateBonus?: (
+		studentId: string,
+		updates: Partial<{ points: number; reason: string; category: string }>,
+	) => void;
+	onSaveBonus?: () => void;
+	bonusSaving?: boolean;
 }
 
 type M3IconName = ComponentProps<typeof Icon>["name"];
-type ReportStepTab = Exclude<AttendancePanelTab, "attendance">;
+type ReportStepTab = "startLesson" | "professional" | "endLesson";
 
 const attendanceMenuItems: {
 	value: AttendancePanelTab;
@@ -86,6 +98,12 @@ const attendanceMenuItems: {
 		label: "Điểm danh",
 		description: "Cập nhật có mặt, vắng và ghi chú.",
 		icon: "fact_check",
+	},
+	{
+		value: "bonusPoints",
+		label: "Điểm cộng",
+		description: "Ghi nhận điểm cộng buổi học.",
+		icon: "star",
 	},
 	{
 		value: "startLesson",
@@ -136,9 +154,17 @@ export const AttendanceModal = ({
 	onUpdateEndLessonField,
 	onSaveAttendance,
 	onSyncToGoogleSheet,
+	bonusDraft = {},
+	onUpdateBonus = () => {},
+	onSaveBonus = () => {},
+	bonusSaving = false,
 }: AttendanceModalProps) => {
 	const activeReportTab: ReportStepTab | null =
-		attendanceTab === "attendance" ? null : attendanceTab;
+		attendanceTab === "startLesson" ||
+		attendanceTab === "professional" ||
+		attendanceTab === "endLesson"
+			? attendanceTab
+			: null;
 
 	const { handleSafeClose } = useUnsavedChangesGuard({
 		isDirty: hasUnsavedAttendanceChanges,
@@ -157,7 +183,7 @@ export const AttendanceModal = ({
 				<DialogOverlay />
 				<DialogContent
 					hideCloseButton
-					className="flex max-h-[92vh] w-[calc(100%-2rem)] max-w-5xl flex-col overflow-hidden rounded-4xl bg-m3-surface-container-high p-0 text-m3-on-surface shadow-2xl"
+					className="flex max-h-[92vh] w-[calc(100%-2rem)] max-w-6xl flex-col overflow-hidden rounded-4xl bg-m3-surface-container p-0 text-m3-on-surface"
 				>
 					{/* Modal Header */}
 					<div className="flex items-center justify-between px-6 pt-5 pb-3">
@@ -191,7 +217,13 @@ export const AttendanceModal = ({
 							{attendanceSchoolName ? (
 								<Chip
 									variant="assist"
-									leadingIcon={<Icon name="domain" size={16} />}
+									leadingIcon={
+										<Icon
+											name="domain"
+											size={16}
+											className="text-m3-on-primary-container"
+										/>
+									}
 									label={`Trường: ${attendanceSchoolName}`}
 									className="border-0 bg-m3-primary-container text-m3-on-primary-container font-medium"
 								/>
@@ -242,33 +274,28 @@ export const AttendanceModal = ({
 					{/* Content */}
 					<ScrollArea
 						type="scroll"
-						orientation="vertical"
+						orientation="both"
 						className="min-h-0 flex-1"
 						viewportClassName="p-4 sm:p-6"
 					>
 						<div className="flex flex-col gap-4">
-						{attendanceLoading && (
-							<div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
-								<ProgressIndicator
-									variant="circular"
-									shape="wavy"
-									size={64}
-									aria-label="Đang tải danh sách học sinh..."
-								/>
-								<p className="text-xs text-m3-on-surface-variant font-medium">
-									Đang tải danh sách học sinh...
-								</p>
-							</div>
-						)}
-
-						{!attendanceLoading && attendanceData && (
-							<>
-								<div className="rounded-3xl bg-m3-surface-container p-3 sm:p-4">
-									<p className="text-xs font-semibold uppercase tracking-wider text-m3-primary mb-2.5">
-										Báo cáo
+							{attendanceLoading && (
+								<div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
+									<ProgressIndicator
+										variant="circular"
+										shape="wavy"
+										size={64}
+										aria-label="Đang tải danh sách học sinh..."
+									/>
+									<p className="text-xs text-m3-on-surface font-medium">
+										Đang tải danh sách học sinh...
 									</p>
+								</div>
+							)}
 
-									<div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
+							{!attendanceLoading && attendanceData && (
+								<>
+									<div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-5">
 										{attendanceMenuItems.map((item) => {
 											const isActive = attendanceTab === item.value;
 
@@ -277,20 +304,27 @@ export const AttendanceModal = ({
 													key={item.value}
 													variant="filled"
 													interactive
+													morphRadius={{
+														rest: isActive ? "largeIncreased" : "medium",
+														hover: "largeIncreased",
+													}}
+													disableElevation
 													onClick={() => onTabChange(item.value)}
 													disabled={attendanceSaving}
-													className={`rounded-2xl p-3.5 text-left transition-all duration-200 cursor-pointer ${
+													className={cn(
+														"p-3.5 text-left cursor-pointer",
 														isActive
-															? "bg-m3-primary-container text-m3-on-primary-container shadow-xs"
-															: "bg-m3-surface-container-low hover:bg-m3-surface-container-low text-m3-on-surface"
-													}`}
+															? "bg-m3-primary-container text-m3-on-primary-container"
+															: "bg-m3-surface-container-lowest text-m3-on-surface",
+													)}
 												>
 													<span
-														className={`flex items-center gap-2 text-sm font-bold ${
+														className={cn(
+															"flex items-center gap-2 text-sm font-bold",
 															isActive
 																? "text-m3-on-primary-container"
-																: "text-m3-on-surface"
-														}`}
+																: "text-m3-on-surface",
+														)}
 													>
 														<Icon
 															name={item.icon}
@@ -298,17 +332,18 @@ export const AttendanceModal = ({
 															className={
 																isActive
 																	? "text-m3-on-primary-container"
-																	: "text-m3-primary"
+																	: "text-m3-on-surface"
 															}
 														/>
 														{item.label}
 													</span>
 													<span
-														className={`mt-1.5 block text-xs leading-snug ${
+														className={cn(
+															"mt-1.5 block text-xs leading-snug",
 															isActive
 																? "text-m3-on-primary-container/80"
-																: "text-m3-on-surface-variant"
-														}`}
+																: "text-m3-on-surface-variant",
+														)}
 													>
 														{item.description}
 													</span>
@@ -316,46 +351,54 @@ export const AttendanceModal = ({
 											);
 										})}
 									</div>
-								</div>
 
-								{attendanceTab === "attendance" ? (
-									<AttendanceTabContent
-										attendanceData={attendanceData}
-										attendanceDraft={attendanceDraft}
-										attendanceStats={attendanceStats}
-										attendanceKeyword={attendanceKeyword}
-										attendanceNameSortDirection={attendanceNameSortDirection}
-										attendanceSyncing={attendanceSyncing}
-										attendanceSaving={attendanceSaving}
-										attendanceLoading={attendanceLoading}
-										hasUnsavedAttendanceChanges={hasUnsavedAttendanceChanges}
-										filteredAttendanceStudents={filteredAttendanceStudents}
-										onKeywordChange={onKeywordChange}
-										onToggleNameSort={onToggleNameSort}
-										onSetAllStatus={onSetAllStatus}
-										onToggleStatus={onToggleStatus}
-										onUpdateNote={onUpdateNote}
-										onSyncToGoogleSheet={onSyncToGoogleSheet}
-									/>
-								) : activeReportTab ? (
-									<ReportTabContent
-										activeStep={activeReportTab}
-										reportsDraft={reportsDraft}
-										hasRoomSnapshot={hasRoomSnapshot}
-										attendanceData={attendanceData}
-										attendanceDraft={attendanceDraft}
-										onUpdateStartLessonField={onUpdateStartLessonField}
-										onUpdateProfessionalField={onUpdateProfessionalField}
-										onUpdateEndLessonField={onUpdateEndLessonField}
-									/>
-								) : null}
-							</>
-						)}
+									{attendanceTab === "attendance" ? (
+										<AttendanceTabContent
+											attendanceData={attendanceData}
+											attendanceDraft={attendanceDraft}
+											attendanceStats={attendanceStats}
+											attendanceKeyword={attendanceKeyword}
+											attendanceNameSortDirection={attendanceNameSortDirection}
+											attendanceSyncing={attendanceSyncing}
+											attendanceSaving={attendanceSaving}
+											attendanceLoading={attendanceLoading}
+											hasUnsavedAttendanceChanges={hasUnsavedAttendanceChanges}
+											filteredAttendanceStudents={filteredAttendanceStudents}
+											onKeywordChange={onKeywordChange}
+											onToggleNameSort={onToggleNameSort}
+											onSetAllStatus={onSetAllStatus}
+											onToggleStatus={onToggleStatus}
+											onUpdateNote={onUpdateNote}
+											onSyncToGoogleSheet={onSyncToGoogleSheet}
+										/>
+									) : attendanceTab === "bonusPoints" ? (
+										<BonusTabContent
+											attendanceData={attendanceData}
+											attendanceDraft={attendanceDraft}
+											bonusDraft={bonusDraft}
+											onUpdateBonus={onUpdateBonus}
+											onSaveBonus={onSaveBonus}
+											bonusSaving={bonusSaving}
+										/>
+									) : activeReportTab ? (
+										<ReportTabContent
+											activeStep={activeReportTab}
+											reportsDraft={reportsDraft}
+											hasRoomSnapshot={hasRoomSnapshot}
+											attendanceData={attendanceData}
+											attendanceDraft={attendanceDraft}
+											onUpdateStartLessonField={onUpdateStartLessonField}
+											onUpdateProfessionalField={onUpdateProfessionalField}
+											onUpdateEndLessonField={onUpdateEndLessonField}
+										/>
+									) : null}
+								</>
+							)}
 						</div>
 					</ScrollArea>
 
 					{/* Modal Footer */}
-					<DialogFooter className="gap-2 border-t border-m3-outline-variant/60 px-6 py-3 mt-0 bg-m3-surface-container-high">
+					<DialogFooter className="gap-2 px-6 py-3 mt-0 bg-m3-surface-container">
 						<Button
 							type="button"
 							colorStyle="text"

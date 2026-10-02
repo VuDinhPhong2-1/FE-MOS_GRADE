@@ -18,6 +18,7 @@ import {
 import { AnimatePresence, motion } from "motion/react";
 import type React from "react";
 import { useCallback, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { DataTable, TableEmptyState } from "../../../../components/data-table";
 import type { Assignment } from "../../../../types/assignment.types";
 import { cn } from "../../../../utils/utils";
@@ -61,6 +62,7 @@ export const ManageAssignmentsPanel: React.FC<ManageAssignmentsPanelProps> = ({
 	onDelete,
 	onBack,
 }) => {
+	const navigate = useNavigate();
 	const [searchQuery, setSearchQuery] = useState("");
 	const [isSearchActive, setIsSearchActive] = useState(false);
 
@@ -194,16 +196,28 @@ export const ManageAssignmentsPanel: React.FC<ManageAssignmentsPanelProps> = ({
 					cell: ({ getValue }) => {
 						const type = getValue();
 						const isAuto = type === "auto";
+						const isPaper = type === "paper";
+						const label = isAuto
+							? "Tự động"
+							: isPaper
+								? "Bài tập giấy"
+								: "Thủ công";
+						const iconName = isAuto
+							? "smart_toy"
+							: isPaper
+								? "assignment"
+								: "draw";
+						const iconClass = isAuto
+							? "text-m3-primary"
+							: isPaper
+								? "text-m3-tertiary"
+								: "text-m3-secondary";
 						return (
 							<Chip
 								variant="assist"
-								label={isAuto ? "Tự động" : "Thủ công"}
+								label={label}
 								leadingIcon={
-									<Icon
-										name={isAuto ? "smart_toy" : "draw"}
-										size={16}
-										className={isAuto ? "text-m3-primary" : "text-m3-secondary"}
-									/>
+									<Icon name={iconName} size={16} className={iconClass} />
 								}
 								className="pointer-events-none h-6 px-2.5 text-xs font-medium"
 							/>
@@ -291,10 +305,35 @@ export const ManageAssignmentsPanel: React.FC<ManageAssignmentsPanelProps> = ({
 								<ButtonDistribute
 									mode="dynamic"
 									size="sm"
-									weights={[1, 1]}
+									weights={
+										assignment.gradingType === "paper" ? [1, 1, 1] : [1, 1]
+									}
 									gap={4}
 									expandRatio={0.1}
 								>
+									{assignment.gradingType === "paper" && (
+										<TooltipBox
+											tooltip={<PlainTooltip>Nhập điểm bài tập</PlainTooltip>}
+											placement="top"
+										>
+											<IconButton
+												size="sm"
+												onClick={() =>
+													navigate(
+														`/classes/${assignment.classId}/assignments/${assignment.id}/manual-grade`,
+													)
+												}
+												aria-label="Nhập điểm bài tập"
+												className="text-m3-primary hover:bg-m3-primary/10"
+											>
+												<Icon
+													name="edit_note"
+													size={20}
+													className="text-m3-primary"
+												/>
+											</IconButton>
+										</TooltipBox>
+									)}
 									<TooltipBox
 										tooltip={<PlainTooltip>Sửa bài tập</PlainTooltip>}
 										placement="top"
@@ -338,6 +377,7 @@ export const ManageAssignmentsPanel: React.FC<ManageAssignmentsPanelProps> = ({
 			onOpenEdit,
 			onDelete,
 			showInactiveAssignments,
+			navigate,
 		],
 	);
 
@@ -452,6 +492,8 @@ export const ManageAssignmentsPanel: React.FC<ManageAssignmentsPanelProps> = ({
 				table={table}
 				className="shadow-none border-none"
 				minWidthClassName="min-w-220 w-full"
+				scrollContainerClassName="max-h-[55vh]"
+				stickyHeader
 				headerSlot={
 					<div className="flex items-center justify-between px-6 py-4 bg-m3-surface-container-high border-b border-m3-outline-variant/30">
 						<div className="flex items-center gap-2">

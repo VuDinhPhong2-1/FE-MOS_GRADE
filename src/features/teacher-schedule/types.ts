@@ -40,6 +40,7 @@ export type AttendancePanelTab =
 	| "attendance"
 	| "startLesson"
 	| "professional"
-	| "endLesson";
+	| "endLesson"
+	| "bonusPoints";
 
 export type LessonTimelineStatus = "done" | "ongoing" | "upcoming";

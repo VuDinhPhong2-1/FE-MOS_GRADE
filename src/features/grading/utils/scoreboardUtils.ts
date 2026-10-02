@@ -9,7 +9,8 @@ export type ScoreTableSortKey =
 	| "none"
 	| "name"
 	| "classification"
-	| "totalScore";
+	| "totalScore"
+	| "grandTotalScore";
 export type ScoreTableSortDirection = "asc" | "desc";
 export type PracticeCode =
 	| "practice01"
@@ -24,6 +25,7 @@ export const SCORE_SORT_KEY_OPTIONS = [
 	{ value: "name", label: "Theo tên (A → Z)" },
 	{ value: "classification", label: "Theo xếp loại" },
 	{ value: "totalScore", label: "Theo tổng điểm" },
+	{ value: "grandTotalScore", label: "Theo tổng tổng hợp (gồm điểm cộng)" },
 ];
 
 export interface PracticeSummary {
@@ -44,6 +46,8 @@ export interface DisplayStudentRow {
 	examReviewPercentage: number;
 	classification: CompetencyLevel;
 	practiceSummaries: Record<PracticeCode, PracticeSummary>;
+	bonusPoints: number;
+	grandTotalScore: number;
 }
 
 export interface ViewAllScoresModalProps {

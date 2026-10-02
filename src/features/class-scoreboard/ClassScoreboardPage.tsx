@@ -5,10 +5,12 @@ import { RouteLoadingFallback } from "../../components/common";
 import { useAuth } from "../../context/AuthContext";
 import { usePageHeader } from "../../context/PageActionsContext";
 import { assignmentService } from "../../services/assignment.service";
+import { bonusPointService } from "../../services/bonus-point.service";
 import { classService } from "../../services/class.service";
 import { scoreService } from "../../services/score.service";
 import studentService from "../../services/student.service";
 import type { Assignment } from "../../types/assignment.types";
+import type { ClassBonusSummaryResponse } from "../../types/bonus-point.types";
 import type { Class } from "../../types/class.types";
 import type { ScoreResponse } from "../../types/score.types";
 import type { Student } from "../../types/student.types";
@@ -35,6 +37,8 @@ const ClassScoreboardPage = () => {
 	const [students, setStudents] = useState<Student[]>([]);
 	const [assignments, setAssignments] = useState<Assignment[]>([]);
 	const [scores, setScores] = useState<ScoreResponse[]>([]);
+	const [bonusSummary, setBonusSummary] =
+		useState<ClassBonusSummaryResponse | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 
@@ -61,12 +65,15 @@ const ClassScoreboardPage = () => {
 			setError(null);
 
 			try {
-				const [classData, studentData, assignmentData, scoreData] =
+				const [classData, studentData, assignmentData, scoreData, bonusData] =
 					await Promise.all([
 						classService.getClassById(classId, getAccessToken),
 						studentService.getStudentsByClassId(classId, getAccessToken),
 						assignmentService.getByClass(classId, getAccessToken),
 						scoreService.getByClass(classId, getAccessToken),
+						bonusPointService
+							.getByClass(classId, getAccessToken)
+							.catch(() => null),
 					]);
 
 				if (!active) {
@@ -77,6 +84,7 @@ const ClassScoreboardPage = () => {
 				setStudents(studentData);
 				setAssignments(assignmentData);
 				setScores(scoreData);
+				setBonusSummary(bonusData);
 			} catch (err: unknown) {
 				if (!active) {
 					return;
@@ -123,9 +131,17 @@ const ClassScoreboardPage = () => {
 		{
 			title: `Bảng điểm ${classDisplayName}`,
 			subtitle: `${students.length} học sinh · ${assignments.length} bài tập`,
-			actions: [],
+			disablePageScroll: true,
+			actions: [
+				{
+					id: "bonus-points",
+					label: "Điểm cộng",
+					icon: "military_tech",
+					onClick: () => navigate(`/classes/${classId}/bonus-points`),
+				},
+			],
 		},
-		[classDisplayName, students.length, assignments.length],
+		[classDisplayName, students.length, assignments.length, classId, navigate],
 	);
 
 	const scoreboardScores = useMemo(
@@ -170,6 +186,7 @@ const ClassScoreboardPage = () => {
 		assignments,
 		students,
 		scores: scoreboardScores,
+		bonusSummary,
 		classDisplayName,
 		title: `Bảng điểm lớp ${classDisplayName}`,
 		onStudentClassificationUpdated: handleStudentClassificationUpdated,
@@ -205,11 +222,11 @@ const ClassScoreboardPage = () => {
 	}
 
 	return (
-		<div className="space-y-4">
+		<div className="h-full flex-1 min-h-0 flex flex-col overflow-hidden p-3.5 sm:p-5 pb-24 sm:pb-24 lg:pb-22">
 			<ScoreboardContent
 				state={scoreboardState}
 				hideInlineSearch
-				tableMaxHeightClassName="min-h-96 max-h-[calc(100vh-14rem)]"
+				tableMaxHeightClassName="flex-1 min-h-0"
 			/>
 
 			{/* FloatingActionToolbar hợp nhất với đầy đủ action buttons, sort, xuất file & tìm kiếm */}

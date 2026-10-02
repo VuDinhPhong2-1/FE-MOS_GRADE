@@ -126,8 +126,8 @@ export const SubmissionLogsTable: React.FC<SubmissionLogsTableProps> = ({
 				table={table}
 				banded={false}
 				stickyHeader
-				scrollContainerClassName="max-h-120 overflow-y-auto"
-				minWidthClassName="min-w-190 w-full"
+				scrollContainerClassName="max-h-120"
+				minWidthClassName="min-w-200 w-full"
 				className="bg-m3-surface-container-low"
 				emptyState={
 					<TableEmptyState

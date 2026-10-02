@@ -3,6 +3,7 @@ import { showAlert } from "../../../components/common";
 import { useAuth } from "../../../context/AuthContext";
 import studentService from "../../../services/student.service";
 import type { Assignment } from "../../../types/assignment.types";
+import type { ClassBonusSummaryResponse } from "../../../types/bonus-point.types";
 import type { AutoGradingTaskResultRequest } from "../../../types/score.types";
 import type { Student } from "../../../types/student.types";
 import type { ExcelCellComment } from "../../../utils/exportUtils";
@@ -50,6 +51,7 @@ export interface UseScoreboardStateProps {
 	assignments: Assignment[];
 	students: Student[];
 	scores: ScoreboardScoreItem[];
+	bonusSummary?: ClassBonusSummaryResponse | null;
 	classDisplayName?: string;
 	title?: string;
 	onStudentClassificationUpdated?: (
@@ -64,6 +66,7 @@ export function useScoreboardState({
 	assignments,
 	students,
 	scores,
+	bonusSummary,
 	classDisplayName,
 	title,
 	onStudentClassificationUpdated,
@@ -498,6 +501,11 @@ export function useScoreboardState({
 					? Math.round((examReviewScore / examReviewMaxScore) * 10000) / 100
 					: 0;
 
+			const bonusPoints =
+				bonusSummary?.students.find((s) => s.studentId === student.id)
+					?.totalBonusPoints ?? 0;
+			const grandTotalScore = totalScore + bonusPoints;
+
 			return {
 				id: student.id,
 				middleName,
@@ -511,6 +519,8 @@ export function useScoreboardState({
 				examReviewPercentage,
 				classification,
 				practiceSummaries,
+				bonusPoints,
+				grandTotalScore,
 			};
 		});
 	}, [
@@ -525,6 +535,7 @@ export function useScoreboardState({
 		practiceMaxScoreByCode,
 		practiceCompletionTargetByCode,
 		examReviewMaxScore,
+		bonusSummary,
 	]);
 
 	const sortedDisplayRows = useMemo<DisplayStudentRow[]>(() => {
@@ -591,6 +602,21 @@ export function useScoreboardState({
 				return vietnameseCollator.compare(leftMiddleName, rightMiddleName);
 			}
 
+			if (sortKey === "grandTotalScore") {
+				const byGrandTotal = left.grandTotalScore - right.grandTotalScore;
+				if (byGrandTotal !== 0) {
+					return sortDirection === "asc" ? byGrandTotal : -byGrandTotal;
+				}
+				const byFirstName = vietnameseCollator.compare(
+					leftFirstName,
+					rightFirstName,
+				);
+				if (byFirstName !== 0) {
+					return byFirstName;
+				}
+				return vietnameseCollator.compare(leftMiddleName, rightMiddleName);
+			}
+
 			const leftOrder = classificationSortOrder[left.classification];
 			const rightOrder = classificationSortOrder[right.classification];
 			const byClassification = leftOrder - rightOrder;
@@ -625,7 +651,12 @@ export function useScoreboardState({
 				getPracticeExcelScoreHeaderLabel(practice),
 			]),
 			...(hasPracticeScoreColumns
-				? ["Tổng điểm 3 Practice", "Tỷ lệ đạt OTTH"]
+				? [
+						"Tổng điểm 3 Practice",
+						"Điểm cộng",
+						"Tổng tổng hợp",
+						"Tỷ lệ đạt OTTH",
+					]
 				: []),
 			...(hasExamReviewScoreColumns ? ["Tỷ lệ đạt ôn thi"] : []),
 			"Ghi chú",
@@ -657,6 +688,8 @@ export function useScoreboardState({
 				...(hasPracticeScoreColumns
 					? [
 							`${formatScore(row.totalScore)}/${formatScore(maxScoreTotal)}`,
+							formatScore(row.bonusPoints),
+							formatScore(row.grandTotalScore),
 							`${formatScore(row.otthPercentage)}%`,
 						]
 					: []),
@@ -782,7 +815,7 @@ export function useScoreboardState({
 			12,
 			...practiceCompletionColumnWidths,
 			...practiceScoreColumnWidths,
-			...(hasPracticeScoreColumns ? [16, 12] : []),
+			...(hasPracticeScoreColumns ? [16, 12, 14, 12] : []),
 			...(hasExamReviewScoreColumns ? [12] : []),
 			34,
 		];

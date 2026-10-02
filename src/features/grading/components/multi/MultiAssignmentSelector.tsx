@@ -1,4 +1,10 @@
-import { Card, Chip, Icon, LoadingIndicator, ScrollArea } from "@bug-on/m3-expressive";
+import {
+	Card,
+	Chip,
+	Icon,
+	LoadingIndicator,
+	ScrollArea,
+} from "@bug-on/m3-expressive";
 import type React from "react";
 import type { Assignment } from "../../../../types/assignment.types";
 import {
