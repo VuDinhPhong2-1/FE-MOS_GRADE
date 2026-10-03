@@ -2,11 +2,21 @@ import dns from "node:dns";
 import https from "node:https";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 
 dns.setDefaultResultOrder("ipv4first");
 
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+	const env = loadEnv(mode, process.cwd(), "");
+	const target = env.VITE_API_TARGET?.trim().toLowerCase() === "deploy"
+		? env.VITE_API_DEPLOY_URL
+		: env.VITE_API_LOCAL_URL;
+	const apiProxyTarget = (target?.trim() || "https://localhost:7223").replace(
+		/\/+$/,
+		"",
+	);
+
+	return {
 	plugins: [react(), tailwindcss()],
 	build: {
 		chunkSizeWarningLimit: 600,
@@ -46,7 +56,7 @@ export default defineConfig({
 	server: {
 		proxy: {
 			"/api": {
-				target: "https://api.mos-grader-app.info.vn",
+				target: apiProxyTarget,
 				changeOrigin: true,
 				secure: false,
 				timeout: 60000,
@@ -71,5 +81,6 @@ export default defineConfig({
 				},
 			},
 		},
-	},
+		},
+	};
 });
