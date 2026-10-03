@@ -411,7 +411,6 @@ export const SchoolClassAssignmentPicker: React.FC<
 									<ScrollArea
 										type="scroll"
 										orientation="vertical"
-										scrollbarSize={8}
 										className="max-h-60 overflow-hidden rounded-t-m3-md"
 									>
 										<List

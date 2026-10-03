@@ -304,10 +304,6 @@ export const AttendanceModal = ({
 													key={item.value}
 													variant="filled"
 													interactive
-													morphRadius={{
-														rest: isActive ? "largeIncreased" : "medium",
-														hover: "largeIncreased",
-													}}
 													disableElevation
 													onClick={() => onTabChange(item.value)}
 													disabled={attendanceSaving}

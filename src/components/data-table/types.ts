@@ -1,9 +1,9 @@
 import type {
 	ScrollAreaOrientation,
 	ScrollAreaProps,
-	ScrollAreaScrollbarProps,
 	ScrollAreaType,
 } from "@bug-on/m3-expressive";
+import type { ScrollAreaScrollbar } from "@bug-on/m3-expressive";
 import type {
 	Cell,
 	CellData,
@@ -15,6 +15,10 @@ import type {
 	TableState,
 } from "@tanstack/react-table";
 import type React from "react";
+
+type ScrollAreaScrollbarProps = React.ComponentPropsWithoutRef<
+	typeof ScrollAreaScrollbar
+>;
 
 export interface DataTableColumnMeta {
 	className?: string;

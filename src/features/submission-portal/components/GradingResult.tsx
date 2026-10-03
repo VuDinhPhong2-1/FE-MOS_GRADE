@@ -82,7 +82,6 @@ export const GradingResult = ({
 					<ScrollArea
 						type="scroll"
 						orientation="vertical"
-						scrollbarSize={8}
 						className="max-h-80 overflow-hidden rounded-m3-md"
 					>
 						<div className="space-y-2 p-0.5">
@@ -157,7 +156,6 @@ export const GradingResult = ({
 					<ScrollArea
 						type="scroll"
 						orientation="vertical"
-						scrollbarSize={8}
 						className="max-h-80 overflow-hidden rounded-m3-md"
 					>
 						<div className="p-0.5 space-y-1">

@@ -45,13 +45,7 @@ export function DataTable<
 	useScrollArea = true,
 	scrollType = "scroll",
 	scrollOrientation = "both",
-	scrollbarSize = 8,
 	scrollHideDelay = 600,
-	thumbClassName,
-	trackClassName,
-	cornerClassName,
-	verticalScrollbarProps,
-	horizontalScrollbarProps,
 	viewportRef,
 	viewportClassName,
 	viewportProps,
@@ -270,13 +264,7 @@ export function DataTable<
 		<ScrollArea
 			type={scrollType}
 			orientation={determinedOrientation}
-			scrollbarSize={scrollbarSize}
 			scrollHideDelay={scrollHideDelay}
-			thumbClassName={thumbClassName}
-			trackClassName={trackClassName}
-			cornerClassName={cornerClassName}
-			verticalScrollbarProps={verticalScrollbarProps}
-			horizontalScrollbarProps={horizontalScrollbarProps}
 			viewportRef={viewportRef}
 			viewportClassName={viewportClassName}
 			viewportProps={mergedViewportProps}
