@@ -1,5 +1,5 @@
 import { Icon, ScrollArea } from "@bug-on/m3-expressive";
-import type { ClipboardEvent } from "react";
+import type { ChangeEvent, ClipboardEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { showConfirm } from "../components/common";
 import { useAuth } from "../context/AuthContext";
@@ -249,7 +249,7 @@ const specialConditionOptions: Array<{
 		value: "wordTableAutoFit",
 		label: "Tự động căn chỉnh bảng Word",
 		description:
-			"Kiểm tra bảng Word đã dùng đúng chế độ AutoFit, ví dụ AutoFit Contents.",
+			"Kiểm tra chiều rộng từng cột bảng Word theo inch decimal. JSON mẫu: { \"sourceFile\": \"word/document.xml\", \"tableIndex\": 1, \"expectedColumnWidthsInches\": [1.5, 3.25], \"toleranceInches\": 0.05 }.",
 	},
 	{
 		value: "wordViewSetting",
@@ -274,6 +274,31 @@ const specialConditionOptions: Array<{
 		label: "Đổi màu SmartArt (Change Colors)",
 		description:
 			"Kiểm tra riêng kiểu màu SmartArt, không kiểm tra nội dung, số hình hoặc vị trí.",
+	},
+	{
+		value: "wordDocumentProperty",
+		label: "Thuộc tính tài liệu Word",
+		description: "Kiểm tra thuộc tính Status hoặc thuộc tính core/custom của tài liệu Word.",
+	},
+	{
+		value: "wordInsertSymbol",
+		label: "Chèn ký hiệu Word",
+		description: "Kiểm tra ký hiệu Unicode hoặc Symbol xuất hiện sau văn bản mục tiêu.",
+	},
+	{
+		value: "wordFontFormat",
+		label: "Hiệu ứng phông chữ Word",
+		description: "Kiểm tra Small Caps hoặc hiệu ứng run formatting trên nhiều tiêu đề.",
+	},
+	{
+		value: "wordTrackChanges",
+		label: "Theo dõi thay đổi Word",
+		description: "Kiểm tra Track Changes và khóa chỉnh sửa tracked changes.",
+	},
+	{
+		value: "wordInsertComment",
+		label: "Chèn bình luận Word",
+		description: "Kiểm tra comment có nội dung và được neo vào văn bản mục tiêu.",
 	},
 	{
 		value: "excelTableName",
@@ -451,12 +476,13 @@ const specialConditionGroups: Array<{
 }> = [
 	{
 		label: "Word - Thẻ File",
-		matches: (option) => option.value === "wordDocumentInspector",
+		matches: (option) => ["wordDocumentInspector", "wordDocumentProperty"].includes(option.value),
 	},
 	{
 		label: "Word - Thẻ Home",
 		matches: (option) =>
 			[
+				"wordFontFormat",
 				"pictureBullet",
 				"wordParagraphStyle",
 				"wordMoveText",
@@ -470,6 +496,7 @@ const specialConditionGroups: Array<{
 		label: "Word - Thẻ Insert",
 		matches: (option) =>
 			[
+				"wordInsertSymbol",
 				"insertedImage",
 				"hyperlink",
 				"wordTextToTable",
@@ -502,7 +529,7 @@ const specialConditionGroups: Array<{
 	{
 		label: "Word - Thẻ Review",
 		matches: (option) =>
-			["wordResolveComment", "wordCommentReply"].includes(option.value),
+			["wordResolveComment", "wordCommentReply", "wordTrackChanges", "wordInsertComment"].includes(option.value),
 	},
 	{
 		label: "Word - Thẻ ngữ cảnh Bảng (Table Tools)",
@@ -2510,6 +2537,67 @@ const prepareRuleSet = (ruleSet: GradingRuleSet): GradingRuleSet => ({
 	})),
 });
 
+interface JsonConfigEditorProps {
+	initialConfig: unknown;
+	configKey: string;
+	inputClass: string;
+	onUpdate: (configKey: string, config: unknown) => void;
+}
+
+const JsonConfigEditor = ({
+	initialConfig,
+	configKey,
+	inputClass,
+	onUpdate,
+}: JsonConfigEditorProps) => {
+	const [draft, setDraft] = useState(() =>
+		JSON.stringify(initialConfig ?? {}, null, 2),
+	);
+	const [hasError, setHasError] = useState(false);
+
+	const handleChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
+		const nextDraft = event.target.value;
+		setDraft(nextDraft);
+
+		try {
+			const config = JSON.parse(nextDraft) as unknown;
+			setHasError(false);
+			onUpdate(configKey, config);
+		} catch {
+			setHasError(true);
+		}
+	};
+
+	const handleBlur = () => {
+		try {
+			const config = JSON.parse(draft) as unknown;
+			setDraft(JSON.stringify(config, null, 2));
+			setHasError(false);
+		} catch {
+			setHasError(true);
+		}
+	};
+
+	return (
+		<>
+			<textarea
+				value={draft}
+				onChange={handleChange}
+				onBlur={handleBlur}
+				rows={8}
+				className={`${inputClass} mt-3 font-mono text-xs ${
+					hasError ? "border-red-500 focus:border-red-500" : ""
+				}`}
+			/>
+			{hasError && (
+				<p className="mt-1 text-[11px] font-medium text-red-600">
+					JSON không hợp lệ. Vui lòng kiểm tra dấu ngoặc kép và dấu phẩy.
+				</p>
+			)}
+		</>
+	);
+};
+
 const XmlGradingRulesPage = () => {
 	const { getAccessToken, user } = useAuth();
 	const [ruleSets, setRuleSets] = useState<GradingRuleSetSummary[]>([]);
@@ -2974,8 +3062,14 @@ const XmlGradingRulesPage = () => {
 		if (!parsed) {
 			return (
 				<div className="mt-4 rounded-xl border border-slate-800 bg-slate-950 p-4 text-xs text-slate-100">
-					<ScrollArea type="scroll" orientation="both" className="max-h-96">
-						<pre className="font-mono text-slate-300">{gradeJson}</pre>
+					<ScrollArea
+						type="scroll"
+						orientation="both"
+						className="max-h-96"
+					>
+						<pre className="font-mono text-slate-300">
+							{gradeJson}
+						</pre>
 					</ScrollArea>
 				</div>
 			);
@@ -3044,8 +3138,14 @@ const XmlGradingRulesPage = () => {
 
 				{viewRawJson ? (
 					<div className="rounded-lg border border-slate-900 bg-slate-950 p-3 text-xs text-slate-100">
-						<ScrollArea type="scroll" orientation="both" className="max-h-96">
-							<pre className="font-mono">{JSON.stringify(parsed, null, 2)}</pre>
+						<ScrollArea
+							type="scroll"
+							orientation="both"
+							className="max-h-96"
+						>
+							<pre className="font-mono">
+								{JSON.stringify(parsed, null, 2)}
+							</pre>
 						</ScrollArea>
 					</div>
 				) : (
@@ -3895,8 +3995,7 @@ const XmlGradingRulesPage = () => {
 																														?.type ?? ""
 																												}
 																												onChange={(e) => {
-																													const value =
-																														e.target.value;
+																									const value = e.target.value;
 
 																													if (
 																														value ===
@@ -4039,91 +4138,44 @@ const XmlGradingRulesPage = () => {
 																													}
 
 																													if (
-																														[
-																															"wordCommentReply",
-																															"wordDocumentInspector",
-																															"wordParagraphStyle",
-																															"wordTableAutoFit",
-																															"wordViewSetting",
-																														].includes(value)
-																													) {
-																														const base = {
-																															score:
-																																task
-																																	.specialCondition
-																																	?.score ?? 0,
-																															feedback:
-																																task
-																																	.specialCondition
-																																	?.feedback ??
-																																defaultSpecialConditionFeedback(
-																																	value as SpecialConditionType,
-																																),
-																														};
-																														const configs = {
-																															wordCommentReplyConfig:
-																																{
-																																	commentsFile:
-																																		"word/comments.xml",
-																																	commentsExtendedFile:
-																																		"word/commentsExtended.xml",
-																																	parentCommentText:
-																																		"",
-																																	expectedReplyText:
-																																		"",
-																																	caseSensitive: false,
-																																},
-																															wordDocumentInspectorConfig:
-																																{
-																																	sourceFile:
-																																		"word/document.xml",
-																																	requireNoHeaders: true,
-																																	requireNoFooters: true,
-																																	requireNoWatermarks: true,
-																																	preserveDocumentProperties: true,
-																																	preserveCustomXml: true,
-																																},
-																															wordParagraphStyleConfig:
-																																{
-																																	sourceFile:
-																																		"word/document.xml",
-																																	targetText:
-																																		"",
-																																	expectedStyle:
-																																		"Heading 2",
-																																	caseSensitive: false,
-																																},
-																															wordTableAutoFitConfig:
-																																{
-																																	sourceFile:
-																																		"word/document.xml",
-																																	tableIndex: 1,
-																																	anchorText:
-																																		"",
-																																	autoFitType:
-																																		"contents",
-																																},
-																															wordViewSettingConfig:
-																																{
-																																	settingsFile:
-																																		"word/settings.xml",
-																																	settingElement:
-																																		"showParagraphMarks",
-																																	expectedEnabled: true,
-																																	allowMissingAsPass: true,
-																																},
-																														};
-																														updateTaskSpecialCondition(
-																															pi,
-																															ti,
-																															{
+																															[
+																																"wordCommentReply",
+																																"wordDocumentInspector",
+																												"wordDocumentProperty",
+																												"wordInsertSymbol",
+																												"wordFontFormat",
+																												"wordTrackChanges",
+																												"wordInsertComment",
+																																"wordParagraphStyle",
+																																"wordTableAutoFit",
+																																"wordViewSetting",
+																															].includes(value)
+																														) {
+																															const base = {
+																																score: task.specialCondition?.score ?? 0,
+																																feedback:
+																																	task.specialCondition?.feedback ??
+																																	defaultSpecialConditionFeedback(value as SpecialConditionType),
+																															};
+																															const configs = {
+												wordCommentReplyConfig: { commentsFile: "word/comments.xml", commentsExtendedFile: "word/commentsExtended.xml", parentCommentText: "", expectedReplyText: "", caseSensitive: false },
+																																wordDocumentInspectorConfig: { sourceFile: "word/document.xml", requireNoHeaders: true, requireNoFooters: true, requireNoWatermarks: true, preserveDocumentProperties: true, preserveCustomXml: true },
+												wordDocumentPropertyConfig: { sourceFile: "docProps/core.xml", propertyName: "Status", expectedValue: "Draft" },
+												wordInsertSymbolConfig: { sourceFile: "word/document.xml", targetText: "", expectedSymbol: "®", position: "after" },
+												wordFontFormatConfig: { sourceFile: "word/document.xml", targetTexts: [], expectedFormat: "smallCaps", requireAllTargets: true },
+												wordTrackChangesConfig: { settingsFile: "word/settings.xml", requireTracking: true, requireLock: true, expectedPassword: "" },
+												wordInsertCommentConfig: { commentsFile: "word/comments.xml", sourceFile: "word/document.xml", targetText: "", expectedCommentText: "" },
+																																wordParagraphStyleConfig: { sourceFile: "word/document.xml", targetText: "", expectedStyle: "Heading 2", caseSensitive: false },
+										wordTableAutoFitConfig: { sourceFile: "word/document.xml", tableIndex: 1, anchorText: "", expectedColumnWidthsInches: [1.5, 3.25], toleranceInches: 0.05 },
+																																wordViewSettingConfig: { settingsFile: "word/settings.xml", settingElement: "showParagraphMarks", expectedEnabled: true, allowMissingAsPass: true },
+																															};
+																															updateTaskSpecialCondition(pi, ti, {
 																																type: value as SpecialConditionType,
 																																...base,
 																																...configs,
-																															},
-																														);
-																														return;
-																													}
+																															});
+																															return;
+																														}
 
 																													if (
 																														value ===
@@ -5942,105 +5994,64 @@ const XmlGradingRulesPage = () => {
 																								)}
 
 																								{/* Picture Bullet configuration */}
-																								{[
-																									"wordCommentReply",
-																									"wordDocumentInspector",
-																									"wordParagraphStyle",
-																									"wordTableAutoFit",
-																									"wordViewSetting",
-																								].includes(
-																									task.specialCondition?.type ??
-																										"",
-																								) && (
-																									<div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
-																										<p className="text-xs font-semibold text-slate-700">
-																											Cấu hình{" "}
-																											{
-																												specialConditionOptions.find(
-																													(option) =>
-																														option.value ===
-																														task
-																															.specialCondition
-																															?.type,
-																												)?.label
-																											}
-																										</p>
-																										<p className="mt-1 text-[11px] text-slate-500">
-																											Điền các trường theo biểu
-																											mẫu JSON. Các cấu hình mặc
-																											định phù hợp với Word
-																											Project 06 đã được tạo sẵn
-																											khi chọn loại điều kiện.
-																										</p>
-																										<textarea
-																											key={
-																												task.specialCondition
-																													?.type
-																											}
-																											defaultValue={JSON.stringify(
-																												task.specialCondition
-																													?.type ===
-																													"wordCommentReply"
-																													? task
-																															.specialCondition
-																															.wordCommentReplyConfig
-																													: task
-																																.specialCondition
-																																?.type ===
-																															"wordDocumentInspector"
-																														? task
-																																.specialCondition
-																																.wordDocumentInspectorConfig
-																														: task
-																																	.specialCondition
-																																	?.type ===
-																																"wordParagraphStyle"
-																															? task
-																																	.specialCondition
-																																	.wordParagraphStyleConfig
-																															: task
-																																		.specialCondition
-																																		?.type ===
-																																	"wordTableAutoFit"
-																																? task
-																																		.specialCondition
-																																		.wordTableAutoFitConfig
-																																: task
-																																		.specialCondition
-																																		?.wordViewSettingConfig,
-																												null,
-																												2,
-																											)}
-																											onBlur={(e) => {
-																												try {
-																													const config =
-																														JSON.parse(
-																															e.target.value,
-																														);
-																													const configKey = `${task.specialCondition?.type}Config`;
-																													updateTaskSpecialCondition(
-																														pi,
-																														ti,
-																														{
-																															...task.specialCondition!,
-																															[configKey]:
-																																config,
-																														} as SpecialCondition,
-																													);
-																												} catch {
-																													// Giữ nội dung đang nhập cho đến khi JSON hợp lệ.
-																												}
-																											}}
-																											rows={8}
-																											className={`${inputClass} mt-3 font-mono text-xs`}
-																										/>
-																									</div>
-																								)}
-																								{task.specialCondition?.type ===
+																												{[
+																													"wordCommentReply",
+																													"wordDocumentInspector",
+															"wordDocumentProperty",
+															"wordInsertSymbol",
+															"wordFontFormat",
+															"wordTrackChanges",
+															"wordInsertComment",
+																													"wordParagraphStyle",
+																													"wordTableAutoFit",
+																													"wordViewSetting",
+																												].includes(task.specialCondition?.type ?? "") && (
+																													<div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
+																														<p className="text-xs font-semibold text-slate-700">
+																															Cấu hình {specialConditionOptions.find((option) => option.value === task.specialCondition?.type)?.label}
+																														</p>
+																														<p className="mt-1 text-[11px] text-slate-500">
+																															Điền các trường theo biểu mẫu JSON. Các cấu hình mặc định phù hợp với Word Project 06 đã được tạo sẵn khi chọn loại điều kiện.
+																														</p>
+						<JsonConfigEditor
+							key={`${task.taskId}-${task.specialCondition?.type}`}
+							initialConfig={
+								task.specialCondition?.type === "wordCommentReply"
+									? task.specialCondition.wordCommentReplyConfig
+									: task.specialCondition?.type === "wordDocumentInspector"
+										? task.specialCondition.wordDocumentInspectorConfig
+																		: task.specialCondition?.type === "wordDocumentProperty"
+																			? task.specialCondition.wordDocumentPropertyConfig
+																			: task.specialCondition?.type === "wordInsertSymbol"
+																			? task.specialCondition.wordInsertSymbolConfig
+																			: task.specialCondition?.type === "wordFontFormat"
+																				? task.specialCondition.wordFontFormatConfig
+																			: task.specialCondition?.type === "wordTrackChanges"
+																					? task.specialCondition.wordTrackChangesConfig
+																			: task.specialCondition?.type === "wordInsertComment"
+																					? task.specialCondition.wordInsertCommentConfig
+										: task.specialCondition?.type === "wordParagraphStyle"
+											? task.specialCondition.wordParagraphStyleConfig
+											: task.specialCondition?.type === "wordTableAutoFit"
+												? task.specialCondition.wordTableAutoFitConfig
+												: task.specialCondition?.wordViewSettingConfig
+							}
+							configKey={`${task.specialCondition?.type}Config`}
+							inputClass={inputClass}
+							onUpdate={(configKey, config) =>
+								updateTaskSpecialCondition(pi, ti, {
+									...task.specialCondition!,
+									[configKey]: config,
+								} as SpecialCondition)
+							}
+						/>
+																													</div>
+																												)}
+																												{task.specialCondition?.type ===
 																									"pictureBullet" && (
 																									<PictureBulletEditor
 																										config={
-																											task.specialCondition!
+																															task.specialCondition!
 																												.config
 																										}
 																										getAccessToken={
@@ -8365,7 +8376,7 @@ const XmlGradingRulesPage = () => {
 																								</div>
 																							</>
 																						)}
-																						{task.specialCondition?.type ===
+																								{task.specialCondition?.type ===
 																							"wordTableSort" && (
 																							<div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
 																								<div className="grid gap-3 md:grid-cols-3">

@@ -65,6 +65,11 @@ export type SpecialConditionType =
 	| "wordEndnote"
 	| "wordSmartArt"
 	| "wordSmartArtColors"
+	| "wordDocumentProperty"
+	| "wordInsertSymbol"
+	| "wordFontFormat"
+	| "wordTrackChanges"
+	| "wordInsertComment"
 	| "excelTableName"
 	| "excelWorksheetPageSetup"
 	| "excelClearCellFormatting"
@@ -309,7 +314,9 @@ export interface WordTableAutoFitConfig {
 	sourceFile?: string;
 	tableIndex?: number;
 	anchorText?: string;
-	autoFitType?: string;
+	autoFitType?: "contents" | "fixed" | string;
+	expectedColumnWidthsInches?: number[];
+	toleranceInches?: number;
 }
 
 export interface WordViewSettingConfig {
@@ -318,6 +325,12 @@ export interface WordViewSettingConfig {
 	expectedEnabled?: boolean;
 	allowMissingAsPass?: boolean;
 }
+
+export interface WordDocumentPropertyConfig { sourceFile?: string; propertyName?: string; expectedValue?: string; }
+export interface WordInsertSymbolConfig { sourceFile?: string; targetText?: string; expectedSymbol?: string; position?: "after" | "before" | "contains" | string; }
+export interface WordFontFormatConfig { sourceFile?: string; targetTexts?: string[]; expectedFormat?: string; requireAllTargets?: boolean; }
+export interface WordTrackChangesConfig { settingsFile?: string; requireTracking?: boolean; requireLock?: boolean; expectedPassword?: string; }
+export interface WordInsertCommentConfig { commentsFile?: string; sourceFile?: string; targetText?: string; expectedCommentText?: string; caseSensitive?: boolean; }
 
 export interface WordEndnoteConfig {
 	sourceFile?: string;
@@ -599,10 +612,12 @@ export interface SpecialCondition {
 	wordViewSettingConfig?: WordViewSettingConfig;
 	wordEndnoteConfig?: WordEndnoteConfig;
 	wordSmartArtConfig?: WordSmartArtConfig;
-	wordSmartArtColorsConfig?: {
-		colorsFile?: string;
-		expectedColorStyle?: string;
-	};
+	wordSmartArtColorsConfig?: { colorsFile?: string; expectedColorStyle?: string };
+	wordDocumentPropertyConfig?: WordDocumentPropertyConfig;
+	wordInsertSymbolConfig?: WordInsertSymbolConfig;
+	wordFontFormatConfig?: WordFontFormatConfig;
+	wordTrackChangesConfig?: WordTrackChangesConfig;
+	wordInsertCommentConfig?: WordInsertCommentConfig;
 	excelTableNameConfig?: ExcelTableNameConfig;
 	excelWorksheetPageSetupConfig?: ExcelWorksheetPageSetupConfig;
 	excelClearCellFormattingConfig?: ExcelClearCellFormattingConfig;
