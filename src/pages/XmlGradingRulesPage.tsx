@@ -2461,12 +2461,37 @@ const prepareCondition = (
 			: undefined,
 });
 
+const SPECIAL_CONDITION_CONFIG_PROP_MAP: Record<string, string> = {
+	pictureBullet: "config",
+	insertedImage: "imageInsertConfig",
+};
+
+const getSpecialConditionConfigProp = (type?: string): string | null => {
+	if (!type) return null;
+	return SPECIAL_CONDITION_CONFIG_PROP_MAP[type] ?? `${type}Config`;
+};
+
 const prepareSpecialCondition = (
 	specialCondition?: SpecialCondition,
 ): SpecialCondition | undefined => {
 	if (!specialCondition) return undefined;
 
 	const next: SpecialCondition = { ...specialCondition };
+
+	// Sanitize: chỉ giữ lại config của type hiện tại, loại bỏ các config thừa của các type khác
+	const activeConfigProp = getSpecialConditionConfigProp(next.type);
+	if (activeConfigProp) {
+		const raw = next as unknown as Record<string, unknown>;
+		for (const key of Object.keys(raw)) {
+			if (key === "type" || key === "score" || key === "feedback") continue;
+			if (
+				key !== activeConfigProp &&
+				(key === "config" || key.endsWith("Config"))
+			) {
+				delete raw[key];
+			}
+		}
+	}
 
 	if (next.excelChartDataRangeConfig) {
 		next.excelChartDataRangeConfig = {
@@ -4137,45 +4162,128 @@ const XmlGradingRulesPage = () => {
 																														return;
 																													}
 
-																													if (
-																															[
-																																"wordCommentReply",
-																																"wordDocumentInspector",
-																												"wordDocumentProperty",
-																												"wordInsertSymbol",
-																												"wordFontFormat",
-																												"wordTrackChanges",
-																												"wordInsertComment",
-																																"wordParagraphStyle",
-																																"wordTableAutoFit",
-																																"wordViewSetting",
-																															].includes(value)
-																														) {
-																															const base = {
-																																score: task.specialCondition?.score ?? 0,
-																																feedback:
-																																	task.specialCondition?.feedback ??
-																																	defaultSpecialConditionFeedback(value as SpecialConditionType),
-																															};
-																															const configs = {
-												wordCommentReplyConfig: { commentsFile: "word/comments.xml", commentsExtendedFile: "word/commentsExtended.xml", parentCommentText: "", expectedReplyText: "", caseSensitive: false },
-																																wordDocumentInspectorConfig: { sourceFile: "word/document.xml", requireNoHeaders: true, requireNoFooters: true, requireNoWatermarks: true, preserveDocumentProperties: true, preserveCustomXml: true },
-												wordDocumentPropertyConfig: { sourceFile: "docProps/core.xml", propertyName: "Status", expectedValue: "Draft" },
-												wordInsertSymbolConfig: { sourceFile: "word/document.xml", targetText: "", expectedSymbol: "®", position: "after" },
-												wordFontFormatConfig: { sourceFile: "word/document.xml", targetTexts: [], expectedFormat: "smallCaps", requireAllTargets: true },
-												wordTrackChangesConfig: { settingsFile: "word/settings.xml", requireTracking: true, requireLock: true, expectedPassword: "" },
-												wordInsertCommentConfig: { commentsFile: "word/comments.xml", sourceFile: "word/document.xml", targetText: "", expectedCommentText: "" },
-																																wordParagraphStyleConfig: { sourceFile: "word/document.xml", targetText: "", expectedStyle: "Heading 2", caseSensitive: false },
-										wordTableAutoFitConfig: { sourceFile: "word/document.xml", tableIndex: 1, anchorText: "", expectedColumnWidthsInches: [1.5, 3.25], toleranceInches: 0.05 },
-																																wordViewSettingConfig: { settingsFile: "word/settings.xml", settingElement: "showParagraphMarks", expectedEnabled: true, allowMissingAsPass: true },
-																															};
-																															updateTaskSpecialCondition(pi, ti, {
+																													const singleWordConfigs: Record<
+																														string,
+																														unknown
+																													> = {
+																														wordCommentReply: {
+																															commentsFile:
+																																"word/comments.xml",
+																															commentsExtendedFile:
+																																"word/commentsExtended.xml",
+																															parentCommentText: "",
+																															expectedReplyText: "",
+																															caseSensitive: false,
+																														},
+																														wordDocumentInspector: {
+																															sourceFile:
+																																"word/document.xml",
+																															requireNoHeaders: true,
+																															requireNoFooters: true,
+																															requireNoWatermarks: true,
+																															preserveDocumentProperties: true,
+																															preserveCustomXml: true,
+																														},
+																														wordDocumentProperty: {
+																															sourceFile:
+																																"docProps/core.xml",
+																															propertyName: "Status",
+																															expectedValue: "Draft",
+																														},
+																														wordInsertSymbol: {
+																															sourceFile:
+																																"word/document.xml",
+																															targetText: "",
+																															expectedSymbol: "®",
+																															position: "after",
+																														},
+																														wordFontFormat: {
+																															sourceFile:
+																																"word/document.xml",
+																															targetTexts: [],
+																															expectedFormat:
+																																"smallCaps",
+																															requireAllTargets: true,
+																														},
+																														wordTrackChanges: {
+																															settingsFile:
+																																"word/settings.xml",
+																															requireTracking: true,
+																															requireLock: true,
+																															expectedPassword: "",
+																														},
+																														wordInsertComment: {
+																															commentsFile:
+																																"word/comments.xml",
+																															sourceFile:
+																																"word/document.xml",
+																															targetText: "",
+																															expectedCommentText: "",
+																														},
+																														wordParagraphStyle: {
+																															sourceFile:
+																																"word/document.xml",
+																															targetText: "",
+																															expectedStyle: "Heading 2",
+																															caseSensitive: false,
+																														},
+																														wordTableAutoFit: {
+																															sourceFile:
+																																"word/document.xml",
+																															tableIndex: 1,
+																															anchorText: "",
+																															expectedColumnWidthsInches: [
+																																1.5, 3.25,
+																															],
+																															toleranceInches: 0.05,
+																														},
+																														wordViewSetting: {
+																															settingsFile:
+																																"word/settings.xml",
+																															settingElement:
+																																"showParagraphMarks",
+																															expectedEnabled: true,
+																															allowMissingAsPass: true,
+																														},
+																													};
+
+																													if (value in singleWordConfigs) {
+																														const configKey = `${value}Config`;
+																														const base = {
+																															score:
+																																task.specialCondition
+																																	?.score ?? 0,
+																															feedback:
+																																task.specialCondition
+																																	?.feedback ??
+																																defaultSpecialConditionFeedback(
+																																	value as SpecialConditionType,
+																																),
+																														};
+																														const existingConfig = (
+																															task.specialCondition as
+																																| Record<
+																																		string,
+																																		unknown
+																																  >
+																																| undefined
+																														)?.[configKey];
+																														updateTaskSpecialCondition(
+																															pi,
+																															ti,
+																															{
 																																type: value as SpecialConditionType,
 																																...base,
-																																...configs,
-																															});
-																															return;
-																														}
+																																[configKey]:
+																																	existingConfig ??
+																																	singleWordConfigs[
+																																		value
+																																	],
+																															} as SpecialCondition,
+																														);
+																														return;
+																													}
+
 
 																													if (
 																														value ===
