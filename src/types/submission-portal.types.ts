@@ -81,6 +81,19 @@ export interface PublicPortalSubmitResult {
 	rank?: number;
 	alerts: string[];
 	isPreview?: boolean;
+	submissionCount?: number;
+}
+
+export interface PublicPortalStudentSubmission {
+	assignmentId: string;
+	scoreValue?: number;
+	maxScore: number;
+	feedback?: string;
+	autoGradingErrors?: string[];
+	autoGradingTaskResults?: PublicPortalAutoGradingTaskResult[];
+	submittedAt?: string;
+	submissionCount?: number;
+	rank?: number;
 }
 
 export interface PublicPortalAutoGradingTaskResult {

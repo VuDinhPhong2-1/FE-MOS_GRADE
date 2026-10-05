@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { submissionPortalService } from "../../../services/submission-portal.service";
 import type {
 	PublicPortalAssignment,
@@ -16,6 +16,8 @@ export interface UseSubmissionProps {
 export interface UseSubmissionReturn {
 	files: Record<string, File | undefined>;
 	results: Record<string, PublicPortalSubmitResult>;
+	savedResults: Record<string, PublicPortalSubmitResult>;
+	loadingSubmissions: boolean;
 	submittingAssignmentId: string | null;
 	previewingAssignmentId: string | null;
 	draggingAssignmentId: string | null;
@@ -25,6 +27,7 @@ export interface UseSubmissionReturn {
 		assignment: PublicPortalAssignment,
 		file?: File,
 	) => Promise<void>;
+	reloadSubmissions: () => Promise<void>;
 }
 
 export const useSubmission = ({
@@ -38,6 +41,10 @@ export const useSubmission = ({
 	const [results, setResults] = useState<
 		Record<string, PublicPortalSubmitResult>
 	>({});
+	const [savedResults, setSavedResults] = useState<
+		Record<string, PublicPortalSubmitResult>
+	>({});
+	const [loadingSubmissions, setLoadingSubmissions] = useState(false);
 	const [submittingAssignmentId, setSubmittingAssignmentId] = useState<
 		string | null
 	>(null);
@@ -47,6 +54,49 @@ export const useSubmission = ({
 	const [draggingAssignmentId, setDraggingAssignmentId] = useState<
 		string | null
 	>(null);
+
+	const reloadSubmissions = useCallback(async () => {
+		if (!token || !classId || !studentId) {
+			setFiles({});
+			setResults({});
+			setSavedResults({});
+			return;
+		}
+
+		setLoadingSubmissions(true);
+		try {
+			const submissions = await submissionPortalService.getStudentSubmissions(
+				token,
+				classId,
+				studentId,
+			);
+			const initialResults: Record<string, PublicPortalSubmitResult> = {};
+			for (const sub of submissions) {
+				initialResults[sub.assignmentId] = {
+					scoreValue: sub.scoreValue,
+					maxScore: sub.maxScore,
+					feedback: sub.feedback,
+					autoGradingErrors: sub.autoGradingErrors || [],
+					autoGradingTaskResults: sub.autoGradingTaskResults || [],
+					submittedAt: sub.submittedAt || new Date().toISOString(),
+					rank: sub.rank,
+					alerts: [],
+					isPreview: false,
+					submissionCount: sub.submissionCount,
+				};
+			}
+			setSavedResults(initialResults);
+			setResults(initialResults);
+		} catch (err) {
+			console.error("Failed to load student submissions:", err);
+		} finally {
+			setLoadingSubmissions(false);
+		}
+	}, [token, classId, studentId]);
+
+	useEffect(() => {
+		void reloadSubmissions();
+	}, [reloadSubmissions]);
 
 	const submit = useCallback(
 		async (assignmentId: string) => {
@@ -58,11 +108,6 @@ export const useSubmission = ({
 			}
 			setSubmittingAssignmentId(assignmentId);
 			setMessage("");
-			setResults((prev) => {
-				const next = { ...prev };
-				delete next[assignmentId];
-				return next;
-			});
 			try {
 				const result = await submissionPortalService.submit(
 					token,
@@ -71,15 +116,36 @@ export const useSubmission = ({
 					assignmentId,
 					file,
 				);
+				const prevCount = results[assignmentId]?.submissionCount ?? 0;
+				const officialResult: PublicPortalSubmitResult = {
+					...result,
+					isPreview: false,
+					submissionCount: prevCount + 1,
+				};
 				setResults((prev) => ({
 					...prev,
-					[assignmentId]: { ...result, isPreview: false },
+					[assignmentId]: officialResult,
 				}));
+				setSavedResults((prev) => ({
+					...prev,
+					[assignmentId]: officialResult,
+				}));
+				setFiles((prev) => {
+					const next = { ...prev };
+					delete next[assignmentId];
+					return next;
+				});
 				setMessage("Đã nộp và chấm bài thành công.");
 				if (onSubmissionSuccess) {
 					await onSubmissionSuccess();
 				}
 			} catch (error) {
+				if (savedResults[assignmentId]) {
+					setResults((prev) => ({
+						...prev,
+						[assignmentId]: savedResults[assignmentId],
+					}));
+				}
 				setMessage(
 					error instanceof Error ? error.message : "Không thể nộp bài",
 				);
@@ -87,18 +153,36 @@ export const useSubmission = ({
 				setSubmittingAssignmentId(null);
 			}
 		},
-		[classId, studentId, files, token, setMessage, onSubmissionSuccess],
+		[
+			classId,
+			studentId,
+			files,
+			results,
+			savedResults,
+			token,
+			setMessage,
+			onSubmissionSuccess,
+		],
 	);
 
 	const handleFileSelected = useCallback(
 		async (assignment: PublicPortalAssignment, file?: File) => {
 			setFiles((prev) => ({ ...prev, [assignment.id]: file }));
-			setResults((prev) => {
-				const next = { ...prev };
-				delete next[assignment.id];
-				return next;
-			});
-			if (!file) return;
+			if (!file) {
+				if (savedResults[assignment.id]) {
+					setResults((prev) => ({
+						...prev,
+						[assignment.id]: savedResults[assignment.id],
+					}));
+				} else {
+					setResults((prev) => {
+						const next = { ...prev };
+						delete next[assignment.id];
+						return next;
+					});
+				}
+				return;
+			}
 			if (!classId || !studentId) {
 				setMessage("Vui lòng chọn lớp và học sinh trước khi chấm thử file.");
 				return;
@@ -116,9 +200,19 @@ export const useSubmission = ({
 				);
 				setResults((prev) => ({
 					...prev,
-					[assignment.id]: { ...preview, isPreview: true },
+					[assignment.id]: {
+						...preview,
+						isPreview: true,
+						submissionCount: savedResults[assignment.id]?.submissionCount,
+					},
 				}));
 			} catch (error) {
+				if (savedResults[assignment.id]) {
+					setResults((prev) => ({
+						...prev,
+						[assignment.id]: savedResults[assignment.id],
+					}));
+				}
 				setMessage(
 					error instanceof Error ? error.message : "Không thể chấm thử bài",
 				);
@@ -126,17 +220,20 @@ export const useSubmission = ({
 				setPreviewingAssignmentId(null);
 			}
 		},
-		[classId, studentId, token, setMessage],
+		[classId, studentId, token, setMessage, savedResults],
 	);
 
 	return {
 		files,
 		results,
+		savedResults,
+		loadingSubmissions,
 		submittingAssignmentId,
 		previewingAssignmentId,
 		draggingAssignmentId,
 		setDraggingAssignmentId,
 		submit,
 		handleFileSelected,
+		reloadSubmissions,
 	};
 };

@@ -135,6 +135,7 @@ export const SubmissionPortalPage = () => {
 										onClassChange={setClassId}
 										onStudentSearchChange={setStudentSearch}
 										filteredStudents={filteredStudents}
+										students={students}
 										studentId={studentId}
 										onStudentChange={setStudentId}
 										loadingStudents={loadingStudents}

@@ -32,8 +32,20 @@ export const usePortalData = (
 	onResetStudentSearch?: () => void,
 ): UsePortalDataReturn => {
 	const [info, setInfo] = useState<PublicPortalInfo | null>(null);
-	const [classId, setClassId] = useState("");
-	const [studentId, setStudentId] = useState("");
+	const [classId, setClassIdState] = useState(() => {
+		try {
+			return sessionStorage.getItem(`mos_portal_${token}_classId`) || "";
+		} catch {
+			return "";
+		}
+	});
+	const [studentId, setStudentIdState] = useState(() => {
+		try {
+			return sessionStorage.getItem(`mos_portal_${token}_studentId`) || "";
+		} catch {
+			return "";
+		}
+	});
 	const [students, setStudents] = useState<PublicPortalStudent[]>([]);
 	const [leaderboard, setLeaderboard] = useState<SubmissionLeaderboardItem[]>(
 		[],
@@ -42,6 +54,34 @@ export const usePortalData = (
 	const [loadingStudents, setLoadingStudents] = useState(false);
 	const [loadingLeaderboard, setLoadingLeaderboard] = useState(false);
 	const [message, setMessage] = useState("");
+
+	const setClassId = useCallback(
+		(id: string) => {
+			setClassIdState(id);
+			try {
+				if (id) {
+					sessionStorage.setItem(`mos_portal_${token}_classId`, id);
+				} else {
+					sessionStorage.removeItem(`mos_portal_${token}_classId`);
+				}
+			} catch {}
+		},
+		[token],
+	);
+
+	const setStudentId = useCallback(
+		(id: string) => {
+			setStudentIdState(id);
+			try {
+				if (id) {
+					sessionStorage.setItem(`mos_portal_${token}_studentId`, id);
+				} else {
+					sessionStorage.removeItem(`mos_portal_${token}_studentId`);
+				}
+			} catch {}
+		},
+		[token],
+	);
 
 	const selectedStudent = useMemo(
 		() => students.find((s) => s.id === studentId),
@@ -76,20 +116,36 @@ export const usePortalData = (
 		} finally {
 			setLoading(false);
 		}
-	}, [token]);
+	}, [token, setClassId]);
 
 	const loadStudents = useCallback(async () => {
-		setStudentId("");
-		onResetStudentSearch?.();
 		if (!classId) {
 			setStudents([]);
+			setStudentId("");
+			onResetStudentSearch?.();
 			return;
 		}
 		setLoadingStudents(true);
 		try {
-			setStudents(
-				await submissionPortalService.getPublicStudents(token, classId),
+			const studentList = await submissionPortalService.getPublicStudents(
+				token,
+				classId,
 			);
+			setStudents(studentList);
+			let savedStudentId = "";
+			try {
+				savedStudentId =
+					sessionStorage.getItem(`mos_portal_${token}_studentId`) || "";
+			} catch {}
+			if (
+				savedStudentId &&
+				studentList.some((s) => s.id === savedStudentId)
+			) {
+				setStudentIdState(savedStudentId);
+			} else {
+				setStudentId("");
+				onResetStudentSearch?.();
+			}
 		} catch (error) {
 			setMessage(
 				error instanceof Error
@@ -99,7 +155,7 @@ export const usePortalData = (
 		} finally {
 			setLoadingStudents(false);
 		}
-	}, [classId, token, onResetStudentSearch]);
+	}, [classId, token, onResetStudentSearch, setStudentId]);
 
 	const loadLeaderboard = useCallback(async () => {
 		setLoadingLeaderboard(true);

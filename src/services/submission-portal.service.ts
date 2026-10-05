@@ -3,6 +3,7 @@ import type {
 	CreateSubmissionPortalRequest,
 	PublicPortalInfo,
 	PublicPortalStudent,
+	PublicPortalStudentSubmission,
 	PublicPortalSubmitResult,
 	SubmissionAlert,
 	SubmissionLeaderboardItem,
@@ -144,6 +145,21 @@ export const submissionPortalService = {
 				await errorMessage(res, "Không thể lấy danh sách học sinh"),
 			);
 		return res.json() as Promise<PublicPortalStudent[]>;
+	},
+
+	async getStudentSubmissions(
+		token: string,
+		classId: string,
+		studentId: string,
+	): Promise<PublicPortalStudentSubmission[]> {
+		const res = await fetch(
+			`${API_BASE_URL}/public/portals/${token}/classes/${classId}/students/${studentId}/submissions`,
+		);
+		if (!res.ok)
+			throw new Error(
+				await errorMessage(res, "Không thể lấy thông tin bài nộp của học sinh"),
+			);
+		return res.json() as Promise<PublicPortalStudentSubmission[]>;
 	},
 
 	async submit(

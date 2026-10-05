@@ -47,7 +47,12 @@ export const AssignmentCard = ({
 		if (isSubmitting) return "Đang nộp";
 		if (isPreviewing) return "Đang chấm thử";
 		if (result?.isPreview) return "Đã chấm thử";
-		if (result) return "Đã nộp";
+		if (result) {
+			if (result.submissionCount && result.submissionCount > 1) {
+				return `Đã nộp (${result.submissionCount} lần)`;
+			}
+			return "Đã nộp";
+		}
 		return "Chưa nộp";
 	};
 
@@ -55,7 +60,7 @@ export const AssignmentCard = ({
 		if (isSubmitting) return "Đang ghi nhận điểm...";
 		if (isPreviewing) return "Đang chấm thử...";
 		if (result?.isPreview) return "Nộp bài để ghi nhận điểm";
-		if (result) return "Nộp lại bài";
+		if (result && !result.isPreview) return "Nộp lại bài";
 		return "Nộp bài";
 	};
 
@@ -98,9 +103,26 @@ export const AssignmentCard = ({
 						{assignment.name}
 					</Text>
 				</div>
-				<span className="rounded-2xl text-center bg-m3-surface-container px-3 py-2 text-sm font-bold text-m3-on-surface">
-					{assignment.maxScore} điểm
-				</span>
+				{typeof result?.scoreValue === "number" ? (
+					<span
+						className={`rounded-2xl text-center px-3 py-2 text-sm font-bold transition-all shadow-xs ${
+							result.isPreview
+								? "bg-m3-tertiary-container text-m3-on-tertiary-container"
+								: "bg-m3-primary text-m3-on-primary"
+						}`}
+						title={
+							result.isPreview
+								? "Điểm chấm thử"
+								: "Điểm đã lưu chính thức"
+						}
+					>
+						{result.scoreValue} / {assignment.maxScore} điểm
+					</span>
+				) : (
+					<span className="rounded-2xl text-center bg-m3-surface-container px-3 py-2 text-sm font-bold text-m3-on-surface">
+						{assignment.maxScore} điểm
+					</span>
+				)}
 			</div>
 
 			{assignment.description && (
