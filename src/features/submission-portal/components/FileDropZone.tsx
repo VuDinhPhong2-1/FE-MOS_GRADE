@@ -52,78 +52,90 @@ export const FileDropZone = ({
 	};
 
 	return (
-		<div className="mt-4 flex flex-col gap-2">
-			<Card
-				variant="outlined"
-				disableElevation
-				className={cn(
-					"flex border-dashed flex-col items-center justify-center p-6 text-center transition-colors cursor-pointer rounded-m3-md",
-					isDragging && "bg-m3-primary-container text-m3-on-primary-container",
-				)}
-				onClick={handleContainerClick}
-				onDragOver={handleDragOver}
-				onDragLeave={handleDragLeave}
-				onDrop={handleDrop}
+		<div className="mt-3 flex flex-col gap-2">
+			<input
+				ref={inputRef}
+				type="file"
+				className="hidden"
 				disabled={disabled || isPreviewing}
-			>
-				<Icon
-					name={file ? "check_circle" : "cloud_upload"}
-					size={36}
-					className={
-						isDragging ? "text-m3-primary" : "text-m3-on-surface-variant"
+				onChange={(e) => {
+					const selected = e.target.files?.[0];
+					if (selected) {
+						onFileSelect(selected);
 					}
-				/>
-				<Text variant="title-sm" className="mt-2 font-bold">
-					{isPreviewing
-						? "Đang chấm thử file..."
-						: file
-							? file.name
-							: "Chọn hoặc kéo thả file bài làm"}
-				</Text>
-				{file ? (
-					<Text variant="body-sm" className="text-m3-on-surface-variant">
-						{formatFileSize(file.size)}
-					</Text>
-				) : (
-					<Text variant="body-sm" className="text-m3-on-surface-variant">
-						Kéo thả hoặc nhấp để tải lên
-					</Text>
-				)}
+				}}
+			/>
 
-				<input
-					ref={inputRef}
-					type="file"
-					className="hidden"
-					disabled={disabled || isPreviewing}
-					onChange={(e) => {
-						const selected = e.target.files?.[0];
-						if (selected) {
-							onFileSelect(selected);
-						}
-					}}
-				/>
-			</Card>
-
-			{file && (
+			{file ? (
 				<Card
 					variant="filled"
-					className="flex flex-row items-center justify-between bg-m3-surface-container-low px-3 py-2 text-m3-on-surface rounded-m3-md"
+					className="flex flex-row items-center justify-between gap-2.5 bg-m3-primary-container/40 border border-m3-primary/30 px-3.5 py-2.5 text-m3-on-surface rounded-xl"
 				>
-					<div className="flex items-center gap-2 overflow-hidden">
-						<Icon name="description" size={18} className="text-m3-primary" />
-						<Text variant="body-sm" className="truncate font-semibold">
-							{file.name}
-						</Text>
+					<div className="flex items-center gap-2.5 min-w-0">
+						<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-m3-primary/10 text-m3-primary">
+							<Icon name="description" size={18} />
+						</div>
+						<div className="min-w-0">
+							<Text
+								variant="label-md"
+								className="truncate font-bold text-m3-on-surface"
+							>
+								{file.name}
+							</Text>
+							<Text
+								variant="body-sm"
+								className="text-m3-on-surface-variant text-[11px]"
+							>
+								{formatFileSize(file.size)}
+							</Text>
+						</div>
 					</div>
 					<IconButton
-						aria-label="Xóa file"
+						aria-label="Đổi file khác"
 						colorStyle="standard"
 						disabled={disabled || isPreviewing}
-						onClick={() => onFileSelect(undefined)}
+						onClick={(e) => {
+							e.stopPropagation();
+							onFileSelect(undefined);
+						}}
+						className="shrink-0 text-m3-error hover:bg-m3-error-container/40"
 					>
-						<Icon name="close" size={18} className="text-m3-error" />
+						<Icon name="close" size={18} />
 					</IconButton>
 				</Card>
+			) : (
+				<div
+					className={cn(
+						"flex flex-col items-center justify-center p-4 text-center border-2 border-dashed rounded-xl cursor-pointer transition-all",
+						isDragging
+							? "border-m3-primary bg-m3-primary-container/30 text-m3-primary scale-[1.01]"
+							: "border-m3-outline-variant/60 hover:border-m3-primary/60 hover:bg-m3-surface-container-high/40 text-m3-on-surface-variant",
+						(disabled || isPreviewing) &&
+							"opacity-60 pointer-events-none cursor-not-allowed",
+					)}
+					onClick={handleContainerClick}
+					onDragOver={handleDragOver}
+					onDragLeave={handleDragLeave}
+					onDrop={handleDrop}
+				>
+					<div className="flex h-9 w-9 items-center justify-center rounded-full bg-m3-surface-container text-m3-primary">
+						<Icon name="cloud_upload" size={20} />
+					</div>
+					<Text
+						variant="label-md"
+						className="mt-2 font-bold text-m3-on-surface"
+					>
+						{isPreviewing
+							? "Đang chấm thử file..."
+							: "Chọn file hoặc kéo thả vào đây"}
+					</Text>
+					<Text
+						variant="body-sm"
+						className="text-[11px] text-m3-on-surface-variant/80 mt-0.5"
+					>
+						Hỗ trợ file bài tập Office (.docx, .xlsx, .pptx)
+					</Text>
+				</div>
 			)}
 		</div>
 	);

@@ -139,6 +139,17 @@ export const useSubmission = ({
 				if (onSubmissionSuccess) {
 					await onSubmissionSuccess();
 				}
+				try {
+					const channel = new BroadcastChannel("mos_portal_realtime");
+					channel.postMessage({
+						type: "SUBMISSION_COMPLETED",
+						studentId,
+						classId,
+						assignmentId,
+						timestamp: Date.now(),
+					});
+					channel.close();
+				} catch {}
 			} catch (error) {
 				if (savedResults[assignmentId]) {
 					setResults((prev) => ({

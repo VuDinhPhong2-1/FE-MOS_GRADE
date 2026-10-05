@@ -1,6 +1,7 @@
 import { Icon } from "@bug-on/m3-expressive/core";
 import { ProgressIndicator } from "@bug-on/m3-expressive/feedback";
 import { Card, ScrollArea, Text } from "@bug-on/m3-expressive/layout";
+import { useState } from "react";
 import type { PublicPortalSubmitResult } from "../../../types/submission-portal.types";
 import { formatDateTime } from "../utils/formatters";
 import {
@@ -19,6 +20,7 @@ export const GradingResult = ({
 	result,
 	showDetailedFeedback,
 }: GradingResultProps) => {
+	const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 	const failedTaskResults = getFailedTaskResults(result);
 	const fallbackErrors = uniqueNonEmpty(result.autoGradingErrors);
 	const hasDetailedIssues =
@@ -74,99 +76,124 @@ export const GradingResult = ({
 				</Text>
 			)}
 
-			{failedTaskResults.length > 0 && (
+			{hasDetailedIssues && (
 				<div className="mt-2 space-y-2">
-					<Text variant="title-sm" className="font-bold text-m3-error mb-2">
-						Các câu cần sửa:
-					</Text>
-					<ScrollArea
-						type="scroll"
-						orientation="vertical"
-						className="max-h-80 overflow-hidden rounded-m3-md"
+					<button
+						type="button"
+						onClick={() => setIsDetailsOpen((prev) => !prev)}
+						className="flex w-full items-center justify-between gap-2 rounded-xl bg-m3-error-container/40 hover:bg-m3-error-container/60 px-3 py-2 text-xs font-bold text-m3-error cursor-pointer transition-colors"
 					>
-						<div className="space-y-2 p-0.5">
-							{failedTaskResults.map((task, index) => {
-								const errors = uniqueNonEmpty(task.errors);
-								const fixes = uniqueNonEmpty(task.fixActions);
-								const taskKey = [
-									task.taskId,
-									task.taskName,
-									errors.join("|"),
-									fixes.join("|"),
-								]
-									.filter(Boolean)
-									.join("-");
+						<div className="flex items-center gap-1.5">
+							<Icon name="warning" size={16} />
+							<span>
+								Có {failedTaskResults.length || fallbackErrors.length} câu cần
+								sửa
+							</span>
+						</div>
+						<div className="flex items-center gap-1">
+							<span>{isDetailsOpen ? "Thu gọn" : "Xem chi tiết"}</span>
+							<Icon
+								name={isDetailsOpen ? "expand_less" : "expand_more"}
+								size={16}
+							/>
+						</div>
+					</button>
 
-								return (
-									<Card
-										key={taskKey}
-										variant="outlined"
-										className="border-m3-error-container rounded-m3-sm p-3"
-									>
-										<div className="flex items-center justify-between">
-											<Text
-												variant="label-lg"
-												className="font-bold text-m3-on-surface"
-											>
-												{getTaskLabel(task, index)}
-											</Text>
-											{typeof task.score === "number" &&
-												typeof task.maxScore === "number" && (
-													<Text
-														variant="body-sm"
-														className="font-semibold text-m3-on-surface-variant"
-													>
-														({task.score}/{task.maxScore} điểm)
-													</Text>
-												)}
-										</div>
+					{isDetailsOpen && (
+						<>
+							{failedTaskResults.length > 0 && (
+								<ScrollArea
+									type="scroll"
+									orientation="vertical"
+									className="max-h-80 overflow-hidden rounded-m3-md"
+								>
+									<div className="space-y-2 p-0.5">
+										{failedTaskResults.map((task, index) => {
+											const errors = uniqueNonEmpty(task.errors);
+											const fixes = uniqueNonEmpty(task.fixActions);
+											const taskKey = [
+												task.taskId,
+												task.taskName,
+												errors.join("|"),
+												fixes.join("|"),
+											]
+												.filter(Boolean)
+												.join("-");
 
-										{errors.map((error) => (
+											return (
+												<Card
+													key={taskKey}
+													variant="outlined"
+													className="border-m3-error-container rounded-m3-sm p-3"
+												>
+													<div className="flex items-center justify-between">
+														<Text
+															variant="label-lg"
+															className="font-bold text-m3-on-surface"
+														>
+															{getTaskLabel(task, index)}
+														</Text>
+														{typeof task.score === "number" &&
+															typeof task.maxScore === "number" && (
+																<Text
+																	variant="body-sm"
+																	className="font-semibold text-m3-on-surface-variant"
+																>
+																	({task.score}/{task.maxScore} điểm)
+																</Text>
+															)}
+													</div>
+
+													{errors.map((error) => (
+														<Text
+															key={error}
+															variant="body-sm"
+															className="mt-1.5 text-m3-error"
+														>
+															<span className="font-bold">Câu sai:</span>{" "}
+															{error}
+														</Text>
+													))}
+
+													{fixes.map((fix) => (
+														<Text
+															key={fix}
+															variant="body-sm"
+															className="mt-1 text-green-700/80"
+														>
+															<span className="font-bold">Cách khắc phục:</span>{" "}
+															{fix}
+														</Text>
+													))}
+												</Card>
+											);
+										})}
+									</div>
+								</ScrollArea>
+							)}
+
+							{failedTaskResults.length === 0 && fallbackErrors.length > 0 && (
+								<ScrollArea
+									type="scroll"
+									orientation="vertical"
+									className="max-h-80 overflow-hidden rounded-m3-md"
+								>
+									<div className="p-0.5 space-y-1">
+										{fallbackErrors.map((error, index) => (
 											<Text
 												key={error}
 												variant="body-sm"
-												className="mt-1.5 text-m3-error"
+												className="text-m3-error"
 											>
-												<span className="font-bold">Câu sai:</span> {error}
+												<span className="font-bold">Câu sai {index + 1}:</span>{" "}
+												{error}
 											</Text>
 										))}
-
-										{fixes.map((fix) => (
-											<Text
-												key={fix}
-												variant="body-sm"
-												className="mt-1 text-green-700/80"
-											>
-												<span className="font-bold">Cách khắc phục:</span> {fix}
-											</Text>
-										))}
-									</Card>
-								);
-							})}
-						</div>
-					</ScrollArea>
-				</div>
-			)}
-
-			{failedTaskResults.length === 0 && fallbackErrors.length > 0 && (
-				<div className="mt-2 space-y-1">
-					<Text variant="title-sm" className="font-bold text-m3-error">
-						Các câu cần sửa:
-					</Text>
-					<ScrollArea
-						type="scroll"
-						orientation="vertical"
-						className="max-h-80 overflow-hidden rounded-m3-md"
-					>
-						<div className="p-0.5 space-y-1">
-							{fallbackErrors.map((error, index) => (
-								<Text key={error} variant="body-sm" className="text-m3-error">
-									<span className="font-bold">Câu sai {index + 1}:</span>{" "}
-									{error}
-								</Text>
-							))}
-						</div>
-					</ScrollArea>
+									</div>
+								</ScrollArea>
+							)}
+						</>
+					)}
 				</div>
 			)}
 

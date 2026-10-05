@@ -1,13 +1,12 @@
-import { Button } from "@bug-on/m3-expressive/buttons";
 import { Icon } from "@bug-on/m3-expressive/core";
-import { LoadingIndicator } from "@bug-on/m3-expressive/feedback";
 import {
-	Select,
-	TextField,
-	type TextFieldHandle,
-} from "@bug-on/m3-expressive/forms";
-import { Card, Text } from "@bug-on/m3-expressive/layout";
-import { useEffect, useMemo, useRef, useState } from "react";
+	LoadingIndicator,
+	ProgressIndicator,
+} from "@bug-on/m3-expressive/feedback";
+import { Select, TextField } from "@bug-on/m3-expressive/forms";
+import { Card } from "@bug-on/m3-expressive/layout";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type {
 	PublicPortalClass,
 	PublicPortalStudent,
@@ -29,16 +28,11 @@ export interface IdentitySectionProps {
 	selectedStudent?: PublicPortalStudent;
 	completedCount: number;
 	totalAssignmentsCount: number;
+	earnedScore?: number;
+	totalMaxScore?: number;
 }
 
-const matchesStudent = (studentName: string, query: string): boolean => {
-	const normalizedName = normalizeText(studentName);
-	const queryTokens = normalizeText(query).split(/\s+/).filter(Boolean);
-	if (queryTokens.length === 0) return true;
-	return queryTokens.every((token) => normalizedName.includes(token));
-};
-
-export const IdentitySection = ({
+const IdentitySectionComponent = ({
 	classes,
 	classId,
 	onClassChange,
@@ -52,16 +46,9 @@ export const IdentitySection = ({
 	selectedStudent,
 	completedCount,
 	totalAssignmentsCount,
+	earnedScore = 0,
+	totalMaxScore = 0,
 }: IdentitySectionProps) => {
-	const [isOpen, setIsOpen] = useState(false);
-	const [inputValue, setInputValue] = useState("");
-	const [searchQuery, setSearchQuery] = useState("");
-	const [highlightedIndex, setHighlightedIndex] = useState(-1);
-
-	const containerRef = useRef<HTMLDivElement>(null);
-	const listboxRef = useRef<HTMLDivElement>(null);
-	const inputRef = useRef<TextFieldHandle>(null);
-
 	const allStudents = useMemo(() => {
 		if (students && students.length > 0) return students;
 		return filteredStudents;
@@ -76,43 +63,90 @@ export const IdentitySection = ({
 		[classes],
 	);
 
-	// Sync input text when selectedStudent or studentId changes externally
+	// Combobox search state
+	const [inputValue, setInputValue] = useState("");
+	const [isOpen, setIsOpen] = useState(false);
+	const [activeIndex, setActiveIndex] = useState(0);
+	const [dropdownCoords, setDropdownCoords] = useState<{
+		top: number;
+		left: number;
+		width: number;
+	} | null>(null);
+
+	const containerRef = useRef<HTMLDivElement>(null);
+	const dropdownRef = useRef<HTMLDivElement>(null);
+
+	// Synchronize input value when studentId or selectedStudent changes
 	useEffect(() => {
 		if (selectedStudent) {
 			setInputValue(selectedStudent.fullName);
-		} else {
+		} else if (!studentId) {
 			setInputValue("");
 		}
-		setSearchQuery("");
-		setHighlightedIndex(-1);
-	}, [studentId, selectedStudent]);
+	}, [selectedStudent, studentId]);
 
-	// Reset state when class changes
-	useEffect(() => {
-		setIsOpen(false);
-		setSearchQuery("");
-		setHighlightedIndex(-1);
-	}, [classId]);
-
-	// Filter student list based on search query
-	const matchingStudents = useMemo(() => {
-		if (!searchQuery.trim()) {
+	// Filter student options based on user typing
+	const filteredList = useMemo(() => {
+		if (!allStudents.length) return [];
+		// If input matches the currently selected student name, show all options
+		if (selectedStudent && inputValue === selectedStudent.fullName) {
 			return allStudents;
 		}
-		return allStudents.filter((s) => matchesStudent(s.fullName, searchQuery));
-	}, [allStudents, searchQuery]);
+		const query = normalizeText(inputValue);
+		if (!query) return allStudents;
 
-	// Close dropdown when clicking outside
+		const tokens = query.split(/\s+/).filter(Boolean);
+		return allStudents.filter((s) => {
+			const normName = normalizeText(s.fullName);
+			return tokens.every((token) => normName.includes(token));
+		});
+	}, [allStudents, inputValue, selectedStudent]);
+
+	// Position calculation for portal floating dropdown
 	useEffect(() => {
-		const handleClickOutside = (event: MouseEvent) => {
+		if (!isOpen) return;
+
+		const updatePosition = () => {
+			if (!containerRef.current) return;
+			const rect = containerRef.current.getBoundingClientRect();
+			if (rect.bottom < 0 || rect.top > window.innerHeight) {
+				setIsOpen(false);
+				return;
+			}
+			setDropdownCoords({
+				top: rect.bottom + 4,
+				left: rect.left,
+				width: Math.max(rect.width, 280),
+			});
+		};
+
+		updatePosition();
+		window.addEventListener("scroll", updatePosition, true);
+		window.addEventListener("resize", updatePosition);
+		return () => {
+			window.removeEventListener("scroll", updatePosition, true);
+			window.removeEventListener("resize", updatePosition);
+		};
+	}, [isOpen]);
+
+	// Click outside dismissal
+	useEffect(() => {
+		if (!isOpen) return;
+
+		const handleClickOutside = (e: MouseEvent) => {
+			const target = e.target as Node;
 			if (
 				containerRef.current &&
-				!containerRef.current.contains(event.target as Node)
+				!containerRef.current.contains(target) &&
+				dropdownRef.current &&
+				!dropdownRef.current.contains(target)
 			) {
 				setIsOpen(false);
-				setHighlightedIndex(-1);
-				setSearchQuery("");
-				setInputValue(selectedStudent?.fullName || "");
+				if (selectedStudent) {
+					setInputValue(selectedStudent.fullName);
+				} else {
+					setInputValue("");
+				}
 			}
 		};
 
@@ -120,359 +154,348 @@ export const IdentitySection = ({
 		return () => {
 			document.removeEventListener("mousedown", handleClickOutside);
 		};
-	}, [selectedStudent]);
+	}, [isOpen, selectedStudent]);
 
-	const scrollItemIntoView = (index: number) => {
-		const list = listboxRef.current;
-		if (!list) return;
-		const item = list.children[index] as HTMLElement | undefined;
-		if (item) {
-			item.scrollIntoView({ block: "nearest" });
+	// Scroll active item into view during keyboard navigation
+	useEffect(() => {
+		if (!isOpen || !dropdownRef.current) return;
+		const activeEl = dropdownRef.current.children[activeIndex] as
+			| HTMLElement
+			| undefined;
+		if (activeEl?.scrollIntoView) {
+			activeEl.scrollIntoView({ block: "nearest" });
 		}
+	}, [activeIndex, isOpen]);
+
+	const handleClassChange = (newClassId: string) => {
+		onClassChange(newClassId);
+		onStudentChange("");
+		setInputValue("");
+		setIsOpen(false);
 	};
 
 	const handleSelectStudent = (student: PublicPortalStudent) => {
 		onStudentChange(student.id);
 		setInputValue(student.fullName);
-		setSearchQuery("");
 		setIsOpen(false);
-		setHighlightedIndex(-1);
-		onStudentSearchChange?.("");
 	};
 
 	const handleClearStudent = () => {
 		onStudentChange("");
 		setInputValue("");
-		setSearchQuery("");
-		setHighlightedIndex(-1);
-		onStudentSearchChange?.("");
-		setIsOpen(true);
-		inputRef.current?.focus();
-	};
-
-	const handleInputChange = (newVal: string) => {
-		setInputValue(newVal);
-		setSearchQuery(newVal);
-		setIsOpen(true);
-		setHighlightedIndex(0);
-		onStudentSearchChange?.(newVal);
-	};
-
-	const handleInputFocus = () => {
-		if (classId && !loadingStudents) {
+		setActiveIndex(0);
+		if (classId && !loadingStudents && allStudents.length > 0) {
 			setIsOpen(true);
 		}
 	};
 
-	const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+	const handleInputChange = (val: string) => {
+		setInputValue(val);
+		if (!isOpen) setIsOpen(true);
+		setActiveIndex(0);
+		onStudentSearchChange?.(val);
+	};
+
+	const handleKeyDown = (
+		e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>,
+	) => {
 		if (!isOpen) {
-			if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+			if (e.key === "ArrowDown" || e.key === "Enter") {
 				e.preventDefault();
 				setIsOpen(true);
-				setHighlightedIndex(0);
 			}
 			return;
 		}
 
 		if (e.key === "ArrowDown") {
 			e.preventDefault();
-			if (matchingStudents.length > 0) {
-				setHighlightedIndex((prev) => {
-					const next = prev < matchingStudents.length - 1 ? prev + 1 : 0;
-					scrollItemIntoView(next);
-					return next;
-				});
-			}
+			setActiveIndex((prev) =>
+				filteredList.length > 0 ? (prev + 1) % filteredList.length : 0,
+			);
 		} else if (e.key === "ArrowUp") {
 			e.preventDefault();
-			if (matchingStudents.length > 0) {
-				setHighlightedIndex((prev) => {
-					const next = prev > 0 ? prev - 1 : matchingStudents.length - 1;
-					scrollItemIntoView(next);
-					return next;
-				});
-			}
+			setActiveIndex((prev) =>
+				filteredList.length > 0
+					? (prev - 1 + filteredList.length) % filteredList.length
+					: 0,
+			);
 		} else if (e.key === "Enter") {
 			e.preventDefault();
 			if (
-				highlightedIndex >= 0 &&
-				highlightedIndex < matchingStudents.length
+				filteredList.length > 0 &&
+				activeIndex >= 0 &&
+				activeIndex < filteredList.length
 			) {
-				handleSelectStudent(matchingStudents[highlightedIndex]);
-			} else if (matchingStudents.length === 1) {
-				handleSelectStudent(matchingStudents[0]);
+				handleSelectStudent(filteredList[activeIndex]);
 			}
 		} else if (e.key === "Escape") {
 			e.preventDefault();
 			setIsOpen(false);
-			setHighlightedIndex(-1);
-			setSearchQuery("");
-			setInputValue(selectedStudent?.fullName || "");
-		} else if (e.key === "Tab") {
-			setIsOpen(false);
-			setHighlightedIndex(-1);
+			if (selectedStudent) {
+				setInputValue(selectedStudent.fullName);
+			} else {
+				setInputValue("");
+			}
 		}
 	};
 
-	const isPickerDisabled = !classId || loadingStudents;
-
-	const pickerPlaceholder = loadingStudents
-		? "Đang tải danh sách..."
-		: !classId
-			? "Vui lòng chọn lớp trước"
-			: "Tìm hoặc chọn tên của bạn";
+	const completionPercent =
+		totalAssignmentsCount > 0
+			? Math.round((completedCount / totalAssignmentsCount) * 100)
+			: 0;
 
 	return (
 		<Card
 			variant="filled"
-			className="flex flex-col gap-4 bg-m3-surface-container-lowest p-5 text-m3-on-surface rounded-m3-xl"
+			className="flex flex-col gap-3 bg-m3-surface-container-lowest p-3.5 sm:p-4 text-m3-on-surface rounded-m3-xl border border-m3-outline-variant/40 shadow-xs"
 		>
-			<div className="flex flex-wrap items-center gap-2">
-				<span
-					className={cn(
-						"inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold h-10",
-						classId
-							? "bg-m3-primary-container text-m3-on-primary-container"
-							: "bg-m3-surface-container-high text-m3-on-surface-variant",
-					)}
-				>
-					<Icon
-						name={classId ? "check_circle" : "looks_one"}
-						size={16}
-						animateFill
-						fill={classId ? 1 : 0}
-					/>
-					1. Chọn lớp
-				</span>
-				<span
-					className={cn(
-						"inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold h-10",
-						studentId
-							? "bg-m3-primary-container text-m3-on-primary-container"
-							: "bg-m3-surface-container-high text-m3-on-surface-variant",
-					)}
-				>
-					<Icon
-						name={studentId ? "check_circle" : "looks_two"}
-						size={16}
-						animateFill
-						fill={studentId ? 1 : 0}
-					/>
-					2. Xác nhận học sinh
-				</span>
-				<span
-					className={cn(
-						"inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold h-10",
-						completedCount === totalAssignmentsCount
-							? "bg-m3-primary-container text-m3-on-primary-container"
-							: "bg-m3-surface-container-high text-m3-on-surface-variant",
-					)}
-				>
-					<Icon
-						name={
-							completedCount === totalAssignmentsCount
-								? "check_circle"
-								: "assignment_turned_in"
-						}
-						size={16}
-						animateFill
-						fill={completedCount === totalAssignmentsCount ? 1 : 0}
-					/>
-					3. Nộp bài ({completedCount}/{totalAssignmentsCount})
-				</span>
-			</div>
+			<div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-3.5">
+				{/* Left: 2 distinct dropdowns: Class & Student */}
+				<div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1 min-w-0">
+					{/* Dropdown 1: Chọn lớp */}
+					<div className="w-full sm:w-48 md:w-56 shrink-0">
+						<Select
+							variant="filled"
+							colorVariant="vibrant"
+							label="Lớp học"
+							placeholder="Chọn lớp"
+							options={classOptions}
+							value={classId}
+							onChange={handleClassChange}
+							disabled={classes.length === 0}
+							className="w-full"
+						/>
+					</div>
 
-			<div className="grid gap-4 md:grid-cols-2">
-				<Select
-					variant="filled"
-					colorVariant="vibrant"
-					label="Lớp học"
-					placeholder="Chọn lớp"
-					options={classOptions}
-					value={classId}
-					onChange={(value) => onClassChange(value)}
-				/>
-
-				{/* Accessible & robust student combobox */}
-				<div ref={containerRef} className="relative w-full">
-					<TextField
-						ref={inputRef}
-						variant="filled"
-						label="Tên của bạn"
-						placeholder={pickerPlaceholder}
-						value={inputValue}
-						onChange={(val) => handleInputChange(val)}
-						onFocus={handleInputFocus}
-						onKeyDown={handleKeyDown}
-						disabled={isPickerDisabled}
-						leadingIcon={<Icon name="search" size={20} />}
-						trailingIcon={
-							(studentId || inputValue) && !isPickerDisabled ? (
-								<button
-									type="button"
-									aria-label="Xóa chọn học sinh"
-									tabIndex={-1}
-									className="flex items-center justify-center p-0.5 rounded-full hover:bg-m3-surface-container-highest cursor-pointer text-m3-on-surface-variant transition-colors"
-									onMouseDown={(e) => {
-										e.preventDefault();
-										handleClearStudent();
-									}}
-								>
-									<Icon name="close" size={18} />
-								</button>
-							) : (
-								<button
-									type="button"
-									aria-label={isOpen ? "Đóng danh sách" : "Mở danh sách"}
-									tabIndex={-1}
-									disabled={isPickerDisabled}
-									className={cn(
-										"flex items-center justify-center p-0.5 rounded-full hover:bg-m3-surface-container-highest cursor-pointer text-m3-on-surface-variant transition-transform duration-200",
-										isOpen && "rotate-180",
-									)}
-									onMouseDown={(e) => {
-										e.preventDefault();
-										if (!isPickerDisabled) {
-											setIsOpen((prev) => !prev);
-											if (!isOpen) {
-												inputRef.current?.focus();
-											}
-										}
-									}}
-								>
-									<Icon name="arrow_drop_down" size={22} />
-								</button>
-							)
-						}
-					/>
-
-					{/* Dropdown list */}
-					{isOpen && !isPickerDisabled && (
-						<div
-							ref={listboxRef}
-							role="listbox"
-							id="student-combobox-listbox"
-							aria-label="Danh sách học sinh"
-							className="absolute left-0 right-0 top-full z-50 mt-1 max-h-60 overflow-y-auto rounded-2xl border border-m3-outline-variant/30 bg-m3-surface-container-high p-1 shadow-lg backdrop-blur-sm"
-						>
-							{matchingStudents.length === 0 ? (
-								<div className="flex flex-col items-center justify-center gap-1.5 p-4 text-center text-m3-on-surface-variant">
-									<Icon name="search_off" size={24} className="opacity-60" />
-									<Text variant="body-sm" className="text-m3-on-surface-variant">
-										Không tìm thấy học sinh phù hợp
-									</Text>
-								</div>
-							) : (
-								matchingStudents.map((s, idx) => {
-									const isSelected = s.id === studentId;
-									const isHighlighted = idx === highlightedIndex;
-
-									return (
-										<div
-											key={s.id}
-											role="option"
-											id={`student-option-${s.id}`}
-											aria-selected={isSelected}
-											onMouseDown={(e) => {
-												e.preventDefault();
-												handleSelectStudent(s);
+					{/* Dropdown 2: Gõ tên để tìm học sinh (Searchable Combobox with Portal) */}
+					<div
+						ref={containerRef}
+						className="relative w-full sm:w-72 md:w-80 shrink-0"
+					>
+						<TextField
+							variant="filled"
+							label="Học sinh"
+							placeholder={
+								loadingStudents
+									? "Đang tải danh sách..."
+									: !classId
+										? "Chọn lớp trước"
+										: allStudents.length === 0
+											? "Chưa có học sinh"
+											: "Gõ tên để tìm học sinh..."
+							}
+							value={inputValue}
+							onChange={handleInputChange}
+							onFocus={(e) => {
+								if (classId && !loadingStudents && allStudents.length > 0) {
+									setIsOpen(true);
+									e.currentTarget.select();
+								}
+							}}
+							onKeyDown={handleKeyDown}
+							disabled={!classId || loadingStudents || allStudents.length === 0}
+							trailingIconMode="custom"
+							trailingIcon={
+								<div className="flex items-center gap-0.5">
+									{studentId || inputValue ? (
+										<button
+											type="button"
+											onClick={(e) => {
+												e.stopPropagation();
+												handleClearStudent();
 											}}
-											onMouseEnter={() => setHighlightedIndex(idx)}
-											className={cn(
-												"flex w-full cursor-pointer items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-sm transition-colors select-none",
-												isSelected
-													? "bg-m3-primary-container text-m3-on-primary-container font-semibold"
-													: isHighlighted
-														? "bg-m3-surface-container-highest text-m3-on-surface"
-														: "text-m3-on-surface hover:bg-m3-surface-container-highest",
-											)}
+											title="Xóa lựa chọn"
+											aria-label="Xóa lựa chọn"
+											className="flex h-7 w-7 items-center justify-center rounded-full text-m3-on-surface-variant hover:text-m3-on-surface hover:bg-m3-surface-container-highest transition-colors cursor-pointer"
 										>
-											<div className="flex items-center gap-2.5 min-w-0">
-												<Icon
-													name={isSelected ? "account_circle" : "person"}
-													size={20}
-													className={cn(
-														"shrink-0",
-														isSelected
-															? "text-m3-on-primary-container"
-															: "text-m3-on-surface-variant",
-													)}
-												/>
-												<span className="truncate">{s.fullName}</span>
-											</div>
-											{isSelected && (
-												<Icon
-													name="check"
-													size={18}
-													className="shrink-0 text-m3-on-primary-container"
-												/>
-											)}
+											<Icon name="close" size={16} />
+										</button>
+									) : null}
+									<button
+										type="button"
+										tabIndex={-1}
+										disabled={
+											!classId || loadingStudents || allStudents.length === 0
+										}
+										onClick={(e) => {
+											e.stopPropagation();
+											setIsOpen((prev) => !prev);
+										}}
+										className="flex h-7 w-7 items-center justify-center rounded-full text-m3-on-surface-variant hover:text-m3-on-surface transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+									>
+										<Icon
+											name={isOpen ? "arrow_drop_up" : "arrow_drop_down"}
+											size={22}
+										/>
+									</button>
+								</div>
+							}
+							className="w-full"
+						/>
+
+						{/* Portal-backed floating options list (bypasses Card overflow: hidden) */}
+						{isOpen &&
+							dropdownCoords &&
+							typeof document !== "undefined" &&
+							createPortal(
+								<div
+									ref={dropdownRef}
+									style={{
+										position: "fixed",
+										top: `${dropdownCoords.top}px`,
+										left: `${dropdownCoords.left}px`,
+										width: `${dropdownCoords.width}px`,
+										zIndex: 99999,
+									}}
+									className="max-h-72 overflow-y-auto rounded-2xl bg-m3-surface-container-high text-m3-on-surface border border-m3-outline-variant/60 shadow-2xl p-1.5 focus:outline-hidden"
+									role="listbox"
+									aria-label="Danh sách học sinh"
+								>
+									{filteredList.length === 0 ? (
+										<div className="px-3.5 py-4 text-center text-xs text-m3-on-surface-variant flex flex-col items-center gap-1.5">
+											<Icon
+												name="search_off"
+												size={20}
+												className="text-m3-outline"
+											/>
+											<span>
+												Không tìm thấy học sinh nào phù hợp với &quot;
+												{inputValue}&quot;
+											</span>
 										</div>
-									);
-								})
+									) : (
+										filteredList.map((student, idx) => {
+											const isSelected = student.id === studentId;
+											const isActive = idx === activeIndex;
+											return (
+												<div
+													key={student.id}
+													role="option"
+													tabIndex={-1}
+													aria-selected={isSelected}
+													onClick={() => handleSelectStudent(student)}
+													onKeyDown={(e) => {
+														if (e.key === "Enter" || e.key === " ") {
+															e.preventDefault();
+															handleSelectStudent(student);
+														}
+													}}
+													onMouseEnter={() => setActiveIndex(idx)}
+													className={cn(
+														"flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-sm transition-colors cursor-pointer select-none",
+														isSelected
+															? "bg-m3-primary/15 text-m3-primary font-bold"
+															: isActive
+																? "bg-m3-surface-container-highest text-m3-on-surface"
+																: "text-m3-on-surface hover:bg-m3-surface-container-highest/60",
+													)}
+												>
+													<div className="flex items-center gap-2.5 min-w-0">
+														<Icon
+															name={isSelected ? "check_circle" : "person"}
+															size={18}
+															className={
+																isSelected
+																	? "text-m3-primary shrink-0"
+																	: "text-m3-on-surface-variant shrink-0"
+															}
+														/>
+														<span className="truncate">{student.fullName}</span>
+													</div>
+													{isSelected && (
+														<span className="text-[11px] font-semibold text-m3-primary bg-m3-primary/10 px-2 py-0.5 rounded-full shrink-0">
+															Đang chọn
+														</span>
+													)}
+												</div>
+											);
+										})
+									)}
+								</div>,
+								document.body,
 							)}
-						</div>
-					)}
+					</div>
 				</div>
+
+				{/* Right: Gamified Progress & Score Metrics (when student selected) or Prompt */}
+				{selectedStudent ? (
+					<div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 lg:gap-5 shrink-0">
+						{/* Progress Bar Widget */}
+						<div className="flex flex-col gap-1 sm:min-w-44">
+							<div className="flex items-center justify-between text-xs">
+								<span className="font-semibold text-m3-on-surface-variant flex items-center gap-1">
+									<Icon
+										name="task_alt"
+										size={14}
+										className="text-emerald-600 dark:text-emerald-400"
+									/>
+									Tiến độ
+								</span>
+								<span className="font-bold text-m3-on-surface">
+									{completedCount}/{totalAssignmentsCount} ({completionPercent}
+									%)
+								</span>
+							</div>
+							<div className="w-full">
+								<ProgressIndicator
+									variant="linear"
+									trackShape="flat"
+									trackHeight={6}
+									showStopIndicator={false}
+									aria-label={`Tiến độ làm bài: ${completionPercent}%`}
+									value={completionPercent}
+								/>
+							</div>
+						</div>
+
+						{/* Total Score Badge */}
+						{totalMaxScore > 0 && (
+							<div className="flex items-center gap-2.5 rounded-2xl bg-m3-primary-container/60 px-3.5 py-1.5 text-m3-on-primary-container border border-m3-primary/20 shrink-0">
+								<Icon
+									name="emoji_events"
+									size={22}
+									className="text-m3-primary shrink-0"
+								/>
+								<div>
+									<div className="text-[10px] font-semibold text-m3-on-primary-container/80 uppercase tracking-wider">
+										Tổng điểm
+									</div>
+									<div className="text-sm font-black text-m3-on-primary-container leading-tight">
+										{earnedScore}{" "}
+										<span className="text-xs font-medium text-m3-on-primary-container/70">
+											/ {totalMaxScore} đ
+										</span>
+									</div>
+								</div>
+							</div>
+						)}
+					</div>
+				) : (
+					<div className="flex items-center gap-2 text-xs font-medium text-m3-on-surface-variant bg-m3-surface-container-high/60 px-3 py-2 rounded-xl border border-m3-outline-variant/20 shrink-0">
+						<Icon name="info" size={16} className="text-m3-primary shrink-0" />
+						<span>Chọn tên học sinh để bắt đầu nộp bài</span>
+					</div>
+				)}
 			</div>
 
 			{classId && loadingStudents && (
-				<Card
-					variant="filled"
-					className="flex items-center gap-2 bg-m3-secondary-container p-3 text-m3-on-secondary-container"
-				>
-					<LoadingIndicator aria-label="Đang tải học sinh" size={20} />
-					<Text variant="body-sm" className="font-semibold">
+				<div className="flex items-center gap-2 text-xs font-medium text-m3-on-surface-variant pt-1 border-t border-m3-outline-variant/20">
+					<LoadingIndicator aria-label="Đang tải học sinh" size={16} />
+					<span>
 						Đang tải danh sách học sinh của lớp{" "}
 						{selectedClass?.name || "đã chọn"}...
-					</Text>
-				</Card>
+					</span>
+				</div>
 			)}
 
 			{classId && !loadingStudents && allStudents.length === 0 && (
-				<Card
-					variant="filled"
-					className="flex items-center gap-2 bg-m3-tertiary-container p-3 text-m3-on-tertiary-container"
-				>
-					<Icon name="info" size={20} />
-					<Text variant="body-sm">
-						Lớp học này hiện chưa có học sinh nào.
-					</Text>
-				</Card>
-			)}
-
-			{selectedStudent && (
-				<Card
-					variant="filled"
-					className="flex items-center justify-between gap-2 bg-m3-tertiary-container rounded-m3-md p-4 text-m3-on-tertiary-container flex-row"
-				>
-					<div className="flex items-center gap-2">
-						<Icon
-							name="account_circle"
-							size={24}
-							className="text-m3-on-tertiary-container"
-						/>
-						<Text variant="body-lg" className="text-m3-on-tertiary-container">
-							Đang nộp bài cho{" "}
-							<span className="font-bold text-m3-on-tertiary-container">
-								{selectedStudent.fullName}
-							</span>{" "}
-							— lớp{" "}
-							<span className="font-bold text-m3-on-tertiary-container">
-								{selectedClass?.name}
-							</span>
-						</Text>
-					</div>
-					<Button
-						colorStyle="text"
-						onClick={handleClearStudent}
-						size="sm"
-						className="text-m3-on-tertiary-container"
-					>
-						Đổi học sinh
-					</Button>
-				</Card>
+				<div className="flex items-center gap-2 text-xs font-medium text-amber-600 dark:text-amber-400 pt-1 border-t border-m3-outline-variant/20">
+					<Icon name="warning" size={16} />
+					<span>Lớp học này hiện chưa có học sinh nào.</span>
+				</div>
 			)}
 		</Card>
 	);
 };
+
+export const IdentitySection = memo(IdentitySectionComponent);

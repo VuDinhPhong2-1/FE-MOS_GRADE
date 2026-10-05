@@ -20,10 +20,7 @@ export function TableEmptyState({
 					{title}
 				</Text>
 				{description && (
-					<Text
-						variant="body-md"
-						className="mt-1 text-m3-on-surface-variant"
-					>
+					<Text variant="body-md" className="mt-1 text-m3-on-surface-variant">
 						{description}
 					</Text>
 				)}

@@ -112,7 +112,12 @@ const ClassActionToolbarComponent = ({
 						</TooltipBox>
 					</div>
 				</MenuTrigger>
-				<MenuContent maxHeight="full" align="center" className="w-64" separatorStyle="gap">
+				<MenuContent
+					maxHeight="full"
+					align="center"
+					className="w-64"
+					separatorStyle="gap"
+				>
 					<MenuGroup label="Trạng thái lớp">
 						<MenuItem
 							selected={statusFilter === "all"}

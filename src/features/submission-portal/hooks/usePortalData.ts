@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { submissionPortalService } from "../../../services/submission-portal.service";
 import type {
 	PublicPortalAssignment,
@@ -7,6 +7,11 @@ import type {
 	PublicPortalStudent,
 	SubmissionLeaderboardItem,
 } from "../../../types/submission-portal.types";
+
+export interface UsePortalDataOptions {
+	onResetStudentSearch?: () => void;
+	isLeaderboardActive?: boolean;
+}
 
 export interface UsePortalDataReturn {
 	info: PublicPortalInfo | null;
@@ -21,16 +26,52 @@ export interface UsePortalDataReturn {
 	loadingStudents: boolean;
 	leaderboard: SubmissionLeaderboardItem[];
 	loadingLeaderboard: boolean;
+	isRefreshingLeaderboard: boolean;
+	lastLeaderboardUpdated: Date | null;
+	autoRefreshLeaderboard: boolean;
+	setAutoRefreshLeaderboard: (enabled: boolean) => void;
 	selectedClass: PublicPortalClass | undefined;
 	selectedStudent: PublicPortalStudent | undefined;
 	visibleAssignments: PublicPortalAssignment[];
-	loadLeaderboard: () => Promise<void>;
+	loadLeaderboard: (silent?: boolean) => Promise<void>;
 }
+
+/**
+ * Fast item-level diffing to avoid unnecessary state mutations and component re-renders
+ * when polling fetches identical leaderboard data.
+ */
+const isLeaderboardEqual = (
+	prev: SubmissionLeaderboardItem[],
+	next: SubmissionLeaderboardItem[],
+): boolean => {
+	if (prev === next) return true;
+	if (prev.length !== next.length) return false;
+	for (let i = 0; i < prev.length; i++) {
+		const a = prev[i];
+		const b = next[i];
+		if (
+			a.studentId !== b.studentId ||
+			a.scoreValue !== b.scoreValue ||
+			a.rank !== b.rank ||
+			a.submissionCount !== b.submissionCount ||
+			a.gradedAt !== b.gradedAt
+		) {
+			return false;
+		}
+	}
+	return true;
+};
 
 export const usePortalData = (
 	token: string,
-	onResetStudentSearch?: () => void,
+	optionsOrReset?: (() => void) | UsePortalDataOptions,
 ): UsePortalDataReturn => {
+	const options: UsePortalDataOptions =
+		typeof optionsOrReset === "function"
+			? { onResetStudentSearch: optionsOrReset }
+			: optionsOrReset || {};
+	const { onResetStudentSearch, isLeaderboardActive = true } = options;
+
 	const [info, setInfo] = useState<PublicPortalInfo | null>(null);
 	const [classId, setClassIdState] = useState(() => {
 		try {
@@ -50,9 +91,14 @@ export const usePortalData = (
 	const [leaderboard, setLeaderboard] = useState<SubmissionLeaderboardItem[]>(
 		[],
 	);
+	const leaderboardRef = useRef<SubmissionLeaderboardItem[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [loadingStudents, setLoadingStudents] = useState(false);
 	const [loadingLeaderboard, setLoadingLeaderboard] = useState(false);
+	const [isRefreshingLeaderboard, setIsRefreshingLeaderboard] = useState(false);
+	const [lastLeaderboardUpdated, setLastLeaderboardUpdated] =
+		useState<Date | null>(null);
+	const [autoRefreshLeaderboard, setAutoRefreshLeaderboard] = useState(true);
 	const [message, setMessage] = useState("");
 
 	const setClassId = useCallback(
@@ -137,10 +183,7 @@ export const usePortalData = (
 				savedStudentId =
 					sessionStorage.getItem(`mos_portal_${token}_studentId`) || "";
 			} catch {}
-			if (
-				savedStudentId &&
-				studentList.some((s) => s.id === savedStudentId)
-			) {
+			if (savedStudentId && studentList.some((s) => s.id === savedStudentId)) {
 				setStudentIdState(savedStudentId);
 			} else {
 				setStudentId("");
@@ -157,21 +200,42 @@ export const usePortalData = (
 		}
 	}, [classId, token, onResetStudentSearch, setStudentId]);
 
-	const loadLeaderboard = useCallback(async () => {
-		setLoadingLeaderboard(true);
-		try {
-			setLeaderboard(
-				await submissionPortalService.getLeaderboard(
+	const loadLeaderboard = useCallback(
+		async (silent = false) => {
+			if (silent) {
+				setIsRefreshingLeaderboard(true);
+			} else {
+				setLoadingLeaderboard(true);
+			}
+			try {
+				const data = await submissionPortalService.getLeaderboard(
 					token,
 					classId || undefined,
-				),
-			);
-		} catch {
-			setLeaderboard([]);
-		} finally {
-			setLoadingLeaderboard(false);
-		}
-	}, [classId, token]);
+				);
+				// Client optimization: only update state if leaderboard data actually changed
+				if (!isLeaderboardEqual(leaderboardRef.current, data)) {
+					leaderboardRef.current = data;
+					setLeaderboard(data);
+					setLastLeaderboardUpdated(new Date());
+				} else if (!silent) {
+					// Manual user refresh triggered: update timestamp so user knows fresh sync happened
+					setLastLeaderboardUpdated(new Date());
+				}
+			} catch {
+				if (!silent) {
+					leaderboardRef.current = [];
+					setLeaderboard([]);
+				}
+			} finally {
+				if (silent) {
+					setIsRefreshingLeaderboard(false);
+				} else {
+					setLoadingLeaderboard(false);
+				}
+			}
+		},
+		[classId, token],
+	);
 
 	useEffect(() => {
 		void loadInfo();
@@ -181,11 +245,77 @@ export const usePortalData = (
 		void loadStudents();
 	}, [loadStudents]);
 
+	// Initial load of leaderboard
 	useEffect(() => {
 		if (info?.showLeaderboard) {
-			void loadLeaderboard();
+			void loadLeaderboard(false);
 		}
 	}, [info?.showLeaderboard, loadLeaderboard]);
+
+	// Fetch immediately when user switches to the leaderboard tab
+	useEffect(() => {
+		if (info?.showLeaderboard && isLeaderboardActive) {
+			void loadLeaderboard(true);
+		}
+	}, [info?.showLeaderboard, isLeaderboardActive, loadLeaderboard]);
+
+	// Real-time silent background auto-polling (every 6s) ONLY when leaderboard is active, visible, and enabled
+	useEffect(() => {
+		if (
+			!info?.showLeaderboard ||
+			!autoRefreshLeaderboard ||
+			!isLeaderboardActive
+		) {
+			return;
+		}
+
+		const intervalId = window.setInterval(() => {
+			if (document.visibilityState === "visible") {
+				void loadLeaderboard(true);
+			}
+		}, 6000);
+
+		return () => {
+			window.clearInterval(intervalId);
+		};
+	}, [
+		info?.showLeaderboard,
+		autoRefreshLeaderboard,
+		isLeaderboardActive,
+		loadLeaderboard,
+	]);
+
+	// Refresh immediately on tab visibility switch or cross-tab submission broadcast
+	useEffect(() => {
+		if (!info?.showLeaderboard) {
+			return;
+		}
+
+		const handleVisibilityChange = () => {
+			if (document.visibilityState === "visible" && isLeaderboardActive) {
+				void loadLeaderboard(true);
+			}
+		};
+
+		let channel: BroadcastChannel | null = null;
+		try {
+			channel = new BroadcastChannel("mos_portal_realtime");
+			channel.onmessage = (event) => {
+				if (event.data?.type === "SUBMISSION_COMPLETED") {
+					void loadLeaderboard(true);
+				}
+			};
+		} catch {}
+
+		document.addEventListener("visibilitychange", handleVisibilityChange);
+
+		return () => {
+			document.removeEventListener("visibilitychange", handleVisibilityChange);
+			if (channel) {
+				channel.close();
+			}
+		};
+	}, [info?.showLeaderboard, isLeaderboardActive, loadLeaderboard]);
 
 	return {
 		info,
@@ -200,6 +330,10 @@ export const usePortalData = (
 		loadingStudents,
 		leaderboard,
 		loadingLeaderboard,
+		isRefreshingLeaderboard,
+		lastLeaderboardUpdated,
+		autoRefreshLeaderboard,
+		setAutoRefreshLeaderboard,
 		selectedClass,
 		selectedStudent,
 		visibleAssignments,

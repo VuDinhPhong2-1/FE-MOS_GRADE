@@ -1,6 +1,6 @@
 import { Icon } from "@bug-on/m3-expressive/core";
 import { Card, ScrollArea, Text } from "@bug-on/m3-expressive/layout";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { RouteLoadingFallback } from "../../components/common";
 import { AssignmentGrid } from "./components/AssignmentGrid";
@@ -29,11 +29,17 @@ export const SubmissionPortalPage = () => {
 		loadingStudents,
 		leaderboard,
 		loadingLeaderboard,
+		isRefreshingLeaderboard,
+		lastLeaderboardUpdated,
+		autoRefreshLeaderboard,
+		setAutoRefreshLeaderboard,
 		selectedClass,
 		selectedStudent,
 		visibleAssignments,
 		loadLeaderboard,
-	} = usePortalData(token);
+	} = usePortalData(token, {
+		isLeaderboardActive: tab === "leaderboard",
+	});
 
 	const { setStudentSearch, filteredStudents } = useStudentFilter(students);
 
@@ -54,13 +60,30 @@ export const SubmissionPortalPage = () => {
 		onSubmissionSuccess: loadLeaderboard,
 	});
 
-	const completedCount = useMemo(
-		() =>
-			visibleAssignments.filter(
-				(a) => results[a.id] && !results[a.id].isPreview,
-			).length,
-		[visibleAssignments, results],
-	);
+	const { completedCount, earnedScore, totalMaxScore } = useMemo(() => {
+		let completed = 0;
+		let earned = 0;
+		let totalMax = 0;
+		for (const a of visibleAssignments) {
+			totalMax += a.maxScore || 0;
+			const res = results[a.id];
+			if (res && !res.isPreview) {
+				completed++;
+				if (typeof res.scoreValue === "number") {
+					earned += res.scoreValue;
+				}
+			}
+		}
+		return {
+			completedCount: completed,
+			earnedScore: earned,
+			totalMaxScore: totalMax,
+		};
+	}, [visibleAssignments, results]);
+
+	const handleRefreshLeaderboard = useCallback(() => {
+		void loadLeaderboard(true);
+	}, [loadLeaderboard]);
 
 	if (loading && !info) {
 		return (
@@ -143,6 +166,8 @@ export const SubmissionPortalPage = () => {
 										selectedStudent={selectedStudent}
 										completedCount={completedCount}
 										totalAssignmentsCount={visibleAssignments.length}
+										earnedScore={earnedScore}
+										totalMaxScore={totalMaxScore}
 									/>
 
 									<AssignmentGrid
@@ -164,7 +189,16 @@ export const SubmissionPortalPage = () => {
 								<LeaderboardSection
 									leaderboard={leaderboard}
 									loadingLeaderboard={loadingLeaderboard}
+									isRefreshing={isRefreshingLeaderboard}
+									lastUpdatedAt={lastLeaderboardUpdated}
 									selectedClass={selectedClass}
+									classes={info.classes}
+									classId={classId}
+									onClassChange={setClassId}
+									currentStudentId={studentId}
+									onRefresh={handleRefreshLeaderboard}
+									autoRefresh={autoRefreshLeaderboard}
+									onToggleAutoRefresh={setAutoRefreshLeaderboard}
 								/>
 							}
 						/>

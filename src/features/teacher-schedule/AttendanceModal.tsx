@@ -93,37 +93,37 @@ const attendanceMenuItems: {
 	description: string;
 	icon: M3IconName;
 }[] = [
-		{
-			value: "attendance",
-			label: "Điểm danh",
-			description: "Cập nhật có mặt, vắng và ghi chú.",
-			icon: "fact_check",
-		},
-		{
-			value: "bonusPoints",
-			label: "Điểm cộng",
-			description: "Ghi nhận điểm cộng buổi học.",
-			icon: "star",
-		},
-		{
-			value: "startLesson",
-			label: "Báo cáo đầu buổi",
-			description: "Thông tin phòng máy đầu buổi.",
-			icon: "description",
-		},
-		{
-			value: "professional",
-			label: "Báo cáo chuyên môn",
-			description: "Nội dung dạy, tài liệu và số tiết.",
-			icon: "menu_book",
-		},
-		{
-			value: "endLesson",
-			label: "Báo cáo cuối buổi",
-			description: "Sĩ số và tình trạng cuối buổi.",
-			icon: "assignment",
-		},
-	];
+	{
+		value: "attendance",
+		label: "Điểm danh",
+		description: "Cập nhật có mặt, vắng và ghi chú.",
+		icon: "fact_check",
+	},
+	{
+		value: "bonusPoints",
+		label: "Điểm cộng",
+		description: "Ghi nhận điểm cộng buổi học.",
+		icon: "star",
+	},
+	{
+		value: "startLesson",
+		label: "Báo cáo đầu buổi",
+		description: "Thông tin phòng máy đầu buổi.",
+		icon: "description",
+	},
+	{
+		value: "professional",
+		label: "Báo cáo chuyên môn",
+		description: "Nội dung dạy, tài liệu và số tiết.",
+		icon: "menu_book",
+	},
+	{
+		value: "endLesson",
+		label: "Báo cáo cuối buổi",
+		description: "Sĩ số và tình trạng cuối buổi.",
+		icon: "assignment",
+	},
+];
 
 export const AttendanceModal = ({
 	open,
@@ -155,14 +155,14 @@ export const AttendanceModal = ({
 	onSaveAttendance,
 	onSyncToGoogleSheet,
 	bonusDraft = {},
-	onUpdateBonus = () => { },
-	onSaveBonus = () => { },
+	onUpdateBonus = () => {},
+	onSaveBonus = () => {},
 	bonusSaving = false,
 }: AttendanceModalProps) => {
 	const activeReportTab: ReportStepTab | null =
 		attendanceTab === "startLesson" ||
-			attendanceTab === "professional" ||
-			attendanceTab === "endLesson"
+		attendanceTab === "professional" ||
+		attendanceTab === "endLesson"
 			? attendanceTab
 			: null;
 
