@@ -1,4 +1,4 @@
-import { Button, Icon } from "@bug-on/m3-expressive";
+import { Button, Card, Icon, ShapeMedia } from "@bug-on/m3-expressive";
 import type React from "react";
 import { useAuth } from "../context/AuthContext";
 
@@ -27,9 +27,16 @@ const AccountStatusPage: React.FC = () => {
 				/>
 			</div>
 
-			<section className="relative z-10 w-full max-w-lg overflow-hidden rounded-4xl bg-m3-surface-container p-8 text-center shadow-xl">
+			<Card
+				variant="filled"
+				disableElevation
+				className="relative z-10 w-full max-w-lg p-8 text-center"
+			>
 				{/* Status Badge Icon */}
-				<div
+				<ShapeMedia
+					morphOn="hover"
+					morphTo="clover8Leaf"
+					shape="clover4Leaf"
 					className={`mx-auto flex h-20 w-20 items-center justify-center rounded-3xl ${
 						isRejected
 							? "bg-m3-error-container text-m3-on-error-container"
@@ -37,10 +44,11 @@ const AccountStatusPage: React.FC = () => {
 					}`}
 				>
 					<Icon
+						size={32}
 						name={isRejected ? "gpp_bad" : "hourglass_top"}
-						className="text-4xl"
+						className="text-amber-600 dark:text-amber-400"
 					/>
-				</div>
+				</ShapeMedia>
 
 				<h1 className="mt-6 text-2xl font-black tracking-tight text-m3-on-surface">
 					{isRejected
@@ -94,14 +102,17 @@ const AccountStatusPage: React.FC = () => {
 				</div>
 
 				<div className="mt-8 flex justify-center">
-					<Button colorStyle="filled" size="md" type="button" onClick={logout}>
-						<div className="flex items-center gap-2">
-							<Icon name="logout" className="text-lg" />
-							<span>Đăng xuất</span>
-						</div>
+					<Button
+						colorStyle="filled"
+						size="md"
+						type="button"
+						onClick={logout}
+						icon={<Icon name="logout" size={20} />}
+					>
+						Đăng xuất
 					</Button>
 				</div>
-			</section>
+			</Card>
 		</div>
 	);
 };

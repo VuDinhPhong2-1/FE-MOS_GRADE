@@ -19,7 +19,7 @@ export const SubmissionPortalManagementPage = () => {
 	// Page Header Configuration
 	usePageHeader(
 		{
-			title: "Cổng nộp bài công khai",
+			title: "Quản lý bài tập",
 			subtitle:
 				"Tạo link nộp bài tự động chấm, chia sẻ cho học sinh và theo dõi cảnh báo.",
 			actions: [

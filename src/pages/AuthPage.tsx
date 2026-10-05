@@ -293,8 +293,10 @@ export default function AuthPage() {
 							variant="outlined"
 							type="text"
 							name="username"
-							label="Tên đăng nhập"
-							placeholder="Nhập tên đăng nhập"
+							label={isLogin ? "Tên đăng nhập hoặc Email" : "Tên đăng nhập"}
+							placeholder={
+								isLogin ? "Nhập tên đăng nhập hoặc email" : "Nhập tên đăng nhập"
+							}
 							required
 							disabled={isAuthBusy}
 							fullWidth

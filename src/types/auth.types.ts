@@ -1,4 +1,4 @@
-﻿export interface User {
+export interface User {
 	userId: string;
 	username: string;
 	email?: string;
@@ -12,6 +12,8 @@
 	teacherApprovalReviewedAt?: string;
 	teacherApprovalReviewedBy?: string;
 	teacherApprovalNote?: string;
+	hasPassword?: boolean;
+	hasGoogleLinked?: boolean;
 }
 
 export interface AuthContextType {
@@ -49,6 +51,8 @@ export interface LoginResponse {
 	teacherApprovalReviewedAt?: string;
 	teacherApprovalReviewedBy?: string;
 	teacherApprovalNote?: string;
+	hasPassword?: boolean;
+	hasGoogleLinked?: boolean;
 }
 
 export interface RegisterResponse {
@@ -68,6 +72,15 @@ export interface UpdateProfileRequest {
 	avatar?: string;
 }
 
+export interface ChangePasswordRequest {
+	currentPassword: string;
+	newPassword: string;
+}
+
+export interface SetPasswordRequest {
+	newPassword: string;
+}
+
 export interface ProfileResponse {
 	userId: string;
 	username: string;
@@ -83,6 +96,8 @@ export interface ProfileResponse {
 	teacherApprovalReviewedAt?: string;
 	teacherApprovalReviewedBy?: string;
 	teacherApprovalNote?: string;
+	hasPassword?: boolean;
+	hasGoogleLinked?: boolean;
 }
 
 export interface TeacherSummary {

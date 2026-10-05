@@ -268,7 +268,7 @@ export const DataExportSection = () => {
 			</div>
 
 			{/* Actions */}
-			<div className="flex flex-wrap items-center justify-end gap-3 pt-3 border-t border-m3-outline-variant/30">
+			<div className="flex flex-wrap items-center justify-end gap-3 pt-3">
 				<Button
 					type="button"
 					colorStyle="outlined"

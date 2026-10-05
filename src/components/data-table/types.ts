@@ -1,9 +1,9 @@
 import type {
 	ScrollAreaOrientation,
 	ScrollAreaProps,
+	ScrollAreaScrollbar,
 	ScrollAreaType,
 } from "@bug-on/m3-expressive";
-import type { ScrollAreaScrollbar } from "@bug-on/m3-expressive";
 import type {
 	Cell,
 	CellData,

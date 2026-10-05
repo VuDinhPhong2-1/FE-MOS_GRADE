@@ -1,4 +1,4 @@
-import { Icon } from "@bug-on/m3-expressive";
+import { Icon, Text } from "@bug-on/m3-expressive";
 import type { TableEmptyStateProps } from "./types";
 
 export function TableEmptyState({
@@ -12,15 +12,20 @@ export function TableEmptyState({
 		<div
 			className={`mx-auto flex max-w-sm flex-col items-center justify-center gap-3 px-6 py-12 text-center ${className}`}
 		>
-			<div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-m3-surface-container-high text-m3-on-surface-variant shadow-xs">
-				<Icon name={icon} className="text-3xl" />
+			<div className="flex size-16 items-center justify-center rounded-2xl bg-m3-surface-container-lowest text-m3-on-surface-variant shadow-xs">
+				<Icon name={icon} size={40} className="text-m3-on-surface-variant" />
 			</div>
 			<div>
-				<p className="font-bold text-m3-on-surface">{title}</p>
+				<Text variant="headline-sm" className="text-m3-on-surface">
+					{title}
+				</Text>
 				{description && (
-					<p className="mt-1 text-xs text-m3-on-surface-variant">
+					<Text
+						variant="body-md"
+						className="mt-1 text-m3-on-surface-variant"
+					>
 						{description}
-					</p>
+					</Text>
 				)}
 			</div>
 			{action && <div className="mt-1">{action}</div>}

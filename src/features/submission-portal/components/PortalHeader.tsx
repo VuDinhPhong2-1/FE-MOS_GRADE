@@ -75,6 +75,7 @@ export const PortalHeader = ({
 				actions={actions}
 				colors={primaryColors}
 				scrollBehavior="pinned"
+				className="px-3"
 			/>
 			<div className="h-16" aria-hidden="true" />
 		</>

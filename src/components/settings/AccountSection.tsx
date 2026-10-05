@@ -37,6 +37,15 @@ export const AccountSection = () => {
 	const [saving, setSaving] = useState(false);
 	const [confirmLogout, setConfirmLogout] = useState(false);
 
+	// Change Password State
+	const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+	const [passwordForm, setPasswordForm] = useState({
+		currentPassword: "",
+		newPassword: "",
+		confirmPassword: "",
+	});
+	const [changingPassword, setChangingPassword] = useState(false);
+
 	useEffect(() => {
 		if (!user) return;
 		setForm({
@@ -84,6 +93,73 @@ export const AccountSection = () => {
 			);
 		} finally {
 			setSaving(false);
+		}
+	};
+
+	const isSettingInitialPassword = user.hasPassword === false;
+
+	const handlePasswordSubmit = async (event: FormEvent<HTMLFormElement>) => {
+		event.preventDefault();
+		if (changingPassword) return;
+
+		if (!isSettingInitialPassword && !passwordForm.currentPassword) {
+			notify.error("Vui lòng nhập mật khẩu hiện tại");
+			return;
+		}
+
+		if (!passwordForm.newPassword) {
+			notify.error("Vui lòng nhập mật khẩu mới");
+			return;
+		}
+
+		if (passwordForm.newPassword.length < 6) {
+			notify.error("Mật khẩu mới phải có ít nhất 6 ký tự");
+			return;
+		}
+
+		if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+			notify.error("Mật khẩu xác nhận không khớp");
+			return;
+		}
+
+		try {
+			setChangingPassword(true);
+			if (isSettingInitialPassword) {
+				const response = await authService.setPassword(
+					{
+						newPassword: passwordForm.newPassword,
+					},
+					getAccessToken,
+				);
+				notify.success(response.message || "Thiết lập mật khẩu thành công");
+				updateUser({ hasPassword: true });
+			} else {
+				const response = await authService.changePassword(
+					{
+						currentPassword: passwordForm.currentPassword,
+						newPassword: passwordForm.newPassword,
+					},
+					getAccessToken,
+				);
+				notify.success(response.message || "Đổi mật khẩu thành công");
+			}
+
+			setPasswordForm({
+				currentPassword: "",
+				newPassword: "",
+				confirmPassword: "",
+			});
+			setChangePasswordOpen(false);
+		} catch (error) {
+			notify.error(
+				error instanceof Error
+					? error.message
+					: isSettingInitialPassword
+						? "Không thể thiết lập mật khẩu"
+						: "Không thể đổi mật khẩu",
+			);
+		} finally {
+			setChangingPassword(false);
 		}
 	};
 
@@ -137,9 +213,23 @@ export const AccountSection = () => {
 					<div className="truncate text-xs text-m3-on-surface-variant font-mono">
 						{user.email || "Chưa thiết lập email"}
 					</div>
-					<div className="mt-1.5 inline-flex items-center gap-1.5 rounded-full bg-m3-primary/12 px-2.5 py-0.5 text-xs font-semibold text-m3-primary">
-						<Icon name="verified_user" size={14} />
-						<span>{user.role || "Người dùng"}</span>
+					<div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+						<div className="inline-flex items-center gap-1.5 rounded-full bg-m3-primary/12 px-2.5 py-0.5 text-xs font-semibold text-m3-primary">
+							<Icon name="verified_user" size={14} />
+							<span>{user.role || "Người dùng"}</span>
+						</div>
+						{user.hasGoogleLinked && (
+							<div className="inline-flex items-center gap-1 rounded-full bg-m3-secondary-container px-2.5 py-0.5 text-xs font-medium text-m3-on-secondary-container">
+								<Icon name="g_mobiledata" size={16} />
+								<span>Google</span>
+							</div>
+						)}
+						{user.hasPassword !== false && (
+							<div className="inline-flex items-center gap-1 rounded-full bg-m3-tertiary-container px-2.5 py-0.5 text-xs font-medium text-m3-on-tertiary-container">
+								<Icon name="password" size={14} />
+								<span>Mật khẩu</span>
+							</div>
+						)}
 					</div>
 				</div>
 			</div>
@@ -210,17 +300,32 @@ export const AccountSection = () => {
 				/>
 
 				{/* Footer Controls */}
-				<div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-m3-outline-variant/30">
-					<Button
-						type="button"
-						colorStyle="text"
-						size="sm"
-						onClick={() => setConfirmLogout(true)}
-						icon={<Icon name="logout" className="text-base" />}
-						className="text-m3-error hover:bg-m3-error/8 active:bg-m3-error/12"
-					>
-						Đăng xuất
-					</Button>
+				<div className="flex flex-wrap items-center justify-between gap-3 pt-3">
+					<div className="flex items-center gap-2">
+						<Button
+							colorStyle="text"
+							size="sm"
+							onClick={() => setConfirmLogout(true)}
+							icon={<Icon name="logout" size={20} />}
+							className="text-m3-error hover:bg-m3-error/8 active:bg-m3-error/12"
+						>
+							Đăng xuất
+						</Button>
+
+						<Button
+							colorStyle="outlined"
+							size="sm"
+							onClick={() => setChangePasswordOpen(true)}
+							icon={
+								<Icon
+									name={isSettingInitialPassword ? "lock" : "lock_reset"}
+									size={20}
+								/>
+							}
+						>
+							{isSettingInitialPassword ? "Thiết lập mật khẩu" : "Đổi mật khẩu"}
+						</Button>
+					</div>
 
 					<Button
 						type="submit"
@@ -229,9 +334,9 @@ export const AccountSection = () => {
 						loading={saving}
 						loadingVariant="circular"
 						disabled={saving}
-						icon={<Icon name="save" className="text-base" />}
+						icon={<Icon name="save" size={24} />}
 					>
-						Lưu thay đổi hồ sơ
+						Lưu thay đổi
 					</Button>
 				</div>
 			</form>
@@ -265,17 +370,15 @@ export const AccountSection = () => {
 								năng.
 							</DialogBody>
 
-							<DialogFooter className="mt-2 flex shrink-0 items-center justify-end gap-2.5 border-t border-m3-outline-variant/30 pt-4">
+							<DialogFooter className="mt-2 flex shrink-0 items-center justify-end gap-2.5 pt-4">
 								<Button
 									colorStyle="text"
-									type="button"
 									onClick={() => setConfirmLogout(false)}
 								>
 									Hủy
 								</Button>
 								<Button
 									colorStyle="filled"
-									type="button"
 									onClick={handleLogout}
 									className="bg-m3-error text-m3-on-error hover:bg-m3-error/90 shadow-xs"
 									icon={<Icon name="logout" className="text-base" />}
@@ -284,6 +387,151 @@ export const AccountSection = () => {
 								</Button>
 							</DialogFooter>
 						</div>
+					</DialogContent>
+				</DialogPortal>
+			</Dialog>
+
+			{/* Dialog Đổi / Thiết lập mật khẩu */}
+			<Dialog
+				open={changePasswordOpen}
+				onOpenChange={(open) => {
+					if (!changingPassword) {
+						setChangePasswordOpen(open);
+						if (!open) {
+							setPasswordForm({
+								currentPassword: "",
+								newPassword: "",
+								confirmPassword: "",
+							});
+						}
+					}
+				}}
+			>
+				<DialogPortal open={changePasswordOpen}>
+					<DialogOverlay />
+					<DialogContent
+						hideCloseButton
+						className="flex max-h-[90vh] w-[calc(100%-2rem)] max-w-md flex-col overflow-hidden rounded-4xl bg-m3-surface-container-high p-6 text-m3-on-surface z-50"
+					>
+						<form
+							onSubmit={handlePasswordSubmit}
+							className="flex flex-col gap-4"
+						>
+							<div className="flex items-center gap-3.5">
+								<div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-m3-primary-container text-m3-on-primary-container">
+									<Icon
+										name={isSettingInitialPassword ? "lock" : "lock_reset"}
+										size={24}
+									/>
+								</div>
+								<div className="min-w-0 flex-1">
+									<DialogTitle className="text-lg font-bold text-m3-on-surface leading-snug">
+										{isSettingInitialPassword
+											? "Thiết lập mật khẩu đăng nhập"
+											: "Đổi mật khẩu"}
+									</DialogTitle>
+									<DialogDescription className="text-xs text-m3-on-surface-variant">
+										{isSettingInitialPassword
+											? "Tạo mật khẩu để đăng nhập bằng tài khoản hoặc email"
+											: "Cập nhật mật khẩu để bảo vệ tài khoản"}
+									</DialogDescription>
+								</div>
+							</div>
+
+							<DialogBody>
+								<div className="space-y-4 mt-2">
+									{!isSettingInitialPassword && (
+										<TextField
+											type="password"
+											variant="outlined"
+											label="Mật khẩu hiện tại"
+											placeholder="Nhập mật khẩu đang dùng"
+											fullWidth
+											required
+											value={passwordForm.currentPassword}
+											onChange={(value: string) =>
+												setPasswordForm((prev) => ({
+													...prev,
+													currentPassword: value,
+												}))
+											}
+											leadingIcon={<Icon name="lock" />}
+											trailingIconMode="password-toggle"
+										/>
+									)}
+
+									<TextField
+										type="password"
+										variant="outlined"
+										label="Mật khẩu mới"
+										placeholder="Tối thiểu 6 ký tự"
+										fullWidth
+										required
+										value={passwordForm.newPassword}
+										onChange={(value: string) =>
+											setPasswordForm((prev) => ({
+												...prev,
+												newPassword: value,
+											}))
+										}
+										leadingIcon={<Icon name="password" />}
+										trailingIconMode="password-toggle"
+									/>
+
+									<TextField
+										type="password"
+										variant="outlined"
+										label="Xác nhận mật khẩu mới"
+										placeholder="Nhập lại mật khẩu mới"
+										fullWidth
+										required
+										value={passwordForm.confirmPassword}
+										onChange={(value: string) =>
+											setPasswordForm((prev) => ({
+												...prev,
+												confirmPassword: value,
+											}))
+										}
+										leadingIcon={<Icon name="check_circle" />}
+										trailingIconMode="password-toggle"
+									/>
+								</div>
+							</DialogBody>
+
+							<DialogFooter className="mt-2 flex shrink-0 items-center justify-end gap-2.5 pt-4">
+								<Button
+									colorStyle="text"
+									disabled={changingPassword}
+									onClick={() => {
+										setChangePasswordOpen(false);
+										setPasswordForm({
+											currentPassword: "",
+											newPassword: "",
+											confirmPassword: "",
+										});
+									}}
+								>
+									Hủy
+								</Button>
+								<Button
+									colorStyle="filled"
+									type="submit"
+									loading={changingPassword}
+									loadingVariant="loading-indicator"
+									disabled={changingPassword}
+									icon={
+										<Icon
+											name={isSettingInitialPassword ? "lock" : "lock_reset"}
+											className="text-base"
+										/>
+									}
+								>
+									{isSettingInitialPassword
+										? "Thiết lập mật khẩu"
+										: "Đổi mật khẩu"}
+								</Button>
+							</DialogFooter>
+						</form>
 					</DialogContent>
 				</DialogPortal>
 			</Dialog>

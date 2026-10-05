@@ -1,5 +1,5 @@
 import { Icon } from "@bug-on/m3-expressive/core";
-import { Card, Text } from "@bug-on/m3-expressive/layout";
+import { Card, ScrollArea, Text } from "@bug-on/m3-expressive/layout";
 import { useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { RouteLoadingFallback } from "../../components/common";
@@ -88,7 +88,14 @@ export const SubmissionPortalPage = () => {
 	}
 
 	return (
-		<div className="min-h-screen bg-m3-surface-container text-m3-on-surface">
+		<div
+			className="flex h-screen flex-col overflow-hidden bg-m3-primary text-m3-on-primary"
+			style={{
+				height: "100dvh",
+				paddingLeft: "env(safe-area-inset-left)",
+				paddingRight: "env(safe-area-inset-right)",
+			}}
+		>
 			<PortalHeader
 				title={info.title}
 				description={info.description}
@@ -96,63 +103,72 @@ export const SubmissionPortalPage = () => {
 				assignmentsCount={info.assignments.length}
 				maxSubmissionsPerStudent={info.maxSubmissionsPerStudent}
 			/>
-			<main className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-10">
-				{message && (
-					<Card
-						variant="filled"
-						className="flex items-center gap-2 bg-m3-error-container p-4 text-m3-on-error-container rounded-m3-xl"
+			<main className="flex w-full flex-1 min-h-0 flex-col px-3 pb-3 pt-0 overflow-hidden">
+				<div className="flex flex-1 min-h-0 flex-col overflow-hidden rounded-m3-xl-inc bg-m3-surface-container-low text-m3-on-surface">
+					<ScrollArea
+						type="scroll"
+						orientation="vertical"
+						className="flex-1 min-h-0"
+						viewportClassName="p-6 space-y-6"
 					>
-						<Icon name="info" size={20} />
-						<Text variant="body-md" className="text-m3-on-error-container">
-							{message}
-						</Text>
-					</Card>
-				)}
+						{message && (
+							<Card
+								variant="filled"
+								className="flex items-center gap-2 bg-m3-error-container p-4 text-m3-on-error-container rounded-m3-xl"
+							>
+								<Icon name="info" size={20} />
+								<Text variant="body-md" className="text-m3-on-error-container">
+									{message}
+								</Text>
+							</Card>
+						)}
 
-				<PortalTabs
-					tab={tab}
-					onTabChange={setTab}
-					showLeaderboard={Boolean(info.showLeaderboard)}
-					submitContent={
-						<>
-							<IdentitySection
-								classes={info.classes}
-								classId={classId}
-								onClassChange={setClassId}
-								onStudentSearchChange={setStudentSearch}
-								filteredStudents={filteredStudents}
-								studentId={studentId}
-								onStudentChange={setStudentId}
-								loadingStudents={loadingStudents}
-								selectedClass={selectedClass}
-								selectedStudent={selectedStudent}
-								completedCount={completedCount}
-								totalAssignmentsCount={visibleAssignments.length}
-							/>
+						<PortalTabs
+							tab={tab}
+							onTabChange={setTab}
+							showLeaderboard={Boolean(info.showLeaderboard)}
+							submitContent={
+								<>
+									<IdentitySection
+										classes={info.classes}
+										classId={classId}
+										onClassChange={setClassId}
+										onStudentSearchChange={setStudentSearch}
+										filteredStudents={filteredStudents}
+										studentId={studentId}
+										onStudentChange={setStudentId}
+										loadingStudents={loadingStudents}
+										selectedClass={selectedClass}
+										selectedStudent={selectedStudent}
+										completedCount={completedCount}
+										totalAssignmentsCount={visibleAssignments.length}
+									/>
 
-							<AssignmentGrid
-								assignments={visibleAssignments}
-								files={files}
-								results={results}
-								submittingAssignmentId={submittingAssignmentId}
-								previewingAssignmentId={previewingAssignmentId}
-								draggingAssignmentId={draggingAssignmentId}
-								confirmedIdentity={Boolean(classId && studentId)}
-								showDetailedFeedback={Boolean(info.showDetailedFeedback)}
-								onFileSelect={handleFileSelected}
-								onSubmit={submit}
-								onDragChange={setDraggingAssignmentId}
-							/>
-						</>
-					}
-					leaderboardContent={
-						<LeaderboardSection
-							leaderboard={leaderboard}
-							loadingLeaderboard={loadingLeaderboard}
-							selectedClass={selectedClass}
+									<AssignmentGrid
+										assignments={visibleAssignments}
+										files={files}
+										results={results}
+										submittingAssignmentId={submittingAssignmentId}
+										previewingAssignmentId={previewingAssignmentId}
+										draggingAssignmentId={draggingAssignmentId}
+										confirmedIdentity={Boolean(classId && studentId)}
+										showDetailedFeedback={Boolean(info.showDetailedFeedback)}
+										onFileSelect={handleFileSelected}
+										onSubmit={submit}
+										onDragChange={setDraggingAssignmentId}
+									/>
+								</>
+							}
+							leaderboardContent={
+								<LeaderboardSection
+									leaderboard={leaderboard}
+									loadingLeaderboard={loadingLeaderboard}
+									selectedClass={selectedClass}
+								/>
+							}
 						/>
-					}
-				/>
+					</ScrollArea>
+				</div>
 			</main>
 		</div>
 	);

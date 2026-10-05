@@ -19,9 +19,6 @@ const Dashboard = lazy(() => import("./pages/Dashboard"));
 const SchoolList = lazy(() => import("./pages/SchoolList"));
 const TeacherSchedule = lazy(() => import("./pages/TeacherSchedule"));
 const ComputerRoomsPage = lazy(() => import("./pages/ComputerRoomsPage"));
-const AssignmentManagementPage = lazy(
-	() => import("./pages/AssignmentManagementPage"),
-);
 const SubmissionPortalManagementPage = lazy(
 	() => import("./pages/SubmissionPortalManagementPage"),
 );
@@ -103,13 +100,7 @@ const AppLayout: React.FC = () => {
 					id: "assignments",
 					label: "Bài tập",
 					icon: "assignment",
-					path: "/assignments/exam",
-				},
-				{
-					id: "submission-portals",
-					label: "Nộp bài",
-					icon: "upload_file",
-					path: "/submission-portals",
+					path: "/assignments",
 				},
 				{
 					id: "grading-test",
@@ -184,27 +175,15 @@ function App() {
 									/>
 									<Route
 										path="/assignments"
-										element={<Navigate to="/assignments/exam" replace />}
+										element={<SubmissionPortalManagementPage />}
 									/>
 									<Route
-										path="/assignments/filters"
-										element={<Navigate to="/assignments/exam" replace />}
-									/>
-									<Route
-										path="/assignments/list"
-										element={<Navigate to="/assignments/exam" replace />}
-									/>
-									<Route
-										path="/assignments/form"
-										element={<Navigate to="/assignments/exam" replace />}
-									/>
-									<Route
-										path="/assignments/exam"
-										element={<AssignmentManagementPage section="exam" />}
+										path="/assignments/*"
+										element={<Navigate to="/assignments" replace />}
 									/>
 									<Route
 										path="/submission-portals"
-										element={<SubmissionPortalManagementPage />}
+										element={<Navigate to="/assignments" replace />}
 									/>
 
 									{/* XML Rules: bảo vệ theo permission 'xmlrules.view' */}

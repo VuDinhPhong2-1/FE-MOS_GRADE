@@ -3,7 +3,6 @@ import {
 	Icon,
 	Menu,
 	MenuContent,
-	MenuDivider,
 	MenuGroup,
 	MenuItem,
 	MenuTrigger,
@@ -113,7 +112,7 @@ const ClassActionToolbarComponent = ({
 						</TooltipBox>
 					</div>
 				</MenuTrigger>
-				<MenuContent align="center" className="w-64" separatorStyle="gap">
+				<MenuContent maxHeight="full" align="center" className="w-64" separatorStyle="gap">
 					<MenuGroup label="Trạng thái lớp">
 						<MenuItem
 							selected={statusFilter === "all"}
@@ -137,8 +136,6 @@ const ClassActionToolbarComponent = ({
 							Ngừng hoạt động
 						</MenuItem>
 					</MenuGroup>
-
-					<MenuDivider isGapVariant className="bg-transparent" />
 
 					<MenuGroup label="Lọc theo khối">
 						<MenuItem

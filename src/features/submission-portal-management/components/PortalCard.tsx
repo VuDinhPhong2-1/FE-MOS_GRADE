@@ -32,7 +32,7 @@ export const PortalCard: React.FC<PortalCardProps> = ({
 		>
 			<div className="space-y-3">
 				{/* Top row: Status, Alert badges & Creation date */}
-				<div className="flex flex-wrap items-start justify-between gap-2">
+				<div className="flex flex-wrap items-center justify-between gap-2">
 					<div className="flex flex-wrap items-center gap-2">
 						<Chip
 							variant="suggestion"
@@ -50,6 +50,16 @@ export const PortalCard: React.FC<PortalCardProps> = ({
 									: "bg-m3-surface-variant text-m3-on-surface-variant",
 							)}
 						/>
+
+						<Button
+							colorStyle="outlined"
+							size="sm"
+							icon={<Icon name="open_in_new" size={16} />}
+							className="h-8 text-xs font-medium"
+							onClick={() => window.open(url, "_blank", "noopener,noreferrer")}
+						>
+							Xem thử
+						</Button>
 
 						{portal.unreadAlertCount > 0 && (
 							<Chip
@@ -128,15 +138,6 @@ export const PortalCard: React.FC<PortalCardProps> = ({
 						onClick={() => onCopyUrl(url)}
 					>
 						Sao chép
-					</Button>
-
-					<Button
-						colorStyle="outlined"
-						size="sm"
-						icon={<Icon name="open_in_new" size={18} />}
-						onClick={() => window.open(url, "_blank", "noopener,noreferrer")}
-					>
-						Xem thử
 					</Button>
 
 					<Button

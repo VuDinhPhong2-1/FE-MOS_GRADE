@@ -1,7 +1,9 @@
 import { AUTH_API_BASE_URL } from "../config/api";
 import type {
+	ChangePasswordRequest,
 	PermissionCatalogResponse,
 	ProfileResponse,
+	SetPasswordRequest,
 	TeacherApprovalDecisionRequest,
 	TeacherApprovalRequest,
 	TeacherSummary,
@@ -163,6 +165,56 @@ class AuthService {
 			const message = await parseErrorMessage(
 				response,
 				"Không thể cập nhật phân quyền giáo viên",
+			);
+			throw new Error(message);
+		}
+
+		return response.json();
+	}
+
+	async changePassword(
+		data: ChangePasswordRequest,
+		getAccessToken: (forceRefresh?: boolean) => Promise<string | null>,
+	): Promise<{ message: string }> {
+		const response = await authFetch(
+			`${AUTH_API_BASE_URL}/change-password`,
+			{
+				method: "POST",
+				headers: jsonHeaders,
+				body: JSON.stringify(data),
+			},
+			getAccessToken,
+		);
+
+		if (!response.ok) {
+			const message = await parseErrorMessage(
+				response,
+				"Không thể đổi mật khẩu",
+			);
+			throw new Error(message);
+		}
+
+		return response.json();
+	}
+
+	async setPassword(
+		data: SetPasswordRequest,
+		getAccessToken: (forceRefresh?: boolean) => Promise<string | null>,
+	): Promise<{ message: string }> {
+		const response = await authFetch(
+			`${AUTH_API_BASE_URL}/set-password`,
+			{
+				method: "POST",
+				headers: jsonHeaders,
+				body: JSON.stringify(data),
+			},
+			getAccessToken,
+		);
+
+		if (!response.ok) {
+			const message = await parseErrorMessage(
+				response,
+				"Không thể thiết lập mật khẩu",
 			);
 			throw new Error(message);
 		}
