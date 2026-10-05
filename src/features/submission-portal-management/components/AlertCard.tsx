@@ -82,8 +82,7 @@ export const AlertCard: React.FC<AlertCardProps> = ({ alert }) => {
 												: ""}
 										</span>
 										<span className="block text-[11px] text-m3-on-surface-variant opacity-80">
-											Tệp: {student.fileName || "--"} · IP:{" "}
-											{student.ipAddress || "--"} · Nộp lúc:{" "}
+											Tệp: {student.fileName || "--"} · Nộp lúc:{" "}
 											{formatDateTime(student.submittedAt)}
 										</span>
 									</div>
@@ -105,7 +104,7 @@ export const AlertCard: React.FC<AlertCardProps> = ({ alert }) => {
 			) : (
 				<p className="rounded-m3-sm bg-m3-surface/70 p-2.5 text-xs text-m3-on-surface">
 					Chưa có dữ liệu tên học sinh cho cảnh báo này. Vui lòng đối chiếu bảng
-					“Lượt nộp gần đây” theo thời gian/IP/tệp.
+					“Lượt nộp gần đây” theo thời gian/tệp.
 				</p>
 			)}
 		</Card>

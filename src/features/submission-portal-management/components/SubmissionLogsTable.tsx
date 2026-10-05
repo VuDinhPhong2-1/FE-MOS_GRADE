@@ -105,9 +105,9 @@ export const SubmissionLogsTable: React.FC<SubmissionLogsTableProps> = ({
 					</h3>
 					<p className="text-xs text-m3-on-surface-variant">
 						{hasMore
-							? `Hiển thị 50 / ${totalCount} lượt nộp gần nhất. Đối chiếu tệp nộp, IP và điểm số.`
+							? `Hiển thị 50 / ${totalCount} lượt nộp gần nhất. Đối chiếu tệp nộp, thời gian và điểm số.`
 							: totalCount === 0
-								? "Đối chiếu tệp nộp, IP và điểm số của học sinh qua cổng nộp bài."
+								? "Đối chiếu tệp nộp, thời gian và điểm số của học sinh qua cổng nộp bài."
 								: `${totalCount} lượt nộp bài đã ghi nhận.`}
 					</p>
 				</div>

@@ -14,21 +14,27 @@ import type {
 import { authFetch } from "./auth-fetch";
 
 const jsonHeaders = { "Content-Type": "application/json" };
-const deviceIdStorageKey = "mos_submission_portal_device_id";
+const sessionIdStorageKey = "mos_submission_portal_session_id";
+const legacyDeviceIdStorageKey = "mos_submission_portal_device_id";
 
-const getDeviceId = () => {
+export const getSessionId = (): string => {
 	try {
-		const existing = window.localStorage.getItem(deviceIdStorageKey);
-		if (existing) return existing;
+		const existing =
+			window.localStorage.getItem(sessionIdStorageKey) ||
+			window.localStorage.getItem(legacyDeviceIdStorageKey);
+		if (existing) {
+			window.localStorage.setItem(sessionIdStorageKey, existing);
+			return existing;
+		}
 
-		const deviceId =
+		const sessionId =
 			typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
 				? crypto.randomUUID()
 				: `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-		window.localStorage.setItem(deviceIdStorageKey, deviceId);
-		return deviceId;
+		window.localStorage.setItem(sessionIdStorageKey, sessionId);
+		return sessionId;
 	} catch {
-		return undefined;
+		return "portal-session-fallback";
 	}
 };
 
@@ -174,13 +180,18 @@ export const submissionPortalService = {
 		body.append("studentId", studentId);
 		body.append("assignmentId", assignmentId);
 		body.append("file", file);
-		const deviceId = getDeviceId();
+		const sessionId = getSessionId();
+		const headers: Record<string, string> = {};
+		if (sessionId) {
+			headers["X-Session-Id"] = sessionId;
+			headers["X-Device-Id"] = sessionId;
+		}
 		const res = await fetch(
 			`${API_BASE_URL}/public/portals/${token}/grade-and-submit`,
 			{
 				method: "POST",
 				body,
-				headers: deviceId ? { "X-Device-Id": deviceId } : undefined,
+				headers: Object.keys(headers).length > 0 ? headers : undefined,
 			},
 		);
 		if (!res.ok) throw new Error(await errorMessage(res, "Không thể nộp bài"));

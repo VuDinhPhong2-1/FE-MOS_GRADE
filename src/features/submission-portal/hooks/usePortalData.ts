@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { submissionPortalService } from "../../../services/submission-portal.service";
+import {
+	getSessionId,
+	submissionPortalService,
+} from "../../../services/submission-portal.service";
 import type {
 	PublicPortalAssignment,
 	PublicPortalClass,
@@ -75,14 +78,22 @@ export const usePortalData = (
 	const [info, setInfo] = useState<PublicPortalInfo | null>(null);
 	const [classId, setClassIdState] = useState(() => {
 		try {
-			return sessionStorage.getItem(`mos_portal_${token}_classId`) || "";
+			return (
+				localStorage.getItem(`mos_portal_${token}_classId`) ||
+				sessionStorage.getItem(`mos_portal_${token}_classId`) ||
+				""
+			);
 		} catch {
 			return "";
 		}
 	});
 	const [studentId, setStudentIdState] = useState(() => {
 		try {
-			return sessionStorage.getItem(`mos_portal_${token}_studentId`) || "";
+			return (
+				localStorage.getItem(`mos_portal_${token}_studentId`) ||
+				sessionStorage.getItem(`mos_portal_${token}_studentId`) ||
+				""
+			);
 		} catch {
 			return "";
 		}
@@ -106,10 +117,11 @@ export const usePortalData = (
 			setClassIdState(id);
 			try {
 				if (id) {
-					sessionStorage.setItem(`mos_portal_${token}_classId`, id);
+					localStorage.setItem(`mos_portal_${token}_classId`, id);
 				} else {
-					sessionStorage.removeItem(`mos_portal_${token}_classId`);
+					localStorage.removeItem(`mos_portal_${token}_classId`);
 				}
+				sessionStorage.removeItem(`mos_portal_${token}_classId`);
 			} catch {}
 		},
 		[token],
@@ -120,10 +132,12 @@ export const usePortalData = (
 			setStudentIdState(id);
 			try {
 				if (id) {
-					sessionStorage.setItem(`mos_portal_${token}_studentId`, id);
+					localStorage.setItem(`mos_portal_${token}_studentId`, id);
+					getSessionId();
 				} else {
-					sessionStorage.removeItem(`mos_portal_${token}_studentId`);
+					localStorage.removeItem(`mos_portal_${token}_studentId`);
 				}
+				sessionStorage.removeItem(`mos_portal_${token}_studentId`);
 			} catch {}
 		},
 		[token],

@@ -147,6 +147,7 @@ export interface SubmissionAlertStudent {
 	assignmentName?: string;
 	fileName?: string;
 	ipAddress?: string;
+	sessionId?: string;
 	scoreValue?: number;
 	maxScore?: number;
 	submittedAt?: string;
@@ -160,6 +161,7 @@ export interface SubmissionLog {
 	scoreValue?: number;
 	maxScore: number;
 	ipAddress?: string;
+	sessionId?: string;
 	fileHash?: string;
 	fileName?: string;
 	alerts: string[];
