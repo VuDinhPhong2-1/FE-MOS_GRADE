@@ -90,6 +90,23 @@ export const PortalCard: React.FC<PortalCardProps> = ({
 					)}
 				</div>
 
+				{/* Applied Classes Badges */}
+				{portal.classes && portal.classes.length > 0 && (
+					<div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+						<span className="text-xs font-semibold text-m3-on-surface-variant">
+							Lớp:
+						</span>
+						{portal.classes.map((cls) => (
+							<span
+								key={cls.id}
+								className="rounded-m3-full bg-m3-secondary-container px-2.5 py-0.5 text-xs font-bold text-m3-on-secondary-container"
+							>
+								{cls.name}
+							</span>
+						))}
+					</div>
+				)}
+
 				{/* Quick Stats: Classes, Assignments, Scoring Policy */}
 				<div className="grid grid-cols-3 gap-2 rounded-m3-md bg-m3-surface-container-highest p-2.5 text-center text-xs">
 					<div>

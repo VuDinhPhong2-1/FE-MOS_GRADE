@@ -1,23 +1,31 @@
+import type { SelectOption } from "@bug-on/m3-expressive";
 import { useSnackbar } from "@bug-on/m3-expressive";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { showConfirm } from "../../../components/common";
 import { useAuth } from "../../../context/AuthContext";
+import { classService } from "../../../services/class.service";
 import { submissionPortalService } from "../../../services/submission-portal.service";
+import type { Class } from "../../../types/class.types";
 import type { SubmissionPortal } from "../../../types/submission-portal.types";
 import type { ScoringPolicy } from "../utils/portalFormatters";
 
 export const usePortalManagement = () => {
-	const { getAccessToken } = useAuth();
+	const { user, getAccessToken } = useAuth();
 	const { showSnackbar } = useSnackbar();
 
 	const hasLoadedOnceRef = useRef(false);
 	const [portals, setPortals] = useState<SubmissionPortal[]>([]);
+	const [teacherClasses, setTeacherClasses] = useState<Class[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [isRefreshing, setIsRefreshing] = useState(false);
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
 	const [editingPortal, setEditingPortal] = useState<SubmissionPortal | null>(
 		null,
 	);
+
+	// Filters
+	const [scopeFilter, setScopeFilter] = useState<"all" | "teacher">("all");
+	const [selectedClassId, setSelectedClassId] = useState("");
 
 	// Form fields
 	const [title, setTitle] = useState("Link nộp bài thực hành");
@@ -33,20 +41,111 @@ export const usePortalManagement = () => {
 		[portals],
 	);
 
+	const teacherClassIdSet = useMemo(() => {
+		const set = new Set<string>();
+		const currentUserId = user?.userId;
+		for (const cls of teacherClasses) {
+			if (
+				!currentUserId ||
+				cls.ownerId === currentUserId ||
+				cls.managerTeacherIds?.includes(currentUserId)
+			) {
+				set.add(cls.id);
+			}
+		}
+		return set;
+	}, [teacherClasses, user?.userId]);
+
+	const isTeacherPortal = useCallback(
+		(portal: SubmissionPortal) => {
+			if (user?.userId && portal.createdBy === user.userId) return true;
+			return portal.classIds.some((id) => teacherClassIdSet.has(id));
+		},
+		[teacherClassIdSet, user?.userId],
+	);
+
+	const classOptions = useMemo<SelectOption[]>(() => {
+		const scopedPortals =
+			scopeFilter === "teacher"
+				? visiblePortals.filter(isTeacherPortal)
+				: visiblePortals;
+
+		const classMap = new Map<string, string>();
+
+		for (const portal of scopedPortals) {
+			if (portal.classes && portal.classes.length > 0) {
+				for (const c of portal.classes) {
+					classMap.set(c.id, c.name);
+				}
+			} else {
+				for (const cId of portal.classIds) {
+					const found = teacherClasses.find((tc) => tc.id === cId);
+					if (found) {
+						classMap.set(found.id, found.name);
+					}
+				}
+			}
+		}
+
+		return [
+			{ value: "", label: "Tất cả các lớp" },
+			...Array.from(classMap.entries())
+				.sort((a, b) => a[1].localeCompare(b[1], "vi"))
+				.map(([id, name]) => ({
+					value: id,
+					label: name,
+				})),
+		];
+	}, [scopeFilter, visiblePortals, isTeacherPortal, teacherClasses]);
+
+	const handleScopeChange = useCallback((newScope: "all" | "teacher") => {
+		setScopeFilter(newScope);
+		// Reset class filter if not available in new scope
+		setSelectedClassId("");
+	}, []);
+
+	const resetFilters = useCallback(() => {
+		setScopeFilter("all");
+		setSelectedClassId("");
+	}, []);
+
+	const filteredPortals = useMemo(() => {
+		let list = visiblePortals;
+
+		if (scopeFilter === "teacher") {
+			list = list.filter(isTeacherPortal);
+		}
+
+		if (selectedClassId) {
+			list = list.filter((p) => p.classIds.includes(selectedClassId));
+		}
+
+		return list;
+	}, [visiblePortals, scopeFilter, isTeacherPortal, selectedClassId]);
+
 	const stats = useMemo(
 		() => ({
-			active: visiblePortals.length,
-			totalAlerts: visiblePortals.reduce(
+			active: filteredPortals.length,
+			totalAlerts: filteredPortals.reduce(
 				(s, p) => s + (p.unreadAlertCount || 0),
 				0,
 			),
-			scopedAssignments: visiblePortals.reduce(
+			scopedAssignments: filteredPortals.reduce(
 				(s, p) => s + p.assignmentIds.length,
 				0,
 			),
 		}),
-		[visiblePortals],
+		[filteredPortals],
 	);
+
+	const fetchTeacherClasses = useCallback(async () => {
+		try {
+			const classList = await classService.getAllClasses(getAccessToken, true);
+			setTeacherClasses(classList.filter((cls) => cls.isActive !== false));
+		} catch {
+			// Non-critical fallback
+		}
+	}, [getAccessToken]);
 
 	const fetchPortals = useCallback(async () => {
 		if (!hasLoadedOnceRef.current) {
@@ -56,7 +155,10 @@ export const usePortalManagement = () => {
 		}
 
 		try {
-			const portalList = await submissionPortalService.getAll(getAccessToken);
+			const [portalList] = await Promise.all([
+				submissionPortalService.getAll(getAccessToken),
+				fetchTeacherClasses(),
+			]);
 			setPortals(portalList);
 			hasLoadedOnceRef.current = true;
 		} catch (error) {
@@ -71,7 +173,7 @@ export const usePortalManagement = () => {
 			setLoading(false);
 			setIsRefreshing(false);
 		}
-	}, [getAccessToken, showSnackbar]);
+	}, [getAccessToken, fetchTeacherClasses, showSnackbar]);
 
 	const resetForm = useCallback(() => {
 		setTitle("Link nộp bài thực hành");
@@ -289,6 +391,15 @@ export const usePortalManagement = () => {
 		portals,
 		setPortals,
 		visiblePortals,
+		filteredPortals,
+		scopeFilter,
+		setScopeFilter: handleScopeChange,
+		selectedClassId,
+		setSelectedClassId,
+		classOptions,
+		resetFilters,
+		hasActiveFilters: scopeFilter !== "all" || Boolean(selectedClassId),
+		userRole: user?.role,
 		stats,
 		loading,
 		setLoading,

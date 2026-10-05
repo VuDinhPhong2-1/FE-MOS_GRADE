@@ -3,6 +3,7 @@ export * from "./components/PortalCard";
 export * from "./components/PortalDetailsSection";
 export * from "./components/PortalFormDialog";
 export * from "./components/PortalList";
+export * from "./components/PortalListFilterBar";
 export * from "./components/SchoolClassAssignmentPicker";
 export * from "./components/StatsBanner";
 export * from "./components/SubmissionLogsTable";

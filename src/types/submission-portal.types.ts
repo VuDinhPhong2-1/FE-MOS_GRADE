@@ -14,6 +14,8 @@ export interface SubmissionPortal {
 	isActive: boolean;
 	createdAt: string;
 	unreadAlertCount: number;
+	createdBy?: string;
+	classes?: PublicPortalClass[];
 }
 
 export interface CreateSubmissionPortalRequest {
@@ -132,6 +134,8 @@ export interface SubmissionAlert {
 	isRead: boolean;
 	isDismissed: boolean;
 	createdAt: string;
+	occurrences?: number;
+	latestAt?: string;
 }
 
 export interface SubmissionAlertStudent {

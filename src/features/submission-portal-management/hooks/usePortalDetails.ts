@@ -9,6 +9,52 @@ import type {
 } from "../../../types/submission-portal.types";
 import { formatDateTime } from "../utils/portalFormatters";
 
+const groupAlerts = (rawAlerts: SubmissionAlert[]): SubmissionAlert[] => {
+	const groups: SubmissionAlert[] = [];
+	const map = new Map<string, SubmissionAlert>();
+
+	for (const alert of rawAlerts) {
+		const sortedStudentIds = [...alert.involvedStudentIds].sort().join(",");
+		const key = `${alert.alertType}:${sortedStudentIds}`;
+
+		const existing = map.get(key);
+		if (!existing) {
+			const clone: SubmissionAlert = {
+				...alert,
+				occurrences: alert.occurrences ?? 1,
+				latestAt: alert.latestAt || alert.createdAt,
+				involvedSubmissionLogIds: [...alert.involvedSubmissionLogIds],
+				involvedStudents: alert.involvedStudents
+					? [...alert.involvedStudents]
+					: undefined,
+			};
+			map.set(key, clone);
+			groups.push(clone);
+		} else {
+			existing.occurrences =
+				(existing.occurrences ?? 1) + (alert.occurrences ?? 1);
+			const alertTime = new Date(alert.latestAt || alert.createdAt).getTime();
+			const existingTime = new Date(
+				existing.latestAt || existing.createdAt,
+			).getTime();
+			if (alertTime > existingTime) {
+				existing.latestAt = alert.latestAt || alert.createdAt;
+				existing.message = alert.message;
+				if (alert.involvedStudents && alert.involvedStudents.length > 0) {
+					existing.involvedStudents = alert.involvedStudents;
+				}
+			}
+			for (const logId of alert.involvedSubmissionLogIds) {
+				if (!existing.involvedSubmissionLogIds.includes(logId)) {
+					existing.involvedSubmissionLogIds.push(logId);
+				}
+			}
+		}
+	}
+
+	return groups;
+};
+
 export const usePortalDetails = () => {
 	const { getAccessToken } = useAuth();
 	const { showSnackbar } = useSnackbar();
@@ -42,11 +88,12 @@ export const usePortalDetails = () => {
 					submissionPortalService.getAlerts(portal.id, getAccessToken),
 					submissionPortalService.getLogs(portal.id, getAccessToken),
 				]);
+				const grouped = groupAlerts(portalAlerts);
 				cacheRef.current.set(portal.id, {
-					alerts: portalAlerts,
+					alerts: grouped,
 					logs: portalLogs,
 				});
-				setAlerts(portalAlerts);
+				setAlerts(grouped);
 				setLogs(portalLogs);
 			} catch (error) {
 				if (!cached) {

@@ -1,10 +1,19 @@
-import { Button, Card, Icon } from "@bug-on/m3-expressive";
+import { Button, Card, Icon, type SelectOption } from "@bug-on/m3-expressive";
 import type React from "react";
 import type { SubmissionPortal } from "../../../types/submission-portal.types";
 import { PortalCard } from "./PortalCard";
+import { PortalListFilterBar } from "./PortalListFilterBar";
 
 interface PortalListProps {
 	portals: SubmissionPortal[];
+	totalPortalsCount: number;
+	scopeFilter: "all" | "teacher";
+	onScopeChange: (scope: "all" | "teacher") => void;
+	selectedClassId: string;
+	onClassChange: (classId: string) => void;
+	classOptions: SelectOption[];
+	onResetFilters: () => void;
+	hasActiveFilters: boolean;
 	publicOrigin: string;
 	onOpenCreate: () => void;
 	onCopyUrl: (url: string) => void;
@@ -16,6 +25,14 @@ interface PortalListProps {
 
 export const PortalList: React.FC<PortalListProps> = ({
 	portals,
+	totalPortalsCount,
+	scopeFilter,
+	onScopeChange,
+	selectedClassId,
+	onClassChange,
+	classOptions,
+	onResetFilters,
+	hasActiveFilters,
 	publicOrigin,
 	onOpenCreate,
 	onCopyUrl,
@@ -46,6 +63,19 @@ export const PortalList: React.FC<PortalListProps> = ({
 				</Button>
 			</div>
 
+			{/* Filter Bar: Scope Filter (Tất cả / Lớp trực thuộc giáo viên) & Class Filter */}
+			<PortalListFilterBar
+				scopeFilter={scopeFilter}
+				onScopeChange={onScopeChange}
+				selectedClassId={selectedClassId}
+				onClassChange={onClassChange}
+				classOptions={classOptions}
+				totalCount={totalPortalsCount}
+				filteredCount={portals.length}
+				onResetFilters={onResetFilters}
+				hasActiveFilters={hasActiveFilters}
+			/>
+
 			{/* Portals Grid */}
 			<div className="grid gap-4 xl:grid-cols-2 items-start">
 				{portals.map((portal) => (
@@ -61,8 +91,36 @@ export const PortalList: React.FC<PortalListProps> = ({
 					/>
 				))}
 
-				{/* Empty State */}
-				{portals.length === 0 && (
+				{/* Filtered Empty State */}
+				{portals.length === 0 && hasActiveFilters && (
+					<Card
+						variant="filled"
+						className="bg-m3-surface-container-low flex flex-col items-center justify-center p-10 text-center xl:col-span-2"
+					>
+						<div className="flex h-16 w-16 items-center justify-center rounded-m3-full bg-m3-surface-container-highest text-m3-on-surface-variant">
+							<Icon name="filter_list_off" size={32} />
+						</div>
+						<h3 className="mt-4 text-lg font-bold text-m3-on-surface">
+							Không tìm thấy cổng nộp bài phù hợp
+						</h3>
+						<p className="mt-1 max-w-md text-sm text-m3-on-surface-variant">
+							Không có cổng nộp bài nào khớp với bộ lọc phạm vi hoặc lớp học đã
+							chọn.
+						</p>
+						<div className="mt-5">
+							<Button
+								colorStyle="tonal"
+								icon={<Icon name="filter_alt_off" />}
+								onClick={onResetFilters}
+							>
+								Xóa bộ lọc
+							</Button>
+						</div>
+					</Card>
+				)}
+
+				{/* Global Empty State */}
+				{portals.length === 0 && !hasActiveFilters && (
 					<Card
 						variant="filled"
 						className="bg-m3-surface-container-low flex flex-col items-center justify-center p-10 text-center xl:col-span-2"

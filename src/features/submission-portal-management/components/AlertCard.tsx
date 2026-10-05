@@ -19,16 +19,37 @@ export const AlertCard: React.FC<AlertCardProps> = ({ alert }) => {
 		<Card variant="filled" className={`${colors.containerClass} p-4 space-y-3`}>
 			{/* Header: Severity Badge & Timestamp */}
 			<div className="flex items-center justify-between gap-2">
-				<Chip
-					variant="suggestion"
-					label={severityLabel(alert.severity)}
-					leadingIcon={
-						<Icon name="warning" size={16} className={cn(colors.iconClass)} />
+				<div className="flex flex-wrap items-center gap-2">
+					<Chip
+						variant="suggestion"
+						label={severityLabel(alert.severity)}
+						leadingIcon={
+							<Icon name="warning" size={16} className={cn(colors.iconClass)} />
+						}
+						className={cn(colors.badgeClass, "pointer-events-none select-none")}
+					/>
+					{alert.occurrences && alert.occurrences > 1 ? (
+						<Chip
+							variant="suggestion"
+							label={`Lặp lại ${alert.occurrences} lần`}
+							leadingIcon={
+								<Icon name="repeat" size={15} className="text-m3-error" />
+							}
+							className="border border-m3-error/40 bg-m3-error/15 text-m3-error font-bold pointer-events-none select-none"
+						/>
+					) : null}
+				</div>
+				<span
+					className="text-xs opacity-80"
+					title={
+						alert.latestAt
+							? `Phát hiện lần đầu: ${formatDateTime(alert.createdAt)}`
+							: undefined
 					}
-					className={cn(colors.badgeClass, "pointer-events-none select-none")}
-				/>
-				<span className="text-xs opacity-80">
-					{formatDateTime(alert.createdAt)}
+				>
+					{alert.occurrences && alert.occurrences > 1
+						? `Gần nhất: ${formatDateTime(alert.latestAt || alert.createdAt)}`
+						: formatDateTime(alert.createdAt)}
 				</span>
 			</div>
 

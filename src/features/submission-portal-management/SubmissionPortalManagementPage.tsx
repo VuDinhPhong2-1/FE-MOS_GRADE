@@ -77,7 +77,15 @@ export const SubmissionPortalManagementPage = () => {
 
 			{/* Main Portals Grid List */}
 			<PortalList
-				portals={portalMgmt.visiblePortals}
+				portals={portalMgmt.filteredPortals}
+				totalPortalsCount={portalMgmt.visiblePortals.length}
+				scopeFilter={portalMgmt.scopeFilter}
+				onScopeChange={portalMgmt.setScopeFilter}
+				selectedClassId={portalMgmt.selectedClassId}
+				onClassChange={portalMgmt.setSelectedClassId}
+				classOptions={portalMgmt.classOptions}
+				onResetFilters={portalMgmt.resetFilters}
+				hasActiveFilters={portalMgmt.hasActiveFilters}
 				publicOrigin={publicOrigin}
 				onOpenCreate={() => portalMgmt.setIsCreateOpen(true)}
 				onCopyUrl={portalMgmt.copyText}
