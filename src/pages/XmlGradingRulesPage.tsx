@@ -632,6 +632,9 @@ const splitTextareaLines = (value: string) =>
 const cleanTextareaLines = (values?: string[]) =>
 	(values ?? []).map((item) => item.trim()).filter(Boolean);
 
+const cleanFormulaFragmentLines = (values?: string[]) =>
+	(values ?? []).filter((item) => item.trim().length > 0);
+
 const escapeInternalNewlinesForTextareaLine = (value: string) =>
 	value.replace(/\r\n/g, "\\n").replace(/\n/g, "\\n").replace(/\r/g, "\\n");
 
@@ -1835,10 +1838,7 @@ const ExcelProject02SpecialConditionEditor = ({
 						).join("\n")}
 						onChange={(e) =>
 							updateConfig("excelDefinedNameConfig", {
-								expectedRanges: e.target.value
-									.split(/\r?\n/)
-									.map((item) => item.trim())
-									.filter(Boolean),
+								expectedRanges: e.target.value.split(/\r?\n/),
 							})
 						}
 						placeholder={"D5:D15\nD18:D26"}
@@ -1889,10 +1889,7 @@ const ExcelProject02SpecialConditionEditor = ({
 						).join("\n")}
 						onChange={(e) =>
 							updateConfig("excelFormulaReferencesConfig", {
-								requiredReferences: e.target.value
-									.split(/\r?\n/)
-									.map((item) => item.trim())
-									.filter(Boolean),
+								requiredReferences: e.target.value.split(/\r?\n/),
 							})
 						}
 						placeholder={"Price_10G\nInstall_10G\nSupport_10G"}
@@ -1908,10 +1905,7 @@ const ExcelProject02SpecialConditionEditor = ({
 						).join("\n")}
 						onChange={(e) =>
 							updateConfig("excelFormulaReferencesConfig", {
-								requiredFunctions: e.target.value
-									.split(/\r?\n/)
-									.map((item) => item.trim())
-									.filter(Boolean),
+								requiredFunctions: e.target.value.split(/\r?\n/),
 							})
 						}
 						placeholder={"SUM\nCONCAT"}
@@ -1927,13 +1921,10 @@ const ExcelProject02SpecialConditionEditor = ({
 						).join("\n")}
 						onChange={(e) =>
 							updateConfig("excelFormulaReferencesConfig", {
-								requiredFormulaFragments: e.target.value
-									.split(/\r?\n/)
-									.map((item) => item.trim())
-									.filter(Boolean),
+								requiredFormulaFragments: e.target.value.split(/\r?\n/),
 							})
 						}
-						placeholder={'" - "'}
+						placeholder={'"  -  "'}
 						className={textareaClass}
 					/>
 				</label>
@@ -2127,15 +2118,14 @@ const ExcelProject02SpecialConditionEditor = ({
 					File nguồn
 					<input
 						value={
-							specialCondition.excelDocumentPropertyConfig?.sourceFile ??
-							"docProps/custom.xml"
+							specialCondition.excelDocumentPropertyConfig?.sourceFile ?? ""
 						}
 						onChange={(e) =>
 							updateConfig("excelDocumentPropertyConfig", {
 								sourceFile: e.target.value,
 							})
 						}
-						placeholder="docProps/custom.xml"
+						placeholder="Tự động (core.xml / custom.xml)"
 						className={inputClass}
 					/>
 				</label>
@@ -2523,7 +2513,7 @@ const prepareSpecialCondition = (
 			requiredFunctions: cleanTextareaLines(
 				next.excelFormulaReferencesConfig.requiredFunctions,
 			),
-			requiredFormulaFragments: cleanTextareaLines(
+			requiredFormulaFragments: cleanFormulaFragmentLines(
 				next.excelFormulaReferencesConfig.requiredFormulaFragments,
 			),
 		};
@@ -5517,7 +5507,7 @@ const XmlGradingRulesPage = () => {
 																																		expectedValue:
 																																			"Draft",
 																																		sourceFile:
-																																			"docProps/custom.xml",
+																																			"",
 																																	},
 																															},
 																														);
