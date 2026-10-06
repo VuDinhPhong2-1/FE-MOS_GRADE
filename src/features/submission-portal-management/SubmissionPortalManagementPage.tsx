@@ -62,12 +62,23 @@ export const SubmissionPortalManagementPage = () => {
 		[portalMgmt, details],
 	);
 
+	const handleToggleDetails = useCallback(
+		(portal: Parameters<typeof details.openDetails>[0]) => {
+			if (details.selectedPortal?.id === portal.id) {
+				details.closeDetails();
+			} else {
+				void details.openDetails(portal);
+			}
+		},
+		[details],
+	);
+
 	if (portalMgmt.loading && portalMgmt.visiblePortals.length === 0) {
 		return <RouteLoadingFallback message="Đang tải cổng nộp bài..." />;
 	}
 
 	return (
-		<main className="space-y-4">
+		<main className="space-y-4 pb-28">
 			{/* Metric Cards Banner */}
 			<StatsBanner
 				activeCount={portalMgmt.stats.active}
@@ -78,7 +89,6 @@ export const SubmissionPortalManagementPage = () => {
 			{/* Main Portals Grid List */}
 			<PortalList
 				portals={portalMgmt.filteredPortals}
-				totalPortalsCount={portalMgmt.visiblePortals.length}
 				scopeFilter={portalMgmt.scopeFilter}
 				onScopeChange={portalMgmt.setScopeFilter}
 				selectedClassId={portalMgmt.selectedClassId}
@@ -86,10 +96,17 @@ export const SubmissionPortalManagementPage = () => {
 				classOptions={portalMgmt.classOptions}
 				onResetFilters={portalMgmt.resetFilters}
 				hasActiveFilters={portalMgmt.hasActiveFilters}
+				searchQuery={portalMgmt.searchQuery}
+				onSearchQueryChange={portalMgmt.setSearchQuery}
+				isSearchActive={portalMgmt.isSearchActive}
+				onOpenSearch={portalMgmt.openSearch}
+				onCloseSearch={portalMgmt.closeSearch}
+				onSearchActiveChange={portalMgmt.setIsSearchActive}
 				publicOrigin={publicOrigin}
+				selectedPortalId={details.selectedPortal?.id}
 				onOpenCreate={() => portalMgmt.setIsCreateOpen(true)}
 				onCopyUrl={portalMgmt.copyText}
-				onOpenDetails={details.openDetails}
+				onOpenDetails={handleToggleDetails}
 				onEdit={portalMgmt.openEdit}
 				onDelete={handleDeletePortal}
 				isActionDisabled={portalMgmt.loading}
