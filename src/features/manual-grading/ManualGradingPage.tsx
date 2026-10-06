@@ -4,6 +4,7 @@ import {
 	Card,
 	Icon,
 	LoadingIndicator,
+	Text,
 	useSnackbar,
 } from "@bug-on/m3-expressive";
 import type React from "react";
@@ -82,7 +83,7 @@ export const ManualGradingPage: React.FC = () => {
 			const initialDraft: Record<string, { score: string; feedback: string }> =
 				{};
 
-			(scoreRes as ScoreResponse[]).forEach((s) => {
+			for (const s of scoreRes as ScoreResponse[]) {
 				initialSaved[s.studentId] =
 					s.scoreValue !== undefined && s.scoreValue !== null
 						? s.scoreValue
@@ -94,7 +95,7 @@ export const ManualGradingPage: React.FC = () => {
 							: "",
 					feedback: s.feedback || "",
 				};
-			});
+			}
 
 			setSavedScores(initialSaved);
 			setDraftScores(initialDraft);
@@ -164,7 +165,7 @@ export const ManualGradingPage: React.FC = () => {
 
 			if (
 				hasVal &&
-				(isNaN(parsed!) || parsed! < 0 || parsed! > assignment.maxScore)
+				(Number.isNaN(parsed!) || parsed! < 0 || parsed! > assignment.maxScore)
 			) {
 				showSnackbar({
 					message: `Điểm phải từ 0 đến ${assignment.maxScore}`,
@@ -221,7 +222,7 @@ export const ManualGradingPage: React.FC = () => {
 			const draft = draftScores[student.id];
 			if (draft && draft.score.trim() !== "") {
 				const val = parseFloat(draft.score);
-				if (isNaN(val) || val < 0 || val > assignment.maxScore) {
+				if (Number.isNaN(val) || val < 0 || val > assignment.maxScore) {
 					showSnackbar({
 						message: `Điểm học sinh ${student.firstName} không hợp lệ (0 - ${assignment.maxScore})`,
 					});
@@ -254,9 +255,9 @@ export const ManualGradingPage: React.FC = () => {
 
 			// Update saved state
 			const newSaved: Record<string, number | null> = {};
-			scoresToSave.forEach((item) => {
+			for (const item of scoresToSave) {
 				newSaved[item.studentId] = item.scoreValue ?? null;
-			});
+			}
 			setSavedScores(newSaved);
 
 			showSnackbar({
@@ -300,14 +301,14 @@ export const ManualGradingPage: React.FC = () => {
 
 	if (loading) {
 		return (
-			<div className="flex flex-col items-center justify-center min-h-[400px] gap-3">
+			<div className="flex flex-col items-center justify-center min-h-100 gap-3">
 				<LoadingIndicator
 					size={40}
 					aria-label="Đang tải dữ liệu bài tập và học sinh"
 				/>
-				<p className="text-sm font-medium text-m3-on-surface-variant">
+				<Text variant="body-md" className="text-sm font-medium text-m3-on-surface-variant">
 					Đang tải danh sách bài tập và học sinh...
-				</p>
+				</Text>
 			</div>
 		);
 	}
@@ -322,9 +323,9 @@ export const ManualGradingPage: React.FC = () => {
 				<h2 className="text-lg font-bold text-m3-on-surface mb-2">
 					Không thể tải trang chấm điểm
 				</h2>
-				<p className="text-sm text-m3-on-surface-variant mb-6">
+				<Text variant="body-md" className="text-sm text-m3-on-surface-variant mb-6">
 					{errorMessage || "Không tìm thấy bài tập hoặc lớp học."}
-				</p>
+				</Text>
 				<Button
 					colorStyle="filled"
 					onClick={() => navigate(`/classes/${classId}/grading`)}

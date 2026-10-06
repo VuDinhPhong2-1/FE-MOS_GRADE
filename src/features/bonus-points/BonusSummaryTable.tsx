@@ -4,6 +4,7 @@ import {
 	Icon,
 	IconButton,
 	ScrollArea,
+	Text,
 	TextField,
 } from "@bug-on/m3-expressive";
 import type React from "react";
@@ -49,13 +50,13 @@ export const BonusSummaryTable: React.FC<BonusSummaryTableProps> = ({
 						<Icon name="stars" size={22} />
 					</div>
 					<div>
-						<p className="text-xs font-medium text-m3-on-surface-variant">
+						<Text variant="body-sm" className="text-xs font-medium text-m3-on-surface-variant">
 							Tổng điểm cộng toàn lớp
-						</p>
-						<p className="text-xl font-bold text-m3-primary">
+						</Text>
+						<Text variant="headline-sm" className="text-xl font-bold text-m3-primary">
 							{totalClassBonus > 0 ? `+${totalClassBonus}` : totalClassBonus}{" "}
 							điểm
-						</p>
+						</Text>
 					</div>
 				</Card>
 
@@ -67,12 +68,12 @@ export const BonusSummaryTable: React.FC<BonusSummaryTableProps> = ({
 						<Icon name="group" size={22} />
 					</div>
 					<div>
-						<p className="text-xs font-medium text-m3-on-surface-variant">
+						<Text variant="body-sm" className="text-xs font-medium text-m3-on-surface-variant">
 							Học sinh có điểm cộng
-						</p>
-						<p className="text-xl font-bold text-m3-secondary">
+						</Text>
+						<Text variant="headline-sm" className="text-xl font-bold text-m3-secondary">
 							{studentsWithBonusCount}/{summary.length} học sinh
-						</p>
+						</Text>
 					</div>
 				</Card>
 
@@ -84,15 +85,15 @@ export const BonusSummaryTable: React.FC<BonusSummaryTableProps> = ({
 						<Icon name="insights" size={22} />
 					</div>
 					<div>
-						<p className="text-xs font-medium text-m3-on-surface-variant">
+						<Text variant="body-sm" className="text-xs font-medium text-m3-on-surface-variant">
 							Điểm cộng trung bình
-						</p>
-						<p className="text-xl font-bold text-m3-tertiary">
+						</Text>
+						<Text variant="headline-sm" className="text-xl font-bold text-m3-tertiary">
 							{summary.length > 0
 								? (totalClassBonus / summary.length).toFixed(1)
 								: "0"}{" "}
 							điểm/HS
-						</p>
+						</Text>
 					</div>
 				</Card>
 			</div>

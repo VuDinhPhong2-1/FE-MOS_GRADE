@@ -8,9 +8,10 @@ import {
 	DialogPortal,
 	DialogTitle,
 	Icon,
+	Text,
 } from "@bug-on/m3-expressive";
 import { memo } from "react";
-import type { Student } from "../../types/student.types";
+import type { Student } from "../../../types/student.types";
 
 export interface DeleteStudentDialogProps {
 	open: boolean;
@@ -60,7 +61,7 @@ const DeleteStudentDialogComponent = ({
 							</div>
 						</div>
 
-						<p className="text-sm leading-relaxed text-m3-on-surface-variant">
+						<Text variant="body-md" className="text-sm leading-relaxed text-m3-on-surface-variant">
 							Bạn có chắc chắn muốn xóa học sinh{" "}
 							<strong className="font-semibold text-m3-on-surface">
 								"{fullName}"
@@ -69,7 +70,7 @@ const DeleteStudentDialogComponent = ({
 							{isTemp
 								? "Học sinh này đang ở trạng thái tạm thời, sẽ được gỡ khỏi danh sách hiện tại."
 								: "Dữ liệu học sinh cùng điểm số và thông tin liên quan sẽ bị xóa hoàn toàn khỏi lớp học."}
-						</p>
+						</Text>
 
 						<DialogFooter className="mt-2 flex shrink-0 items-center justify-end gap-2.5 pt-4">
 							<Button

@@ -9,6 +9,7 @@ import {
 	DialogPortal,
 	DialogTitle,
 	Icon,
+	IconButton,
 	ScrollArea,
 	TextField,
 } from "@bug-on/m3-expressive";
@@ -22,9 +23,9 @@ import {
 import {
 	DialogHeaderIcon,
 	useUnsavedChangesGuard,
-} from "../../components/common";
-import type { CreateSchoolRequest, School } from "../../types";
-import { EMPTY_FORM, type SchoolFormModalProps } from "./types";
+} from "../../../components/common";
+import type { CreateSchoolRequest, School } from "../../../types";
+import { EMPTY_FORM, type SchoolFormModalProps } from "../types";
 
 const getInitialFormData = (
 	editingSchool: School | null,
@@ -92,6 +93,73 @@ export const SchoolFormModal = ({
 		[],
 	);
 
+	const handleOpenSheet = useCallback(
+		(e: React.MouseEvent) => {
+			e.preventDefault();
+			e.stopPropagation();
+			const sheetId = formData.attendanceSpreadsheetId?.trim();
+			if (!sheetId) return;
+			const url =
+				sheetId.startsWith("http://") || sheetId.startsWith("https://")
+					? sheetId
+					: `https://docs.google.com/spreadsheets/d/${sheetId}/edit`;
+			window.open(url, "_blank", "noopener,noreferrer");
+		},
+		[formData.attendanceSpreadsheetId],
+	);
+
+	const handleOpenMap = useCallback(
+		(e: React.MouseEvent) => {
+			e.preventDefault();
+			e.stopPropagation();
+			const address = formData.address?.trim();
+			if (!address) return;
+			window.open(
+				`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`,
+				"_blank",
+				"noopener,noreferrer",
+			);
+		},
+		[formData.address],
+	);
+
+	const handleCallPhone = useCallback(
+		(e: React.MouseEvent) => {
+			e.preventDefault();
+			e.stopPropagation();
+			const phone = formData.phoneNumber?.trim();
+			if (!phone) return;
+			window.location.href = `tel:${phone}`;
+		},
+		[formData.phoneNumber],
+	);
+
+	const handleSendEmail = useCallback(
+		(e: React.MouseEvent) => {
+			e.preventDefault();
+			e.stopPropagation();
+			const email = formData.email?.trim();
+			if (!email) return;
+			window.location.href = `mailto:${email}`;
+		},
+		[formData.email],
+	);
+
+	const handleOpenWebsite = useCallback(
+		(e: React.MouseEvent) => {
+			e.preventDefault();
+			e.stopPropagation();
+			const website = formData.website?.trim();
+			if (!website) return;
+			const url =
+				website.startsWith("http://") || website.startsWith("https://")
+					? website
+					: `https://${website}`;
+			window.open(url, "_blank", "noopener,noreferrer");
+		},
+		[formData.website],
+	);
+
 	const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
 		const payload: CreateSchoolRequest = {
@@ -151,8 +219,8 @@ export const SchoolFormModal = ({
 							className="flex-1 min-h-0"
 							viewportClassName="px-6 pt-4 pb-6 pr-5"
 						>
-							<div className="flex flex-col gap-6">
-								<div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+							<div className="flex flex-col gap-4">
+								<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
 									<TextField
 										variant="outlined"
 										label="Tên trường"
@@ -178,23 +246,39 @@ export const SchoolFormModal = ({
 									/>
 								</div>
 
-								<div>
-									<TextField
-										variant="outlined"
-										label="ID Google Sheet"
-										placeholder="Dán Spreadsheet ID hoặc link Google Sheet"
-										disabled={isSubmitting || !isAdmin}
-										fullWidth
-										leadingIcon={<Icon name="table_chart" />}
-										value={formData.attendanceSpreadsheetId || ""}
-										onChange={handleFieldChange("attendanceSpreadsheetId")}
-										supportingText={
-											isAdmin
-												? "Mỗi trường có 1 Google Sheet riêng. Lớp học mới tạo sẽ tự động kế thừa."
-												: "Chỉ tài khoản Admin mới có quyền cập nhật Spreadsheet ID."
-										}
-									/>
-								</div>
+								<TextField
+									variant="outlined"
+									label="ID Google Sheet"
+									placeholder="Dán Spreadsheet ID hoặc link Google Sheet"
+									disabled={isSubmitting || !isAdmin}
+									fullWidth
+									leadingIcon={<Icon name="table_chart" />}
+									value={formData.attendanceSpreadsheetId || ""}
+									onChange={handleFieldChange("attendanceSpreadsheetId")}
+									trailingIconMode="custom"
+									trailingIcon={
+										<IconButton
+											type="button"
+											size="sm"
+											colorStyle="standard"
+											disabled={
+												isSubmitting ||
+												!isAdmin ||
+												!formData.attendanceSpreadsheetId?.trim()
+											}
+											onClick={handleOpenSheet}
+											title="Mở Google Sheet"
+											aria-label="Mở Google Sheet"
+										>
+											<Icon name="open_in_new" size={18} />
+										</IconButton>
+									}
+									supportingText={
+										isAdmin
+											? "Mỗi trường có 1 Google Sheet riêng. Lớp học mới tạo sẽ tự động kế thừa."
+											: "Chỉ tài khoản Admin mới có quyền cập nhật Spreadsheet ID."
+									}
+								/>
 
 								<TextField
 									variant="outlined"
@@ -205,9 +289,23 @@ export const SchoolFormModal = ({
 									leadingIcon={<Icon name="location_on" />}
 									value={formData.address || ""}
 									onChange={handleFieldChange("address")}
+									trailingIconMode="custom"
+									trailingIcon={
+										<IconButton
+											type="button"
+											size="sm"
+											colorStyle="standard"
+											disabled={isSubmitting || !formData.address?.trim()}
+											onClick={handleOpenMap}
+											title="Xem vị trí trên Google Maps"
+											aria-label="Xem vị trí trên Google Maps"
+										>
+											<Icon name="open_in_new" size={18} />
+										</IconButton>
+									}
 								/>
 
-								<div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+								<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
 									<TextField
 										variant="outlined"
 										type="tel"
@@ -218,6 +316,20 @@ export const SchoolFormModal = ({
 										leadingIcon={<Icon name="call" />}
 										value={formData.phoneNumber || ""}
 										onChange={handleFieldChange("phoneNumber")}
+										trailingIconMode="custom"
+										trailingIcon={
+											<IconButton
+												type="button"
+												size="sm"
+												colorStyle="standard"
+												disabled={isSubmitting || !formData.phoneNumber?.trim()}
+												onClick={handleCallPhone}
+												title="Gọi số điện thoại"
+												aria-label="Gọi số điện thoại"
+											>
+												<Icon name="phone_in_talk" size={18} />
+											</IconButton>
+										}
 									/>
 									<TextField
 										variant="outlined"
@@ -229,6 +341,20 @@ export const SchoolFormModal = ({
 										leadingIcon={<Icon name="mail" />}
 										value={formData.email || ""}
 										onChange={handleFieldChange("email")}
+										trailingIconMode="custom"
+										trailingIcon={
+											<IconButton
+												type="button"
+												size="sm"
+												colorStyle="standard"
+												disabled={isSubmitting || !formData.email?.trim()}
+												onClick={handleSendEmail}
+												title="Gửi email"
+												aria-label="Gửi email"
+											>
+												<Icon name="send" size={18} />
+											</IconButton>
+										}
 									/>
 								</div>
 
@@ -242,6 +368,20 @@ export const SchoolFormModal = ({
 									leadingIcon={<Icon name="language" />}
 									value={formData.website || ""}
 									onChange={handleFieldChange("website")}
+									trailingIconMode="custom"
+									trailingIcon={
+										<IconButton
+											type="button"
+											size="sm"
+											colorStyle="standard"
+											disabled={isSubmitting || !formData.website?.trim()}
+											onClick={handleOpenWebsite}
+											title="Truy cập website"
+											aria-label="Truy cập website"
+										>
+											<Icon name="open_in_new" size={18} />
+										</IconButton>
+									}
 								/>
 
 								<TextField
@@ -250,6 +390,7 @@ export const SchoolFormModal = ({
 									placeholder="Thông tin ghi chú thêm về trường..."
 									disabled={isSubmitting}
 									fullWidth
+									rows={4}
 									leadingIcon={<Icon name="notes" />}
 									value={formData.description || ""}
 									onChange={handleFieldChange("description")}
@@ -258,7 +399,7 @@ export const SchoolFormModal = ({
 						</ScrollArea>
 
 						{/* Modal Footer */}
-						<DialogFooter className="mt-0 flex shrink-0 items-center justify-end gap-2.5 border-t border-m3-outline-variant/30 px-6 py-4">
+						<DialogFooter className="mt-0 flex shrink-0 items-center justify-end gap-2.5 px-6 py-4">
 							<Button
 								colorStyle="text"
 								type="button"

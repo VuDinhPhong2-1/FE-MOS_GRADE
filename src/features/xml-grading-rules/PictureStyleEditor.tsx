@@ -1,4 +1,4 @@
-import { Icon, ProgressIndicator } from "@bug-on/m3-expressive";
+import { Icon, ProgressIndicator, Text } from "@bug-on/m3-expressive";
 import { useEffect, useRef, useState } from "react";
 import { insertedImageAssetsService } from "../../services/insertedImageAssets.service";
 import type { PictureStyleConfig } from "../../types/xml-grading-rules.types";
@@ -260,9 +260,9 @@ const PictureStyleEditor = ({
 		<div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
 			<div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_240px]">
 				<div>
-					<p className="text-xs font-semibold text-slate-600">
+					<Text variant="label-sm" className="text-xs font-semibold text-slate-600">
 						Anh chuan de xac dinh dung anh can cham
-					</p>
+					</Text>
 					<input
 						ref={inputRef}
 						type="file"
@@ -297,9 +297,9 @@ const PictureStyleEditor = ({
 
 					{fileName && (
 						<div className="mt-2 flex items-center gap-2">
-							<p className="min-w-0 flex-1 truncate text-[11px] text-slate-500">
+							<Text variant="label-sm" className="min-w-0 flex-1 truncate text-[11px] text-slate-500">
 								{fileName}
-							</p>
+							</Text>
 							<button
 								type="button"
 								onClick={handleRemoveImage}
@@ -312,26 +312,26 @@ const PictureStyleEditor = ({
 						</div>
 					)}
 
-					<p className="mt-1.5 text-[11px] text-slate-400">
+					<Text variant="label-sm" className="mt-1.5 text-[11px] text-slate-400">
 						Nen chon anh goc trong file dap an. He thong tu tinh hash, khong can
 						nhap tay.
-					</p>
+					</Text>
 
 					{error && (
-						<p className="mt-2 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-[11px] text-red-600">
+						<Text variant="label-sm" className="mt-2 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-[11px] text-red-600">
 							{error}
-						</p>
+						</Text>
 					)}
 
 					{!error && !uploading && !previewLoading && hasSavedImage && (
-						<p className="mt-2 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-[11px] text-emerald-700">
+						<Text variant="label-sm" className="mt-2 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-[11px] text-emerald-700">
 							Da luu anh va hash tren server.
-						</p>
+						</Text>
 					)}
 				</div>
 
 				<div>
-					<p className="mb-2 text-xs font-semibold text-slate-600">Xem truoc</p>
+					<Text variant="label-sm" className="mb-2 text-xs font-semibold text-slate-600">Xem truoc</Text>
 					{previewUrl ? (
 						<div className="relative flex h-36 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white p-2">
 							<img

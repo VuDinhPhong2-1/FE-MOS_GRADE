@@ -1,4 +1,4 @@
-import { ProgressIndicator } from "@bug-on/m3-expressive";
+import { ProgressIndicator, Text } from "@bug-on/m3-expressive";
 import type React from "react";
 
 export interface RouteLoadingFallbackProps {
@@ -31,9 +31,12 @@ export const RouteLoadingFallback: React.FC<RouteLoadingFallbackProps> = ({
 					size={size}
 					aria-label={message}
 				/>
-				<p className="text-sm font-medium text-m3-on-surface-variant font-md3-expressive animate-pulse text-center">
+				<Text
+					variant="body-md"
+					className="font-medium text-m3-on-surface-variant font-md3-expressive animate-pulse text-center"
+				>
 					{message}
-				</p>
+				</Text>
 			</div>
 		</div>
 	);

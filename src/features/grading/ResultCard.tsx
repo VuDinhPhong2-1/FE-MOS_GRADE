@@ -1,4 +1,4 @@
-import { Icon } from "@bug-on/m3-expressive";
+import { Icon, Text } from "@bug-on/m3-expressive";
 import { clsx } from "clsx";
 import React from "react";
 import type { GradingResult } from "../../types";
@@ -27,16 +27,16 @@ const ResultCard: React.FC<Props> = ({ result }) => {
 				</h2>
 				<div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4">
 					<div className="rounded-2xl bg-m3-primary-container/40 p-3.5 shadow-2xs">
-						<p className="text-xs font-semibold text-m3-primary">Tổng điểm</p>
-						<p className="text-2xl font-bold text-m3-primary">
+						<Text variant="label-sm" className="text-xs font-semibold text-m3-primary">Tổng điểm</Text>
+						<Text variant="headline-sm" className="text-2xl font-bold text-m3-primary">
 							{result.totalScore} / {result.maxScore}
-						</p>
+						</Text>
 					</div>
 					<div className="rounded-2xl bg-m3-secondary-container/40 p-3.5 shadow-2xs">
-						<p className="text-xs font-semibold text-m3-secondary">Tỷ lệ</p>
-						<p className="text-2xl font-bold text-m3-secondary">
+						<Text variant="label-sm" className="text-xs font-semibold text-m3-secondary">Tỷ lệ</Text>
+						<Text variant="headline-sm" className="text-2xl font-bold text-m3-secondary">
 							{result.percentage}%
-						</p>
+						</Text>
 					</div>
 					<div
 						className={clsx(
@@ -44,7 +44,8 @@ const ResultCard: React.FC<Props> = ({ result }) => {
 							result.percentage >= 70 ? "bg-emerald-500/15" : "bg-amber-500/15",
 						)}
 					>
-						<p
+						<Text
+							variant="label-sm"
 							className={clsx(
 								"text-xs font-semibold",
 								result.percentage >= 70
@@ -53,8 +54,9 @@ const ResultCard: React.FC<Props> = ({ result }) => {
 							)}
 						>
 							Trạng thái
-						</p>
-						<p
+						</Text>
+						<Text
+							variant="headline-sm"
 							className={clsx(
 								"text-2xl font-bold",
 								result.percentage >= 70
@@ -63,15 +65,15 @@ const ResultCard: React.FC<Props> = ({ result }) => {
 							)}
 						>
 							{result.status}
-						</p>
+						</Text>
 					</div>
 					<div className="rounded-2xl bg-m3-surface-container-highest p-3.5 shadow-2xs">
-						<p className="text-xs font-semibold text-m3-on-surface-variant">
+						<Text variant="label-sm" className="text-xs font-semibold text-m3-on-surface-variant">
 							Ngày chấm
-						</p>
-						<p className="mt-1 text-sm font-medium text-m3-on-surface">
+						</Text>
+						<Text variant="body-md" className="mt-1 text-sm font-medium text-m3-on-surface">
 							{new Date(result.gradedAt).toLocaleString("vi-VN")}
-						</p>
+						</Text>
 					</div>
 				</div>
 			</div>
@@ -104,9 +106,9 @@ const ResultCard: React.FC<Props> = ({ result }) => {
 										<Icon name="cancel" className="text-rose-500 text-xl" />
 									)}
 									<div>
-										<p className="font-medium text-m3-on-surface">
+										<Text variant="body-md" className="font-medium text-m3-on-surface">
 											{task.taskId}: {task.taskName}
-										</p>
+										</Text>
 									</div>
 								</div>
 								<div className="flex items-center gap-4">
@@ -138,9 +140,9 @@ const ResultCard: React.FC<Props> = ({ result }) => {
 								<div className="px-12 pb-4 pt-0 text-sm">
 									{errors.length > 0 && (
 										<div className="mb-2">
-											<p className="mb-1 font-semibold text-rose-600 dark:text-rose-400">
+											<Text variant="body-sm" className="mb-1 font-semibold text-rose-600 dark:text-rose-400">
 												Lỗi sai:
-											</p>
+											</Text>
 											<ul className="list-disc space-y-1 pl-5 text-rose-500 dark:text-rose-300">
 												{Array.from(new Set(errors)).map((err) => (
 													<li key={`${taskKey}-err-${err}`}>
@@ -155,9 +157,9 @@ const ResultCard: React.FC<Props> = ({ result }) => {
 									)}
 									{details.length > 0 && (
 										<div>
-											<p className="mb-1 font-semibold text-emerald-600 dark:text-emerald-400">
+											<Text variant="body-sm" className="mb-1 font-semibold text-emerald-600 dark:text-emerald-400">
 												Chi tiết đúng:
-											</p>
+											</Text>
 											<ul className="list-disc space-y-1 pl-5 text-emerald-500 dark:text-emerald-300">
 												{Array.from(new Set(details)).map((detail) => (
 													<li key={`${taskKey}-detail-${detail}`}>

@@ -16,14 +16,14 @@ import {
 	TextField,
 } from "@bug-on/m3-expressive";
 import { type FormEvent, memo, useEffect, useMemo, useState } from "react";
-import { DialogHeaderIcon, showConfirm } from "../../components/common";
-import studentService from "../../services/student.service";
+import { DialogHeaderIcon, showConfirm } from "../../../components/common";
+import studentService from "../../../services/student.service";
 import type {
 	CompetencyLevel,
 	StudentFormData,
 	StudentModalProps,
-} from "./types";
-import { VALID_COMPETENCY_LEVELS, VALID_STATUSES } from "./types";
+} from "../types";
+import { VALID_COMPETENCY_LEVELS, VALID_STATUSES } from "../types";
 
 const defaultForm: StudentFormData = {
 	middleName: "",

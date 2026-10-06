@@ -25,10 +25,13 @@ const LeaderboardPodiumComponent = ({
 				<Text variant="title-md" className="font-black text-m3-on-surface">
 					Cuộc đua chuẩn bị khởi tranh!
 				</Text>
-				<p className="mt-1 max-w-md text-xs text-m3-on-surface-variant">
+				<Text
+					variant="body-sm"
+					className="mt-1 max-w-md text-xs text-m3-on-surface-variant"
+				>
 					Chưa có học sinh nào nộp bài có kết quả. Hãy là người đầu tiên hoàn
 					thành bài tập để khắc tên lên vị trí Quán quân!
-				</p>
+				</Text>
 			</div>
 		);
 	}
@@ -42,9 +45,12 @@ const LeaderboardPodiumComponent = ({
 				>
 					BỤC VINH DANH QUÁN QUÂN
 				</Text>
-				<p className="text-xs text-m3-on-surface-variant mt-1">
+				<Text
+					variant="body-sm"
+					className="text-xs text-m3-on-surface-variant mt-1"
+				>
 					Top 3 học sinh xuất sắc nhất cuộc tranh tài hiện tại
-				</p>
+				</Text>
 			</div>
 
 			<div className="flex flex-col items-center gap-4 sm:flex-row sm:items-end sm:justify-center sm:gap-4 md:gap-6">

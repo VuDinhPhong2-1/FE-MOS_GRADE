@@ -158,10 +158,10 @@ export const SchoolClassAssignmentPicker: React.FC<
 						<h4 className="text-sm font-bold text-m3-on-surface">
 							3. Phạm vi áp dụng (Trường, Lớp, Bài tập)
 						</h4>
-						<p className="text-xs text-m3-on-surface-variant">
+						<Text variant="body-sm" className="text-xs text-m3-on-surface-variant">
 							Chọn trường trước, sau đó chọn lớp và tích chọn một hoặc nhiều bài
 							tập chấm tự động.
-						</p>
+						</Text>
 					</div>
 				</div>
 				<div className="flex items-center gap-1.5 text-xs font-semibold">
@@ -274,10 +274,13 @@ export const SchoolClassAssignmentPicker: React.FC<
 
 					{/* Supporting Helper / Notice */}
 					{!selectedSchoolId && (
-						<p className="flex items-center gap-1.5 text-[11px] text-m3-on-surface-variant/70 pl-1">
+						<Text
+							variant="label-sm"
+							className="flex items-center gap-1.5 text-[11px] text-m3-on-surface-variant/70 pl-1"
+						>
 							<Icon name="lock" className="text-xs" />
 							Chọn trường học ở bước 1 để mở khóa chọn lớp.
-						</p>
+						</Text>
 					)}
 					{selectedSchoolId && !loadingClasses && classes.length === 0 && (
 						<div className="flex items-center gap-2 rounded-2xl bg-m3-surface-container-high p-2.5 text-xs text-m3-on-surface-variant">
@@ -351,11 +354,13 @@ export const SchoolClassAssignmentPicker: React.FC<
 									className="mt-0.5 text-base text-m3-tertiary shrink-0"
 								/>
 								<div className="space-y-0.5">
-									<p className="font-bold">Lớp chưa có bài tập chấm tự động</p>
-									<p className="text-[11px] opacity-80">
+									<Text variant="body-sm" className="font-bold">
+										Lớp chưa có bài tập chấm tự động
+									</Text>
+									<Text variant="label-sm" className="text-[11px] opacity-80">
 										Lớp đã chọn chưa có bài tập chấm tự động có API endpoint.
 										Hãy tạo bài tập ở trang Chấm điểm của lớp trước.
-									</p>
+									</Text>
 								</div>
 							</div>
 						)}

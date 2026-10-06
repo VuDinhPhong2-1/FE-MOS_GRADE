@@ -4,6 +4,7 @@ import {
 	Icon,
 	ProgressIndicator,
 	ShapeMedia,
+	Text,
 	TextField,
 	useThemeMode,
 } from "@bug-on/m3-expressive";
@@ -215,10 +216,10 @@ export default function AuthPage() {
 						<h1 className="mt-5 text-3xl font-black leading-tight tracking-tight">
 							Hệ thống quản lý và chấm điểm MOS
 						</h1>
-						<p className="mt-2.5 text-sm opacity-90 leading-relaxed">
+						<Text variant="body-md" className="mt-2.5 text-sm opacity-90 leading-relaxed">
 							Theo dõi lớp học, chấm điểm bài tập tự động và tổng hợp kết quả
 							trực quan.
-						</p>
+						</Text>
 					</div>
 
 					{/* Center Showcase: Animated M3 ShapeMedia */}
@@ -259,11 +260,11 @@ export default function AuthPage() {
 						<h2 className="text-2xl font-black tracking-tight text-m3-on-surface">
 							{isLogin ? "Đăng nhập" : "Đăng ký tài khoản"}
 						</h2>
-						<p className="mt-1 text-sm text-m3-on-surface-variant">
+						<Text variant="body-md" className="mt-1 text-sm text-m3-on-surface-variant">
 							{isLogin
 								? "Chào mừng bạn quay lại MOS Grader."
 								: "Tạo tài khoản mới để bắt đầu sử dụng."}
-						</p>
+						</Text>
 					</div>
 
 					{error && (

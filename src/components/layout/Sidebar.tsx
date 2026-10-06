@@ -38,7 +38,7 @@ export const Sidebar = ({ navItems, onNavigate }: SidebarProps) => {
 	};
 
 	return (
-		<aside className="relative hidden h-full flex-col bg-m3-surface-container-low text-m3-on-surface lg:flex">
+		<aside className="relative hidden h-full flex-col bg-m3-surface-container text-m3-on-surface lg:flex">
 			<NavigationRail
 				variant="collapsed"
 				header={
@@ -54,13 +54,14 @@ export const Sidebar = ({ navItems, onNavigate }: SidebarProps) => {
 					>
 						<Text
 							variant="title-lg"
-							className="font-extrabold text-m3-on-primary"
+							weight={800}
+							className="text-m3-on-primary"
 						>
 							M
 						</Text>
 					</ShapeMedia>
 				}
-				className="bg-m3-surface-container-low py-4"
+				className="bg-m3-surface-container py-4"
 			>
 				{navItems.map((item) => (
 					<NavigationRailItem

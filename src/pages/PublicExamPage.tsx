@@ -1,4 +1,4 @@
-import { Icon, ProgressIndicator } from "@bug-on/m3-expressive";
+import { Icon, ProgressIndicator, Text } from "@bug-on/m3-expressive";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { localAgentService } from "../services/local-agent.service";
@@ -251,16 +251,16 @@ export function PublicExamPage() {
 					<h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
 						Ca thi MOS
 					</h1>
-					<p className="mt-2 text-sm text-slate-600">
+					<Text variant="body-md" className="mt-2 text-sm text-slate-600">
 						Chon dung ten cua ban roi bat dau thi tren Local Agent.
-					</p>
+					</Text>
 				</div>
 
 				<section className="overflow-hidden rounded-3xl bg-m3-surface-container shadow-xs text-m3-on-surface">
 					<div className="bg-linear-to-r from-sky-600 via-cyan-600 to-emerald-500 px-6 py-5 text-white">
-						<p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/80">
+						<Text variant="label-sm" className="text-xs font-semibold uppercase tracking-[0.24em] text-white/80">
 							Public Exam
-						</p>
+						</Text>
 						<h2 className="mt-2 text-2xl font-bold">
 							{publication?.name || "Dang tai ca thi..."}
 						</h2>
@@ -290,30 +290,30 @@ export function PublicExamPage() {
 							<>
 								<div className="grid gap-3 md:grid-cols-3">
 									<div className="rounded-2xl bg-m3-surface-container-low px-4 py-3 text-m3-on-surface">
-										<p className="text-xs uppercase tracking-wide text-m3-on-surface-variant">
+										<Text variant="label-sm" className="text-xs uppercase tracking-wide text-m3-on-surface-variant">
 											So hoc sinh
-										</p>
-										<p className="mt-1 text-xl font-bold text-m3-on-surface">
+										</Text>
+										<Text variant="title-md" className="mt-1 text-xl font-bold text-m3-on-surface">
 											{publication.students.length}
-										</p>
+										</Text>
 									</div>
 									<div className="rounded-2xl bg-m3-surface-container-low px-4 py-3 text-m3-on-surface">
-										<p className="text-xs uppercase tracking-wide text-m3-on-surface-variant">
+										<Text variant="label-sm" className="text-xs uppercase tracking-wide text-m3-on-surface-variant">
 											So project
-										</p>
-										<p className="mt-1 text-xl font-bold text-m3-on-surface">
+										</Text>
+										<Text variant="title-md" className="mt-1 text-xl font-bold text-m3-on-surface">
 											{publication.projectCount}
-										</p>
+										</Text>
 									</div>
 									<div className="rounded-2xl bg-m3-surface-container-low px-4 py-3 text-m3-on-surface">
-										<p className="text-xs uppercase tracking-wide text-m3-on-surface-variant">
+										<Text variant="label-sm" className="text-xs uppercase tracking-wide text-m3-on-surface-variant">
 											Thoi luong
-										</p>
-										<p className="mt-1 text-xl font-bold text-m3-on-surface">
+										</Text>
+										<Text variant="title-md" className="mt-1 text-xl font-bold text-m3-on-surface">
 											{publication.durationMinutes
 												? `${publication.durationMinutes} phut`
 												: "Khong gioi han"}
-										</p>
+										</Text>
 									</div>
 								</div>
 
@@ -487,24 +487,24 @@ export function PublicExamPage() {
 
 								{canResumeCurrentStudent && agentState && (
 									<div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm text-emerald-800">
-										<p className="font-semibold">
+										<Text variant="body-sm" className="font-semibold text-emerald-800">
 											Da tim thay bai cu tren may local.
-										</p>
-										<p className="mt-2">Student: {displayStudentName || "-"}</p>
-										<p>Session ID: {agentState.sessionId || "-"}</p>
-										<p>
+										</Text>
+										<Text variant="body-sm" className="mt-2 text-emerald-800">Student: {displayStudentName || "-"}</Text>
+										<Text variant="body-sm" className="text-emerald-800">Session ID: {agentState.sessionId || "-"}</Text>
+										<Text variant="body-sm" className="text-emerald-800">
 											Project hien tai: {agentState.currentProjectNumber}/
 											{agentState.totalProjectCount}
-										</p>
-										<p>Status: {agentState.status}</p>
+										</Text>
+										<Text variant="body-sm" className="text-emerald-800">Status: {agentState.status}</Text>
 										{agentState.workingFilePath && (
-											<p>Working file: {agentState.workingFilePath}</p>
+											<Text variant="body-sm" className="text-emerald-800">Working file: {agentState.workingFilePath}</Text>
 										)}
 										{!agentState.workingFileExists && (
-											<p className="mt-2 text-rose-700">
+											<Text variant="body-sm" className="mt-2 text-rose-700">
 												Khong tim thay file dang lam do. Ban co the tao lai file
 												project hien tai tu template.
-											</p>
+											</Text>
 										)}
 									</div>
 								)}
@@ -520,7 +520,7 @@ export function PublicExamPage() {
 					</div>
 				</section>
 
-				<p className="mt-4 text-center text-xs text-slate-500">
+				<Text variant="body-sm" className="mt-4 text-center text-xs text-slate-500">
 					Neu mo nham lien ket, quay lai trang{" "}
 					<Link
 						to="/login"
@@ -529,7 +529,7 @@ export function PublicExamPage() {
 						dang nhap
 					</Link>
 					.
-				</p>
+				</Text>
 			</div>
 		</main>
 	);

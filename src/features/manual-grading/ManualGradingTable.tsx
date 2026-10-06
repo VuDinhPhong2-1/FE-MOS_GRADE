@@ -4,6 +4,7 @@ import {
 	Icon,
 	IconButton,
 	ScrollArea,
+	Text,
 	TextField,
 } from "@bug-on/m3-expressive";
 import type React from "react";
@@ -68,10 +69,10 @@ export const ManualGradingTable: React.FC<ManualGradingTableProps> = ({
 				<h3 className="text-lg font-semibold text-m3-on-surface mb-1">
 					Không tìm thấy học sinh nào
 				</h3>
-				<p className="text-sm text-m3-on-surface-variant">
+				<Text variant="body-md" className="text-sm text-m3-on-surface-variant">
 					Lớp học chưa có học sinh hoặc không có kết quả phù hợp với từ khóa tìm
 					kiếm.
-				</p>
+				</Text>
 			</Card>
 		);
 	}
@@ -112,7 +113,7 @@ export const ManualGradingTable: React.FC<ManualGradingTableProps> = ({
 								: null;
 							const isScoreValid =
 								!hasDraftValue ||
-								(!isNaN(parsedDraftScore!) &&
+								(!Number.isNaN(parsedDraftScore!) &&
 									parsedDraftScore! >= 0 &&
 									parsedDraftScore! <= maxScore);
 
@@ -143,13 +144,13 @@ export const ManualGradingTable: React.FC<ManualGradingTableProps> = ({
 												{initial}
 											</div>
 											<div>
-												<p className="font-semibold text-m3-on-surface leading-tight">
+												<Text variant="body-md" className="font-semibold text-m3-on-surface leading-tight">
 													{fullName}
-												</p>
+												</Text>
 												{student.notes && (
-													<p className="text-xs text-m3-on-surface-variant truncate max-w-xs mt-0.5">
+													<Text variant="body-sm" className="text-xs text-m3-on-surface-variant truncate max-w-xs mt-0.5">
 														{student.notes}
-													</p>
+													</Text>
 												)}
 											</div>
 										</div>

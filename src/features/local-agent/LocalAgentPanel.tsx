@@ -1,4 +1,4 @@
-import { Icon, ProgressIndicator } from "@bug-on/m3-expressive";
+import { Icon, ProgressIndicator, Text } from "@bug-on/m3-expressive";
 import { useEffect, useState } from "react";
 import { localAgentService } from "../../services/local-agent.service";
 import type { LocalAgentState } from "../../types/local-agent.types";
@@ -81,10 +81,10 @@ export function LocalAgentPanel({
 			<div className="mb-4 flex flex-wrap items-start justify-between gap-3">
 				<div>
 					<h2 className="text-lg font-semibold text-slate-800">Local Agent</h2>
-					<p className="mt-1 text-sm text-slate-600">
+					<Text variant="body-md" className="mt-1 text-sm text-slate-600">
 						Dùng panel này để start exam, submit, restart và chuyển project qua
 						Local Agent.
-					</p>
+					</Text>
 				</div>
 
 				<button

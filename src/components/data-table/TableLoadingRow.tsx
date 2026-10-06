@@ -1,4 +1,4 @@
-import { ProgressIndicator } from "@bug-on/m3-expressive";
+import { ProgressIndicator, Text } from "@bug-on/m3-expressive";
 
 export interface TableLoadingRowProps {
 	colSpan: number;
@@ -19,9 +19,12 @@ export function TableLoadingRow({
 						size={40}
 						aria-label={message}
 					/>
-					<p className="text-sm font-medium text-m3-on-surface-variant">
+					<Text
+						variant="body-md"
+						className="font-medium text-m3-on-surface-variant"
+					>
 						{message}
-					</p>
+					</Text>
 				</div>
 			</td>
 		</tr>

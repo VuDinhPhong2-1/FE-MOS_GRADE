@@ -1,4 +1,11 @@
-import { Button, Card, Chip, Icon } from "@bug-on/m3-expressive";
+import {
+	Button,
+	ButtonDistribute,
+	Card,
+	Chip,
+	Icon,
+	Text,
+} from "@bug-on/m3-expressive";
 import type React from "react";
 import type { SubmissionPortal } from "../../../types/submission-portal.types";
 import { cn } from "../../../utils/utils";
@@ -12,6 +19,7 @@ interface PortalCardProps {
 	onEdit: (portal: SubmissionPortal) => void;
 	onDelete: (portal: SubmissionPortal) => void;
 	isActionDisabled?: boolean;
+	isSelected?: boolean;
 }
 
 export const PortalCard: React.FC<PortalCardProps> = ({
@@ -22,13 +30,26 @@ export const PortalCard: React.FC<PortalCardProps> = ({
 	onEdit,
 	onDelete,
 	isActionDisabled,
+	isSelected,
 }) => {
 	const url = `${publicOrigin}/submit/${portal.publicToken}`;
 
 	return (
 		<Card
 			variant="filled"
-			className="bg-m3-surface-container flex flex-col justify-between p-5 space-y-4"
+			className={cn(
+				"flex flex-col justify-between p-5 space-y-4 cursor-pointer pointer-events-auto transition-colors",
+				isSelected
+					? "bg-m3-primary-container text-m3-on-primary-container ring-2 ring-m3-primary shadow-sm"
+					: "bg-m3-surface-container-highest text-m3-on-surface",
+			)}
+			onClick={() => onOpenDetails(portal)}
+			disableElevation
+			disableStateLayer
+			morphRadius={{
+				rest: isSelected ? "extraLargeIncreased" : "large",
+				hover: "extraLargeIncreased",
+			}}
 		>
 			<div className="space-y-3">
 				{/* Top row: Status, Alert badges & Creation date */}
@@ -44,56 +65,76 @@ export const PortalCard: React.FC<PortalCardProps> = ({
 								/>
 							}
 							className={cn(
-								"border-m3-on-surface-variant/50 pointer-events-none",
+								"border-m3-on-surface-variant/50 pointer-events-none h-10",
 								portal.isActive
 									? "bg-m3-primary/10 text-m3-primary"
 									: "bg-m3-surface-variant text-m3-on-surface-variant",
 							)}
 						/>
 
-						<Button
-							colorStyle="outlined"
-							size="sm"
-							icon={<Icon name="open_in_new" size={16} />}
-							className="h-8 text-xs font-medium"
-							onClick={() => window.open(url, "_blank", "noopener,noreferrer")}
-						>
-							Xem thử
-						</Button>
-
 						{portal.unreadAlertCount > 0 && (
 							<Chip
 								variant="suggestion"
 								label={`${portal.unreadAlertCount} cảnh báo`}
 								leadingIcon={
-									<Icon name="warning" size={16} className="text-m3-on-error" />
+									<Icon name="warning" size={20} className="text-m3-on-error" />
 								}
-								className="border-none bg-m3-error text-m3-on-error font-semibold pointer-events-none select-none"
+								className="border-none bg-m3-error text-m3-on-error font-semibold pointer-events-none h-10"
 							/>
 						)}
 					</div>
 
-					<span className="text-right text-xs text-m3-on-surface-variant">
+					<span
+						className={cn(
+							"text-right text-xs",
+							isSelected
+								? "text-m3-on-primary-container/80"
+								: "text-m3-on-surface-variant",
+						)}
+					>
 						Ngày tạo: {formatDateTime(portal.createdAt)}
 					</span>
 				</div>
 
 				{/* Title & Description */}
 				<div>
-					<h3 className="text-lg font-bold text-m3-on-surface">
+					<Text
+						variant="title-md"
+						className={cn(
+							"font-bold text-left",
+							isSelected
+								? "text-m3-on-primary-container"
+								: "text-m3-on-surface",
+						)}
+					>
 						{portal.title}
-					</h3>
+					</Text>
 					{portal.description && (
-						<p className="mt-1 text-sm text-m3-on-surface-variant line-clamp-2">
+						<Text
+							variant="body-sm"
+							className={cn(
+								"mt-1 line-clamp-2",
+								isSelected
+									? "text-m3-on-primary-container/80"
+									: "text-m3-on-surface-variant",
+							)}
+						>
 							{portal.description}
-						</p>
+						</Text>
 					)}
 				</div>
 
 				{/* Applied Classes Badges */}
 				{portal.classes && portal.classes.length > 0 && (
 					<div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-						<span className="text-xs font-semibold text-m3-on-surface-variant">
+						<span
+							className={cn(
+								"text-xs font-semibold",
+								isSelected
+									? "text-m3-on-primary-container"
+									: "text-m3-on-surface-variant",
+							)}
+						>
 							Lớp:
 						</span>
 						{portal.classes.map((cls) => (
@@ -108,7 +149,14 @@ export const PortalCard: React.FC<PortalCardProps> = ({
 				)}
 
 				{/* Quick Stats: Classes, Assignments, Scoring Policy */}
-				<div className="grid grid-cols-3 gap-2 rounded-m3-md bg-m3-surface-container-highest p-2.5 text-center text-xs">
+				<div
+					className={cn(
+						"grid grid-cols-3 gap-2 rounded-m3-md p-2.5 text-center text-xs transition-colors",
+						isSelected
+							? "bg-m3-surface/60 text-m3-on-surface"
+							: "bg-m3-surface-container-low",
+					)}
+				>
 					<div>
 						<span className="block font-bold text-m3-on-surface">
 							{portal.classIds.length}
@@ -131,62 +179,67 @@ export const PortalCard: React.FC<PortalCardProps> = ({
 			</div>
 
 			{/* Link Box & Action Buttons */}
-			<div className="space-y-3 pt-2">
-				<div className="rounded-m3-lg bg-m3-surface-container-high p-3">
-					<div className="break-all font-mono text-xs text-m3-on-surface-variant select-all">
-						{url}
-					</div>
-				</div>
+			<ButtonDistribute
+				size="sm"
+				expandRatio={0.1}
+				gap={8}
+				onClick={(e) => e.stopPropagation()}
+				onPointerDown={(e) => e.stopPropagation()}
+			>
+				<Button
+					colorStyle="filled"
+					size="sm"
+					icon={<Icon name="open_in_new" size={20} />}
+					fullWidth
+					onClick={(e) => {
+						e.stopPropagation();
+						window.open(url, "_blank", "noopener,noreferrer");
+					}}
+				>
+					Mở liên kết
+				</Button>
 
-				<div className="flex flex-wrap items-center gap-2">
-					<Button
-						colorStyle="filled"
-						size="sm"
-						icon={<Icon name="analytics" size={18} />}
-						onClick={() => onOpenDetails(portal)}
-					>
-						Chi tiết
-					</Button>
+				<Button
+					colorStyle="tonal"
+					size="sm"
+					icon={<Icon name="content_copy" size={20} />}
+					onClick={(e) => {
+						e.stopPropagation();
+						onCopyUrl(url);
+					}}
+					fullWidth
+				>
+					Sao chép
+				</Button>
 
-					<Button
-						colorStyle="tonal"
-						size="sm"
-						icon={<Icon name="content_copy" size={18} />}
-						onClick={() => onCopyUrl(url)}
-					>
-						Sao chép
-					</Button>
+				<Button
+					colorStyle="outlined"
+					size="sm"
+					icon={<Icon name="edit" size={20} />}
+					onClick={(e) => {
+						e.stopPropagation();
+						onEdit(portal);
+					}}
+					fullWidth
+				>
+					Sửa
+				</Button>
 
-					<Button
-						colorStyle="text"
-						size="sm"
-						icon={<Icon name="qr_code_2" size={18} />}
-						onClick={() => onCopyUrl(url)}
-					>
-						QR
-					</Button>
-
-					<Button
-						colorStyle="text"
-						size="sm"
-						icon={<Icon name="edit" size={18} />}
-						onClick={() => onEdit(portal)}
-					>
-						Sửa
-					</Button>
-
-					<Button
-						colorStyle="text"
-						size="sm"
-						disabled={isActionDisabled}
-						icon={<Icon name="link_off" size={18} />}
-						className="text-m3-error hover:bg-m3-error/10 ml-auto"
-						onClick={() => onDelete(portal)}
-					>
-						Đóng link
-					</Button>
-				</div>
-			</div>
+				<Button
+					colorStyle="text"
+					size="sm"
+					disabled={isActionDisabled}
+					icon={<Icon name="link_off" size={20} />}
+					className="text-m3-error hover:bg-m3-error/10"
+					onClick={(e) => {
+						e.stopPropagation();
+						onDelete(portal);
+					}}
+					fullWidth
+				>
+					Đóng link
+				</Button>
+			</ButtonDistribute>
 		</Card>
 	);
 };

@@ -4,6 +4,7 @@ import {
 	Checkbox,
 	Icon,
 	IconButton,
+	Text,
 } from "@bug-on/m3-expressive";
 import {
 	createColumnHelper,
@@ -381,9 +382,9 @@ export const ScheduleTable = ({
 			{!hideSelectionBar && selectedScheduleIds.length > 0 && (
 				<section className="shrink-0 overflow-hidden rounded-2xl bg-m3-surface-container p-4 shadow-xs">
 					<div className="flex flex-col gap-3 rounded-2xl border border-m3-primary/30 bg-m3-primary/10 px-4 py-3 text-sm text-m3-on-surface sm:flex-row sm:items-center sm:justify-between">
-						<p>
+						<Text variant="body-md">
 							Đã chọn <strong>{selectedScheduleIds.length}</strong> lịch dạy
-						</p>
+						</Text>
 						<div className="flex flex-wrap items-center gap-2">
 							<Button
 								colorStyle="tonal"

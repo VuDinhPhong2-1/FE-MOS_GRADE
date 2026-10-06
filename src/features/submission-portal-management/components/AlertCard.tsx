@@ -1,4 +1,4 @@
-import { Card, Chip, Icon, List, ListItem } from "@bug-on/m3-expressive";
+import { Card, Chip, Icon, List, ListItem, Text } from "@bug-on/m3-expressive";
 import type React from "react";
 import type { SubmissionAlert } from "../../../types/submission-portal.types";
 import { cn } from "../../../utils/utils";
@@ -16,10 +16,13 @@ export const AlertCard: React.FC<AlertCardProps> = ({ alert }) => {
 	const colors = severityColors(alert.severity);
 
 	return (
-		<Card variant="filled" className={`${colors.containerClass} p-4 space-y-3`}>
+		<Card
+			variant="filled"
+			className={`${colors.containerClass} p-4 space-y-3 min-w-0 w-full overflow-hidden`}
+		>
 			{/* Header: Severity Badge & Timestamp */}
-			<div className="flex items-center justify-between gap-2">
-				<div className="flex flex-wrap items-center gap-2">
+			<div className="flex flex-wrap items-center justify-between gap-2 min-w-0">
+				<div className="flex flex-wrap items-center gap-1.5 min-w-0">
 					<Chip
 						variant="suggestion"
 						label={severityLabel(alert.severity)}
@@ -40,7 +43,7 @@ export const AlertCard: React.FC<AlertCardProps> = ({ alert }) => {
 					) : null}
 				</div>
 				<span
-					className="text-xs opacity-80"
+					className="text-xs opacity-80 shrink-0 ml-auto"
 					title={
 						alert.latestAt
 							? `Phát hiện lần đầu: ${formatDateTime(alert.createdAt)}`
@@ -54,34 +57,48 @@ export const AlertCard: React.FC<AlertCardProps> = ({ alert }) => {
 			</div>
 
 			{/* Alert Message */}
-			<p className="text-sm font-semibold leading-relaxed">{alert.message}</p>
+			<Text
+				variant="body-md"
+				className="font-semibold leading-relaxed wrap-break-word"
+			>
+				{alert.message}
+			</Text>
 
 			{/* Involved Students Sub-List */}
 			{alert.involvedStudents && alert.involvedStudents.length > 0 ? (
-				<div className="space-y-2 text-m3-on-surface">
-					<p className="text-xs font-bold uppercase tracking-wider text-m3-on-surface">
+				<div className="space-y-2 text-m3-on-surface min-w-0">
+					<Text
+						variant="label-sm"
+						className="font-bold uppercase tracking-wider text-m3-on-surface"
+					>
 						Học sinh liên quan
-					</p>
-					<List outerRadius={12} variant="expressive" listStyle="segmented">
+					</Text>
+					<List
+						outerRadius={8}
+						variant="expressive"
+						listStyle="segmented"
+						className="w-full min-w-0"
+					>
 						{alert.involvedStudents.map((student) => (
 							<ListItem
 								key={`${alert.id}-${student.studentId}-${student.submittedAt || "latest"}`}
 								value={`${alert.id}-${student.studentId}`}
-								className="bg-m3-surface-container-lowest"
+								className="bg-m3-surface-container-lowest min-w-0"
+								supportingTextLines={2}
 								headline={
-									<span className="font-bold text-m3-on-surface">
+									<span className="font-bold text-m3-on-surface block truncate">
 										{student.studentName || "(Không rõ học sinh)"}
 									</span>
 								}
 								supportingText={
-									<div className="space-y-1">
-										<span className="block text-xs text-m3-on-surface-variant">
+									<div className="space-y-0.5 min-w-0">
+										<span className="block text-xs text-m3-on-surface-variant truncate">
 											{student.className || "Chưa rõ lớp"}
 											{student.assignmentName
 												? ` · ${student.assignmentName}`
 												: ""}
 										</span>
-										<span className="block text-[11px] text-m3-on-surface-variant opacity-80">
+										<span className="block text-[11px] text-m3-on-surface-variant opacity-80 truncate">
 											Tệp: {student.fileName || "--"} · Nộp lúc:{" "}
 											{formatDateTime(student.submittedAt)}
 										</span>
@@ -92,7 +109,7 @@ export const AlertCard: React.FC<AlertCardProps> = ({ alert }) => {
 								}
 								trailingContent={
 									student.scoreValue !== undefined ? (
-										<span className="rounded-m3-full bg-m3-surface-container-high px-2.5 py-0.5 text-xs font-black text-m3-on-surface">
+										<span className="rounded-m3-full bg-m3-surface-container-high px-2.5 py-0.5 text-xs font-black text-m3-on-surface shrink-0 whitespace-nowrap">
 											{student.scoreValue}/{student.maxScore ?? "--"}
 										</span>
 									) : undefined
@@ -102,10 +119,13 @@ export const AlertCard: React.FC<AlertCardProps> = ({ alert }) => {
 					</List>
 				</div>
 			) : (
-				<p className="rounded-m3-sm bg-m3-surface/70 p-2.5 text-xs text-m3-on-surface">
+				<Text
+					variant="body-sm"
+					className="rounded-m3-sm bg-m3-surface/70 p-2.5 text-m3-on-surface"
+				>
 					Chưa có dữ liệu tên học sinh cho cảnh báo này. Vui lòng đối chiếu bảng
 					“Lượt nộp gần đây” theo thời gian/tệp.
-				</p>
+				</Text>
 			)}
 		</Card>
 	);

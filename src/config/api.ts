@@ -29,6 +29,13 @@ const resolveBaseUrl = (): string => {
 		return normalizeBaseUrl(explicit);
 	}
 
+	// 1. Khi chạy DEV: Tự động dùng /api để đi qua Vite proxy.
+	// Hỗ trợ mượt mà cả Localhost và LAN IP (192.168.x.x) trên cả Windows và Mac.
+	if (import.meta.env.DEV) {
+		return "/api";
+	}
+
+	// 2. Khi Build Deploy (Production): Trỏ trực tiếp theo target (mặc định deployUrl)
 	const target = normalizeTarget(
 		import.meta.env.VITE_API_TARGET as string | undefined,
 	);
@@ -43,7 +50,7 @@ const resolveBaseUrl = (): string => {
 		return normalizeBaseUrl(localUrl);
 	}
 
-	return normalizeBaseUrl(defaultLocalOrigin);
+	return normalizeBaseUrl(deployUrl || defaultLocalOrigin);
 };
 
 const normalizeOriginUrl = (

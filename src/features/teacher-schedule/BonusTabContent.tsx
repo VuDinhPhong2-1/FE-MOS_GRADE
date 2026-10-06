@@ -5,6 +5,7 @@ import {
 	Icon,
 	IconButton,
 	Select,
+	Text,
 	TextField,
 } from "@bug-on/m3-expressive";
 import type React from "react";
@@ -90,10 +91,10 @@ export const BonusTabContent: React.FC<BonusTabContentProps> = ({
 							className="pointer-events-none h-6 px-2.5 text-xs font-semibold bg-m3-primary-container text-m3-on-primary-container"
 						/>
 					</div>
-					<p className="text-xs text-m3-on-surface-variant mt-1">
+					<Text variant="body-sm" className="text-xs text-m3-on-surface-variant mt-1">
 						Cộng điểm phát biểu, làm bài tốt hoặc ý thức trong buổi học này.
 						Điểm sẽ được tính vào bảng xếp hạng chung.
-					</p>
+					</Text>
 				</div>
 
 				<div className="flex items-center gap-2">
@@ -175,9 +176,9 @@ export const BonusTabContent: React.FC<BonusTabContentProps> = ({
 										{idx + 1}
 									</td>
 									<td className="py-2 px-3">
-										<p className="font-semibold text-m3-on-surface">
+										<Text variant="body-md" className="font-semibold text-m3-on-surface">
 											{student.fullName}
-										</p>
+										</Text>
 									</td>
 									<td className="py-2 px-3 text-center">
 										<Chip
@@ -226,7 +227,7 @@ export const BonusTabContent: React.FC<BonusTabContentProps> = ({
 													onChange={(val) => {
 														const parsed = parseFloat(val);
 														onUpdateBonus(student.studentId, {
-															points: isNaN(parsed) ? 0 : parsed,
+															points: Number.isNaN(parsed) ? 0 : parsed,
 															category:
 																currentBonus.category || selectedCategory,
 														});

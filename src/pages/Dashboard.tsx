@@ -91,8 +91,8 @@ export default function Dashboard() {
 			colorClass: "bg-m3-primary-container text-m3-on-primary-container",
 		},
 		{
-			title: "Xếp lịch coi thi",
-			description: "Lập lịch thi, phân công giáo viên và theo dõi ca chấm.",
+			title: "Xếp lịch",
+			description: "Lập lịch, phân công giáo viên và theo dõi.",
 			icon: "calendar_month",
 			path: "/schedule",
 			shape: "clover8Leaf",
@@ -213,9 +213,12 @@ export default function Dashboard() {
 						</ShapeIcon>
 					</div>
 					<div className="mt-4">
-						<p className="text-xs text-left font-semibold uppercase tracking-wider text-m3-on-surface-variant">
+						<Text
+							variant="label-sm"
+							className="text-xs text-left font-semibold uppercase tracking-wider text-m3-on-surface-variant"
+						>
 							Trường đang quản lý
-						</p>
+						</Text>
 						<div
 							className="mt-4 flex items-baseline gap-2"
 							aria-busy={stats.isLoading}
@@ -259,9 +262,12 @@ export default function Dashboard() {
 						</ShapeIcon>
 					</div>
 					<div className="mt-4">
-						<p className="text-left text-xs font-semibold uppercase tracking-wider text-m3-on-surface-variant">
+						<Text
+							variant="label-sm"
+							className="text-left text-xs font-semibold uppercase tracking-wider text-m3-on-surface-variant"
+						>
 							Chế độ chấm thi
-						</p>
+						</Text>
 						<div className="mt-4 flex items-baseline gap-2">
 							<span className="text-3xl font-black text-m3-secondary">
 								XML Engine
@@ -284,33 +290,40 @@ export default function Dashboard() {
 						>
 							<Icon name="schedule" variant="rounded" size={24} />
 						</ShapeIcon>
-					</div>
-					<div className="mt-4 flex flex-row items-center justify-between">
-						<div>
-							<p className="truncate text-left text-xs font-semibold uppercase tracking-wider text-m3-on-surface-variant">
-								{weekProgress.weekRangeText}
-							</p>
-							<div className="mt-3 flex items-baseline gap-2">
-								<span className="text-3xl font-black text-m3-on-surface">
-									{weekProgress.currentWeekday}
-								</span>
-								<span className="text-xs text-m3-on-surface-variant">
-									(Ngày {weekProgress.dayInWeek}/7)
-								</span>
-							</div>
+						<div
+							className="relative flex items-center justify-center shrink-0"
+							title={`Tiến trình tuần: ${weekProgress.percent}%`}
+						>
+							<ProgressIndicator
+								variant="circular"
+								shape="wavy"
+								trackShape="flat"
+								size={48}
+								waveSpeed={0.4}
+								amplitude={2}
+								wavelength={16}
+								value={weekProgress.percent}
+								aria-label={`Tiến trình ${weekProgress.weekRangeText}: ${weekProgress.percent}%`}
+								className="shrink-0"
+							/>
 						</div>
-						<ProgressIndicator
-							variant="circular"
-							shape="wavy"
-							trackShape="flat"
-							size={64}
-							waveSpeed={0.4}
-							amplitude={2}
-							wavelength={16}
-							value={weekProgress.percent}
-							aria-label={`Tiến trình ${weekProgress.weekRangeText}: ${weekProgress.percent}%`}
-							className="w-full"
-						/>
+					</div>
+					<div className="mt-4">
+						<Text
+							variant="label-sm"
+							className="truncate text-left text-xs font-semibold uppercase tracking-wider text-m3-on-surface-variant"
+							title={weekProgress.weekRangeText}
+						>
+							{weekProgress.weekRangeText}
+						</Text>
+						<div className="mt-4 flex items-baseline gap-2">
+							<span className="text-3xl font-black text-m3-on-surface">
+								{weekProgress.currentWeekday}
+							</span>
+							<span className="text-xs font-semibold text-m3-on-surface-variant">
+								{weekProgress.percent}%
+							</span>
+						</div>
 					</div>
 				</Card>
 
@@ -330,9 +343,12 @@ export default function Dashboard() {
 						<Chip label={user?.role || "Giáo viên"} />
 					</div>
 					<div className="mt-4">
-						<p className="text-left text-xs font-semibold uppercase tracking-wider text-m3-on-surface-variant">
+						<Text
+							variant="label-sm"
+							className="text-left text-xs font-semibold uppercase tracking-wider text-m3-on-surface-variant"
+						>
 							Tài khoản hiện tại
-						</p>
+						</Text>
 						<div className="mt-4 flex items-baseline gap-2">
 							<span
 								className="truncate text-2xl font-black text-m3-on-surface"
@@ -380,9 +396,12 @@ export default function Dashboard() {
 								<h3 className="text-left text-base font-bold text-m3-on-surface transition-colors group-hover:text-m3-primary">
 									{action.title}
 								</h3>
-								<p className="text-left mt-2 text-xs leading-relaxed text-m3-on-surface-variant">
+								<Text
+									variant="body-sm"
+									className="text-left mt-2 text-xs leading-relaxed text-m3-on-surface-variant"
+								>
 									{action.description}
-								</p>
+								</Text>
 							</div>
 							<div className="mt-6 flex items-center gap-1 text-xs font-semibold text-m3-primary">
 								<span>Truy cập</span>
@@ -410,9 +429,12 @@ export default function Dashboard() {
 						<h2 className="text-lg font-bold text-m3-on-surface">
 							Quy trình làm việc chuẩn trên MOS Grader
 						</h2>
-						<p className="text-xs text-m3-on-surface-variant">
+						<Text
+							variant="body-sm"
+							className="text-xs text-m3-on-surface-variant"
+						>
 							Các bước hoàn chỉnh từ thiết lập lớp đến xuất điểm số
-						</p>
+						</Text>
 					</div>
 				</div>
 
@@ -433,9 +455,12 @@ export default function Dashboard() {
 							<h4 className="mt-3 text-sm font-bold text-m3-on-surface">
 								{ws.title}
 							</h4>
-							<p className="mt-1.5 text-xs leading-relaxed text-m3-on-surface-variant">
+							<Text
+								variant="body-sm"
+								className="mt-1.5 text-xs leading-relaxed text-m3-on-surface-variant"
+							>
 								{ws.desc}
-							</p>
+							</Text>
 						</div>
 					))}
 				</div>

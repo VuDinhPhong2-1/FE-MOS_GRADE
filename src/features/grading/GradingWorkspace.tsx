@@ -1,4 +1,4 @@
-import { Button, Icon, ProgressIndicator } from "@bug-on/m3-expressive";
+import { Button, Icon, ProgressIndicator, Text } from "@bug-on/m3-expressive";
 import type React from "react";
 import { useMemo, useRef, useState } from "react";
 import type { Student } from "../../types/student.types";
@@ -242,9 +242,9 @@ export const GradingWorkspace: React.FC<GradingWorkspaceProps> = ({
 							size={64}
 							aria-label="Đang tải dữ liệu..."
 						/>
-						<p className="text-sm font-medium text-m3-on-surface-variant">
+						<Text variant="body-md" className="text-sm font-medium text-m3-on-surface-variant">
 							Đang tải dữ liệu bài tập của lớp...
-						</p>
+						</Text>
 					</div>
 				)}
 

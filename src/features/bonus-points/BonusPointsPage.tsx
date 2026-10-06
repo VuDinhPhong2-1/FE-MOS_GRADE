@@ -10,6 +10,7 @@ import {
 	Tabs,
 	TabsContent,
 	TabsList,
+	Text,
 	useSnackbar,
 } from "@bug-on/m3-expressive";
 import type React from "react";
@@ -112,13 +113,13 @@ export const BonusPointsPage: React.FC = () => {
 				{ points: number; category: string; reason: string }
 			> = {};
 
-			(existingPoints || []).forEach((bp: BonusPointResponse) => {
+			for (const bp of (existingPoints || []) as BonusPointResponse[]) {
 				draftMap[bp.studentId] = {
 					points: (draftMap[bp.studentId]?.points || 0) + bp.points,
 					category: bp.category || "participation",
 					reason: bp.reason || draftMap[bp.studentId]?.reason || "",
 				};
-			});
+			}
 
 			setDailyDraft(draftMap);
 		} catch {
@@ -266,11 +267,14 @@ export const BonusPointsPage: React.FC = () => {
 
 	if (loading) {
 		return (
-			<div className="flex flex-col items-center justify-center min-h-[400px] gap-3">
+			<div className="flex flex-col items-center justify-center min-h-100 gap-3">
 				<LoadingIndicator size={40} aria-label="Đang tải điểm cộng" />
-				<p className="text-sm font-medium text-m3-on-surface-variant">
+				<Text
+					variant="body-md"
+					className="text-sm font-medium text-m3-on-surface-variant"
+				>
 					Đang tải dữ liệu điểm cộng...
-				</p>
+				</Text>
 			</div>
 		);
 	}
@@ -285,9 +289,12 @@ export const BonusPointsPage: React.FC = () => {
 				<h2 className="text-lg font-bold text-m3-on-surface mb-2">
 					Không thể tải trang điểm cộng
 				</h2>
-				<p className="text-sm text-m3-on-surface-variant mb-6">
+				<Text
+					variant="body-md"
+					className="text-sm text-m3-on-surface-variant mb-6"
+				>
 					{errorMessage || "Không tìm thấy thông tin lớp học."}
-				</p>
+				</Text>
 				<Button colorStyle="filled" onClick={() => navigate(-1)}>
 					Quay lại
 				</Button>
@@ -327,10 +334,13 @@ export const BonusPointsPage: React.FC = () => {
 									className="pointer-events-none h-6 px-2.5 text-xs font-semibold"
 								/>
 							</div>
-							<p className="text-sm text-m3-on-surface-variant mt-0.5">
+							<Text
+								variant="body-md"
+								className="text-sm text-m3-on-surface-variant mt-0.5"
+							>
 								Ghi nhận điểm cộng trực tiếp trên lớp và theo dõi bảng xếp hạng
 								tổng hợp.
-							</p>
+							</Text>
 						</div>
 					</div>
 

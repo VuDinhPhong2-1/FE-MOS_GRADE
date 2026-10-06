@@ -4,6 +4,7 @@ import {
 	Icon,
 	LoadingIndicator,
 	ScrollArea,
+	Text,
 } from "@bug-on/m3-expressive";
 import type React from "react";
 import type {
@@ -36,25 +37,29 @@ export const PortalDetailsSection: React.FC<PortalDetailsSectionProps> = ({
 			{/* Left Column: Suspicious Alerts */}
 			<Card
 				variant="filled"
-				className="bg-m3-surface-container flex flex-col p-5 space-y-4"
+				className="bg-m3-surface-container flex flex-col p-5 space-y-4 min-w-0"
 			>
 				<div className="flex items-start justify-between gap-3">
-					<div>
+					<div className="min-w-0">
 						<div className="flex items-center gap-2">
 							<Icon name="security" className="text-m3-primary" size={20} />
 							<h3 className="text-lg font-bold text-m3-on-surface">
 								Cảnh báo nghi vấn
 							</h3>
 						</div>
-						<p className="mt-0.5 text-xs text-m3-on-surface-variant truncate max-w-sm">
+						<Text
+							variant="body-sm"
+							className="mt-0.5 text-xs text-m3-on-surface-variant truncate max-w-sm"
+						>
 							Cổng: {selectedPortal.title}
-						</p>
+						</Text>
 					</div>
 
 					<Button
 						size="sm"
 						icon={<Icon name="close" size={18} />}
 						onClick={onClose}
+						className="shrink-0"
 					>
 						Đóng
 					</Button>
@@ -77,29 +82,35 @@ export const PortalDetailsSection: React.FC<PortalDetailsSectionProps> = ({
 				<ScrollArea
 					type="scroll"
 					orientation="vertical"
-					className="max-h-150 pr-1"
-					viewportClassName="space-y-3"
+					className="max-h-150 overflow-hidden rounded-m3-md"
+					scrollbarSize={8}
+					viewportClassName="[&>div]:!block [&>div]:!w-full [&>div]:!min-w-0"
 				>
-					{alerts.map((alert) => (
-						<AlertCard key={alert.id} alert={alert} />
-					))}
+					<div className="flex flex-col gap-3 min-w-0 w-full">
+						{alerts.map((alert) => (
+							<AlertCard key={alert.id} alert={alert} />
+						))}
 
-					{alerts.length === 0 && !loadingDetails && (
-						<Card
-							variant="filled"
-							className="bg-m3-primary-container text-m3-on-primary-container flex items-center gap-3 p-4"
-						>
-							<Icon name="verified" size={22} />
-							<span className="text-sm font-semibold">
-								Không có cảnh báo nghi vấn nào trên cổng này.
-							</span>
-						</Card>
-					)}
+						{alerts.length === 0 && !loadingDetails && (
+							<Card
+								variant="filled"
+								className="bg-m3-primary-container text-m3-on-primary-container flex items-center gap-3 p-4"
+							>
+								<Icon name="verified" size={22} />
+								<span className="text-sm font-semibold">
+									Không có cảnh báo nghi vấn nào trên cổng này.
+								</span>
+							</Card>
+						)}
+					</div>
 				</ScrollArea>
 			</Card>
 
 			{/* Right Column: Submission Logs Table */}
-			<Card variant="filled" className="bg-m3-surface-container p-5">
+			<Card
+				variant="filled"
+				className="bg-m3-surface-container p-5 min-w-0 overflow-hidden"
+			>
 				<SubmissionLogsTable logs={logs} onExportCsv={onExportLogsCsv} />
 			</Card>
 		</section>

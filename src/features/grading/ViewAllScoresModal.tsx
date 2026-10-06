@@ -6,6 +6,7 @@ import {
 	Icon,
 	IconButton,
 	ScrollArea,
+	Text,
 } from "@bug-on/m3-expressive";
 import type { FC } from "react";
 import ScoreboardActionToolbar from "./components/ScoreboardActionToolbar";
@@ -54,7 +55,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 						<h2 className="text-xl font-extrabold text-m3-on-surface">
 							{state.headerTitle}
 						</h2>
-						<p className="text-sm text-m3-on-surface-variant">
+						<Text variant="body-md" className="text-sm text-m3-on-surface-variant">
 							{state.sortedDisplayRows.length}
 							{state.searchTerm || state.showOnlyExamStudents
 								? `/${state.filteredStudentCount}`
@@ -62,7 +63,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 							học sinh hiển thị, tổng lớp {students.length},{" "}
 							{assignments.length} bài tập, hiện {state.visibleScoreColumnCount}
 							/{state.totalScoreColumnCount} cột điểm
-						</p>
+						</Text>
 					</div>
 				</div>
 				<IconButton

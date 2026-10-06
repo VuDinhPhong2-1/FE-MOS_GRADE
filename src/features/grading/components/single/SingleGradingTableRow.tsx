@@ -1,4 +1,4 @@
-import { Button, Icon, ProgressIndicator } from "@bug-on/m3-expressive";
+import { Button, Icon, ProgressIndicator, Text } from "@bug-on/m3-expressive";
 import type React from "react";
 import { memo } from "react";
 import type { Assignment } from "../../../../types/assignment.types";
@@ -180,13 +180,13 @@ const SingleGradingTableRowComponent: React.FC<SingleGradingTableRowProps> = ({
 					>
 						{state?.studentFile ? "Đổi file bài làm" : "Chọn file bài làm"}
 					</label>
-					<p className="mt-1 text-[11px] text-m3-on-surface-variant/70">
+					<Text variant="label-sm" className="mt-1 text-[11px] text-m3-on-surface-variant/70">
 						Kéo thả file vào đây
-					</p>
+					</Text>
 					{state?.studentFile && (
-						<p className="text-xs text-m3-on-surface mt-1 truncate max-w-50 mx-auto">
+						<Text variant="body-sm" className="text-xs text-m3-on-surface mt-1 truncate max-w-50 mx-auto">
 							{state.studentFile.name}
-						</p>
+						</Text>
 					)}
 					{canUndoSingle && (
 						<div className="mt-2">
@@ -229,9 +229,9 @@ const SingleGradingTableRowComponent: React.FC<SingleGradingTableRowProps> = ({
 					/>
 				)}
 				{state?.gradingResult && (
-					<p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 font-medium">
+					<Text variant="body-sm" className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 font-medium">
 						Đã chấm tự động
-					</p>
+					</Text>
 				)}
 			</td>
 			<td className="px-4 py-3 text-center">

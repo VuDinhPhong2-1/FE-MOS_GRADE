@@ -13,6 +13,7 @@ import {
 	Icon,
 	ProgressIndicator,
 	ScrollArea,
+	Text,
 } from "@bug-on/m3-expressive";
 import type { ComponentProps } from "react";
 import {
@@ -287,9 +288,9 @@ export const AttendanceModal = ({
 										size={64}
 										aria-label="Đang tải danh sách học sinh..."
 									/>
-									<p className="text-xs text-m3-on-surface font-medium">
+									<Text variant="body-sm" className="text-xs text-m3-on-surface font-medium">
 										Đang tải danh sách học sinh...
-									</p>
+									</Text>
 								</div>
 							)}
 

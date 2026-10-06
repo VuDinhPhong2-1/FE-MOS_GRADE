@@ -1,4 +1,4 @@
-import { Icon, ProgressIndicator, ScrollArea } from "@bug-on/m3-expressive";
+import { Icon, ProgressIndicator, ScrollArea, Text } from "@bug-on/m3-expressive";
 import type { LocalAgentState } from "../../types/local-agent.types";
 
 type LocalAgentCompactPanelProps = {
@@ -71,22 +71,22 @@ export function LocalAgentCompactPanel({
 			<div className="flex min-h-0 flex-1 flex-col gap-3 p-4 lg:flex-row">
 				<div className="min-h-0 flex-1 rounded-xl border border-slate-200 bg-slate-50 p-3">
 					<div className="grid gap-2 text-sm sm:grid-cols-2">
-						<p>
+						<Text variant="body-md">
 							<span className="font-medium text-slate-700">Working file:</span>{" "}
 							{formatValue(state.workingFilePath)}
-						</p>
-						<p>
+						</Text>
+						<Text variant="body-md">
 							<span className="font-medium text-slate-700">Template:</span>{" "}
 							{formatValue(state.templateFileName)}
-						</p>
-						<p>
+						</Text>
+						<Text variant="body-md">
 							<span className="font-medium text-slate-700">Subject:</span>{" "}
 							{formatValue(state.subject)}
-						</p>
-						<p>
+						</Text>
+						<Text variant="body-md">
 							<span className="font-medium text-slate-700">Session:</span>{" "}
 							{formatValue(state.sessionId)}
-						</p>
+						</Text>
 					</div>
 
 					{state.isCompleted && (
@@ -148,7 +148,7 @@ export function LocalAgentCompactPanel({
 							viewportClassName="px-3 py-2"
 						>
 							{taskItems.length === 0 ? (
-								<p className="text-sm text-slate-500">Chưa có task snapshot.</p>
+								<Text variant="body-md" className="text-sm text-slate-500">Chưa có task snapshot.</Text>
 							) : (
 								<ul className="space-y-2 text-sm">
 									{taskItems.map((task) => (

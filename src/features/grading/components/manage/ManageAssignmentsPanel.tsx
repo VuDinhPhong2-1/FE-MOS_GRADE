@@ -8,6 +8,7 @@ import {
 	IconButton,
 	PlainTooltip,
 	Switch,
+	Text,
 	TooltipBox,
 } from "@bug-on/m3-expressive";
 import {
@@ -404,10 +405,10 @@ export const ManageAssignmentsPanel: React.FC<ManageAssignmentsPanelProps> = ({
 							Quản lý bài tập
 						</h3>
 					</div>
-					<p className="text-xs sm:text-sm text-m3-on-surface-variant max-w-2xl">
+					<Text variant="body-sm" className="text-xs sm:text-sm text-m3-on-surface-variant max-w-2xl">
 						Xem danh sách bài tập của lớp, chỉnh sửa điểm tối đa, cấu hình trạng
 						thái hoạt động hoặc xóa bài tập không còn sử dụng.
-					</p>
+					</Text>
 				</div>
 
 				{/* Stats Chips */}

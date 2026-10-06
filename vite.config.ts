@@ -60,21 +60,29 @@ export default defineConfig(({ mode }) => {
 					target: apiProxyTarget,
 					changeOrigin: true,
 					secure: false,
+					ws: true,
 					timeout: 60000,
 					proxyTimeout: 60000,
-					agent: new https.Agent({
-						keepAlive: false,
-						family: 4,
-					}),
+					agent: apiProxyTarget.startsWith("https:")
+						? new https.Agent({
+								keepAlive: false,
+								family: 4,
+								rejectUnauthorized: false,
+							})
+						: undefined,
 					configure: (proxy) => {
 						proxy.on("error", (err, _req, res) => {
-							console.warn("[vite proxy warning]:", err.message);
+							console.warn(
+								`[vite proxy warning] Failed to proxy to ${apiProxyTarget}:`,
+								err.message,
+							);
 							if (res && "writeHead" in res && !res.headersSent) {
 								res.writeHead(502, { "Content-Type": "application/json" });
 								res.end(
 									JSON.stringify({
-										message: "Proxy connection reset",
+										message: `Proxy error: Không thể kết nối tới backend tại ${apiProxyTarget}. Vui lòng kiểm tra backend đã được khởi động chưa.`,
 										error: err.message,
+										target: apiProxyTarget,
 									}),
 								);
 							}

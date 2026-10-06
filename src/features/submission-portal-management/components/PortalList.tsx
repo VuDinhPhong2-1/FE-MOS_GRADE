@@ -1,12 +1,11 @@
-import { Button, Card, Icon, type SelectOption } from "@bug-on/m3-expressive";
+import { Button, Card, Icon, type SelectOption, Text } from "@bug-on/m3-expressive";
 import type React from "react";
 import type { SubmissionPortal } from "../../../types/submission-portal.types";
+import { PortalActionToolbar } from "./PortalActionToolbar";
 import { PortalCard } from "./PortalCard";
-import { PortalListFilterBar } from "./PortalListFilterBar";
 
 interface PortalListProps {
 	portals: SubmissionPortal[];
-	totalPortalsCount: number;
 	scopeFilter: "all" | "teacher";
 	onScopeChange: (scope: "all" | "teacher") => void;
 	selectedClassId: string;
@@ -15,17 +14,23 @@ interface PortalListProps {
 	onResetFilters: () => void;
 	hasActiveFilters: boolean;
 	publicOrigin: string;
+	selectedPortalId?: string;
 	onOpenCreate: () => void;
 	onCopyUrl: (url: string) => void;
 	onOpenDetails: (portal: SubmissionPortal) => void;
 	onEdit: (portal: SubmissionPortal) => void;
 	onDelete: (portal: SubmissionPortal) => void;
 	isActionDisabled?: boolean;
+	searchQuery?: string;
+	onSearchQueryChange?: (query: string) => void;
+	isSearchActive?: boolean;
+	onOpenSearch?: () => void;
+	onCloseSearch?: () => void;
+	onSearchActiveChange?: (isActive: boolean) => void;
 }
 
 export const PortalList: React.FC<PortalListProps> = ({
 	portals,
-	totalPortalsCount,
 	scopeFilter,
 	onScopeChange,
 	selectedClassId,
@@ -34,46 +39,38 @@ export const PortalList: React.FC<PortalListProps> = ({
 	onResetFilters,
 	hasActiveFilters,
 	publicOrigin,
+	selectedPortalId,
 	onOpenCreate,
 	onCopyUrl,
 	onOpenDetails,
 	onEdit,
 	onDelete,
 	isActionDisabled,
+	searchQuery = "",
+	onSearchQueryChange = () => {},
+	isSearchActive,
+	onOpenSearch,
+	onCloseSearch,
+	onSearchActiveChange,
 }) => {
 	return (
 		<section className="space-y-4">
-			{/* Section Header */}
-			<div className="flex flex-wrap items-center justify-between gap-3">
-				<div>
-					<h2 className="text-xl font-bold text-m3-on-surface">
-						Danh sách cổng nộp bài
-					</h2>
-					<p className="text-sm text-m3-on-surface-variant">
-						Sao chép link, xem thử giao diện học sinh và kiểm tra cảnh báo nộp
-						bài.
-					</p>
-				</div>
-				<Button
-					colorStyle="filled"
-					icon={<Icon name="add_link" />}
-					onClick={onOpenCreate}
-				>
-					Tạo link mới
-				</Button>
-			</div>
-
-			{/* Filter Bar: Scope Filter (Tất cả / Lớp trực thuộc giáo viên) & Class Filter */}
-			<PortalListFilterBar
+			{/* Floating Action Toolbar với Tìm kiếm, Bộ lọc và FAB Tạo link */}
+			<PortalActionToolbar
 				scopeFilter={scopeFilter}
 				onScopeChange={onScopeChange}
 				selectedClassId={selectedClassId}
 				onClassChange={onClassChange}
 				classOptions={classOptions}
-				totalCount={totalPortalsCount}
-				filteredCount={portals.length}
 				onResetFilters={onResetFilters}
 				hasActiveFilters={hasActiveFilters}
+				searchQuery={searchQuery}
+				onSearchQueryChange={onSearchQueryChange}
+				isSearchActive={isSearchActive}
+				onOpenSearch={onOpenSearch}
+				onCloseSearch={onCloseSearch}
+				onSearchActiveChange={onSearchActiveChange}
+				onOpenCreate={onOpenCreate}
 			/>
 
 			{/* Portals Grid */}
@@ -83,6 +80,7 @@ export const PortalList: React.FC<PortalListProps> = ({
 						key={portal.id}
 						portal={portal}
 						publicOrigin={publicOrigin}
+						isSelected={selectedPortalId === portal.id}
 						onCopyUrl={onCopyUrl}
 						onOpenDetails={onOpenDetails}
 						onEdit={onEdit}
@@ -103,17 +101,20 @@ export const PortalList: React.FC<PortalListProps> = ({
 						<h3 className="mt-4 text-lg font-bold text-m3-on-surface">
 							Không tìm thấy cổng nộp bài phù hợp
 						</h3>
-						<p className="mt-1 max-w-md text-sm text-m3-on-surface-variant">
-							Không có cổng nộp bài nào khớp với bộ lọc phạm vi hoặc lớp học đã
+						<Text
+							variant="body-sm"
+							className="mt-1 max-w-md text-m3-on-surface-variant"
+						>
+							Không có cổng nộp bài nào khớp với bộ lọc hoặc từ khóa tìm kiếm đã
 							chọn.
-						</p>
+						</Text>
 						<div className="mt-5">
 							<Button
 								colorStyle="tonal"
 								icon={<Icon name="filter_alt_off" />}
 								onClick={onResetFilters}
 							>
-								Xóa bộ lọc
+								Xóa bộ lọc & tìm kiếm
 							</Button>
 						</div>
 					</Card>
@@ -131,10 +132,13 @@ export const PortalList: React.FC<PortalListProps> = ({
 						<h3 className="mt-4 text-lg font-bold text-m3-on-surface">
 							Chưa có link nộp bài nào đang mở
 						</h3>
-						<p className="mt-1 max-w-md text-sm text-m3-on-surface-variant">
+						<Text
+							variant="body-sm"
+							className="mt-1 max-w-md text-m3-on-surface-variant"
+						>
 							Tạo link mới để học sinh chọn trường, chọn lớp, chọn bài tập và
 							nộp bài thi chấm tự động qua cổng công khai.
-						</p>
+						</Text>
 						<div className="mt-5">
 							<Button
 								colorStyle="filled"

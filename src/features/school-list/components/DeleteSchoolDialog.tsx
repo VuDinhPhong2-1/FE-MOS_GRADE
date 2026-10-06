@@ -8,8 +8,9 @@ import {
 	DialogPortal,
 	DialogTitle,
 	Icon,
+	Text,
 } from "@bug-on/m3-expressive";
-import type { DeleteSchoolDialogProps } from "./types";
+import type { DeleteSchoolDialogProps } from "../types";
 
 export const DeleteSchoolDialog = ({
 	open,
@@ -46,31 +47,30 @@ export const DeleteSchoolDialog = ({
 							</div>
 						</div>
 
-						<p className="text-sm text-m3-on-surface-variant leading-relaxed">
+						<Text variant="body-md" className="text-sm text-m3-on-surface-variant leading-relaxed">
 							Bạn có chắc chắn muốn xóa trường{" "}
 							<strong className="font-semibold text-m3-on-surface">
 								"{schoolToDelete?.name}"
 							</strong>
 							? Tất cả các dữ liệu lớp học và thông tin liên quan trực thuộc
 							trường này có thể bị ảnh hưởng.
-						</p>
+						</Text>
 
 						<DialogFooter className="mt-2 flex shrink-0 items-center justify-end gap-2.5 border-t border-m3-outline-variant/30 pt-4">
 							<Button
 								colorStyle="text"
-								type="button"
 								onClick={onClose}
 								disabled={isDeleting}
+								className="text-m3-on-surface-variant hover:bg-m3-surface-container-highest"
 							>
-								Hủy
+								Hủy bỏ
 							</Button>
 							<Button
 								colorStyle="filled"
-								type="button"
-								onClick={() => void onConfirmDelete()}
-								disabled={isDeleting}
+								onClick={onConfirmDelete}
 								loading={isDeleting}
-								className="bg-m3-error text-m3-on-error hover:bg-m3-error/90 shadow-xs"
+								className="bg-m3-error text-m3-on-error hover:bg-m3-error/90"
+								icon={<Icon name="delete" className="text-base" />}
 							>
 								Xác nhận xóa
 							</Button>

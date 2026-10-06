@@ -23,9 +23,11 @@ export const usePortalManagement = () => {
 		null,
 	);
 
-	// Filters
+	// Filters & Search
 	const [scopeFilter, setScopeFilter] = useState<"all" | "teacher">("all");
 	const [selectedClassId, setSelectedClassId] = useState("");
+	const [searchQuery, setSearchQuery] = useState("");
+	const [isSearchActive, setIsSearchActive] = useState(false);
 
 	// Form fields
 	const [title, setTitle] = useState("Link nộp bài thực hành");
@@ -104,9 +106,16 @@ export const usePortalManagement = () => {
 		setSelectedClassId("");
 	}, []);
 
+	const openSearch = useCallback(() => setIsSearchActive(true), []);
+	const closeSearch = useCallback(() => {
+		setIsSearchActive(false);
+		setSearchQuery("");
+	}, []);
+
 	const resetFilters = useCallback(() => {
 		setScopeFilter("all");
 		setSelectedClassId("");
+		setSearchQuery("");
 	}, []);
 
 	const filteredPortals = useMemo(() => {
@@ -120,8 +129,27 @@ export const usePortalManagement = () => {
 			list = list.filter((p) => p.classIds.includes(selectedClassId));
 		}
 
+		if (searchQuery.trim()) {
+			const q = searchQuery.trim().toLowerCase();
+			list = list.filter((p) => {
+				const matchesTitle = p.title.toLowerCase().includes(q);
+				const matchesDesc = p.description?.toLowerCase().includes(q);
+				const matchesToken = p.publicToken?.toLowerCase().includes(q);
+				const matchesClasses = p.classes?.some((c) =>
+					c.name.toLowerCase().includes(q),
+				);
+				return matchesTitle || matchesDesc || matchesToken || matchesClasses;
+			});
+		}
+
 		return list;
-	}, [visiblePortals, scopeFilter, isTeacherPortal, selectedClassId]);
+	}, [
+		visiblePortals,
+		scopeFilter,
+		isTeacherPortal,
+		selectedClassId,
+		searchQuery,
+	]);
 
 	const stats = useMemo(
 		() => ({
@@ -397,8 +425,17 @@ export const usePortalManagement = () => {
 		selectedClassId,
 		setSelectedClassId,
 		classOptions,
+		searchQuery,
+		setSearchQuery,
+		isSearchActive,
+		setIsSearchActive,
+		openSearch,
+		closeSearch,
 		resetFilters,
-		hasActiveFilters: scopeFilter !== "all" || Boolean(selectedClassId),
+		hasActiveFilters:
+			scopeFilter !== "all" ||
+			Boolean(selectedClassId) ||
+			Boolean(searchQuery.trim()),
 		userRole: user?.role,
 		stats,
 		loading,

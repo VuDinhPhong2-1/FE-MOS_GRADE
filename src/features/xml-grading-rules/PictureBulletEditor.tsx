@@ -1,4 +1,4 @@
-import { Icon, ProgressIndicator } from "@bug-on/m3-expressive";
+import { Icon, ProgressIndicator, Text } from "@bug-on/m3-expressive";
 import { useEffect, useRef, useState } from "react";
 import { pictureBulletAssetsService } from "../../services/pictureBulletAssets.service";
 import type { PictureBulletConfig } from "../../types/xml-grading-rules.types";
@@ -199,14 +199,14 @@ const PictureBulletEditor = ({
 				</div>
 
 				<div className="min-w-0">
-					<p className="text-sm font-bold text-slate-800">
+					<Text variant="body-md" className="text-sm font-bold text-slate-800">
 						Cấu hình Picture Bullet
-					</p>
+					</Text>
 
-					<p className="mt-1 text-xs leading-5 text-slate-500">
+					<Text variant="body-sm" className="mt-1 text-xs leading-5 text-slate-500">
 						Chọn hình ảnh chuẩn được sử dụng làm dấu đầu dòng trong bài Word của
 						học viên.
-					</p>
+					</Text>
 				</div>
 			</div>
 
@@ -214,9 +214,9 @@ const PictureBulletEditor = ({
 			<div className="mt-4 grid gap-4 md:grid-cols-[minmax(0,1fr)_160px]">
 				{/* Image upload */}
 				<div>
-					<p className="text-xs font-semibold text-slate-600">
+					<Text variant="label-sm" className="text-xs font-semibold text-slate-600">
 						Hình ảnh Bullet chuẩn
-					</p>
+					</Text>
 
 					<div className="mt-2">
 						<input
@@ -256,9 +256,9 @@ const PictureBulletEditor = ({
 
 					{fileName && (
 						<div className="mt-2 flex items-center gap-2">
-							<p className="min-w-0 flex-1 truncate text-[11px] text-slate-500">
+							<Text variant="label-sm" className="min-w-0 flex-1 truncate text-[11px] text-slate-500">
 								{fileName}
-							</p>
+							</Text>
 
 							<button
 								type="button"
@@ -272,20 +272,20 @@ const PictureBulletEditor = ({
 						</div>
 					)}
 
-					<p className="mt-1.5 text-[11px] text-slate-400">
+					<Text variant="label-sm" className="mt-1.5 text-[11px] text-slate-400">
 						PNG, JPG, GIF, BMP hoặc WebP · tối đa 10MB
-					</p>
+					</Text>
 
 					{error && (
-						<p className="mt-2 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-[11px] text-red-600">
+						<Text variant="label-sm" className="mt-2 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-[11px] text-red-600">
 							{error}
-						</p>
+						</Text>
 					)}
 
 					{!error && !uploading && hasSavedImage && (
-						<p className="mt-2 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-[11px] text-emerald-700">
+						<Text variant="label-sm" className="mt-2 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-[11px] text-emerald-700">
 							Đã lưu ảnh và hash trên server — sẵn sàng dùng để chấm điểm.
-						</p>
+						</Text>
 					)}
 				</div>
 
@@ -306,9 +306,9 @@ const PictureBulletEditor = ({
 						</select>
 					</label>
 
-					<p className="mt-1.5 text-[11px] leading-4 text-slate-400">
+					<Text variant="label-sm" className="mt-1.5 text-[11px] leading-4 text-slate-400">
 						Cấp numbering cần kiểm tra trong Word.
-					</p>
+					</Text>
 				</div>
 			</div>
 
@@ -316,7 +316,7 @@ const PictureBulletEditor = ({
           so với bản trước (min-h-28 / max-h-20 max-w-20) để đỡ chiếm
           diện tích khi có nhiều Task/Condition trên cùng màn hình. */}
 			<div className="mt-4">
-				<p className="mb-2 text-xs font-semibold text-slate-600">Xem trước</p>
+				<Text variant="label-sm" className="mb-2 text-xs font-semibold text-slate-600">Xem trước</Text>
 
 				{previewUrl ? (
 					<div className="relative flex h-64 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white p-2.5">
@@ -359,9 +359,9 @@ const PictureBulletEditor = ({
 								className="mx-auto text-slate-300"
 							/>
 
-							<p className="mt-1.5 text-[11px] text-slate-400">
+							<Text variant="label-sm" className="mt-1.5 text-[11px] text-slate-400">
 								Chưa chọn hình ảnh
-							</p>
+							</Text>
 						</div>
 					</div>
 				)}
