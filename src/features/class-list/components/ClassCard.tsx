@@ -5,6 +5,7 @@ import {
 	Chip,
 	Icon,
 	IconButton,
+	Text,
 } from "@bug-on/m3-expressive";
 import type React from "react";
 import { memo } from "react";
@@ -49,12 +50,12 @@ export const ClassCard: React.FC<ClassCardProps> = memo(
 							<h3 className="truncate text-lg font-bold text-m3-on-surface transition-colors group-hover:text-m3-primary">
 								{cls.name}
 							</h3>
-							<p className="text-xs text-m3-on-surface-variant">
+							<Text variant="body-sm" className="text-xs text-m3-on-surface-variant">
 								Khối:{" "}
 								<span className="font-semibold text-m3-on-surface">
 									{cls.grade || "---"}
 								</span>
-							</p>
+							</Text>
 						</div>
 						<Chip
 							variant="suggestion"
@@ -82,9 +83,9 @@ export const ClassCard: React.FC<ClassCardProps> = memo(
 						</div>
 
 						{cls.description && (
-							<p className="line-clamp-2 pt-1 text-xs italic text-m3-on-surface-variant/80">
+							<Text variant="body-sm" className="line-clamp-2 pt-1 text-xs italic text-m3-on-surface-variant/80">
 								{cls.description}
-							</p>
+							</Text>
 						)}
 					</div>
 				</div>

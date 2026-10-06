@@ -1,4 +1,4 @@
-import { Card, Icon, ShapeIcon } from "@bug-on/m3-expressive";
+import { Card, Icon, ShapeIcon, Text } from "@bug-on/m3-expressive";
 import type React from "react";
 
 interface StatsBannerProps {
@@ -38,7 +38,9 @@ export const StatsBanner: React.FC<StatsBannerProps> = ({
 				<div className="mt-3 text-3xl font-black" aria-live="polite">
 					{activeCount}
 				</div>
-				<p className="mt-1 text-xs opacity-75">Cổng nộp bài đang hoạt động</p>
+				<Text variant="body-sm" className="mt-1 opacity-75">
+					Cổng nộp bài đang hoạt động
+				</Text>
 			</Card>
 
 			{/* Scoped Assignments */}
@@ -65,9 +67,9 @@ export const StatsBanner: React.FC<StatsBannerProps> = ({
 				<div className="mt-3 text-3xl font-black" aria-live="polite">
 					{scopedAssignmentsCount}
 				</div>
-				<p className="mt-1 text-xs opacity-75">
+				<Text variant="body-sm" className="mt-1 opacity-75">
 					Tổng bài tập được gán chấm tự động
-				</p>
+				</Text>
 			</Card>
 
 			{/* Alerts */}
@@ -90,9 +92,9 @@ export const StatsBanner: React.FC<StatsBannerProps> = ({
 				<div className="mt-3 text-3xl font-black" aria-live="polite">
 					{totalAlertsCount}
 				</div>
-				<p className="mt-1 text-xs opacity-75">
+				<Text variant="body-sm" className="mt-1 opacity-75">
 					Lượt nộp cần giáo viên đối chiếu
-				</p>
+				</Text>
 			</Card>
 		</section>
 	);

@@ -1,4 +1,4 @@
-import { Card, Icon } from "@bug-on/m3-expressive";
+import { Card, Icon, Text } from "@bug-on/m3-expressive";
 import type React from "react";
 import { useMemo } from "react";
 import { usePageHeader } from "../context/PageActionsContext";
@@ -91,9 +91,9 @@ const PermissionManagement: React.FC = () => {
 						Truy cập bị từ chối
 					</h1>
 				</div>
-				<p className="text-sm text-m3-on-surface-variant">
+				<Text variant="body-md" className="text-sm text-m3-on-surface-variant">
 					Chức năng này chỉ dành riêng cho Quản trị viên (Admin) của hệ thống.
-				</p>
+				</Text>
 			</Card>
 		);
 	}

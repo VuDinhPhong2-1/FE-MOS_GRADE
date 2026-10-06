@@ -7,6 +7,7 @@ import {
 	IconButton,
 	ScrollArea,
 	Select,
+	Text,
 	TextField,
 } from "@bug-on/m3-expressive";
 import type React from "react";
@@ -168,13 +169,13 @@ export const BonusEntryTable: React.FC<BonusEntryTableProps> = ({
 													{initial}
 												</div>
 												<div>
-													<p className="font-semibold text-m3-on-surface">
+													<Text variant="body-md" className="font-semibold text-m3-on-surface">
 														{fullName}
-													</p>
+													</Text>
 													{student.notes && (
-														<p className="text-xs text-m3-on-surface-variant truncate max-w-xs">
+														<Text variant="body-sm" className="text-xs text-m3-on-surface-variant truncate max-w-xs">
 															{student.notes}
-														</p>
+														</Text>
 													)}
 												</div>
 											</div>
@@ -204,7 +205,7 @@ export const BonusEntryTable: React.FC<BonusEntryTableProps> = ({
 														onChange={(val) => {
 															const parsed = parseFloat(val);
 															onChangeItem(student.id, {
-																points: isNaN(parsed) ? 0 : parsed,
+																points: Number.isNaN(parsed) ? 0 : parsed,
 																category: item.category || defaultCategory,
 															});
 														}}

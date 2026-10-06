@@ -4,6 +4,7 @@ import {
 	Icon,
 	ProgressIndicator,
 	ScrollArea,
+	Text,
 } from "@bug-on/m3-expressive";
 import { memo } from "react";
 import { PermissionItem } from "./PermissionItem";
@@ -32,10 +33,10 @@ export const PermissionPanel = memo(function PermissionPanel({
 				<h4 className="text-base font-bold text-m3-on-surface">
 					Chưa chọn giáo viên
 				</h4>
-				<p className="mt-1 text-xs text-m3-on-surface-variant max-w-xs">
+				<Text variant="body-sm" className="mt-1 text-xs text-m3-on-surface-variant max-w-xs">
 					Vui lòng chọn một giáo viên từ danh sách bên trái để xem và phân quyền
 					chức năng.
-				</p>
+				</Text>
 			</Card>
 		);
 	}
@@ -56,9 +57,9 @@ export const PermissionPanel = memo(function PermissionPanel({
 							quyền
 						</span>
 					</div>
-					<p className="text-sm text-m3-on-surface-variant mt-0.5">
+					<Text variant="body-md" className="text-sm text-m3-on-surface-variant mt-0.5">
 						{selectedTeacher.email || selectedTeacher.username}
-					</p>
+					</Text>
 				</div>
 
 				<div className="flex flex-wrap items-center gap-2">

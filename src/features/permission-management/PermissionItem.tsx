@@ -3,6 +3,7 @@ import {
 	Icon,
 	IconButton,
 	PlainTooltip,
+	Text,
 	TooltipBox,
 } from "@bug-on/m3-expressive";
 import { memo, useCallback, useId } from "react";
@@ -45,12 +46,12 @@ export const PermissionItem = memo(function PermissionItem({
 					htmlFor={inputId}
 					className="min-w-0 flex-1 cursor-pointer select-none"
 				>
-					<p className="font-semibold text-m3-on-surface line-clamp-1">
+					<Text variant="body-md" className="font-semibold text-m3-on-surface line-clamp-1">
 						{permissionInfo.label}
-					</p>
-					<p className="text-xs text-m3-on-surface-variant/80 font-mono mt-0.5 line-clamp-1">
+					</Text>
+					<Text variant="label-sm" className="text-xs text-m3-on-surface-variant/80 font-mono mt-0.5 line-clamp-1">
 						{permission}
-					</p>
+					</Text>
 				</label>
 			</div>
 

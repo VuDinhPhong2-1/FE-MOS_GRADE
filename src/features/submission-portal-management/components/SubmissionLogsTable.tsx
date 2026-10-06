@@ -1,4 +1,4 @@
-import { Button, Icon } from "@bug-on/m3-expressive";
+import { Button, Icon, Text } from "@bug-on/m3-expressive";
 import {
 	createColumnHelper,
 	tableFeatures,
@@ -103,13 +103,16 @@ export const SubmissionLogsTable: React.FC<SubmissionLogsTableProps> = ({
 					<h3 className="text-lg font-bold text-m3-on-surface">
 						Lượt nộp gần đây
 					</h3>
-					<p className="text-xs text-m3-on-surface-variant">
+					<Text
+						variant="body-sm"
+						className="text-xs text-m3-on-surface-variant"
+					>
 						{hasMore
 							? `Hiển thị 50 / ${totalCount} lượt nộp gần nhất. Đối chiếu tệp nộp, thời gian và điểm số.`
 							: totalCount === 0
 								? "Đối chiếu tệp nộp, thời gian và điểm số của học sinh qua cổng nộp bài."
 								: `${totalCount} lượt nộp bài đã ghi nhận.`}
-					</p>
+					</Text>
 				</div>
 				<Button
 					colorStyle="filled"

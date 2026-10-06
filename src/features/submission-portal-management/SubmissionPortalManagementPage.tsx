@@ -78,7 +78,7 @@ export const SubmissionPortalManagementPage = () => {
 	}
 
 	return (
-		<main className="space-y-4 pb-28">
+		<main className="space-y-4 pb-5">
 			{/* Metric Cards Banner */}
 			<StatsBanner
 				activeCount={portalMgmt.stats.active}

@@ -12,6 +12,7 @@ import {
 	DialogTitle,
 	Icon,
 	IconButton,
+	Text,
 } from "@bug-on/m3-expressive";
 import type React from "react";
 import type { StudentBonusPointSummary } from "../../types/bonus-point.types";
@@ -69,7 +70,7 @@ export const StudentBonusHistoryDialog: React.FC<
 							<DialogTitle className="text-xl font-bold text-m3-on-surface">
 								Lịch sử điểm cộng
 							</DialogTitle>
-							<p className="text-sm text-m3-on-surface-variant mt-0.5">
+							<Text variant="body-md" className="text-sm text-m3-on-surface-variant mt-0.5">
 								Học sinh:{" "}
 								<span className="font-semibold text-m3-on-surface">
 									{student.studentFullName}
@@ -80,7 +81,7 @@ export const StudentBonusHistoryDialog: React.FC<
 										? `+${student.totalBonusPoints}`
 										: student.totalBonusPoints}
 								</span>
-							</p>
+							</Text>
 						</div>
 					</div>
 				</DialogHeader>
@@ -93,9 +94,9 @@ export const StudentBonusHistoryDialog: React.FC<
 								size={48}
 								className="mx-auto mb-2 text-m3-on-surface-variant/50"
 							/>
-							<p className="text-sm font-medium">
+							<Text variant="body-md" className="text-sm font-medium">
 								Chưa có lịch sử điểm cộng nào.
-							</p>
+							</Text>
 						</div>
 					) : (
 						<div className="space-y-3">
@@ -133,14 +134,14 @@ export const StudentBonusHistoryDialog: React.FC<
 											</div>
 
 											{entry.reason && (
-												<p className="text-sm text-m3-on-surface mt-1 font-medium">
+												<Text variant="body-md" className="text-sm text-m3-on-surface mt-1 font-medium">
 													{entry.reason}
-												</p>
+												</Text>
 											)}
 
-											<p className="text-xs text-m3-on-surface-variant/70 mt-1">
+											<Text variant="body-sm" className="text-xs text-m3-on-surface-variant/70 mt-1">
 												Người ghi: {entry.createdByName || "Giáo viên"}
-											</p>
+											</Text>
 										</div>
 									</div>
 

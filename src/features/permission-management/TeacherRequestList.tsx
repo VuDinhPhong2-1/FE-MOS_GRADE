@@ -5,6 +5,7 @@ import {
 	Icon,
 	List,
 	LoadingIndicator,
+	Text,
 } from "@bug-on/m3-expressive";
 import { memo } from "react";
 import { TeacherRequestCard } from "./TeacherRequestCard";
@@ -41,9 +42,9 @@ export const TeacherRequestList = memo(function TeacherRequestList({
 					<h3 className="text-lg font-bold text-m3-on-surface">
 						Yêu cầu đăng ký giáo viên
 					</h3>
-					<p className="text-sm text-m3-on-surface-variant">
+					<Text variant="body-md" className="text-sm text-m3-on-surface-variant">
 						Duyệt hoặc từ chối tài khoản giáo viên mới đăng ký trong hệ thống.
-					</p>
+					</Text>
 				</div>
 
 				<ButtonGroup variant="connected" size="sm">
@@ -85,12 +86,12 @@ export const TeacherRequestList = memo(function TeacherRequestList({
 							<Icon name="person_search" size={30} />
 						</div>
 						<div>
-							<p className="font-bold text-m3-on-surface">
+							<Text variant="body-md" className="font-bold text-m3-on-surface">
 								Không có yêu cầu phù hợp
-							</p>
-							<p className="mt-1 text-xs text-m3-on-surface-variant">
+							</Text>
+							<Text variant="body-sm" className="mt-1 text-xs text-m3-on-surface-variant">
 								Hiện không có yêu cầu phê duyệt giáo viên nào ở trạng thái này.
-							</p>
+							</Text>
 						</div>
 					</div>
 				</div>

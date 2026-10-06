@@ -4,6 +4,7 @@ import {
 	Card,
 	Chip,
 	Icon,
+	Text,
 } from "@bug-on/m3-expressive";
 import type React from "react";
 import type { SubmissionPortal } from "../../../types/submission-portal.types";
@@ -97,27 +98,29 @@ export const PortalCard: React.FC<PortalCardProps> = ({
 
 				{/* Title & Description */}
 				<div>
-					<p
+					<Text
+						variant="title-md"
 						className={cn(
-							"text-lg font-bold",
+							"font-bold text-left",
 							isSelected
 								? "text-m3-on-primary-container"
 								: "text-m3-on-surface",
 						)}
 					>
 						{portal.title}
-					</p>
+					</Text>
 					{portal.description && (
-						<p
+						<Text
+							variant="body-sm"
 							className={cn(
-								"mt-1 text-sm line-clamp-2",
+								"mt-1 line-clamp-2",
 								isSelected
 									? "text-m3-on-primary-container/80"
 									: "text-m3-on-surface-variant",
 							)}
 						>
 							{portal.description}
-						</p>
+						</Text>
 					)}
 				</div>
 

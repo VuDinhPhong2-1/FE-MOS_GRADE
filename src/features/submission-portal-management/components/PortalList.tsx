@@ -1,4 +1,4 @@
-import { Button, Card, Icon, type SelectOption } from "@bug-on/m3-expressive";
+import { Button, Card, Icon, type SelectOption, Text } from "@bug-on/m3-expressive";
 import type React from "react";
 import type { SubmissionPortal } from "../../../types/submission-portal.types";
 import { PortalActionToolbar } from "./PortalActionToolbar";
@@ -101,10 +101,13 @@ export const PortalList: React.FC<PortalListProps> = ({
 						<h3 className="mt-4 text-lg font-bold text-m3-on-surface">
 							Không tìm thấy cổng nộp bài phù hợp
 						</h3>
-						<p className="mt-1 max-w-md text-sm text-m3-on-surface-variant">
+						<Text
+							variant="body-sm"
+							className="mt-1 max-w-md text-m3-on-surface-variant"
+						>
 							Không có cổng nộp bài nào khớp với bộ lọc hoặc từ khóa tìm kiếm đã
 							chọn.
-						</p>
+						</Text>
 						<div className="mt-5">
 							<Button
 								colorStyle="tonal"
@@ -129,10 +132,13 @@ export const PortalList: React.FC<PortalListProps> = ({
 						<h3 className="mt-4 text-lg font-bold text-m3-on-surface">
 							Chưa có link nộp bài nào đang mở
 						</h3>
-						<p className="mt-1 max-w-md text-sm text-m3-on-surface-variant">
+						<Text
+							variant="body-sm"
+							className="mt-1 max-w-md text-m3-on-surface-variant"
+						>
 							Tạo link mới để học sinh chọn trường, chọn lớp, chọn bài tập và
 							nộp bài thi chấm tự động qua cổng công khai.
-						</p>
+						</Text>
 						<div className="mt-5">
 							<Button
 								colorStyle="filled"

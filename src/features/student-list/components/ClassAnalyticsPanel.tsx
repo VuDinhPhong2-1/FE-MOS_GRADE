@@ -8,6 +8,7 @@ import {
 	ScrollArea,
 	Select,
 	type SelectOption,
+	Text,
 } from "@bug-on/m3-expressive";
 import { memo, useMemo, useState } from "react";
 import { useAuth } from "../../../context/AuthContext";
@@ -114,10 +115,10 @@ const ClassAnalyticsPanelComponent = ({
 							<Icon name="bar_chart" className="text-m3-primary text-xl" />
 							Phân tích kết quả lớp học
 						</h2>
-						<p className="mt-1 text-sm text-m3-on-surface-variant">
+						<Text variant="body-md" className="mt-1 text-sm text-m3-on-surface-variant">
 							Tổng hợp theo từng lượt chấm để xác định xu hướng học tập và câu
 							hỏi cần củng cố.
-						</p>
+						</Text>
 					</div>
 
 					<div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -352,9 +353,9 @@ const ClassAnalyticsPanelComponent = ({
 								</div>
 
 								{assignments.length === 0 ? (
-									<p className="py-3 text-center text-sm text-m3-on-surface-variant">
+									<Text variant="body-md" className="py-3 text-center text-sm text-m3-on-surface-variant">
 										Lớp chưa có bài tập.
-									</p>
+									</Text>
 								) : (
 									<ScrollArea
 										type="scroll"

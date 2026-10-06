@@ -168,9 +168,12 @@ export const ThemePaletteSection = () => {
 								)}
 							</div>
 
-							<p className="text-xs text-m3-on-surface-variant line-clamp-2 mb-3">
+							<Text
+								variant="body-sm"
+								className="text-xs text-m3-on-surface-variant line-clamp-2 mb-3"
+							>
 								{palette.description}
-							</p>
+							</Text>
 
 							{/* Color Shades Swatch Strip */}
 							<div className="flex h-3.5 w-full overflow-hidden rounded-full">

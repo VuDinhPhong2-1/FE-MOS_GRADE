@@ -4,6 +4,7 @@ import {
 	Icon,
 	LoadingIndicator,
 	ScrollArea,
+	Text,
 } from "@bug-on/m3-expressive";
 import type React from "react";
 import type { Assignment } from "../../../../types/assignment.types";
@@ -35,9 +36,9 @@ export const MultiAssignmentSelector: React.FC<
 		<div className="mb-6 p-5 bg-m3-surface-container-high rounded-3xl">
 			{/* Quick select by practice section */}
 			<div>
-				<p className="mb-2 text-xs font-semibold text-m3-on-surface-variant">
+				<Text variant="label-sm" className="mb-2 text-xs font-semibold text-m3-on-surface-variant">
 					Chọn nhanh theo phần
-				</p>
+				</Text>
 				<div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
 					{QUICK_SELECT_PRACTICE_OPTIONS.map((practice) => {
 						const practiceCode = practice.code as PracticeCode;
@@ -128,13 +129,13 @@ export const MultiAssignmentSelector: React.FC<
 							>
 								<div className="flex items-start justify-between gap-3">
 									<div className="min-w-0">
-										<p className="text-sm font-semibold text-m3-on-surface truncate">
+										<Text variant="body-md" className="text-sm font-semibold text-m3-on-surface truncate">
 											{assignment.name}
-										</p>
+										</Text>
 										{assignment.description && (
-											<p className="text-xs text-m3-on-surface-variant mt-1 line-clamp-1">
+											<Text variant="body-sm" className="text-xs text-m3-on-surface-variant mt-1 line-clamp-1">
 												{assignment.description}
-											</p>
+											</Text>
 										)}
 									</div>
 									<div className="flex flex-col items-end gap-1 shrink-0">

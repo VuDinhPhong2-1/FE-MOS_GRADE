@@ -19,7 +19,7 @@ const LeaderboardMyStandingComponent = ({
 	const rank = myEntry.rank ?? 999;
 
 	return (
-		<div className="relative overflow-hidden rounded-2xl border border-m3-primary/30 bg-gradient-to-r from-m3-primary/15 via-m3-primary/5 to-transparent p-4 sm:p-5">
+		<div className="relative overflow-hidden rounded-2xl border border-m3-primary/30 bg-linear-to-r from-m3-primary/15 via-m3-primary/5 to-transparent p-4 sm:p-5">
 			<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 				<div className="flex items-center gap-3.5">
 					<div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-m3-primary text-m3-on-primary font-black shadow-md shadow-m3-primary/20 text-base">
@@ -37,7 +37,10 @@ const LeaderboardMyStandingComponent = ({
 								VỊ TRÍ CỦA BẠN
 							</span>
 						</div>
-						<p className="mt-0.5 text-xs text-m3-on-surface-variant">
+						<Text
+							variant="body-sm"
+							className="mt-0.5 text-xs text-m3-on-surface-variant"
+						>
 							{rank === 1 ? (
 								<span className="font-bold text-amber-600 dark:text-amber-400">
 									👑 Xuất sắc! Bạn đang giữ ngôi vị Quán quân dẫn đầu bảng! Giữ
@@ -64,7 +67,7 @@ const LeaderboardMyStandingComponent = ({
 									bứt phá thứ hạng!
 								</span>
 							)}
-						</p>
+						</Text>
 					</div>
 				</div>
 

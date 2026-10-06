@@ -1,4 +1,4 @@
-import { Button, Card, Icon, TextField } from "@bug-on/m3-expressive";
+import { Button, Card, Icon, Text, TextField } from "@bug-on/m3-expressive";
 import {
 	createColumnHelper,
 	createSortedRowModel,
@@ -114,13 +114,13 @@ const StudentAttendanceMobileCard = memo(function StudentAttendanceMobileCard({
 		>
 			<div className="flex items-start justify-between gap-3">
 				<div>
-					<p className="text-xs text-m3-on-surface-variant">#{index + 1}</p>
-					<p className="font-semibold text-m3-on-surface">
+					<Text variant="label-sm" className="text-xs text-m3-on-surface-variant">#{index + 1}</Text>
+					<Text variant="body-md" className="font-semibold text-m3-on-surface">
 						{student.middleName} {student.firstName}
-					</p>
-					<p className="text-xs text-m3-on-surface-variant">
+					</Text>
+					<Text variant="body-sm" className="text-xs text-m3-on-surface-variant">
 						Trạng thái học sinh: {student.studentStatus || "-"}
-					</p>
+					</Text>
 				</div>
 				<Button
 					colorStyle={isAbsent ? "outlined" : "filled"}
@@ -206,12 +206,12 @@ export const AttendanceTabContent = ({
 					},
 					cell: ({ row }) => (
 						<div>
-							<p className="font-medium text-m3-on-surface">
+							<Text variant="body-md" className="font-medium text-m3-on-surface">
 								{row.original.middleName} {row.original.firstName}
-							</p>
-							<p className="text-xs text-m3-on-surface-variant">
+							</Text>
+							<Text variant="body-sm" className="text-xs text-m3-on-surface-variant">
 								Trạng thái: {row.original.studentStatus || "-"}
-							</p>
+							</Text>
 						</div>
 					),
 				}),
@@ -397,10 +397,10 @@ export const AttendanceTabContent = ({
 				</Button>
 			</div>
 
-			<p className="text-xs text-m3-on-surface-variant">
+			<Text variant="body-sm" className="text-xs text-m3-on-surface-variant">
 				Chạm vào nút trạng thái của từng học sinh để đổi nhanh giữa{" "}
 				<strong>Có mặt</strong> và <strong>Vắng</strong>.
-			</p>
+			</Text>
 
 			{/* Mobile view */}
 			<div className="space-y-2.5 md:hidden">

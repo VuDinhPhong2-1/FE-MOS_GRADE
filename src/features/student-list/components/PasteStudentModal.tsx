@@ -10,6 +10,7 @@ import {
 	DialogTitle,
 	Icon,
 	ScrollArea,
+	Text,
 	TextField,
 	type TextFieldHandle,
 } from "@bug-on/m3-expressive";
@@ -131,12 +132,12 @@ const PasteStudentModalComponent = ({
 						viewportClassName="px-6 py-4"
 					>
 						<div className="flex flex-col gap-4">
-							<p className="text-sm text-m3-on-surface-variant">
+							<Text variant="body-md" className="text-sm text-m3-on-surface-variant">
 								Copy trực tiếp 2 cột từ Excel theo thứ tự:{" "}
 								<strong className="text-m3-on-surface">Họ và tên đệm</strong>,{" "}
 								<strong className="text-m3-on-surface">Tên</strong>, rồi dán vào
 								ô bên dưới.
-							</p>
+							</Text>
 
 							<div onPaste={handlePasteCapture} className="w-full">
 								<TextField

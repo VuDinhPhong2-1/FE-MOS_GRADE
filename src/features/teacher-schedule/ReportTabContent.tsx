@@ -3,6 +3,7 @@ import {
 	ButtonDistribute,
 	Icon,
 	Select,
+	Text,
 	TextField,
 } from "@bug-on/m3-expressive";
 import { useEffect, useMemo, useState } from "react";
@@ -874,10 +875,10 @@ export const ReportTabContent = ({
 						</div>
 						{reportPreview}
 						{hasRoomSnapshot && (
-							<p className="text-xs text-m3-primary/80">
+							<Text variant="body-sm" className="text-xs text-m3-primary/80">
 								Các trường liên quan phòng máy được tự động lấy từ cấu hình
 								phòng máy trong database.
-							</p>
+							</Text>
 						)}
 						<div className="grid gap-3 sm:grid-cols-2">
 							<TextField
@@ -1111,10 +1112,10 @@ export const ReportTabContent = ({
 						{reportActions}
 						{reportPreview}
 						{hasRoomSnapshot && (
-							<p className="text-xs text-m3-tertiary/80">
+							<Text variant="body-sm" className="text-xs text-m3-tertiary/80">
 								Các trường liên quan phòng máy được tự động lấy từ cấu hình
 								phòng máy trong database.
-							</p>
+							</Text>
 						)}
 						<div className="rounded-2xl bg-m3-tertiary-container/30 px-4 py-2.5 text-xs text-m3-on-tertiary-container">
 							{attendanceData.roomSessionContext?.isSharedRoomSession

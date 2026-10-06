@@ -8,6 +8,7 @@ import {
 	DialogPortal,
 	DialogTitle,
 	Icon,
+	Text,
 } from "@bug-on/m3-expressive";
 import type React from "react";
 import type { Class } from "../../../types/class.types";
@@ -55,14 +56,14 @@ export const DeleteClassDialog: React.FC<DeleteClassDialogProps> = ({
 							</div>
 						</div>
 
-						<p className="text-sm text-m3-on-surface-variant leading-relaxed">
+						<Text variant="body-md" className="text-sm text-m3-on-surface-variant leading-relaxed">
 							Bạn có chắc chắn muốn xóa vĩnh viễn lớp{" "}
 							<strong className="font-semibold text-m3-on-surface">
 								"{classToDelete?.name}"
 							</strong>
 							? Toàn bộ danh sách học sinh và các dữ liệu điểm số liên quan trực
 							thuộc lớp này sẽ bị ảnh hưởng.
-						</p>
+						</Text>
 
 						<DialogFooter className="mt-2 flex shrink-0 items-center justify-end gap-2.5 border-t border-m3-outline-variant/30 pt-4">
 							<Button

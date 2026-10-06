@@ -1,4 +1,4 @@
-import { Icon, IconButton } from "@bug-on/m3-expressive";
+import { Icon, IconButton, Text } from "@bug-on/m3-expressive";
 import { useLocation, useNavigate } from "react-router-dom";
 import { usePageActionsContext } from "../../context/PageActionsContext";
 import { ThemeToggle } from "../common";
@@ -31,9 +31,12 @@ const Header = ({ onOpenProfile }: HeaderProps) => {
 							{config.title}
 						</h1>
 						{config.subtitle && (
-							<p className="truncate text-xs text-m3-on-surface-variant">
+							<Text
+								variant="body-sm"
+								className="truncate text-xs text-m3-on-surface-variant"
+							>
 								{config.subtitle}
-							</p>
+							</Text>
 						)}
 					</div>
 				)}

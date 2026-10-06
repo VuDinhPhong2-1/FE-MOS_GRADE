@@ -4,6 +4,7 @@ import {
 	Icon,
 	LoadingIndicator,
 	ScrollArea,
+	Text,
 } from "@bug-on/m3-expressive";
 import type React from "react";
 import type {
@@ -46,9 +47,12 @@ export const PortalDetailsSection: React.FC<PortalDetailsSectionProps> = ({
 								Cảnh báo nghi vấn
 							</h3>
 						</div>
-						<p className="mt-0.5 text-xs text-m3-on-surface-variant truncate max-w-sm">
+						<Text
+							variant="body-sm"
+							className="mt-0.5 text-xs text-m3-on-surface-variant truncate max-w-sm"
+						>
 							Cổng: {selectedPortal.title}
-						</p>
+						</Text>
 					</div>
 
 					<Button

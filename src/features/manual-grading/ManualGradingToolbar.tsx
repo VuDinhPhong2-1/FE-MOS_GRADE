@@ -5,6 +5,7 @@ import {
 	Chip,
 	Icon,
 	IconButton,
+	Text,
 	TextField,
 } from "@bug-on/m3-expressive";
 import type React from "react";
@@ -82,7 +83,7 @@ export const ManualGradingToolbar: React.FC<ManualGradingToolbarProps> = ({
 									className="pointer-events-none h-6 px-2.5 text-xs font-medium bg-m3-tertiary-container/30 text-m3-on-tertiary-container"
 								/>
 							</div>
-							<p className="text-sm text-m3-on-surface-variant mt-0.5">
+							<Text variant="body-md" className="text-sm text-m3-on-surface-variant mt-0.5">
 								Lớp:{" "}
 								<span className="font-semibold text-m3-on-surface">
 									{className}
@@ -92,7 +93,7 @@ export const ManualGradingToolbar: React.FC<ManualGradingToolbarProps> = ({
 									{gradedCount}
 								</span>
 								/{totalStudents} học sinh ({progressPercent}%)
-							</p>
+							</Text>
 						</div>
 					</div>
 

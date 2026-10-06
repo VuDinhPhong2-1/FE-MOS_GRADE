@@ -5,6 +5,7 @@ import {
 	ListItem,
 	ProgressIndicator,
 	ShapeMedia,
+	Text,
 	TextField,
 } from "@bug-on/m3-expressive";
 import { memo, useCallback } from "react";
@@ -79,9 +80,9 @@ export const TeacherRequestCard = memo(function TeacherRequestCard({
 						<PermissionStatusBadge status={status} />
 					</div>
 
-					<p className="text-sm font-medium text-m3-on-surface-variant">
+					<Text variant="body-md" className="text-sm font-medium text-m3-on-surface-variant">
 						{request.email || request.username}
-					</p>
+					</Text>
 
 					<div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-m3-on-surface-variant/80 pt-0.5">
 						<span>
@@ -96,12 +97,12 @@ export const TeacherRequestCard = memo(function TeacherRequestCard({
 					</div>
 
 					{request.teacherApprovalNote && (
-						<p className="mt-2 rounded-xl bg-m3-surface-container-high/60 px-3.5 py-2 text-xs text-m3-on-surface-variant sm:text-sm">
+						<Text variant="body-sm" className="mt-2 rounded-xl bg-m3-surface-container-high/60 px-3.5 py-2 text-xs text-m3-on-surface-variant sm:text-sm">
 							<strong className="font-semibold text-m3-on-surface">
 								Ghi chú:
 							</strong>{" "}
 							{request.teacherApprovalNote}
-						</p>
+						</Text>
 					)}
 				</div>
 			}

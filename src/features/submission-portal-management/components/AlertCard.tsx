@@ -1,4 +1,4 @@
-import { Card, Chip, Icon, List, ListItem } from "@bug-on/m3-expressive";
+import { Card, Chip, Icon, List, ListItem, Text } from "@bug-on/m3-expressive";
 import type React from "react";
 import type { SubmissionAlert } from "../../../types/submission-portal.types";
 import { cn } from "../../../utils/utils";
@@ -57,16 +57,22 @@ export const AlertCard: React.FC<AlertCardProps> = ({ alert }) => {
 			</div>
 
 			{/* Alert Message */}
-			<p className="text-sm font-semibold leading-relaxed wrap-break-word">
+			<Text
+				variant="body-md"
+				className="font-semibold leading-relaxed wrap-break-word"
+			>
 				{alert.message}
-			</p>
+			</Text>
 
 			{/* Involved Students Sub-List */}
 			{alert.involvedStudents && alert.involvedStudents.length > 0 ? (
 				<div className="space-y-2 text-m3-on-surface min-w-0">
-					<p className="text-xs font-bold uppercase tracking-wider text-m3-on-surface">
+					<Text
+						variant="label-sm"
+						className="font-bold uppercase tracking-wider text-m3-on-surface"
+					>
 						Học sinh liên quan
-					</p>
+					</Text>
 					<List
 						outerRadius={8}
 						variant="expressive"
@@ -113,10 +119,13 @@ export const AlertCard: React.FC<AlertCardProps> = ({ alert }) => {
 					</List>
 				</div>
 			) : (
-				<p className="rounded-m3-sm bg-m3-surface/70 p-2.5 text-xs text-m3-on-surface">
+				<Text
+					variant="body-sm"
+					className="rounded-m3-sm bg-m3-surface/70 p-2.5 text-m3-on-surface"
+				>
 					Chưa có dữ liệu tên học sinh cho cảnh báo này. Vui lòng đối chiếu bảng
 					“Lượt nộp gần đây” theo thời gian/tệp.
-				</p>
+				</Text>
 			)}
 		</Card>
 	);
