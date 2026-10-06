@@ -8,6 +8,7 @@ import {
 	InsertedImageEditor,
 	PictureBulletEditor,
 	PictureStyleEditor,
+	TextBoxContainsTextEditor,
 } from "../features/xml-grading-rules";
 import { xmlGradingRulesService } from "../services/xml-grading-rules.service";
 import type {
@@ -457,6 +458,27 @@ const specialConditionOptions: Array<{
 			"Kiểm tra worksheet đã đặt đúng vùng in, ví dụ Q1 Sales!A1:F17.",
 		subjects: ["excel"],
 	},
+	{
+		value: "excelTableColumnFormula",
+		label: "Công thức cột bảng Excel",
+		description:
+			"Kiểm tra công thức tính toán của cột trong bảng Excel, hỗ trợ cú pháp có cấu trúc (ví dụ: =[@Total]-[@Commission] hoặc =RIGHT([@ID], 4)).",
+		subjects: ["excel"],
+	},
+	{
+		value: "excelChartType",
+		label: "Loại biểu đồ Excel",
+		description:
+			"Kiểm tra loại biểu đồ đã tạo trên worksheet (ví dụ: 3-D Clustered Bar, 3-D Clustered Column, Clustered Bar).",
+		subjects: ["excel"],
+	},
+	{
+		value: "excelWorksheetTabColor",
+		label: "Màu tab trang tính Excel",
+		description:
+			"Kiểm tra màu tab (tab color) của trang tính theo mã màu HEX (ví dụ: Blue #0070C0).",
+		subjects: ["excel"],
+	},
 ];
 
 const normalizeSubject = (value: string) => value.trim().toLowerCase();
@@ -577,12 +599,13 @@ const specialConditionGroups: Array<{
 		matches: (option) => option.value === "excelCellHyperlink",
 	},
 	{
-		label: "Excel - Thẻ Page Layout",
+		label: "Excel - Thẻ Page Layout / Trang tính",
 		matches: (option) =>
 			[
 				"excelWorksheetPageSetup",
 				"excelPrintTitles",
 				"excelPrintArea",
+				"excelWorksheetTabColor",
 			].includes(option.value),
 	},
 	{
@@ -601,14 +624,18 @@ const specialConditionGroups: Array<{
 	},
 	{
 		label: "Excel - Thẻ ngữ cảnh Bảng (Table Design)",
-		matches: (option) => option.value === "excelTableName",
+		matches: (option) =>
+			["excelTableName", "excelTableColumnFormula"].includes(option.value),
 	},
 	{
 		label: "Excel - Thẻ ngữ cảnh Biểu đồ (Chart Design)",
 		matches: (option) =>
-			["excelChartDataRange", "excelChartStyle", "excelChartLegend"].includes(
-				option.value,
-			),
+			[
+				"excelChartDataRange",
+				"excelChartStyle",
+				"excelChartLegend",
+				"excelChartType",
+			].includes(option.value),
 	},
 ];
 
@@ -837,6 +864,35 @@ const defaultSpecialConditionFeedback = (
 				errorMessage: "Worksheet chưa được thiết lập đúng vùng in yêu cầu.",
 				fixAction:
 					"Chọn đúng vùng ô -> Page Layout -> Print Area -> Set Print Area.",
+			};
+		case "excelTableColumnFormula":
+			return {
+				successDetail: "Đã thiết lập đúng công thức tính toán cho cột trong bảng.",
+				errorMessage: "Cột trong bảng chưa có công thức hoặc công thức chưa đúng yêu cầu.",
+				fixAction:
+					"Nhập đúng công thức tính toán sử dụng tham chiếu bảng (ví dụ: =[@Total]-[@Commission] hoặc =RIGHT([@ID], 4)) cho cột yêu cầu.",
+			};
+		case "excelChartType":
+			return {
+				successDetail: "Đã tạo đúng loại biểu đồ yêu cầu trên trang tính.",
+				errorMessage: "Chưa tìm thấy biểu đồ đúng loại trên trang tính yêu cầu.",
+				fixAction:
+					"Chọn vùng dữ liệu -> Insert -> Charts và chọn đúng loại biểu đồ (ví dụ: 3-D Clustered Bar). Hoặc chọn biểu đồ -> Chart Design -> Change Chart Type.",
+			};
+		case "excelWorksheetTabColor":
+			return {
+				successDetail: "Đã thiết lập đúng màu tab cho trang tính yêu cầu.",
+				errorMessage: "Màu tab của trang tính chưa đúng màu yêu cầu.",
+				fixAction:
+					"Nhấp chuột phải vào tên tab trang tính -> Tab Color -> chọn đúng màu yêu cầu.",
+			};
+		case "textBoxContainsText":
+			return {
+				successDetail: "Đoạn văn đã được đưa vào hộp văn bản đúng yêu cầu.",
+				errorMessage:
+					"Hộp văn bản chưa chứa đúng nội dung hoặc đoạn văn chưa được chuyển khỏi thân tài liệu.",
+				fixAction:
+					"Bôi đen đoạn văn -> Cut -> Chọn vào hộp văn bản -> Paste.",
 			};
 		default:
 			return generic;
@@ -2428,6 +2484,269 @@ const ExcelProject02SpecialConditionEditor = ({
 						}
 						placeholder="204"
 						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-slate-600">
+					File XML bảng màu (colors)
+					<input
+						value={
+							specialCondition.excelChartStyleConfig?.colorStyleSourceFile ?? ""
+						}
+						onChange={(e) =>
+							updateConfig("excelChartStyleConfig", {
+								colorStyleSourceFile: e.target.value,
+							})
+						}
+						placeholder="xl/charts/colors1.xml"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-slate-600">
+					Mã color style biểu đồ
+					<input
+						type="number"
+						min={1}
+						value={specialCondition.excelChartStyleConfig?.colorStyleId ?? ""}
+						onChange={(e) =>
+							updateConfig("excelChartStyleConfig", {
+								colorStyleId: e.target.value ? Number(e.target.value) : undefined,
+							})
+						}
+						placeholder="10"
+						className={inputClass}
+					/>
+				</label>
+			</div>
+		);
+	}
+
+	if (specialCondition.type === "excelTableColumnFormula") {
+		return (
+			<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-2">
+				<label className="text-xs font-semibold text-slate-600">
+					Tên worksheet
+					<input
+						value={
+							specialCondition.excelTableColumnFormulaConfig?.worksheetName ?? ""
+						}
+						onChange={(e) =>
+							updateConfig("excelTableColumnFormulaConfig", {
+								worksheetName: e.target.value,
+							})
+						}
+						placeholder="Sales"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-slate-600">
+					Tên bảng (Table name)
+					<input
+						value={
+							specialCondition.excelTableColumnFormulaConfig?.tableName ?? ""
+						}
+						onChange={(e) =>
+							updateConfig("excelTableColumnFormulaConfig", {
+								tableName: e.target.value,
+							})
+						}
+						placeholder="Table1"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-slate-600">
+					Tên cột (Column name)
+					<input
+						value={
+							specialCondition.excelTableColumnFormulaConfig?.columnName ?? ""
+						}
+						onChange={(e) =>
+							updateConfig("excelTableColumnFormulaConfig", {
+								columnName: e.target.value,
+							})
+						}
+						placeholder="Net"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-slate-600">
+					Công thức kỳ vọng
+					<input
+						value={
+							specialCondition.excelTableColumnFormulaConfig?.expectedFormula ?? ""
+						}
+						onChange={(e) =>
+							updateConfig("excelTableColumnFormulaConfig", {
+								expectedFormula: e.target.value,
+							})
+						}
+						placeholder="=[@Total]-[@Commission]"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-slate-600">
+					Tham chiếu cột bắt buộc (mỗi dòng 1 tên)
+					<textarea
+						rows={2}
+						value={(
+							specialCondition.excelTableColumnFormulaConfig?.requiredReferences ?? []
+						).join("\n")}
+						onChange={(e) =>
+							updateConfig("excelTableColumnFormulaConfig", {
+								requiredReferences: e.target.value
+									.split(/\r?\n/)
+									.map((s) => s.trim())
+									.filter(Boolean),
+							})
+						}
+						placeholder={"Total\nCommission"}
+						className={textareaClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-slate-600">
+					Hàm bắt buộc (mỗi dòng 1 tên)
+					<textarea
+						rows={2}
+						value={(
+							specialCondition.excelTableColumnFormulaConfig?.requiredFunctions ?? []
+						).join("\n")}
+						onChange={(e) =>
+							updateConfig("excelTableColumnFormulaConfig", {
+								requiredFunctions: e.target.value
+									.split(/\r?\n/)
+									.map((s) => s.trim())
+									.filter(Boolean),
+							})
+						}
+						placeholder="RIGHT"
+						className={textareaClass}
+					/>
+				</label>
+			</div>
+		);
+	}
+
+	if (specialCondition.type === "excelChartType") {
+		return (
+			<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-2">
+				<label className="text-xs font-semibold text-slate-600">
+					Tên worksheet
+					<input
+						value={specialCondition.excelChartTypeConfig?.worksheetName ?? ""}
+						onChange={(e) =>
+							updateConfig("excelChartTypeConfig", {
+								worksheetName: e.target.value,
+							})
+						}
+						placeholder="Qtr 2"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-slate-600">
+					File XML biểu đồ (tùy chọn)
+					<input
+						value={specialCondition.excelChartTypeConfig?.chartSourceFile ?? ""}
+						onChange={(e) =>
+							updateConfig("excelChartTypeConfig", {
+								chartSourceFile: e.target.value,
+							})
+						}
+						placeholder="xl/charts/chart1.xml"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-slate-600">
+					Loại biểu đồ kỳ vọng
+					<input
+						value={specialCondition.excelChartTypeConfig?.expectedChartType ?? ""}
+						onChange={(e) =>
+							updateConfig("excelChartTypeConfig", {
+								expectedChartType: e.target.value,
+							})
+						}
+						placeholder="3-D Clustered Bar"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-slate-600">
+					Hướng thanh (barDir: bar hoặc col)
+					<input
+						value={specialCondition.excelChartTypeConfig?.barDir ?? ""}
+						onChange={(e) =>
+							updateConfig("excelChartTypeConfig", {
+								barDir: e.target.value,
+							})
+						}
+						placeholder="bar"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-slate-600">
+					Nhóm (grouping: clustered, stacked, ...)
+					<input
+						value={specialCondition.excelChartTypeConfig?.grouping ?? ""}
+						onChange={(e) =>
+							updateConfig("excelChartTypeConfig", {
+								grouping: e.target.value,
+							})
+						}
+						placeholder="clustered"
+						className={inputClass}
+					/>
+				</label>
+			</div>
+		);
+	}
+
+	if (specialCondition.type === "excelWorksheetTabColor") {
+		return (
+			<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 bg-violet-50/40 p-4 md:grid-cols-2">
+				<label className="text-xs font-semibold text-slate-600">
+					Tên worksheet
+					<input
+						value={
+							specialCondition.excelWorksheetTabColorConfig?.worksheetName ?? ""
+						}
+						onChange={(e) =>
+							updateConfig("excelWorksheetTabColorConfig", {
+								worksheetName: e.target.value,
+							})
+						}
+						placeholder="Qtr 1"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-slate-600">
+					Mã màu HEX kỳ vọng
+					<input
+						value={
+							specialCondition.excelWorksheetTabColorConfig?.expectedColor ?? ""
+						}
+						onChange={(e) =>
+							updateConfig("excelWorksheetTabColorConfig", {
+								expectedColor: e.target.value,
+							})
+						}
+						placeholder="#0070C0"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-slate-600 md:col-span-2">
+					Mã màu cho phép khác (mỗi dòng 1 mã)
+					<textarea
+						rows={2}
+						value={(
+							specialCondition.excelWorksheetTabColorConfig?.allowedColors ?? []
+						).join("\n")}
+						onChange={(e) =>
+							updateConfig("excelWorksheetTabColorConfig", {
+								allowedColors: e.target.value
+									.split(/\r?\n/)
+									.map((s) => s.trim())
+									.filter(Boolean),
+							})
+						}
+						placeholder={"0070C0\nFF0070C0"}
+						className={textareaClass}
 					/>
 				</label>
 			</div>
@@ -5596,6 +5915,126 @@ const XmlGradingRulesPage = () => {
 																													}
 																													if (
 																														value ===
+																														"excelTableColumnFormula"
+																													) {
+																														updateTaskSpecialCondition(
+																															pi,
+																															ti,
+																															{
+																																type: "excelTableColumnFormula",
+																																score:
+																																	task
+																																		.specialCondition
+																																		?.score ??
+																																	0,
+																																feedback:
+																																	task
+																																		.specialCondition
+																																		?.feedback ??
+																																	defaultSpecialConditionFeedback(
+																																		value as SpecialConditionType,
+																																	),
+																																excelTableColumnFormulaConfig:
+																																	task
+																																		.specialCondition
+																																		?.excelTableColumnFormulaConfig ?? {
+																																		worksheetName:
+																																			"Sales",
+																																		tableName:
+																																			"Table1",
+																																		columnName:
+																																			"Net",
+																																		expectedFormula:
+																																			"=[@Total]-[@Commission]",
+																																		requiredReferences:
+																																			[
+																																				"Total",
+																																				"Commission",
+																																			],
+																																		requiredFunctions:
+																																			[],
+																																		requiredFormulaFragments:
+																																			[],
+																																	},
+																															},
+																														);
+																													}
+																													if (
+																														value ===
+																														"excelChartType"
+																													) {
+																														updateTaskSpecialCondition(
+																															pi,
+																															ti,
+																															{
+																																type: "excelChartType",
+																																score:
+																																	task
+																																		.specialCondition
+																																		?.score ??
+																																	0,
+																																feedback:
+																																	task
+																																		.specialCondition
+																																		?.feedback ??
+																																	defaultSpecialConditionFeedback(
+																																		value as SpecialConditionType,
+																																	),
+																																excelChartTypeConfig:
+																																	task
+																																		.specialCondition
+																																		?.excelChartTypeConfig ?? {
+																																		worksheetName:
+																																			"Qtr 2",
+																																		expectedChartType:
+																																			"3-D Clustered Bar",
+																																		barDir: "bar",
+																																		grouping:
+																																			"clustered",
+																																	},
+																															},
+																														);
+																													}
+																													if (
+																														value ===
+																														"excelWorksheetTabColor"
+																													) {
+																														updateTaskSpecialCondition(
+																															pi,
+																															ti,
+																															{
+																																type: "excelWorksheetTabColor",
+																																score:
+																																	task
+																																		.specialCondition
+																																		?.score ??
+																																	0,
+																																feedback:
+																																	task
+																																		.specialCondition
+																																		?.feedback ??
+																																	defaultSpecialConditionFeedback(
+																																		value as SpecialConditionType,
+																																	),
+																																excelWorksheetTabColorConfig:
+																																	task
+																																		.specialCondition
+																																		?.excelWorksheetTabColorConfig ?? {
+																																		worksheetName:
+																																			"Qtr 1",
+																																		expectedColor:
+																																			"#0070C0",
+																																		allowedColors:
+																																			[
+																																				"0070C0",
+																																				"FF0070C0",
+																																			],
+																																	},
+																															},
+																														);
+																													}
+																													if (
+																														value ===
 																														"wordBookmark"
 																													) {
 																														updateTaskSpecialCondition(
@@ -7010,6 +7449,29 @@ const XmlGradingRulesPage = () => {
 																									</select>
 																								</label>
 																							</div>
+																						)}
+																						{task.specialCondition?.type ===
+																							"textBoxContainsText" && (
+																							<TextBoxContainsTextEditor
+																								config={
+																									task.specialCondition
+																										.textBoxContainsTextConfig
+																								}
+																								inputClass={inputClass}
+																								onChange={(
+																									textBoxContainsTextConfig,
+																								) => {
+																									updateTaskSpecialCondition(
+																										pi,
+																										ti,
+																										{
+																											...task.specialCondition!,
+																											type: "textBoxContainsText",
+																											textBoxContainsTextConfig,
+																										},
+																									);
+																								}}
+																							/>
 																						)}
 																						{task.specialCondition?.type ===
 																							"wordColumns" && (
@@ -11552,65 +12014,69 @@ const XmlGradingRulesPage = () => {
 						</div>
 					)}
 
-					<div className="flex items-center gap-2 rounded-2xl border border-amber-200/60 bg-amber-500/10 px-4 py-3 text-xs text-amber-900 dark:text-amber-200">
-						<Icon
-							name="warning"
-							className="shrink-0 text-base text-amber-600"
-						/>
-						<span>
-							Hãy chạy <strong>Validate</strong> đầy đủ trước khi bật{" "}
-							<strong>Active</strong>.
-						</span>
-					</div>
-
-					{/* Sticky action bar: Save ngay tại vị trí đang nhập, không cần cuộn về đầu trang. */}
-					<div className="sticky bottom-4 z-30 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-m3-outline-variant/60 bg-m3-surface/90 px-4 py-3.5 shadow-xl backdrop-blur-xl p-4">
-						<div className="flex min-w-0 items-center gap-2 text-xs text-m3-on-surface-variant ">
-							<span
-								className={cx(
-									"h-2 w-2 shrink-0 rounded-full",
-									saving
-										? "animate-pulse bg-m3-primary"
-										: saveError
-											? "bg-m3-error"
-											: "bg-emerald-500",
-								)}
-							/>
-							<span className="truncate">
-								{saving
-									? "Đang lưu thay đổi..."
-									: saveError
-										? "Có lỗi cần kiểm tra"
-										: selected.id
-											? "Đã tải ruleset · sẵn sàng lưu"
-											: "Ruleset mới · chưa lưu"}
-							</span>
-						</div>
-
-						<div className="flex items-center gap-2">
-							<button
-								type="button"
-								onClick={validateRuleSet}
-								disabled={saving}
-								className="inline-flex items-center gap-2 rounded-xl border border-m3-outline-variant bg-m3-surface-container px-3.5 py-2.5 text-sm font-bold text-m3-primary transition hover:bg-m3-surface-container-high disabled:opacity-50"
-							>
-								<Icon name="check_circle" className="text-base " /> Validate
-							</button>
-							<button
-								type="button"
-								onMouseDown={(e) => e.preventDefault()}
-								onClick={saveRuleSet}
-								disabled={saving}
-								className="inline-flex items-center gap-2 rounded-xl bg-m3-primary px-4 py-2.5 text-sm font-bold text-m3-on-primary shadow-sm transition hover:bg-m3-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
-							>
+					{activeTab !== "test" && (
+						<>
+							<div className="flex items-center gap-2 rounded-2xl border border-amber-200/60 bg-amber-500/10 px-4 py-3 text-xs text-amber-900 dark:text-amber-200">
 								<Icon
-									name="save"
-									className={cx("text-base", saving && "animate-pulse")}
+									name="warning"
+									className="shrink-0 text-base text-amber-600"
 								/>
-								{saving ? "Đang lưu..." : "Lưu thay đổi"}
-							</button>
-						</div>
-					</div>
+								<span>
+									Hãy chạy <strong>Validate</strong> đầy đủ trước khi bật{" "}
+									<strong>Active</strong>.
+								</span>
+							</div>
+
+							{/* Sticky action bar: Save ngay tại vị trí đang nhập, không cần cuộn về đầu trang. */}
+							<div className="sticky bottom-4 z-30 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-m3-outline-variant/60 bg-m3-surface/90 px-4 py-3.5 shadow-xl backdrop-blur-xl p-4">
+								<div className="flex min-w-0 items-center gap-2 text-xs text-m3-on-surface-variant ">
+									<span
+										className={cx(
+											"h-2 w-2 shrink-0 rounded-full",
+											saving
+												? "animate-pulse bg-m3-primary"
+												: saveError
+													? "bg-m3-error"
+													: "bg-emerald-500",
+										)}
+									/>
+									<span className="truncate">
+										{saving
+											? "Đang lưu thay đổi..."
+											: saveError
+												? "Có lỗi cần kiểm tra"
+												: selected.id
+													? "Đã tải ruleset · sẵn sàng lưu"
+													: "Ruleset mới · chưa lưu"}
+									</span>
+								</div>
+
+								<div className="flex items-center gap-2">
+									<button
+										type="button"
+										onClick={validateRuleSet}
+										disabled={saving}
+										className="inline-flex items-center gap-2 rounded-xl border border-m3-outline-variant bg-m3-surface-container px-3.5 py-2.5 text-sm font-bold text-m3-primary transition hover:bg-m3-surface-container-high disabled:opacity-50"
+									>
+										<Icon name="check_circle" className="text-base " /> Validate
+									</button>
+									<button
+										type="button"
+										onMouseDown={(e) => e.preventDefault()}
+										onClick={saveRuleSet}
+										disabled={saving}
+										className="inline-flex items-center gap-2 rounded-xl bg-m3-primary px-4 py-2.5 text-sm font-bold text-m3-on-primary shadow-sm transition hover:bg-m3-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+									>
+										<Icon
+											name="save"
+											className={cx("text-base", saving && "animate-pulse")}
+										/>
+										{saving ? "Đang lưu..." : "Lưu thay đổi"}
+									</button>
+								</div>
+							</div>
+						</>
+					)}
 				</main>
 			</div>
 		</div>

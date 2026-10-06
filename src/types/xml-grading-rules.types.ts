@@ -91,7 +91,10 @@ export type SpecialConditionType =
 	| "excelMultiColumnSort"
 	| "excelFreezePanes"
 	| "excelDocumentProperty"
-	| "excelPrintArea";
+	| "excelPrintArea"
+	| "excelTableColumnFormula"
+	| "excelChartType"
+	| "excelWorksheetTabColor";
 
 export type ImageWrapType =
 	| "inline"
@@ -455,6 +458,35 @@ export interface ExcelChartStyleConfig {
 	chartSourceFile?: string;
 	styleSourceFile?: string;
 	styleId?: number;
+	colorStyleSourceFile?: string;
+	colorStyleId?: number;
+	requireColorStyle?: boolean;
+}
+
+export interface ExcelTableColumnFormulaConfig {
+	worksheetName?: string;
+	tableName?: string;
+	sourceFile?: string;
+	columnName?: string;
+	expectedFormula?: string;
+	requiredReferences?: string[];
+	requiredFunctions?: string[];
+	requiredFormulaFragments?: string[];
+}
+
+export interface ExcelChartTypeConfig {
+	worksheetName?: string;
+	chartSourceFile?: string;
+	expectedChartType?: string;
+	grouping?: string;
+	barDir?: string;
+}
+
+export interface ExcelWorksheetTabColorConfig {
+	worksheetName?: string;
+	sourceFile?: string;
+	expectedColor?: string;
+	allowedColors?: string[];
 }
 
 export interface ExcelTextReplacementConfig {
@@ -668,6 +700,9 @@ export interface SpecialCondition {
 	excelFreezePanesConfig?: ExcelFreezePanesConfig;
 	excelDocumentPropertyConfig?: ExcelDocumentPropertyConfig;
 	excelPrintAreaConfig?: ExcelPrintAreaConfig;
+	excelTableColumnFormulaConfig?: ExcelTableColumnFormulaConfig;
+	excelChartTypeConfig?: ExcelChartTypeConfig;
+	excelWorksheetTabColorConfig?: ExcelWorksheetTabColorConfig;
 }
 
 export interface TaskXmlRule {
