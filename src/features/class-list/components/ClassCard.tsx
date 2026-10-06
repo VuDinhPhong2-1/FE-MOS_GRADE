@@ -33,8 +33,14 @@ export const ClassCard: React.FC<ClassCardProps> = memo(
 		return (
 			<Card
 				variant="filled"
-				className="group p-5 flex flex-col justify-between"
+				className="group p-5 flex flex-col justify-between bg-m3-surface-container-highest text-m3-on-surface"
 				disableStateLayer={!cls.isActive}
+				disableElevation
+				forceMotion
+				morphRadius={{
+					rest: "large",
+					hover: "extraLarge",
+				}}
 			>
 				<div className="space-y-4">
 					{/* Card Header: Tên lớp & Badge trạng thái */}

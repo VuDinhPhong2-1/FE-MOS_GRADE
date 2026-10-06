@@ -18,15 +18,15 @@ import {
 	DataTable,
 	SortableHeader,
 	TableEmptyState,
-} from "../../components/data-table";
-import type { Student } from "../../types/student.types";
-import type { CompetencyLevel } from "./types";
+} from "../../../components/data-table";
+import type { Student } from "../../../types/student.types";
+import type { CompetencyLevel } from "../types";
 import {
 	competencyBadgeClass,
 	isStudentActive,
 	VALID_COMPETENCY_LEVELS,
 	vietnameseCollator,
-} from "./types";
+} from "../types";
 
 export interface StudentTableProps {
 	displayedStudents: Student[];

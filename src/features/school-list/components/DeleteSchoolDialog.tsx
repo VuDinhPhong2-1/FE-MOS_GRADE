@@ -9,7 +9,7 @@ import {
 	DialogTitle,
 	Icon,
 } from "@bug-on/m3-expressive";
-import type { DeleteSchoolDialogProps } from "./types";
+import type { DeleteSchoolDialogProps } from "../types";
 
 export const DeleteSchoolDialog = ({
 	open,
@@ -58,19 +58,18 @@ export const DeleteSchoolDialog = ({
 						<DialogFooter className="mt-2 flex shrink-0 items-center justify-end gap-2.5 border-t border-m3-outline-variant/30 pt-4">
 							<Button
 								colorStyle="text"
-								type="button"
 								onClick={onClose}
 								disabled={isDeleting}
+								className="text-m3-on-surface-variant hover:bg-m3-surface-container-highest"
 							>
-								Hủy
+								Hủy bỏ
 							</Button>
 							<Button
 								colorStyle="filled"
-								type="button"
-								onClick={() => void onConfirmDelete()}
-								disabled={isDeleting}
+								onClick={onConfirmDelete}
 								loading={isDeleting}
-								className="bg-m3-error text-m3-on-error hover:bg-m3-error/90 shadow-xs"
+								className="bg-m3-error text-m3-on-error hover:bg-m3-error/90"
+								icon={<Icon name="delete" className="text-base" />}
 							>
 								Xác nhận xóa
 							</Button>

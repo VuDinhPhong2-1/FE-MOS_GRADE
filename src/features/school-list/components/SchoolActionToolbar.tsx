@@ -11,8 +11,8 @@ import {
 	TooltipBox,
 } from "@bug-on/m3-expressive";
 import { type MouseEvent, memo, useCallback, useMemo } from "react";
-import { FloatingActionToolbar } from "../../components/common/floating-action-toolbar";
-import type { SchoolActionToolbarProps } from "./types";
+import { FloatingActionToolbar } from "../../../components/common/floating-action-toolbar";
+import type { SchoolActionToolbarProps } from "../types";
 
 const SchoolActionToolbarComponent = ({
 	onOpenAddModal,

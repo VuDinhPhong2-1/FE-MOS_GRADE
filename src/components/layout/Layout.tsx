@@ -41,7 +41,7 @@ const Layout = ({ children, navItems }: LayoutProps) => {
 
 	return (
 		<div
-			className="flex min-h-screen overflow-hidden bg-m3-surface-container-low text-m3-on-surface"
+			className="flex min-h-screen overflow-hidden bg-m3-surface-container text-m3-on-surface"
 			style={{
 				height: "100dvh",
 				paddingLeft: "env(safe-area-inset-left)",
@@ -57,7 +57,7 @@ const Layout = ({ children, navItems }: LayoutProps) => {
 
 				{/* Khung hiển thị nội dung chính - Bo tròn rounded-3xl, scroll bên trong với ScrollArea MD3 hoặc flex fill */}
 				<div className="min-h-0 flex-1 px-0 lg:pr-4 pb-4 overflow-hidden flex flex-col">
-					<div className="flex-1 min-h-0 rounded-m3-xl-inc bg-m3-surface-container-lowest dark:bg-m3-surface text-m3-on-surface overflow-hidden flex flex-col">
+					<div className="flex-1 min-h-0 rounded-m3-xl-inc bg-m3-surface text-m3-on-surface overflow-hidden flex flex-col">
 						{config.disablePageScroll ? (
 							<div className="flex-1 min-h-0 overflow-hidden flex flex-col">
 								{children}
@@ -77,9 +77,9 @@ const Layout = ({ children, navItems }: LayoutProps) => {
 
 				{/* Mobile Bottom Navigation Bar (MD3 Expressive) */}
 				<NavigationBar
-					variant="flexible"
+					variant="baseline"
 					elevated
-					className="lg:hidden bg-m3-surface-container-low z-30"
+					className="lg:hidden bg-m3-surface-container z-30"
 					style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
 				>
 					{mobileNavItems.map((item) => (

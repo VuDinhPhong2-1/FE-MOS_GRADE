@@ -2,19 +2,21 @@ import {
 	Card,
 	Icon,
 	IconButton,
+	List,
+	ListItem,
 	ProgressIndicator,
 	ScrollArea,
 	Select,
 	type SelectOption,
 } from "@bug-on/m3-expressive";
 import { memo, useMemo, useState } from "react";
-import { useAuth } from "../../context/AuthContext";
-import type { Assignment } from "../../types/assignment.types";
+import { useAuth } from "../../../context/AuthContext";
+import type { Assignment } from "../../../types/assignment.types";
 import {
 	mapOverviewToGaugeData,
 	mapWeakTasksToBarChart,
-} from "../../utils/analyticsMappers";
-import { useAnalyticsQueries } from "./hooks/useAnalyticsQueries";
+} from "../../../utils/analyticsMappers";
+import { useAnalyticsQueries } from "../hooks/useAnalyticsQueries";
 
 interface ClassAnalyticsPanelProps {
 	classId: string;
@@ -70,6 +72,7 @@ const ClassAnalyticsPanelComponent = ({
 	}>({ classId, ids: [] });
 	const assignmentIds = selection.classId === classId ? selection.ids : [];
 	const [top, setTop] = useState<number>(10);
+	const [isFilterExpanded, setIsFilterExpanded] = useState<boolean>(false);
 
 	const {
 		overview,
@@ -103,7 +106,7 @@ const ClassAnalyticsPanelComponent = ({
 	const isAnyFetching = isOverviewFetching || isWeakTasksFetching;
 
 	return (
-		<Card variant="filled" className="relative overflow-hidden p-4 sm:p-6">
+		<Card variant="filled" className="relative bg-transparent">
 			<div className="relative">
 				<div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
 					<div>
@@ -120,7 +123,7 @@ const ClassAnalyticsPanelComponent = ({
 					<div className="flex flex-col gap-2 sm:flex-row sm:items-center">
 						<div className="w-max">
 							<Select
-								variant="outlined"
+								variant="filled"
 								options={TOP_OPTIONS}
 								value={String(top)}
 								onChange={(val) => setTop(Number(val) || 10)}
@@ -132,6 +135,7 @@ const ClassAnalyticsPanelComponent = ({
 						</div>
 						<IconButton
 							colorStyle="standard"
+							size="sm"
 							aria-label="Làm mới phân tích"
 							title="Làm mới phân tích"
 							disabled={isAnyFetching}
@@ -165,8 +169,8 @@ const ClassAnalyticsPanelComponent = ({
 				{/* 4 Summary Stat Cards - Zero Layout Shift */}
 				<div className="mb-5 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
 					<Card
-						variant="outlined"
-						className="p-4"
+						variant="filled"
+						className="p-4 bg-m3-surface-container-highest rounded-m3-md"
 						title="Trung bình % của tất cả lượt chấm trong lớp"
 					>
 						<div className="text-xs font-medium text-m3-on-surface-variant">
@@ -185,8 +189,8 @@ const ClassAnalyticsPanelComponent = ({
 					</Card>
 
 					<Card
-						variant="outlined"
-						className="p-4"
+						variant="filled"
+						className="p-4 bg-m3-surface-container-highest rounded-m3-md"
 						title="Tỷ lệ lượt chấm có điểm từ 60% trở lên"
 					>
 						<div className="text-xs font-medium text-m3-on-surface-variant">
@@ -205,8 +209,8 @@ const ClassAnalyticsPanelComponent = ({
 					</Card>
 
 					<Card
-						variant="outlined"
-						className="p-4"
+						variant="filled"
+						className="p-4 bg-m3-surface-container-highest rounded-m3-md"
 						title="Tỷ lệ lượt chấm dưới 40%"
 					>
 						<div className="text-xs font-medium text-m3-on-surface-variant">
@@ -225,8 +229,8 @@ const ClassAnalyticsPanelComponent = ({
 					</Card>
 
 					<Card
-						variant="outlined"
-						className="p-4"
+						variant="filled"
+						className="p-4 bg-m3-surface-container-highest rounded-m3-md"
 						title="Tổng số lượt chấm đã được lưu"
 					>
 						<div className="text-xs font-medium text-m3-on-surface-variant">
@@ -246,7 +250,10 @@ const ClassAnalyticsPanelComponent = ({
 				</div>
 
 				{/* Weak Tasks Section */}
-				<Card variant="outlined" className="p-4">
+				<Card
+					variant="filled"
+					className="p-4 bg-m3-surface-container-highest rounded-m3-md"
+				>
 					<div className="mb-3 flex items-center justify-between">
 						<div className="flex items-center gap-2 font-semibold text-m3-on-surface">
 							<Icon name="warning" className="text-m3-error text-lg" />
@@ -270,64 +277,121 @@ const ClassAnalyticsPanelComponent = ({
 						Xếp hạng chung theo tỷ lệ sai, sau đó theo số học sinh sai. Bộ lọc
 						không thay đổi bốn chỉ số tổng quan.
 					</div>
-					<details className="mb-4 rounded-xl border border-m3-outline-variant p-3">
-						<summary className="cursor-pointer text-sm font-medium">
-							{assignmentIds.length
-								? `Đã chọn ${assignmentIds.length} bài tập`
-								: "Chọn bài tập (hiện xem tất cả dự án)"}
-						</summary>
-						<div className="mt-3 flex gap-4 text-sm">
-							<button
-								type="button"
-								onClick={() =>
-									setSelection({ classId, ids: assignments.map((a) => a.id) })
-								}
-							>
-								Chọn tất cả bài tập
-							</button>
-							<button
-								type="button"
-								onClick={() => setSelection({ classId, ids: [] })}
-							>
-								Bỏ lọc
-							</button>
-						</div>
-						<ScrollArea
-							type="scroll"
-							orientation="vertical"
-							className="mt-3 max-h-56 pr-1"
-							viewportClassName="space-y-2"
+					<List
+						variant="expressive"
+						outerRadius={12}
+						listStyle="segmented"
+						className="mb-4"
+					>
+						<ListItem
+							value="assignment-filter-trigger"
+							expandable
+							expanded={isFilterExpanded}
+							onExpandChange={setIsFilterExpanded}
+							expandTrigger="row"
+							leadingType="icon"
+							leadingContent={
+								<Icon name="tune" size={20} className="text-m3-primary" />
+							}
+							headline={
+								<span className="text-sm font-semibold text-m3-on-surface">
+									{assignmentIds.length
+										? `Đã chọn ${assignmentIds.length} bài tập`
+										: "Chọn bài tập (hiện xem tất cả dự án)"}
+								</span>
+							}
+							supportingText={
+								assignmentIds.length > 0
+									? "Đang lọc câu yếu theo bài tập được chọn"
+									: "Xem tất cả dự án. Nhấp để chọn lọc theo từng bài tập"
+							}
+							trailingText={
+								assignmentIds.length > 0
+									? `${assignmentIds.length}/${assignments.length}`
+									: undefined
+							}
+							className="bg-m3-surface-container-lowest"
 						>
-							{assignments.map((assignment) => (
-								<label
-									key={assignment.id}
-									className="flex items-center gap-2 text-sm"
-								>
-									<input
-										type="checkbox"
-										checked={assignmentIds.includes(assignment.id)}
-										onChange={(event) => {
-											const checked = event.target.checked;
-											setSelection((previous) => {
-												const ids =
-													previous.classId === classId ? previous.ids : [];
-												return {
+							{/* biome-ignore lint/a11y/noStaticElementInteractions: prevent accordion collapse when interacting with controls */}
+							<div
+								className="w-full space-y-2.5 p-2 bg-m3-surface-container-lowest rounded-xl"
+								onClick={(e) => e.stopPropagation()}
+								onKeyDown={(e) => e.stopPropagation()}
+							>
+								<div className="flex flex-wrap items-center justify-between gap-2 px-1 pt-1">
+									<div className="flex items-center gap-2">
+										<button
+											type="button"
+											onClick={(e) => {
+												e.stopPropagation();
+												setSelection({
 													classId,
-													ids: checked
-														? [...ids, assignment.id]
-														: ids.filter((id) => id !== assignment.id),
-												};
-											});
-										}}
-									/>
-									{assignment.name}
-								</label>
-							))}
-							{assignments.length === 0 && (
-								<p className="text-sm">Lớp chưa có bài tập.</p>
-							)}
-						</ScrollArea>
-					</details>
+													ids: assignments.map((a) => a.id),
+												});
+											}}
+											className="cursor-pointer rounded-lg border-none bg-m3-primary/10 px-2.5 py-1 text-xs font-semibold text-m3-primary hover:bg-m3-primary/15 transition-colors"
+										>
+											Chọn tất cả bài tập
+										</button>
+										<button
+											type="button"
+											onClick={(e) => {
+												e.stopPropagation();
+												setSelection({ classId, ids: [] });
+											}}
+											className="cursor-pointer rounded-lg border-none hover:bg-m3-surface-container-highest/60 px-2.5 py-1 text-xs font-semibold text-m3-on-surface-variant hover:text-m3-on-surface transition-colors"
+										>
+											Bỏ lọc
+										</button>
+									</div>
+									<span className="text-xs text-m3-on-surface-variant/80">
+										{assignmentIds.length > 0
+											? `${assignmentIds.length} / ${assignments.length} bài tập đã chọn`
+											: `0 / ${assignments.length} bài tập (xem tất cả)`}
+									</span>
+								</div>
+
+								{assignments.length === 0 ? (
+									<p className="py-3 text-center text-sm text-m3-on-surface-variant">
+										Lớp chưa có bài tập.
+									</p>
+								) : (
+									<ScrollArea
+										type="scroll"
+										orientation="vertical"
+										className="max-h-56 pr-1 overflow-hidden"
+										viewportClassName="space-y-1"
+									>
+										<List
+											variant="expressive"
+											listStyle="segmented"
+											selectionMode="multi-select"
+											value={assignmentIds}
+											onChange={(val) => {
+												const newIds = Array.isArray(val) ? val : [val];
+												setSelection({ classId, ids: newIds });
+											}}
+											className="border-none shadow-none"
+										>
+											{assignments.map((assignment) => (
+												<ListItem
+													key={assignment.id}
+													value={assignment.id}
+													leadingType="checkbox"
+													headline={
+														<span className="text-sm font-medium text-m3-on-surface">
+															{assignment.name}
+														</span>
+													}
+													className="border-none shadow-none bg-m3-surface-container-lowest/80 hover:bg-m3-surface-container-low transition-colors cursor-pointer"
+												/>
+											))}
+										</List>
+									</ScrollArea>
+								)}
+							</div>
+						</ListItem>
+					</List>
 
 					<div className="space-y-2.5">
 						{isWeakTasksLoading ? (

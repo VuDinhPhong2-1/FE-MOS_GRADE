@@ -10,7 +10,7 @@ import {
 	Icon,
 } from "@bug-on/m3-expressive";
 import { memo } from "react";
-import type { Student } from "../../types/student.types";
+import type { Student } from "../../../types/student.types";
 
 export interface DeleteStudentDialogProps {
 	open: boolean;

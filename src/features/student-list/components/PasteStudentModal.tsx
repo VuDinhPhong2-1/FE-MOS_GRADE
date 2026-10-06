@@ -15,12 +15,12 @@ import {
 } from "@bug-on/m3-expressive";
 import { AnimatePresence, motion } from "motion/react";
 import { memo, useMemo, useRef, useState } from "react";
-import { DialogHeaderIcon } from "../../components/common";
-import type { Student } from "../../types/student.types";
+import { DialogHeaderIcon } from "../../../components/common";
+import type { Student } from "../../../types/student.types";
 import {
 	mapRowsToTempStudents,
 	parsePastedRows,
-} from "./utils/studentExcelParser";
+} from "../utils/studentExcelParser";
 
 interface PasteStudentModalProps {
 	isOpen: boolean;

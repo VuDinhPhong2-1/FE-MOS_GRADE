@@ -8,7 +8,7 @@ import {
 	DeleteSchoolDialog,
 	SchoolActionToolbar,
 	SchoolFormModal,
-	SchoolTable,
+	SchoolListView,
 	useSchoolData,
 	useSchoolFilter,
 } from "../features/school-list";
@@ -127,8 +127,8 @@ const SchoolList = () => {
 						</Card>
 					)}
 
-					{/* School Table */}
-					<SchoolTable
+					{/* School List View */}
+					<SchoolListView
 						schools={filteredSchools}
 						isLoading={isLoading}
 						canDeleteSchool={canDeleteSchool}

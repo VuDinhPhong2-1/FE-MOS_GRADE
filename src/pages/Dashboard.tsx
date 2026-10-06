@@ -91,8 +91,8 @@ export default function Dashboard() {
 			colorClass: "bg-m3-primary-container text-m3-on-primary-container",
 		},
 		{
-			title: "Xếp lịch coi thi",
-			description: "Lập lịch thi, phân công giáo viên và theo dõi ca chấm.",
+			title: "Xếp lịch",
+			description: "Lập lịch, phân công giáo viên và theo dõi.",
 			icon: "calendar_month",
 			path: "/schedule",
 			shape: "clover8Leaf",
@@ -293,9 +293,6 @@ export default function Dashboard() {
 							<div className="mt-3 flex items-baseline gap-2">
 								<span className="text-3xl font-black text-m3-on-surface">
 									{weekProgress.currentWeekday}
-								</span>
-								<span className="text-xs text-m3-on-surface-variant">
-									(Ngày {weekProgress.dayInWeek}/7)
 								</span>
 							</div>
 						</div>

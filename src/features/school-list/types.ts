@@ -13,7 +13,7 @@ export const EMPTY_FORM: CreateSchoolRequest = {
 	attendanceSpreadsheetId: "",
 };
 
-export interface SchoolRowProps {
+export interface SchoolListItemProps {
 	school: School;
 	index: number;
 	canDeleteSchool: boolean;
@@ -22,9 +22,11 @@ export interface SchoolRowProps {
 	onSelect: (school: School) => void;
 	onEdit: (school: School) => void;
 	onDelete: (school: School) => void;
+	_listIndex?: number;
+	position?: "solo" | "leading" | "middle" | "trailing";
 }
 
-export interface SchoolTableProps {
+export interface SchoolListViewProps {
 	schools: School[];
 	isLoading: boolean;
 	canDeleteSchool: boolean;

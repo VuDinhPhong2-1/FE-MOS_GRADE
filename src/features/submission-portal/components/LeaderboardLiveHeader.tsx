@@ -53,7 +53,10 @@ export const LeaderboardLiveHeader = ({
 
 					{isRefreshing && (
 						<span className="inline-flex items-center gap-1.5 rounded-full bg-m3-primary/10 px-2 py-0.5 text-[11px] font-semibold text-m3-primary animate-pulse">
-							<LoadingIndicator aria-label="Đang đồng bộ bảng xếp hạng" size={12} />
+							<LoadingIndicator
+								aria-label="Đang đồng bộ bảng xếp hạng"
+								size={12}
+							/>
 							Đang đồng bộ...
 						</span>
 					)}
