@@ -7,15 +7,17 @@ import { formatFileSize } from "../utils/formatters";
 
 export interface FileDropZoneProps {
 	file?: File;
+	attachmentFile?: File;
 	disabled?: boolean;
 	isPreviewing?: boolean;
 	isDragging?: boolean;
-	onFileSelect: (file?: File) => void;
+	onFileSelect: (file?: File, attachmentFile?: File) => void;
 	onDragChange: (isDragging: boolean) => void;
 }
 
 export const FileDropZone = ({
 	file,
+	attachmentFile,
 	disabled = false,
 	isPreviewing = false,
 	isDragging = false,
@@ -23,6 +25,16 @@ export const FileDropZone = ({
 	onDragChange,
 }: FileDropZoneProps) => {
 	const inputRef = useRef<HTMLInputElement>(null);
+
+	const handleFiles = (fileList: FileList | null | undefined) => {
+		if (!fileList || fileList.length === 0) return;
+		const filesArray = Array.from(fileList);
+		const primary =
+			filesArray.find((f) => /\.(docx|xlsx|xlsm|pptx)$/i.test(f.name)) ||
+			filesArray[0];
+		const secondary = filesArray.find((f) => f !== primary);
+		onFileSelect(primary, secondary);
+	};
 
 	const handleDragOver = (e: DragEvent<HTMLElement>) => {
 		e.preventDefault();
@@ -39,10 +51,7 @@ export const FileDropZone = ({
 		e.preventDefault();
 		onDragChange(false);
 		if (disabled || isPreviewing) return;
-		const droppedFile = e.dataTransfer.files?.[0];
-		if (droppedFile) {
-			onFileSelect(droppedFile);
-		}
+		handleFiles(e.dataTransfer.files);
 	};
 
 	const handleContainerClick = () => {
@@ -56,52 +65,63 @@ export const FileDropZone = ({
 			<input
 				ref={inputRef}
 				type="file"
+				multiple
+				accept=".docx,.xlsx,.xlsm,.pptx,.pdf"
 				className="hidden"
 				disabled={disabled || isPreviewing}
 				onChange={(e) => {
-					const selected = e.target.files?.[0];
-					if (selected) {
-						onFileSelect(selected);
-					}
+					handleFiles(e.target.files);
 				}}
 			/>
 
 			{file ? (
 				<Card
 					variant="filled"
-					className="flex flex-row items-center justify-between gap-2.5 bg-m3-primary-container/40 border border-m3-primary/30 px-3.5 py-2.5 text-m3-on-surface rounded-xl"
+					className="flex flex-col gap-2 bg-m3-primary-container/40 border border-m3-primary/30 p-3 text-m3-on-surface rounded-xl"
 				>
-					<div className="flex items-center gap-2.5 min-w-0">
-						<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-m3-primary/10 text-m3-primary">
-							<Icon name="description" size={18} />
+					<div className="flex flex-row items-center justify-between gap-2.5">
+						<div className="flex items-center gap-2.5 min-w-0">
+							<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-m3-primary/10 text-m3-primary">
+								<Icon name="description" size={18} />
+							</div>
+							<div className="min-w-0">
+								<Text
+									variant="label-md"
+									className="truncate font-bold text-m3-on-surface"
+								>
+									{file.name}
+								</Text>
+								<Text
+									variant="body-sm"
+									className="text-m3-on-surface-variant text-[11px]"
+								>
+									{formatFileSize(file.size)}
+								</Text>
+							</div>
 						</div>
-						<div className="min-w-0">
-							<Text
-								variant="label-md"
-								className="truncate font-bold text-m3-on-surface"
-							>
-								{file.name}
-							</Text>
-							<Text
-								variant="body-sm"
-								className="text-m3-on-surface-variant text-[11px]"
-							>
-								{formatFileSize(file.size)}
-							</Text>
-						</div>
+						<IconButton
+							aria-label="Đổi file khác"
+							colorStyle="standard"
+							disabled={disabled || isPreviewing}
+							onClick={(e) => {
+								e.stopPropagation();
+								onFileSelect(undefined, undefined);
+							}}
+							className="shrink-0 text-m3-error hover:bg-m3-error-container/40"
+						>
+							<Icon name="close" size={18} />
+						</IconButton>
 					</div>
-					<IconButton
-						aria-label="Đổi file khác"
-						colorStyle="standard"
-						disabled={disabled || isPreviewing}
-						onClick={(e) => {
-							e.stopPropagation();
-							onFileSelect(undefined);
-						}}
-						className="shrink-0 text-m3-error hover:bg-m3-error-container/40"
-					>
-						<Icon name="close" size={18} />
-					</IconButton>
+
+					{attachmentFile && (
+						<div className="flex items-center gap-1.5 rounded-lg bg-m3-secondary-container/40 px-2 py-1 text-[11px] font-semibold text-m3-on-secondary-container border border-m3-secondary-container">
+							<Icon name="attachment" size={14} />
+							<span className="truncate">
+								Kèm theo: {attachmentFile.name} (
+								{formatFileSize(attachmentFile.size)})
+							</span>
+						</div>
+					)}
 				</Card>
 			) : (
 				<div
@@ -133,7 +153,7 @@ export const FileDropZone = ({
 						variant="body-sm"
 						className="text-[11px] text-m3-on-surface-variant/80 mt-0.5"
 					>
-						Hỗ trợ file bài tập Office (.docx, .xlsx, .pptx)
+						Hỗ trợ .pptx, .docx, .xlsx (chọn kèm .pdf nếu có yêu cầu xuất file)
 					</Text>
 				</div>
 			)}

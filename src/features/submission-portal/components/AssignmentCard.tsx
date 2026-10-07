@@ -17,6 +17,7 @@ import { GradingResult } from "./GradingResult";
 export interface AssignmentCardProps {
 	assignment: PublicPortalAssignment;
 	file?: File;
+	attachmentFile?: File;
 	result?: PublicPortalSubmitResult;
 	isSubmitting: boolean;
 	isPreviewing: boolean;
@@ -24,7 +25,11 @@ export interface AssignmentCardProps {
 	confirmedIdentity: boolean;
 	hasAnySubmitting: boolean;
 	showDetailedFeedback: boolean;
-	onFileSelect: (assignment: PublicPortalAssignment, file?: File) => void;
+	onFileSelect: (
+		assignment: PublicPortalAssignment,
+		file?: File,
+		attachmentFile?: File,
+	) => void;
 	onSubmit: (assignmentId: string) => void;
 	onDragChange: (assignmentId: string | null) => void;
 }
@@ -32,6 +37,7 @@ export interface AssignmentCardProps {
 export const AssignmentCard = ({
 	assignment,
 	file,
+	attachmentFile,
 	result,
 	isSubmitting,
 	isPreviewing,
@@ -76,9 +82,8 @@ export const AssignmentCard = ({
 			className={cn(
 				"relative flex h-full flex-col bg-m3-surface-container-lowest p-5 text-m3-on-surface rounded-m3-xl transition-all duration-200",
 				isPerfect &&
-					"border-2 border-emerald-500/40 bg-emerald-500/[0.015] shadow-xs",
-				hasErrors &&
-					"border-2 border-amber-500/40 bg-amber-500/[0.015] shadow-xs",
+					"border-2 border-emerald-500/40 bg-emerald-500/1.5 shadow-xs",
+				hasErrors && "border-2 border-amber-500/40 bg-amber-500/1.5 shadow-xs",
 				!isCompleted &&
 					"border border-m3-outline-variant/60 hover:border-m3-primary/50 shadow-xs",
 				isSubmitting && "ring-2 ring-m3-primary shadow-md",
@@ -223,10 +228,11 @@ export const AssignmentCard = ({
 
 					<FileDropZone
 						file={file}
+						attachmentFile={attachmentFile}
 						disabled={isSubmitting || isPreviewing}
 						isPreviewing={isPreviewing}
 						isDragging={isDragging}
-						onFileSelect={(f) => onFileSelect(assignment, f)}
+						onFileSelect={(f, att) => onFileSelect(assignment, f, att)}
 						onDragChange={(drag) => onDragChange(drag ? assignment.id : null)}
 					/>
 

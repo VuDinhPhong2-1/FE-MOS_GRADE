@@ -45,6 +45,7 @@ export const SubmissionPortalPage = () => {
 
 	const {
 		files,
+		attachments,
 		results,
 		submittingAssignmentId,
 		previewingAssignmentId,
@@ -173,6 +174,7 @@ export const SubmissionPortalPage = () => {
 									<AssignmentGrid
 										assignments={visibleAssignments}
 										files={files}
+										attachments={attachments}
 										results={results}
 										submittingAssignmentId={submittingAssignmentId}
 										previewingAssignmentId={previewingAssignmentId}
