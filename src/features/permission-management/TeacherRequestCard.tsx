@@ -80,7 +80,10 @@ export const TeacherRequestCard = memo(function TeacherRequestCard({
 						<PermissionStatusBadge status={status} />
 					</div>
 
-					<Text variant="body-md" className="text-sm font-medium text-m3-on-surface-variant">
+					<Text
+						variant="body-md"
+						className="text-sm font-medium text-m3-on-surface-variant"
+					>
 						{request.email || request.username}
 					</Text>
 
@@ -97,7 +100,10 @@ export const TeacherRequestCard = memo(function TeacherRequestCard({
 					</div>
 
 					{request.teacherApprovalNote && (
-						<Text variant="body-sm" className="mt-2 rounded-xl bg-m3-surface-container-high/60 px-3.5 py-2 text-xs text-m3-on-surface-variant sm:text-sm">
+						<Text
+							variant="body-sm"
+							className="mt-2 rounded-xl bg-m3-surface-container-high/60 px-3.5 py-2 text-xs text-m3-on-surface-variant sm:text-sm"
+						>
 							<strong className="font-semibold text-m3-on-surface">
 								Ghi chú:
 							</strong>{" "}

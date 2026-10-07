@@ -36,7 +36,10 @@ export const MultiAssignmentSelector: React.FC<
 		<div className="mb-6 p-5 bg-m3-surface-container-high rounded-3xl">
 			{/* Quick select by practice section */}
 			<div>
-				<Text variant="label-sm" className="mb-2 text-xs font-semibold text-m3-on-surface-variant">
+				<Text
+					variant="label-sm"
+					className="mb-2 text-xs font-semibold text-m3-on-surface-variant"
+				>
 					Chọn nhanh theo phần
 				</Text>
 				<div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
@@ -90,7 +93,7 @@ export const MultiAssignmentSelector: React.FC<
 
 			{/* Assignment card list */}
 			<ScrollArea
-				type="scroll"
+				type="hover"
 				orientation="vertical"
 				className="mt-4 max-h-60 pr-1"
 				viewportClassName="grid grid-cols-1 md:grid-cols-2 gap-2.5"
@@ -129,11 +132,17 @@ export const MultiAssignmentSelector: React.FC<
 							>
 								<div className="flex items-start justify-between gap-3">
 									<div className="min-w-0">
-										<Text variant="body-md" className="text-sm font-semibold text-m3-on-surface truncate">
+										<Text
+											variant="body-md"
+											className="text-sm font-semibold text-m3-on-surface truncate"
+										>
 											{assignment.name}
 										</Text>
 										{assignment.description && (
-											<Text variant="body-sm" className="text-xs text-m3-on-surface-variant mt-1 line-clamp-1">
+											<Text
+												variant="body-sm"
+												className="text-xs text-m3-on-surface-variant mt-1 line-clamp-1"
+											>
 												{assignment.description}
 											</Text>
 										)}

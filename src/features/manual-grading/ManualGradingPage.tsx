@@ -306,7 +306,10 @@ export const ManualGradingPage: React.FC = () => {
 					size={40}
 					aria-label="Đang tải dữ liệu bài tập và học sinh"
 				/>
-				<Text variant="body-md" className="text-sm font-medium text-m3-on-surface-variant">
+				<Text
+					variant="body-md"
+					className="text-sm font-medium text-m3-on-surface-variant"
+				>
 					Đang tải danh sách bài tập và học sinh...
 				</Text>
 			</div>
@@ -323,7 +326,10 @@ export const ManualGradingPage: React.FC = () => {
 				<h2 className="text-lg font-bold text-m3-on-surface mb-2">
 					Không thể tải trang chấm điểm
 				</h2>
-				<Text variant="body-md" className="text-sm text-m3-on-surface-variant mb-6">
+				<Text
+					variant="body-md"
+					className="text-sm text-m3-on-surface-variant mb-6"
+				>
 					{errorMessage || "Không tìm thấy bài tập hoặc lớp học."}
 				</Text>
 				<Button

@@ -48,7 +48,10 @@ export const DeleteRoomDialog: React.FC<DeleteRoomDialogProps> = ({
 							</div>
 						</div>
 
-						<Text variant="body-md" className="text-sm text-m3-on-surface-variant leading-relaxed">
+						<Text
+							variant="body-md"
+							className="text-sm text-m3-on-surface-variant leading-relaxed"
+						>
 							Bạn có chắc chắn muốn xóa vĩnh viễn phòng máy{" "}
 							<strong className="font-semibold text-m3-on-surface">
 								"{room?.name}"

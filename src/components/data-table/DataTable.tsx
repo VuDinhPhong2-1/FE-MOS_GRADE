@@ -43,7 +43,7 @@ export function DataTable<
 	scrollContainerClassName = "",
 	stickyHeader = false,
 	useScrollArea = true,
-	scrollType = "scroll",
+	scrollType = "hover",
 	scrollOrientation = "both",
 	scrollHideDelay = 600,
 	viewportRef,

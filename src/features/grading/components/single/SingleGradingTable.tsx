@@ -129,7 +129,7 @@ export const SingleGradingTable: React.FC<SingleGradingTableProps> = ({
 			}}
 		>
 			<ScrollArea
-				type="scroll"
+				type="hover"
 				orientation="both"
 				className="max-h-[60vh] w-full"
 				viewportProps={

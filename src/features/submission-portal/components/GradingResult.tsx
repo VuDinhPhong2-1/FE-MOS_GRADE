@@ -103,7 +103,7 @@ export const GradingResult = ({
 						<>
 							{failedTaskResults.length > 0 && (
 								<ScrollArea
-									type="scroll"
+									type="hover"
 									orientation="vertical"
 									className="max-h-80 overflow-hidden rounded-m3-md"
 								>
@@ -174,7 +174,7 @@ export const GradingResult = ({
 
 							{failedTaskResults.length === 0 && fallbackErrors.length > 0 && (
 								<ScrollArea
-									type="scroll"
+									type="hover"
 									orientation="vertical"
 									className="max-h-80 overflow-hidden rounded-m3-md"
 								>
@@ -221,7 +221,7 @@ export const GradingResult = ({
 						</Text>
 					</div>
 					<ScrollArea
-						type="scroll"
+						type="hover"
 						orientation="vertical"
 						className="max-h-36 pr-2"
 					>

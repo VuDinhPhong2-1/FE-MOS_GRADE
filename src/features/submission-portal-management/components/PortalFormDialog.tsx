@@ -116,7 +116,6 @@ export const PortalFormDialog: React.FC<PortalFormDialogProps> = ({
 
 	const isCreate = mode === "create";
 
-	// Track initial state when dialog opens to detect dirty changes
 	const [initialState, setInitialState] = useState(() => ({
 		title,
 		description,
@@ -191,7 +190,6 @@ export const PortalFormDialog: React.FC<PortalFormDialogProps> = ({
 		isSubmitting: loading,
 	});
 
-	// Enable create button only when required fields are fully selected and not loading
 	const canSubmitCreate = useMemo(() => {
 		return Boolean(
 			title.trim() &&
@@ -221,7 +219,6 @@ export const PortalFormDialog: React.FC<PortalFormDialogProps> = ({
 						isCreate ? "max-w-4xl" : "max-w-xl"
 					}`}
 				>
-					{/* Modal Header */}
 					<div className="flex items-center justify-between px-6 pt-5 pb-3">
 						<DialogHeader className="mb-0 flex-row items-center gap-3 space-y-0 text-left">
 							<DialogHeaderIcon icon={isCreate ? "add_link" : "edit_square"} />
@@ -238,15 +235,13 @@ export const PortalFormDialog: React.FC<PortalFormDialogProps> = ({
 						</DialogHeader>
 					</div>
 
-					{/* Modal Body */}
 					<ScrollArea
-						type="scroll"
+						type="hover"
 						orientation="vertical"
 						className="flex-1 min-h-0"
 						viewportClassName="flex flex-col gap-4 px-6 py-4"
 					>
 						<div className="flex flex-col gap-4">
-							{/* Group 1: General Info */}
 							<div className="space-y-4 rounded-3xl bg-m3-surface-container-lowest p-4 sm:p-5 text-m3-on-surface">
 								<div className="flex items-center gap-2">
 									<Icon name="info" className="text-base text-m3-primary" />
@@ -304,7 +299,6 @@ export const PortalFormDialog: React.FC<PortalFormDialogProps> = ({
 								/>
 							</div>
 
-							{/* Group 2: Display & Leaderboard Preferences */}
 							<div className="space-y-3 rounded-3xl bg-m3-surface-container-lowest p-4 sm:p-5 text-m3-on-surface">
 								<div className="flex items-center gap-2">
 									<Icon name="tune" className="text-base text-m3-primary" />
@@ -348,7 +342,6 @@ export const PortalFormDialog: React.FC<PortalFormDialogProps> = ({
 								</div>
 							</div>
 
-							{/* Group 3: Scope Picker (Create Mode only) */}
 							{isCreate && (
 								<SchoolClassAssignmentPicker
 									schools={schools}
@@ -374,7 +367,6 @@ export const PortalFormDialog: React.FC<PortalFormDialogProps> = ({
 						</div>
 					</ScrollArea>
 
-					{/* Modal Footer */}
 					<DialogFooter className="mt-0 flex justify-end gap-2 px-6 py-4">
 						<Button
 							type="button"

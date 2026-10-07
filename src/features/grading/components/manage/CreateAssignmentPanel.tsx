@@ -99,7 +99,10 @@ export const CreateAssignmentPanel: React.FC<CreateAssignmentPanelProps> = ({
 							Tạo bài tập mới
 						</h3>
 					</div>
-					<Text variant="body-sm" className="text-xs sm:text-sm text-m3-on-surface-variant max-w-2xl">
+					<Text
+						variant="body-sm"
+						className="text-xs sm:text-sm text-m3-on-surface-variant max-w-2xl"
+					>
 						Tạo nhanh danh sách bài tập theo mẫu MOS Practice và Ôn thi có sẵn.
 						Các bài tập được chọn sẽ xuất hiện trong lớp học ngay sau khi lưu.
 					</Text>
@@ -128,7 +131,10 @@ export const CreateAssignmentPanel: React.FC<CreateAssignmentPanelProps> = ({
 						<Icon name="tune" className="text-lg text-m3-primary" />
 						Cấu hình môn thi & phần bài tập
 					</h4>
-					<Text variant="body-sm" className="text-xs text-m3-on-surface-variant mt-0.5">
+					<Text
+						variant="body-sm"
+						className="text-xs text-m3-on-surface-variant mt-0.5"
+					>
 						Chọn môn học và phần đề thi để hệ thống tải danh sách project tương
 						ứng.
 					</Text>
@@ -177,7 +183,10 @@ export const CreateAssignmentPanel: React.FC<CreateAssignmentPanelProps> = ({
 				{/* Quick create 1-touch */}
 				<div className="rounded-xl bg-m3-surface-container p-4 space-y-3">
 					<div className="flex items-center justify-between">
-						<Text variant="label-sm" className="text-xs font-bold text-m3-primary uppercase tracking-wider flex items-center gap-1.5">
+						<Text
+							variant="label-sm"
+							className="text-xs font-bold text-m3-primary uppercase tracking-wider flex items-center gap-1.5"
+						>
 							<Icon name="bolt" className="text-sm" />
 							Tạo nhanh 1 chạm ({newAssignmentSubject.toUpperCase()})
 						</Text>
@@ -245,7 +254,10 @@ export const CreateAssignmentPanel: React.FC<CreateAssignmentPanelProps> = ({
 							<Icon name="list_alt" className="text-lg text-m3-secondary" />
 							Danh sách project sẽ tạo
 						</h4>
-						<Text variant="body-sm" className="text-xs text-m3-on-surface-variant mt-0.5">
+						<Text
+							variant="body-sm"
+							className="text-xs text-m3-on-surface-variant mt-0.5"
+						>
 							Tích chọn các project cần tạo và chỉnh sửa tên từng bài trước khi
 							lưu. Thao tác chọn và tạo bài được thực hiện trên thanh công cụ
 							bên dưới.
@@ -263,10 +275,16 @@ export const CreateAssignmentPanel: React.FC<CreateAssignmentPanelProps> = ({
 							name="folder_off"
 							className="text-3xl text-m3-on-surface-variant/60 mb-2"
 						/>
-						<Text variant="body-md" className="text-sm font-semibold text-m3-on-surface">
+						<Text
+							variant="body-md"
+							className="text-sm font-semibold text-m3-on-surface"
+						>
 							Phần này chưa có project khả dụng trong hệ thống
 						</Text>
-						<Text variant="body-sm" className="text-xs text-m3-on-surface-variant mt-1">
+						<Text
+							variant="body-sm"
+							className="text-xs text-m3-on-surface-variant mt-1"
+						>
 							Vui lòng chọn môn học hoặc phần thi khác để tiếp tục.
 						</Text>
 					</div>

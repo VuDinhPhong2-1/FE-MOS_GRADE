@@ -38,7 +38,10 @@ const TextBoxContainsTextEditor = ({
 					Hộp văn bản chứa đúng nội dung (Cut/Paste vào Text Box)
 				</p>
 				<p className="mt-0.5 text-xs text-slate-500">
-					Kiểm tra đoạn văn đã được chuyển vào hộp văn bản (Text Box), nội dung đầy đủ và đã được Cut khỏi thân bài. Mặc định hệ thống chấm linh hoạt, chấp nhận cả 2 cách: bôi đen kèm dấu ¶ (xóa cả đoạn) hoặc không kèm dấu ¶ (để lại dòng trống) theo chuẩn thi MOS.
+					Kiểm tra đoạn văn đã được chuyển vào hộp văn bản (Text Box), nội dung
+					đầy đủ và đã được Cut khỏi thân bài. Mặc định hệ thống chấm linh hoạt,
+					chấp nhận cả 2 cách: bôi đen kèm dấu ¶ (xóa cả đoạn) hoặc không kèm
+					dấu ¶ (để lại dòng trống) theo chuẩn thi MOS.
 				</p>
 			</div>
 
@@ -75,7 +78,9 @@ const TextBoxContainsTextEditor = ({
 						}
 						className={inputClass}
 					>
-						<option value="exact">Khớp chính xác toàn bộ (exact - mặc định)</option>
+						<option value="exact">
+							Khớp chính xác toàn bộ (exact - mặc định)
+						</option>
 						<option value="contains">Chứa chuỗi con (contains)</option>
 					</select>
 				</label>
@@ -89,9 +94,7 @@ const TextBoxContainsTextEditor = ({
 						value={current.targetOccurrence ?? 1}
 						onChange={(e) =>
 							update({
-								targetOccurrence: e.target.value
-									? Number(e.target.value)
-									: 1,
+								targetOccurrence: e.target.value ? Number(e.target.value) : 1,
 							})
 						}
 						placeholder="1"
@@ -117,21 +120,18 @@ const TextBoxContainsTextEditor = ({
 					<input
 						type="checkbox"
 						checked={current.requireDefaultPaste ?? true}
-						onChange={(e) =>
-							update({ requireDefaultPaste: e.target.checked })
-						}
+						onChange={(e) => update({ requireDefaultPaste: e.target.checked })}
 						className="h-4 w-4 accent-blue-600"
 					/>
-					Yêu cầu Paste mặc định (loại trừ trường hợp Paste Merge Formatting mang màu chữ của hộp văn bản)
+					Yêu cầu Paste mặc định (loại trừ trường hợp Paste Merge Formatting
+					mang màu chữ của hộp văn bản)
 				</label>
 
 				<label className="flex items-center gap-2 text-xs font-medium text-slate-600">
 					<input
 						type="checkbox"
 						checked={current.caseSensitive ?? false}
-						onChange={(e) =>
-							update({ caseSensitive: e.target.checked })
-						}
+						onChange={(e) => update({ caseSensitive: e.target.checked })}
 						className="h-4 w-4 accent-blue-600"
 					/>
 					Phân biệt chữ hoa / chữ thường (case-sensitive)

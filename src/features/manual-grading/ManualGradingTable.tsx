@@ -144,11 +144,17 @@ export const ManualGradingTable: React.FC<ManualGradingTableProps> = ({
 												{initial}
 											</div>
 											<div>
-												<Text variant="body-md" className="font-semibold text-m3-on-surface leading-tight">
+												<Text
+													variant="body-md"
+													className="font-semibold text-m3-on-surface leading-tight"
+												>
 													{fullName}
 												</Text>
 												{student.notes && (
-													<Text variant="body-sm" className="text-xs text-m3-on-surface-variant truncate max-w-xs mt-0.5">
+													<Text
+														variant="body-sm"
+														className="text-xs text-m3-on-surface-variant truncate max-w-xs mt-0.5"
+													>
 														{student.notes}
 													</Text>
 												)}

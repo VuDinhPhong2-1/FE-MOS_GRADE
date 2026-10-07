@@ -41,7 +41,10 @@ export const RoomCard: React.FC<RoomCardProps> = ({
 							{room.isActive ? "Đang dùng" : "Tạm ẩn"}
 						</span>
 					</div>
-					<Text variant="body-sm" className="mt-1 text-xs text-m3-on-surface-variant">
+					<Text
+						variant="body-sm"
+						className="mt-1 text-xs text-m3-on-surface-variant"
+					>
 						Tổng {room.totalMachinesText} · Máy lỗi {room.brokenMachineCount} ·
 						Khả dụng {room.availableStudentMachines}
 					</Text>
@@ -85,7 +88,10 @@ export const RoomCard: React.FC<RoomCardProps> = ({
 
 				{/* Broken machines details notice */}
 				{room.brokenMachinesDetail ? (
-					<Text variant="body-sm" className="mt-3 rounded-2xl bg-m3-error-container/30 px-3.5 py-2 text-xs text-m3-on-error-container">
+					<Text
+						variant="body-sm"
+						className="mt-3 rounded-2xl bg-m3-error-container/30 px-3.5 py-2 text-xs text-m3-on-error-container"
+					>
 						<strong className="font-semibold">Chi tiết máy hỏng:</strong>{" "}
 						{room.brokenMachinesDetail}
 					</Text>

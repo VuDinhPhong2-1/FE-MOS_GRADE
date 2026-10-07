@@ -70,7 +70,10 @@ export const StudentBonusHistoryDialog: React.FC<
 							<DialogTitle className="text-xl font-bold text-m3-on-surface">
 								Lịch sử điểm cộng
 							</DialogTitle>
-							<Text variant="body-md" className="text-sm text-m3-on-surface-variant mt-0.5">
+							<Text
+								variant="body-md"
+								className="text-sm text-m3-on-surface-variant mt-0.5"
+							>
 								Học sinh:{" "}
 								<span className="font-semibold text-m3-on-surface">
 									{student.studentFullName}
@@ -134,12 +137,18 @@ export const StudentBonusHistoryDialog: React.FC<
 											</div>
 
 											{entry.reason && (
-												<Text variant="body-md" className="text-sm text-m3-on-surface mt-1 font-medium">
+												<Text
+													variant="body-md"
+													className="text-sm text-m3-on-surface mt-1 font-medium"
+												>
 													{entry.reason}
 												</Text>
 											)}
 
-											<Text variant="body-sm" className="text-xs text-m3-on-surface-variant/70 mt-1">
+											<Text
+												variant="body-sm"
+												className="text-xs text-m3-on-surface-variant/70 mt-1"
+											>
 												Người ghi: {entry.createdByName || "Giáo viên"}
 											</Text>
 										</div>

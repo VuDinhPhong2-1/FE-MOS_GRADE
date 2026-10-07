@@ -258,7 +258,10 @@ export function PublicExamPage() {
 
 				<section className="overflow-hidden rounded-3xl bg-m3-surface-container shadow-xs text-m3-on-surface">
 					<div className="bg-linear-to-r from-sky-600 via-cyan-600 to-emerald-500 px-6 py-5 text-white">
-						<Text variant="label-sm" className="text-xs font-semibold uppercase tracking-[0.24em] text-white/80">
+						<Text
+							variant="label-sm"
+							className="text-xs font-semibold uppercase tracking-[0.24em] text-white/80"
+						>
 							Public Exam
 						</Text>
 						<h2 className="mt-2 text-2xl font-bold">
@@ -290,26 +293,44 @@ export function PublicExamPage() {
 							<>
 								<div className="grid gap-3 md:grid-cols-3">
 									<div className="rounded-2xl bg-m3-surface-container-low px-4 py-3 text-m3-on-surface">
-										<Text variant="label-sm" className="text-xs uppercase tracking-wide text-m3-on-surface-variant">
+										<Text
+											variant="label-sm"
+											className="text-xs uppercase tracking-wide text-m3-on-surface-variant"
+										>
 											So hoc sinh
 										</Text>
-										<Text variant="title-md" className="mt-1 text-xl font-bold text-m3-on-surface">
+										<Text
+											variant="title-md"
+											className="mt-1 text-xl font-bold text-m3-on-surface"
+										>
 											{publication.students.length}
 										</Text>
 									</div>
 									<div className="rounded-2xl bg-m3-surface-container-low px-4 py-3 text-m3-on-surface">
-										<Text variant="label-sm" className="text-xs uppercase tracking-wide text-m3-on-surface-variant">
+										<Text
+											variant="label-sm"
+											className="text-xs uppercase tracking-wide text-m3-on-surface-variant"
+										>
 											So project
 										</Text>
-										<Text variant="title-md" className="mt-1 text-xl font-bold text-m3-on-surface">
+										<Text
+											variant="title-md"
+											className="mt-1 text-xl font-bold text-m3-on-surface"
+										>
 											{publication.projectCount}
 										</Text>
 									</div>
 									<div className="rounded-2xl bg-m3-surface-container-low px-4 py-3 text-m3-on-surface">
-										<Text variant="label-sm" className="text-xs uppercase tracking-wide text-m3-on-surface-variant">
+										<Text
+											variant="label-sm"
+											className="text-xs uppercase tracking-wide text-m3-on-surface-variant"
+										>
 											Thoi luong
 										</Text>
-										<Text variant="title-md" className="mt-1 text-xl font-bold text-m3-on-surface">
+										<Text
+											variant="title-md"
+											className="mt-1 text-xl font-bold text-m3-on-surface"
+										>
 											{publication.durationMinutes
 												? `${publication.durationMinutes} phut`
 												: "Khong gioi han"}
@@ -487,18 +508,29 @@ export function PublicExamPage() {
 
 								{canResumeCurrentStudent && agentState && (
 									<div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm text-emerald-800">
-										<Text variant="body-sm" className="font-semibold text-emerald-800">
+										<Text
+											variant="body-sm"
+											className="font-semibold text-emerald-800"
+										>
 											Da tim thay bai cu tren may local.
 										</Text>
-										<Text variant="body-sm" className="mt-2 text-emerald-800">Student: {displayStudentName || "-"}</Text>
-										<Text variant="body-sm" className="text-emerald-800">Session ID: {agentState.sessionId || "-"}</Text>
+										<Text variant="body-sm" className="mt-2 text-emerald-800">
+											Student: {displayStudentName || "-"}
+										</Text>
+										<Text variant="body-sm" className="text-emerald-800">
+											Session ID: {agentState.sessionId || "-"}
+										</Text>
 										<Text variant="body-sm" className="text-emerald-800">
 											Project hien tai: {agentState.currentProjectNumber}/
 											{agentState.totalProjectCount}
 										</Text>
-										<Text variant="body-sm" className="text-emerald-800">Status: {agentState.status}</Text>
+										<Text variant="body-sm" className="text-emerald-800">
+											Status: {agentState.status}
+										</Text>
 										{agentState.workingFilePath && (
-											<Text variant="body-sm" className="text-emerald-800">Working file: {agentState.workingFilePath}</Text>
+											<Text variant="body-sm" className="text-emerald-800">
+												Working file: {agentState.workingFilePath}
+											</Text>
 										)}
 										{!agentState.workingFileExists && (
 											<Text variant="body-sm" className="mt-2 text-rose-700">
@@ -520,7 +552,10 @@ export function PublicExamPage() {
 					</div>
 				</section>
 
-				<Text variant="body-sm" className="mt-4 text-center text-xs text-slate-500">
+				<Text
+					variant="body-sm"
+					className="mt-4 text-center text-xs text-slate-500"
+				>
 					Neu mo nham lien ket, quay lai trang{" "}
 					<Link
 						to="/login"

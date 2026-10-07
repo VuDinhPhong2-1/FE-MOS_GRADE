@@ -131,7 +131,7 @@ export const ProfileModal = ({
 
 						{/* Body */}
 						<ScrollArea
-							type="scroll"
+							type="hover"
 							orientation="vertical"
 							className="flex-1 min-h-0"
 							viewportClassName="px-6 pt-2 pb-6 pr-5"

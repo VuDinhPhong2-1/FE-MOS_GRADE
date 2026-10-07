@@ -2,11 +2,6 @@ import type { Assignment } from "../../../types/assignment.types";
 
 export type ScoringPolicy = "BestScore" | "LatestScore";
 
-export type PageMessage = {
-	type: "success" | "warning" | "error" | "info";
-	text: string;
-};
-
 export const formatDateTime = (value?: string): string =>
 	value ? new Date(value).toLocaleString("vi-VN") : "Không giới hạn";
 

@@ -274,7 +274,7 @@ export const AttendanceModal = ({
 
 					{/* Content */}
 					<ScrollArea
-						type="scroll"
+						type="hover"
 						orientation="both"
 						className="min-h-0 flex-1"
 						viewportClassName="p-4 sm:p-6"
@@ -288,7 +288,10 @@ export const AttendanceModal = ({
 										size={64}
 										aria-label="Đang tải danh sách học sinh..."
 									/>
-									<Text variant="body-sm" className="text-xs text-m3-on-surface font-medium">
+									<Text
+										variant="body-sm"
+										className="text-xs text-m3-on-surface font-medium"
+									>
 										Đang tải danh sách học sinh...
 									</Text>
 								</div>

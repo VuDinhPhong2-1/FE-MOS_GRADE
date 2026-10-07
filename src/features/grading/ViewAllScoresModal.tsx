@@ -55,7 +55,10 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 						<h2 className="text-xl font-extrabold text-m3-on-surface">
 							{state.headerTitle}
 						</h2>
-						<Text variant="body-md" className="text-sm text-m3-on-surface-variant">
+						<Text
+							variant="body-md"
+							className="text-sm text-m3-on-surface-variant"
+						>
 							{state.sortedDisplayRows.length}
 							{state.searchTerm || state.showOnlyExamStudents
 								? `/${state.filteredStudentCount}`
@@ -78,7 +81,7 @@ const ViewAllScoresModal: FC<ViewAllScoresModalProps> = ({
 
 			{/* Modal Body with ScoreboardContent */}
 			<ScrollArea
-				type="scroll"
+				type="hover"
 				orientation="vertical"
 				className="flex-1 min-h-0"
 				viewportClassName="px-2 pb-24 pt-3 sm:px-4 sm:pb-28 sm:pt-4 lg:px-5"

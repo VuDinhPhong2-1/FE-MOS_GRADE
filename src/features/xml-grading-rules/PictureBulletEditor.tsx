@@ -203,7 +203,10 @@ const PictureBulletEditor = ({
 						Cấu hình Picture Bullet
 					</Text>
 
-					<Text variant="body-sm" className="mt-1 text-xs leading-5 text-slate-500">
+					<Text
+						variant="body-sm"
+						className="mt-1 text-xs leading-5 text-slate-500"
+					>
 						Chọn hình ảnh chuẩn được sử dụng làm dấu đầu dòng trong bài Word của
 						học viên.
 					</Text>
@@ -214,7 +217,10 @@ const PictureBulletEditor = ({
 			<div className="mt-4 grid gap-4 md:grid-cols-[minmax(0,1fr)_160px]">
 				{/* Image upload */}
 				<div>
-					<Text variant="label-sm" className="text-xs font-semibold text-slate-600">
+					<Text
+						variant="label-sm"
+						className="text-xs font-semibold text-slate-600"
+					>
 						Hình ảnh Bullet chuẩn
 					</Text>
 
@@ -256,7 +262,10 @@ const PictureBulletEditor = ({
 
 					{fileName && (
 						<div className="mt-2 flex items-center gap-2">
-							<Text variant="label-sm" className="min-w-0 flex-1 truncate text-[11px] text-slate-500">
+							<Text
+								variant="label-sm"
+								className="min-w-0 flex-1 truncate text-[11px] text-slate-500"
+							>
 								{fileName}
 							</Text>
 
@@ -272,18 +281,27 @@ const PictureBulletEditor = ({
 						</div>
 					)}
 
-					<Text variant="label-sm" className="mt-1.5 text-[11px] text-slate-400">
+					<Text
+						variant="label-sm"
+						className="mt-1.5 text-[11px] text-slate-400"
+					>
 						PNG, JPG, GIF, BMP hoặc WebP · tối đa 10MB
 					</Text>
 
 					{error && (
-						<Text variant="label-sm" className="mt-2 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-[11px] text-red-600">
+						<Text
+							variant="label-sm"
+							className="mt-2 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-[11px] text-red-600"
+						>
 							{error}
 						</Text>
 					)}
 
 					{!error && !uploading && hasSavedImage && (
-						<Text variant="label-sm" className="mt-2 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-[11px] text-emerald-700">
+						<Text
+							variant="label-sm"
+							className="mt-2 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-[11px] text-emerald-700"
+						>
 							Đã lưu ảnh và hash trên server — sẵn sàng dùng để chấm điểm.
 						</Text>
 					)}
@@ -306,7 +324,10 @@ const PictureBulletEditor = ({
 						</select>
 					</label>
 
-					<Text variant="label-sm" className="mt-1.5 text-[11px] leading-4 text-slate-400">
+					<Text
+						variant="label-sm"
+						className="mt-1.5 text-[11px] leading-4 text-slate-400"
+					>
 						Cấp numbering cần kiểm tra trong Word.
 					</Text>
 				</div>
@@ -316,7 +337,12 @@ const PictureBulletEditor = ({
           so với bản trước (min-h-28 / max-h-20 max-w-20) để đỡ chiếm
           diện tích khi có nhiều Task/Condition trên cùng màn hình. */}
 			<div className="mt-4">
-				<Text variant="label-sm" className="mb-2 text-xs font-semibold text-slate-600">Xem trước</Text>
+				<Text
+					variant="label-sm"
+					className="mb-2 text-xs font-semibold text-slate-600"
+				>
+					Xem trước
+				</Text>
 
 				{previewUrl ? (
 					<div className="relative flex h-64 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white p-2.5">
@@ -359,7 +385,10 @@ const PictureBulletEditor = ({
 								className="mx-auto text-slate-300"
 							/>
 
-							<Text variant="label-sm" className="mt-1.5 text-[11px] text-slate-400">
+							<Text
+								variant="label-sm"
+								className="mt-1.5 text-[11px] text-slate-400"
+							>
 								Chưa chọn hình ảnh
 							</Text>
 						</div>

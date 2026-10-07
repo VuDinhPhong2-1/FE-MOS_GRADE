@@ -86,7 +86,7 @@ export const EditAssignmentModal: React.FC<EditAssignmentModalProps> = ({
 
 					{/* Body */}
 					<ScrollArea
-						type="scroll"
+						type="hover"
 						orientation="vertical"
 						className="max-h-[75vh] flex-1 min-h-0"
 						viewportClassName="space-y-4 px-6 py-4"

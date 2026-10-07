@@ -195,7 +195,7 @@ export const ScoreboardContent: React.FC<ScoreboardContentProps> = ({
 											{errors.length} lỗi
 										</summary>
 										<ScrollArea
-											type="scroll"
+											type="hover"
 											orientation="vertical"
 											className="mt-1 max-h-24 rounded bg-m3-error-container/30 text-[11px] text-m3-on-error-container"
 											viewportClassName="p-2"

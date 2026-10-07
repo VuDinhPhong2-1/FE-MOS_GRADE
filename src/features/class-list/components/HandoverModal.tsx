@@ -133,7 +133,7 @@ export const HandoverModal: React.FC<HandoverModalProps> = ({
 									</div>
 								) : (
 									<ScrollArea
-										type="scroll"
+										type="hover"
 										orientation="vertical"
 										className="max-h-72 mt-2 pr-1"
 									>

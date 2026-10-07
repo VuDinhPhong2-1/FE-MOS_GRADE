@@ -84,7 +84,7 @@ const ErrorModal: React.FC = () => {
 
 					{/* Body Content */}
 					<ScrollArea
-						type="scroll"
+						type="hover"
 						orientation="vertical"
 						className="min-h-0 flex-1"
 						viewportClassName="px-6 py-3"

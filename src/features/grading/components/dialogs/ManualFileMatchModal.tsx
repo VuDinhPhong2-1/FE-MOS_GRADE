@@ -77,7 +77,7 @@ export const ManualFileMatchModal: React.FC<ManualFileMatchModalProps> = ({
 
 					{/* Body */}
 					<ScrollArea
-						type="scroll"
+						type="hover"
 						orientation="both"
 						className="flex-1 min-h-0"
 						viewportClassName="px-6 py-4 space-y-3"

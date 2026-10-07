@@ -79,7 +79,6 @@ export const SchoolClassAssignmentPicker: React.FC<
 		}
 	};
 
-	// 1. School options
 	const schoolOptions: SelectOption[] = useMemo(
 		() => [
 			{ value: "", label: "Chọn trường học..." },
@@ -91,7 +90,6 @@ export const SchoolClassAssignmentPicker: React.FC<
 		[schools],
 	);
 
-	// 2. Class options
 	const classOptions: SelectOption[] = useMemo(
 		() => [
 			{ value: "", label: "Chọn lớp học..." },
@@ -103,7 +101,6 @@ export const SchoolClassAssignmentPicker: React.FC<
 		[classes],
 	);
 
-	// Filter assignments locally by search query
 	const filteredAssignments = useMemo(() => {
 		if (!searchQuery.trim()) return assignments;
 		const q = searchQuery.toLowerCase().trim();
@@ -117,7 +114,6 @@ export const SchoolClassAssignmentPicker: React.FC<
 	const handleSelectAllFiltered = () => {
 		const targetIds = filteredAssignments.map((a) => a.id);
 		if (onSelectAllAssignments) {
-			// Combine already selected with filtered target IDs
 			const combined = Array.from(
 				new Set([...selectedAssignmentIds, ...targetIds]),
 			);
@@ -141,14 +137,12 @@ export const SchoolClassAssignmentPicker: React.FC<
 		}
 	};
 
-	// Check whether all steps are completed
 	const isStepComplete = Boolean(
 		selectedSchoolId && selectedClassId && selectedAssignmentIds.length > 0,
 	);
 
 	return (
 		<div className="space-y-4 rounded-3xl bg-m3-surface-container-lowest p-4 sm:p-5 text-m3-on-surface">
-			{/* Section Header */}
 			<div className="flex flex-wrap items-center justify-between gap-2">
 				<div className="flex items-start gap-2.5">
 					<div className="mt-0.5 flex h-7 w-7 items-center justify-center rounded-xl bg-m3-primary/10 text-m3-primary shrink-0">
@@ -158,7 +152,10 @@ export const SchoolClassAssignmentPicker: React.FC<
 						<h4 className="text-sm font-bold text-m3-on-surface">
 							3. Phạm vi áp dụng (Trường, Lớp, Bài tập)
 						</h4>
-						<Text variant="body-sm" className="text-xs text-m3-on-surface-variant">
+						<Text
+							variant="body-sm"
+							className="text-xs text-m3-on-surface-variant"
+						>
 							Chọn trường trước, sau đó chọn lớp và tích chọn một hoặc nhiều bài
 							tập chấm tự động.
 						</Text>
@@ -183,9 +180,7 @@ export const SchoolClassAssignmentPicker: React.FC<
 				</div>
 			</div>
 
-			{/* Column Layout: Step 1 (School) -> Step 2 (Class) -> Step 3 (Assignment Direct Checkboxes) */}
 			<div className="flex flex-col gap-4">
-				{/* Step 1: School Selector */}
 				<div className="space-y-3">
 					<div className="flex items-center justify-between">
 						<label
@@ -218,7 +213,6 @@ export const SchoolClassAssignmentPicker: React.FC<
 					/>
 				</div>
 
-				{/* Step 2: Class Selector */}
 				<div className="space-y-3">
 					<div className="flex items-center justify-between">
 						<label
@@ -290,7 +284,6 @@ export const SchoolClassAssignmentPicker: React.FC<
 					)}
 				</div>
 
-				{/* Step 3: Direct Interactive Checkbox Assignment List */}
 				<div className="space-y-3">
 					<div className="flex flex-wrap items-center justify-between gap-1.5">
 						<label
@@ -314,7 +307,6 @@ export const SchoolClassAssignmentPicker: React.FC<
 						</label>
 					</div>
 
-					{/* Loading State */}
 					{loadingAssignments && (
 						<div className="flex flex-col items-center justify-center rounded-2xl bg-m3-surface-container-high p-6 space-y-2">
 							<LoadingIndicator
@@ -327,7 +319,6 @@ export const SchoolClassAssignmentPicker: React.FC<
 						</div>
 					)}
 
-					{/* Step 3 Locked: No School or No Class selected */}
 					{!loadingAssignments && !selectedSchoolId && (
 						<div className="flex items-center gap-2 rounded-2xl bg-m3-surface-container-high p-3 text-xs text-m3-on-surface-variant">
 							<Icon name="lock" className="text-base opacity-60 shrink-0" />
@@ -344,7 +335,6 @@ export const SchoolClassAssignmentPicker: React.FC<
 						</div>
 					)}
 
-					{/* Empty State: Class has no auto-grading assignments */}
 					{!loadingAssignments &&
 						selectedClassId &&
 						assignments.length === 0 && (
@@ -365,11 +355,9 @@ export const SchoolClassAssignmentPicker: React.FC<
 							</div>
 						)}
 
-					{/* Active Checkbox List with Search Input */}
 					{!loadingAssignments && selectedClassId && assignments.length > 0 && (
 						<div className="space-y-2 rounded-2xl bg-m3-surface-container-high/60 px-3 pt-3 pb-0">
 							<div className="flex flex-row gap-3 justify-between items-center">
-								{/* Search Filter Input (only show when more than 3 assignments) */}
 								{assignments.length > 3 && (
 									<TextField
 										id="portal-assignment-search"
@@ -383,7 +371,6 @@ export const SchoolClassAssignmentPicker: React.FC<
 										className="w-1/2"
 									/>
 								)}
-								{/* Quick action buttons & counter */}
 								{selectedClassId && assignments.length > 0 && (
 									<div className="flex items-center gap-2 text-xs">
 										<Text
@@ -416,10 +403,9 @@ export const SchoolClassAssignmentPicker: React.FC<
 								)}
 							</div>
 
-							{/* Scrollable Checkbox List using MD3 Expressive Segmented List */}
 							{filteredAssignments.length > 0 ? (
 								<ScrollArea
-									type="scroll"
+									type="hover"
 									orientation="vertical"
 									className="max-h-60 overflow-hidden rounded-t-m3-md"
 								>

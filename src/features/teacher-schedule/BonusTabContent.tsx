@@ -91,7 +91,10 @@ export const BonusTabContent: React.FC<BonusTabContentProps> = ({
 							className="pointer-events-none h-6 px-2.5 text-xs font-semibold bg-m3-primary-container text-m3-on-primary-container"
 						/>
 					</div>
-					<Text variant="body-sm" className="text-xs text-m3-on-surface-variant mt-1">
+					<Text
+						variant="body-sm"
+						className="text-xs text-m3-on-surface-variant mt-1"
+					>
 						Cộng điểm phát biểu, làm bài tốt hoặc ý thức trong buổi học này.
 						Điểm sẽ được tính vào bảng xếp hạng chung.
 					</Text>
@@ -176,7 +179,10 @@ export const BonusTabContent: React.FC<BonusTabContentProps> = ({
 										{idx + 1}
 									</td>
 									<td className="py-2 px-3">
-										<Text variant="body-md" className="font-semibold text-m3-on-surface">
+										<Text
+											variant="body-md"
+											className="font-semibold text-m3-on-surface"
+										>
 											{student.fullName}
 										</Text>
 									</td>

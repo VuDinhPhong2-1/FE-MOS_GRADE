@@ -37,7 +37,10 @@ export const RoomGrid: React.FC<RoomGridProps> = ({
 					size={64}
 					aria-label="Đang tải danh sách phòng máy..."
 				/>
-				<Text variant="body-md" className="text-sm font-medium text-m3-on-surface-variant">
+				<Text
+					variant="body-md"
+					className="text-sm font-medium text-m3-on-surface-variant"
+				>
 					Đang tải danh sách phòng máy...
 				</Text>
 			</div>
@@ -55,7 +58,10 @@ export const RoomGrid: React.FC<RoomGridProps> = ({
 						<h5 className="text-base font-bold text-m3-on-surface">
 							Không tìm thấy phòng máy phù hợp
 						</h5>
-						<Text variant="body-sm" className="mt-1 text-xs text-m3-on-surface-variant">
+						<Text
+							variant="body-sm"
+							className="mt-1 text-xs text-m3-on-surface-variant"
+						>
 							Không có phòng máy nào khớp với từ khóa tìm kiếm hoặc bộ lọc trạng
 							thái hiện tại.
 						</Text>
@@ -85,7 +91,10 @@ export const RoomGrid: React.FC<RoomGridProps> = ({
 					<h5 className="text-base font-bold text-m3-on-surface">
 						Chưa có phòng máy nào
 					</h5>
-					<Text variant="body-sm" className="mt-1 text-xs text-m3-on-surface-variant leading-relaxed">
+					<Text
+						variant="body-sm"
+						className="mt-1 text-xs text-m3-on-surface-variant leading-relaxed"
+					>
 						Trường này hiện chưa được khai báo phòng máy. Hãy tạo phòng máy đầu
 						tiên để phân bổ lịch dạy và ghi nhận tình trạng thiết bị.
 					</Text>

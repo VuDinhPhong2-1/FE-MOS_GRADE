@@ -44,12 +44,18 @@ export const ClassGrid: React.FC<ClassGridProps> = memo(
 						<div className="mb-4 flex h-16 w-16 items-center justify-center rounded-3xl bg-m3-surface-container-high text-m3-on-surface-variant">
 							<Icon name="menu_book" className="text-3xl" />
 						</div>
-						<Text variant="title-md" className="text-base font-bold text-m3-on-surface">
+						<Text
+							variant="title-md"
+							className="text-base font-bold text-m3-on-surface"
+						>
 							{totalClassCount === 0
 								? "Chưa có lớp học nào trong trường này"
 								: "Không tìm thấy lớp phù hợp với từ khóa tìm kiếm"}
 						</Text>
-						<Text variant="body-sm" className="mt-1 max-w-sm text-xs text-m3-on-surface-variant">
+						<Text
+							variant="body-sm"
+							className="mt-1 max-w-sm text-xs text-m3-on-surface-variant"
+						>
 							{totalClassCount === 0
 								? "Hãy bắt đầu tạo lớp học đầu tiên cho trường để quản lý danh sách học sinh."
 								: "Hãy thử tìm kiếm với tên lớp khác hoặc tắt bộ lọc."}

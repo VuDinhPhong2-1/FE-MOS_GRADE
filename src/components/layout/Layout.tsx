@@ -57,22 +57,28 @@ const Layout = ({ children, navItems }: LayoutProps) => {
 
 				{/* Khung hiển thị nội dung chính - Bo tròn rounded-3xl, scroll bên trong với ScrollArea MD3 hoặc flex fill */}
 				<div className="min-h-0 flex-1 px-0 lg:pr-4 pb-4 overflow-hidden flex flex-col">
-					<div className="flex-1 min-h-0 rounded-m3-xl-inc bg-m3-surface text-m3-on-surface overflow-hidden flex flex-col">
-						{config.disablePageScroll ? (
-							<div className="flex-1 min-h-0 overflow-hidden flex flex-col">
-								{children}
-							</div>
-						) : (
-							<ScrollArea
-								type="scroll"
-								orientation="vertical"
-								className="flex-1 min-h-0"
-								viewportClassName="p-5 sm:pb-24 lg:pb-20"
-							>
-								{children}
-							</ScrollArea>
-						)}
-					</div>
+					{config.transparentContainer ? (
+						<div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+							{children}
+						</div>
+					) : (
+						<div className="flex-1 min-h-0 rounded-m3-xl-inc bg-m3-surface text-m3-on-surface overflow-hidden flex flex-col">
+							{config.disablePageScroll ? (
+								<div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+									{children}
+								</div>
+							) : (
+								<ScrollArea
+									type="hover"
+									orientation="vertical"
+									className="flex-1 min-h-0"
+									viewportClassName="p-5 sm:pb-24 lg:pb-20"
+								>
+									{children}
+								</ScrollArea>
+							)}
+						</div>
+					)}
 				</div>
 
 				{/* Mobile Bottom Navigation Bar (MD3 Expressive) */}

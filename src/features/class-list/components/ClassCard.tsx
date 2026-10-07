@@ -50,7 +50,10 @@ export const ClassCard: React.FC<ClassCardProps> = memo(
 							<h3 className="truncate text-lg font-bold text-m3-on-surface transition-colors group-hover:text-m3-primary">
 								{cls.name}
 							</h3>
-							<Text variant="body-sm" className="text-xs text-m3-on-surface-variant">
+							<Text
+								variant="body-sm"
+								className="text-xs text-m3-on-surface-variant"
+							>
 								Khối:{" "}
 								<span className="font-semibold text-m3-on-surface">
 									{cls.grade || "---"}
@@ -83,7 +86,10 @@ export const ClassCard: React.FC<ClassCardProps> = memo(
 						</div>
 
 						{cls.description && (
-							<Text variant="body-sm" className="line-clamp-2 pt-1 text-xs italic text-m3-on-surface-variant/80">
+							<Text
+								variant="body-sm"
+								className="line-clamp-2 pt-1 text-xs italic text-m3-on-surface-variant/80"
+							>
 								{cls.description}
 							</Text>
 						)}

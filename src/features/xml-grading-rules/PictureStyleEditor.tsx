@@ -260,7 +260,10 @@ const PictureStyleEditor = ({
 		<div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
 			<div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_240px]">
 				<div>
-					<Text variant="label-sm" className="text-xs font-semibold text-slate-600">
+					<Text
+						variant="label-sm"
+						className="text-xs font-semibold text-slate-600"
+					>
 						Anh chuan de xac dinh dung anh can cham
 					</Text>
 					<input
@@ -297,7 +300,10 @@ const PictureStyleEditor = ({
 
 					{fileName && (
 						<div className="mt-2 flex items-center gap-2">
-							<Text variant="label-sm" className="min-w-0 flex-1 truncate text-[11px] text-slate-500">
+							<Text
+								variant="label-sm"
+								className="min-w-0 flex-1 truncate text-[11px] text-slate-500"
+							>
 								{fileName}
 							</Text>
 							<button
@@ -312,26 +318,40 @@ const PictureStyleEditor = ({
 						</div>
 					)}
 
-					<Text variant="label-sm" className="mt-1.5 text-[11px] text-slate-400">
+					<Text
+						variant="label-sm"
+						className="mt-1.5 text-[11px] text-slate-400"
+					>
 						Nen chon anh goc trong file dap an. He thong tu tinh hash, khong can
 						nhap tay.
 					</Text>
 
 					{error && (
-						<Text variant="label-sm" className="mt-2 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-[11px] text-red-600">
+						<Text
+							variant="label-sm"
+							className="mt-2 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-[11px] text-red-600"
+						>
 							{error}
 						</Text>
 					)}
 
 					{!error && !uploading && !previewLoading && hasSavedImage && (
-						<Text variant="label-sm" className="mt-2 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-[11px] text-emerald-700">
+						<Text
+							variant="label-sm"
+							className="mt-2 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-[11px] text-emerald-700"
+						>
 							Da luu anh va hash tren server.
 						</Text>
 					)}
 				</div>
 
 				<div>
-					<Text variant="label-sm" className="mb-2 text-xs font-semibold text-slate-600">Xem truoc</Text>
+					<Text
+						variant="label-sm"
+						className="mb-2 text-xs font-semibold text-slate-600"
+					>
+						Xem truoc
+					</Text>
 					{previewUrl ? (
 						<div className="relative flex h-36 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white p-2">
 							<img

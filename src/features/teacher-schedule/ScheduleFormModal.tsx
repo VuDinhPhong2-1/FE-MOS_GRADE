@@ -190,7 +190,7 @@ export const ScheduleFormModal = ({
 
 					<form onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col">
 						<ScrollArea
-							type="scroll"
+							type="hover"
 							orientation="vertical"
 							className="min-h-0 flex-1"
 							viewportClassName="p-4 sm:p-5"

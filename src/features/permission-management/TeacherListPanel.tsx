@@ -56,7 +56,7 @@ export const TeacherListPanel = memo(function TeacherListPanel({
 				</div>
 			) : (
 				<ScrollArea
-					type="scroll"
+					type="hover"
 					orientation="vertical"
 					className="max-h-130 pr-1"
 				>

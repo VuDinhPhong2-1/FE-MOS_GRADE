@@ -50,10 +50,16 @@ export const BonusSummaryTable: React.FC<BonusSummaryTableProps> = ({
 						<Icon name="stars" size={22} />
 					</div>
 					<div>
-						<Text variant="body-sm" className="text-xs font-medium text-m3-on-surface-variant">
+						<Text
+							variant="body-sm"
+							className="text-xs font-medium text-m3-on-surface-variant"
+						>
 							Tổng điểm cộng toàn lớp
 						</Text>
-						<Text variant="headline-sm" className="text-xl font-bold text-m3-primary">
+						<Text
+							variant="headline-sm"
+							className="text-xl font-bold text-m3-primary"
+						>
 							{totalClassBonus > 0 ? `+${totalClassBonus}` : totalClassBonus}{" "}
 							điểm
 						</Text>
@@ -68,10 +74,16 @@ export const BonusSummaryTable: React.FC<BonusSummaryTableProps> = ({
 						<Icon name="group" size={22} />
 					</div>
 					<div>
-						<Text variant="body-sm" className="text-xs font-medium text-m3-on-surface-variant">
+						<Text
+							variant="body-sm"
+							className="text-xs font-medium text-m3-on-surface-variant"
+						>
 							Học sinh có điểm cộng
 						</Text>
-						<Text variant="headline-sm" className="text-xl font-bold text-m3-secondary">
+						<Text
+							variant="headline-sm"
+							className="text-xl font-bold text-m3-secondary"
+						>
 							{studentsWithBonusCount}/{summary.length} học sinh
 						</Text>
 					</div>
@@ -85,10 +97,16 @@ export const BonusSummaryTable: React.FC<BonusSummaryTableProps> = ({
 						<Icon name="insights" size={22} />
 					</div>
 					<div>
-						<Text variant="body-sm" className="text-xs font-medium text-m3-on-surface-variant">
+						<Text
+							variant="body-sm"
+							className="text-xs font-medium text-m3-on-surface-variant"
+						>
 							Điểm cộng trung bình
 						</Text>
-						<Text variant="headline-sm" className="text-xl font-bold text-m3-tertiary">
+						<Text
+							variant="headline-sm"
+							className="text-xl font-bold text-m3-tertiary"
+						>
 							{summary.length > 0
 								? (totalClassBonus / summary.length).toFixed(1)
 								: "0"}{" "}
@@ -112,7 +130,7 @@ export const BonusSummaryTable: React.FC<BonusSummaryTableProps> = ({
 
 			{/* Table */}
 			<div className="rounded-m3-xl border border-m3-outline-variant/40 bg-m3-surface shadow-sm overflow-hidden">
-				<ScrollArea orientation="both" className="w-full">
+				<ScrollArea type="hover" orientation="both" className="w-full">
 					<table className="min-w-175 w-full text-left border-collapse text-sm">
 						<thead>
 							<tr className="bg-m3-surface-container border-b border-m3-outline-variant/40 text-xs font-semibold text-m3-on-surface-variant uppercase tracking-wider">

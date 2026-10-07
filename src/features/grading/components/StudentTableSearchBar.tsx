@@ -1,4 +1,10 @@
-import { Button, Icon, IconButton, Text, TextField } from "@bug-on/m3-expressive";
+import {
+	Button,
+	Icon,
+	IconButton,
+	Text,
+	TextField,
+} from "@bug-on/m3-expressive";
 import type React from "react";
 
 interface StudentTableSearchBarProps {
@@ -97,7 +103,10 @@ export const StudentTableSearchBar: React.FC<StudentTableSearchBarProps> = ({
 				</div>
 			</div>
 			{hint && (
-				<Text variant="body-sm" className="mt-2 text-xs font-medium text-m3-on-surface-variant">
+				<Text
+					variant="body-sm"
+					className="mt-2 text-xs font-medium text-m3-on-surface-variant"
+				>
 					{hint}
 				</Text>
 			)}

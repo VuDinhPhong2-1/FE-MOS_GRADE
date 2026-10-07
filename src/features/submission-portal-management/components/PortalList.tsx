@@ -1,43 +1,28 @@
-import { Button, Card, Icon, type SelectOption, Text } from "@bug-on/m3-expressive";
+import { Button, Card, Icon, Text } from "@bug-on/m3-expressive";
+import { useReducedMotion } from "motion/react";
 import type React from "react";
+import { memo, useEffect, useRef } from "react";
 import type { SubmissionPortal } from "../../../types/submission-portal.types";
-import { PortalActionToolbar } from "./PortalActionToolbar";
+import { cn } from "../../../utils/utils";
 import { PortalCard } from "./PortalCard";
 
 interface PortalListProps {
 	portals: SubmissionPortal[];
-	scopeFilter: "all" | "teacher";
-	onScopeChange: (scope: "all" | "teacher") => void;
-	selectedClassId: string;
-	onClassChange: (classId: string) => void;
-	classOptions: SelectOption[];
-	onResetFilters: () => void;
-	hasActiveFilters: boolean;
 	publicOrigin: string;
-	selectedPortalId?: string;
 	onOpenCreate: () => void;
 	onCopyUrl: (url: string) => void;
 	onOpenDetails: (portal: SubmissionPortal) => void;
 	onEdit: (portal: SubmissionPortal) => void;
 	onDelete: (portal: SubmissionPortal) => void;
+	selectedPortalId?: string;
 	isActionDisabled?: boolean;
-	searchQuery?: string;
-	onSearchQueryChange?: (query: string) => void;
-	isSearchActive?: boolean;
-	onOpenSearch?: () => void;
-	onCloseSearch?: () => void;
-	onSearchActiveChange?: (isActive: boolean) => void;
+	hasActiveFilters?: boolean;
+	onResetFilters?: () => void;
+	isDetailOpen?: boolean;
 }
 
-export const PortalList: React.FC<PortalListProps> = ({
+const PortalListComponent: React.FC<PortalListProps> = ({
 	portals,
-	scopeFilter,
-	onScopeChange,
-	selectedClassId,
-	onClassChange,
-	classOptions,
-	onResetFilters,
-	hasActiveFilters,
 	publicOrigin,
 	selectedPortalId,
 	onOpenCreate,
@@ -46,38 +31,98 @@ export const PortalList: React.FC<PortalListProps> = ({
 	onEdit,
 	onDelete,
 	isActionDisabled,
-	searchQuery = "",
-	onSearchQueryChange = () => {},
-	isSearchActive,
-	onOpenSearch,
-	onCloseSearch,
-	onSearchActiveChange,
+	hasActiveFilters = false,
+	onResetFilters,
+	isDetailOpen = false,
 }) => {
+	const cardRefs = useRef<Map<string, HTMLElement>>(new Map());
+	const prevIsDetailOpenRef = useRef(isDetailOpen);
+	const shouldReduceMotion = useReducedMotion();
+
+	// Tự động scroll card đang được chọn vào tầm nhìn khi detail mở hoặc portal thay đổi
+	useEffect(() => {
+		if (!selectedPortalId) {
+			prevIsDetailOpenRef.current = isDetailOpen;
+			return;
+		}
+
+		const wasDetailOpen = prevIsDetailOpenRef.current;
+		prevIsDetailOpenRef.current = isDetailOpen;
+
+		const scrollToCard = () => {
+			const targetEl = cardRefs.current.get(selectedPortalId);
+			if (!targetEl) return;
+
+			const viewport = targetEl.closest<HTMLElement>(
+				"[data-radix-scroll-area-viewport]",
+			);
+
+			if (viewport) {
+				const viewportRect = viewport.getBoundingClientRect();
+				const targetRect = targetEl.getBoundingClientRect();
+				const currentScrollTop = viewport.scrollTop;
+				// Khoảng cách an toàn tối thiểu dưới sticky toolbar (~88px)
+				const minTopOffset = 88;
+				const desiredTopOffset = Math.max(
+					minTopOffset,
+					(viewportRect.height - targetRect.height) / 2,
+				);
+				const targetScrollTop = Math.max(
+					0,
+					currentScrollTop +
+						(targetRect.top - viewportRect.top) -
+						desiredTopOffset,
+				);
+
+				viewport.scrollTo({
+					top: targetScrollTop,
+					behavior: shouldReduceMotion ? "auto" : "smooth",
+				});
+			} else {
+				targetEl.scrollIntoView({
+					behavior: shouldReduceMotion ? "auto" : "smooth",
+					block: "center",
+					inline: "nearest",
+				});
+			}
+		};
+
+		// Nếu vừa mở detail (chuyển từ đóng sang mở), cần chờ transition width 300ms của layout ổn định
+		if (isDetailOpen && !wasDetailOpen && !shouldReduceMotion) {
+			const timerId = window.setTimeout(() => {
+				requestAnimationFrame(scrollToCard);
+			}, 320);
+
+			return () => {
+				window.clearTimeout(timerId);
+			};
+		}
+
+		// Nếu detail đã mở sẵn hoặc reduced motion, cuộn ngay ở frame tiếp theo
+		const rafId = requestAnimationFrame(scrollToCard);
+		return () => {
+			cancelAnimationFrame(rafId);
+		};
+	}, [selectedPortalId, isDetailOpen, shouldReduceMotion]);
+
 	return (
 		<section className="space-y-4">
-			{/* Floating Action Toolbar với Tìm kiếm, Bộ lọc và FAB Tạo link */}
-			<PortalActionToolbar
-				scopeFilter={scopeFilter}
-				onScopeChange={onScopeChange}
-				selectedClassId={selectedClassId}
-				onClassChange={onClassChange}
-				classOptions={classOptions}
-				onResetFilters={onResetFilters}
-				hasActiveFilters={hasActiveFilters}
-				searchQuery={searchQuery}
-				onSearchQueryChange={onSearchQueryChange}
-				isSearchActive={isSearchActive}
-				onOpenSearch={onOpenSearch}
-				onCloseSearch={onCloseSearch}
-				onSearchActiveChange={onSearchActiveChange}
-				onOpenCreate={onOpenCreate}
-			/>
-
-			{/* Portals Grid */}
-			<div className="grid gap-4 xl:grid-cols-2 items-start">
+			<div
+				className={cn(
+					"grid gap-4 items-start",
+					isDetailOpen ? "grid-cols-1" : "xl:grid-cols-2",
+				)}
+			>
 				{portals.map((portal) => (
 					<PortalCard
 						key={portal.id}
+						ref={(node) => {
+							if (node) {
+								cardRefs.current.set(portal.id, node);
+							} else {
+								cardRefs.current.delete(portal.id);
+							}
+						}}
 						portal={portal}
 						publicOrigin={publicOrigin}
 						isSelected={selectedPortalId === portal.id}
@@ -89,11 +134,13 @@ export const PortalList: React.FC<PortalListProps> = ({
 					/>
 				))}
 
-				{/* Filtered Empty State */}
 				{portals.length === 0 && hasActiveFilters && (
 					<Card
 						variant="filled"
-						className="bg-m3-surface-container-low flex flex-col items-center justify-center p-10 text-center xl:col-span-2"
+						className={cn(
+							"bg-m3-surface-container-low flex flex-col items-center justify-center p-10 text-center",
+							isDetailOpen ? "col-span-1" : "xl:col-span-2",
+						)}
 					>
 						<div className="flex h-16 w-16 items-center justify-center rounded-m3-full bg-m3-surface-container-highest text-m3-on-surface-variant">
 							<Icon name="filter_list_off" size={32} />
@@ -120,11 +167,13 @@ export const PortalList: React.FC<PortalListProps> = ({
 					</Card>
 				)}
 
-				{/* Global Empty State */}
 				{portals.length === 0 && !hasActiveFilters && (
 					<Card
 						variant="filled"
-						className="bg-m3-surface-container-low flex flex-col items-center justify-center p-10 text-center xl:col-span-2"
+						className={cn(
+							"bg-m3-surface-container-low flex flex-col items-center justify-center p-10 text-center",
+							isDetailOpen ? "col-span-1" : "xl:col-span-2",
+						)}
 					>
 						<div className="flex h-16 w-16 items-center justify-center rounded-m3-full bg-m3-primary-container text-m3-on-primary-container">
 							<Icon name="link_off" size={32} />
@@ -154,3 +203,5 @@ export const PortalList: React.FC<PortalListProps> = ({
 		</section>
 	);
 };
+
+export const PortalList = memo(PortalListComponent);

@@ -33,6 +33,7 @@ export interface PortalActionToolbarProps {
 	onCloseSearch?: () => void;
 	onSearchActiveChange?: (isActive: boolean) => void;
 	onOpenCreate: () => void;
+	className?: string;
 }
 
 const PortalActionToolbarComponent = ({
@@ -50,8 +51,8 @@ const PortalActionToolbarComponent = ({
 	onCloseSearch,
 	onSearchActiveChange,
 	onOpenCreate,
+	className,
 }: PortalActionToolbarProps) => {
-	// Giải phóng tap gesture của Motion trước khi mở dialog tạo cổng
 	const handleOpenCreate = useCallback(
 		(e: MouseEvent<HTMLButtonElement>) => {
 			e.currentTarget.dispatchEvent(
@@ -63,7 +64,6 @@ const PortalActionToolbarComponent = ({
 		[onOpenCreate],
 	);
 
-	// Cấu hình tìm kiếm cho FloatingActionToolbar
 	const searchConfig: SearchConfig = useMemo(
 		() => ({
 			id: "portal-floating-search",
@@ -78,10 +78,8 @@ const PortalActionToolbarComponent = ({
 		[searchQuery, onSearchQueryChange],
 	);
 
-	// Kiểm tra xem bộ lọc lớp học có đang kích hoạt không
-	const hasFilterMenuActive = Boolean(selectedClassId);
+	const isFilterActive = Boolean(selectedClassId);
 
-	// Tooltip mô tả trạng thái lọc lớp học
 	const filterTooltipText = useMemo(() => {
 		if (selectedClassId) {
 			const foundOption = classOptions.find(
@@ -92,16 +90,13 @@ const PortalActionToolbarComponent = ({
 		return "Lọc theo lớp học";
 	}, [selectedClassId, classOptions]);
 
-	// Danh sách các lớp học (loại bỏ tùy chọn rỗng nếu có)
 	const classListOptions = useMemo(
 		() => classOptions.filter((opt) => Boolean(opt.value)),
 		[classOptions],
 	);
 
-	// Action buttons trên FloatingActionToolbar
 	const actions = (
 		<>
-			{/* Nút lọc Phạm vi nộp bài: Tất cả vs Lớp của tôi */}
 			<TooltipBox
 				tooltip={
 					<PlainTooltip>
@@ -142,7 +137,6 @@ const PortalActionToolbarComponent = ({
 				</ToolbarIconButton>
 			</TooltipBox>
 
-			{/* Menu Bộ lọc theo lớp học */}
 			<Menu variant="expressive" colorVariant="vibrant" density={-2}>
 				<MenuTrigger asChild>
 					<div>
@@ -152,13 +146,13 @@ const PortalActionToolbarComponent = ({
 						>
 							<ToolbarIconButton
 								aria-label="Lọc theo lớp học"
-								emphasis={hasFilterMenuActive ? "tonal" : "standard"}
+								emphasis={isFilterActive ? "tonal" : "standard"}
 								className={
-									hasFilterMenuActive ? "text-m3-primary relative" : undefined
+									isFilterActive ? "text-m3-primary relative" : undefined
 								}
 							>
 								<Icon name="tune" size={24} />
-								{hasFilterMenuActive && (
+								{isFilterActive && (
 									<span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-m3-primary" />
 								)}
 							</ToolbarIconButton>
@@ -188,7 +182,6 @@ const PortalActionToolbarComponent = ({
 				</MenuContent>
 			</Menu>
 
-			{/* Nút Xóa bộ lọc khi có bất kỳ điều kiện lọc nào kích hoạt */}
 			{hasActiveFilters && (
 				<TooltipBox
 					tooltip={<PlainTooltip>Xóa bộ lọc & tìm kiếm</PlainTooltip>}
@@ -207,7 +200,6 @@ const PortalActionToolbarComponent = ({
 		</>
 	);
 
-	// End FAB cho phép tạo link mới
 	const endFab = useMemo(
 		() => (
 			<TooltipBox
@@ -231,6 +223,10 @@ const PortalActionToolbarComponent = ({
 			actions={actions}
 			endFab={endFab}
 			search={searchConfig}
+			className={cn(
+				"absolute bottom-4 lg:bottom-6 left-1/2 -translate-x-1/2 max-w-[calc(100%-2rem)] pointer-events-auto",
+				className,
+			)}
 			isSearchActive={isSearchActive}
 			onOpenSearch={onOpenSearch}
 			onCloseSearch={onCloseSearch}

@@ -129,7 +129,7 @@ export const SubmissionPortalPage = () => {
 			<main className="flex w-full flex-1 min-h-0 flex-col px-3 pb-3 pt-0 overflow-hidden">
 				<div className="flex flex-1 min-h-0 flex-col overflow-hidden rounded-m3-xl-inc bg-m3-surface-container-low text-m3-on-surface">
 					<ScrollArea
-						type="scroll"
+						type="hover"
 						orientation="vertical"
 						className="flex-1 min-h-0"
 						viewportClassName="p-6 space-y-6"

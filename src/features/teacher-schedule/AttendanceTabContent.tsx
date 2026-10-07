@@ -114,11 +114,19 @@ const StudentAttendanceMobileCard = memo(function StudentAttendanceMobileCard({
 		>
 			<div className="flex items-start justify-between gap-3">
 				<div>
-					<Text variant="label-sm" className="text-xs text-m3-on-surface-variant">#{index + 1}</Text>
+					<Text
+						variant="label-sm"
+						className="text-xs text-m3-on-surface-variant"
+					>
+						#{index + 1}
+					</Text>
 					<Text variant="body-md" className="font-semibold text-m3-on-surface">
 						{student.middleName} {student.firstName}
 					</Text>
-					<Text variant="body-sm" className="text-xs text-m3-on-surface-variant">
+					<Text
+						variant="body-sm"
+						className="text-xs text-m3-on-surface-variant"
+					>
 						Trạng thái học sinh: {student.studentStatus || "-"}
 					</Text>
 				</div>
@@ -206,10 +214,16 @@ export const AttendanceTabContent = ({
 					},
 					cell: ({ row }) => (
 						<div>
-							<Text variant="body-md" className="font-medium text-m3-on-surface">
+							<Text
+								variant="body-md"
+								className="font-medium text-m3-on-surface"
+							>
 								{row.original.middleName} {row.original.firstName}
 							</Text>
-							<Text variant="body-sm" className="text-xs text-m3-on-surface-variant">
+							<Text
+								variant="body-sm"
+								className="text-xs text-m3-on-surface-variant"
+							>
 								Trạng thái: {row.original.studentStatus || "-"}
 							</Text>
 						</div>

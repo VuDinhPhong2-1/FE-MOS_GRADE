@@ -242,7 +242,10 @@ export const GradingWorkspace: React.FC<GradingWorkspaceProps> = ({
 							size={64}
 							aria-label="Đang tải dữ liệu..."
 						/>
-						<Text variant="body-md" className="text-sm font-medium text-m3-on-surface-variant">
+						<Text
+							variant="body-md"
+							className="text-sm font-medium text-m3-on-surface-variant"
+						>
 							Đang tải dữ liệu bài tập của lớp...
 						</Text>
 					</div>

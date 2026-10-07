@@ -1,6 +1,10 @@
+import { ScrollArea } from "@bug-on/m3-expressive";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useCallback, useEffect } from "react";
 import { RouteLoadingFallback } from "../../components";
 import { usePageHeader } from "../../context/PageActionsContext";
+import { cn } from "../../utils/utils";
+import { PortalActionToolbar } from "./components/PortalActionToolbar";
 import { PortalDetailsSection } from "./components/PortalDetailsSection";
 import { PortalFormDialog } from "./components/PortalFormDialog";
 import { PortalList } from "./components/PortalList";
@@ -13,15 +17,19 @@ export const SubmissionPortalManagementPage = () => {
 	const portalMgmt = usePortalManagement();
 	const filters = usePortalFilters();
 	const details = usePortalDetails();
+	const shouldReduceMotion = useReducedMotion();
 
 	const publicOrigin = window.location.origin;
+	const isDetailOpen = Boolean(details.selectedPortal);
 
-	// Page Header Configuration
+	// Page Header Configuration - disablePageScroll và transparentContainer để 2 pane có khung rounded riêng độc lập
 	usePageHeader(
 		{
 			title: "Quản lý bài tập",
 			subtitle:
 				"Tạo link nộp bài tự động chấm, chia sẻ cho học sinh và theo dõi cảnh báo.",
+			disablePageScroll: true,
+			transparentContainer: true,
 			actions: [
 				{
 					id: "create-submission-portal",
@@ -35,7 +43,6 @@ export const SubmissionPortalManagementPage = () => {
 		[portalMgmt.setIsCreateOpen],
 	);
 
-	// Initial data loading
 	useEffect(() => {
 		void portalMgmt.fetchPortals();
 		void filters.loadSchools();
@@ -78,53 +85,90 @@ export const SubmissionPortalManagementPage = () => {
 	}
 
 	return (
-		<main className="space-y-4 pb-5">
-			{/* Metric Cards Banner */}
-			<StatsBanner
-				activeCount={portalMgmt.stats.active}
-				scopedAssignmentsCount={portalMgmt.stats.scopedAssignments}
-				totalAlertsCount={portalMgmt.stats.totalAlerts}
-			/>
+		<main className="flex-1 min-h-0 h-full w-full flex gap-3 lg:gap-4 overflow-hidden relative">
+			<div
+				className={cn(
+					"h-full flex flex-col min-w-0 overflow-hidden relative rounded-m3-xl-inc bg-m3-surface-container-low text-m3-on-surface",
+					"transition-[width] duration-300 ease-[cubic-bezier(0.2,0,0,1)] motion-reduce:transition-none",
+					isDetailOpen
+						? "w-full lg:w-[calc(60%-0.5rem)] shrink-0"
+						: "w-full flex-1",
+				)}
+			>
+				<ScrollArea
+					type="hover"
+					orientation="vertical"
+					className="flex-1 min-h-0"
+					viewportClassName="p-5 lg:pb-26"
+				>
+					<div className="space-y-4">
+						<StatsBanner
+							activeCount={portalMgmt.stats.active}
+							scopedAssignmentsCount={portalMgmt.stats.scopedAssignments}
+							totalAlertsCount={portalMgmt.stats.totalAlerts}
+							isDetailOpen={isDetailOpen}
+						/>
+						<PortalList
+							portals={portalMgmt.filteredPortals}
+							hasActiveFilters={portalMgmt.hasActiveFilters}
+							onResetFilters={portalMgmt.resetFilters}
+							publicOrigin={publicOrigin}
+							selectedPortalId={details.selectedPortal?.id}
+							onOpenCreate={() => portalMgmt.setIsCreateOpen(true)}
+							onCopyUrl={portalMgmt.copyText}
+							onOpenDetails={handleToggleDetails}
+							onEdit={portalMgmt.openEdit}
+							onDelete={handleDeletePortal}
+							isActionDisabled={portalMgmt.loading}
+							isDetailOpen={isDetailOpen}
+						/>
+					</div>
+				</ScrollArea>
 
-			{/* Main Portals Grid List */}
-			<PortalList
-				portals={portalMgmt.filteredPortals}
-				scopeFilter={portalMgmt.scopeFilter}
-				onScopeChange={portalMgmt.setScopeFilter}
-				selectedClassId={portalMgmt.selectedClassId}
-				onClassChange={portalMgmt.setSelectedClassId}
-				classOptions={portalMgmt.classOptions}
-				onResetFilters={portalMgmt.resetFilters}
-				hasActiveFilters={portalMgmt.hasActiveFilters}
-				searchQuery={portalMgmt.searchQuery}
-				onSearchQueryChange={portalMgmt.setSearchQuery}
-				isSearchActive={portalMgmt.isSearchActive}
-				onOpenSearch={portalMgmt.openSearch}
-				onCloseSearch={portalMgmt.closeSearch}
-				onSearchActiveChange={portalMgmt.setIsSearchActive}
-				publicOrigin={publicOrigin}
-				selectedPortalId={details.selectedPortal?.id}
-				onOpenCreate={() => portalMgmt.setIsCreateOpen(true)}
-				onCopyUrl={portalMgmt.copyText}
-				onOpenDetails={handleToggleDetails}
-				onEdit={portalMgmt.openEdit}
-				onDelete={handleDeletePortal}
-				isActionDisabled={portalMgmt.loading}
-			/>
-
-			{/* Detailed View: Suspicious Alerts & Submission Logs */}
-			{details.selectedPortal && (
-				<PortalDetailsSection
-					selectedPortal={details.selectedPortal}
-					alerts={details.alerts}
-					logs={details.logs}
-					loadingDetails={details.loadingDetails}
-					onClose={details.closeDetails}
-					onExportLogsCsv={details.exportLogsCsv}
+				<PortalActionToolbar
+					scopeFilter={portalMgmt.scopeFilter}
+					onScopeChange={portalMgmt.setScopeFilter}
+					selectedClassId={portalMgmt.selectedClassId}
+					onClassChange={portalMgmt.setSelectedClassId}
+					classOptions={portalMgmt.classOptions}
+					onResetFilters={portalMgmt.resetFilters}
+					hasActiveFilters={portalMgmt.hasActiveFilters}
+					searchQuery={portalMgmt.searchQuery}
+					onSearchQueryChange={portalMgmt.setSearchQuery}
+					isSearchActive={portalMgmt.isSearchActive}
+					onOpenSearch={portalMgmt.openSearch}
+					onCloseSearch={portalMgmt.closeSearch}
+					onSearchActiveChange={portalMgmt.setIsSearchActive}
+					onOpenCreate={() => portalMgmt.setIsCreateOpen(true)}
 				/>
-			)}
+			</div>
 
-			{/* Unified Create / Edit Modal Dialog */}
+			<AnimatePresence>
+				{details.selectedPortal && (
+					<motion.div
+						key="portal-detail-pane"
+						initial={{ x: "100%", opacity: 0 }}
+						animate={{ x: 0, opacity: 1 }}
+						exit={{ x: "100%", opacity: 0 }}
+						transition={
+							shouldReduceMotion
+								? { duration: 0.15 }
+								: { duration: 0.3, ease: [0.2, 0, 0, 1] }
+						}
+						className="fixed inset-0 z-50 bg-m3-surface lg:static lg:z-auto lg:h-full lg:w-[calc(40%-0.5rem)] lg:shrink-0 lg:min-w-0 rounded-none lg:rounded-m3-xl-inc text-m3-on-surface overflow-hidden flex flex-col will-change-transform shadow-m3-elevation-3 lg:shadow-none"
+					>
+						<PortalDetailsSection
+							selectedPortal={details.selectedPortal}
+							alerts={details.alerts}
+							logs={details.logs}
+							loadingDetails={details.loadingDetails}
+							onClose={details.closeDetails}
+							onExportLogsCsv={details.exportLogsCsv}
+						/>
+					</motion.div>
+				)}
+			</AnimatePresence>
+
 			<PortalFormDialog
 				open={portalMgmt.isCreateOpen || Boolean(portalMgmt.editingPortal)}
 				mode={portalMgmt.editingPortal ? "edit" : "create"}

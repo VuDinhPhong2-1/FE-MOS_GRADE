@@ -49,7 +49,10 @@ export const GradingModeSelector: React.FC<GradingModeSelectorProps> = ({
 							<h3 className="text-xl sm:text-2xl font-bold text-m3-on-surface font-md3-expressive tracking-tight">
 								Chọn bài tập để chấm điểm
 							</h3>
-							<Text variant="body-sm" className="text-xs sm:text-sm text-m3-on-surface-variant">
+							<Text
+								variant="body-sm"
+								className="text-xs sm:text-sm text-m3-on-surface-variant"
+							>
 								Chọn một bài tập từ danh sách bên dưới để bắt đầu chấm điểm cho
 								học sinh
 							</Text>
@@ -135,7 +138,10 @@ export const GradingModeSelector: React.FC<GradingModeSelectorProps> = ({
 								<h4 className="text-lg sm:text-xl font-bold text-m3-on-surface group-hover:text-m3-primary transition-colors font-md3-expressive">
 									Chấm nhiều bài (Ma trận)
 								</h4>
-								<Text variant="body-sm" className="text-xs sm:text-sm text-m3-on-surface-variant mt-2 leading-relaxed">
+								<Text
+									variant="body-sm"
+									className="text-xs sm:text-sm text-m3-on-surface-variant mt-2 leading-relaxed"
+								>
 									Kéo thả toàn bộ thư mục bài nộp hoặc nhiều file cùng lúc. Hệ
 									thống tự động đối chiếu tên học sinh và tính điểm chính xác.
 								</Text>
@@ -174,7 +180,10 @@ export const GradingModeSelector: React.FC<GradingModeSelectorProps> = ({
 								<h4 className="text-lg sm:text-xl font-bold text-m3-on-surface group-hover:text-m3-secondary transition-colors font-md3-expressive">
 									Tạo bài tập mới
 								</h4>
-								<Text variant="body-sm" className="text-xs sm:text-sm text-m3-on-surface-variant mt-2 leading-relaxed">
+								<Text
+									variant="body-sm"
+									className="text-xs sm:text-sm text-m3-on-surface-variant mt-2 leading-relaxed"
+								>
 									Tạo nhanh hàng loạt bài tập theo mẫu MOS Practice 01, 02, 03
 									hoặc Ôn thi chỉ với 1 chạm, cấu hình điểm tối đa và tên hiển
 									thị.
@@ -214,7 +223,10 @@ export const GradingModeSelector: React.FC<GradingModeSelectorProps> = ({
 								<h4 className="text-lg sm:text-xl font-bold text-m3-on-surface group-hover:text-m3-tertiary transition-colors font-md3-expressive">
 									Quản lý bài tập
 								</h4>
-								<Text variant="body-sm" className="text-xs sm:text-sm text-m3-on-surface-variant mt-2 leading-relaxed">
+								<Text
+									variant="body-sm"
+									className="text-xs sm:text-sm text-m3-on-surface-variant mt-2 leading-relaxed"
+								>
 									Xem danh sách, chỉnh sửa điểm tối đa, ẩn bài tập cũ hoặc xóa
 									bài tập đã tạo trong lớp học với các tác vụ nhanh gọn.
 								</Text>

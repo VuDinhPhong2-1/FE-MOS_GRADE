@@ -216,7 +216,10 @@ export default function AuthPage() {
 						<h1 className="mt-5 text-3xl font-black leading-tight tracking-tight">
 							Hệ thống quản lý và chấm điểm MOS
 						</h1>
-						<Text variant="body-md" className="mt-2.5 text-sm opacity-90 leading-relaxed">
+						<Text
+							variant="body-md"
+							className="mt-2.5 text-sm opacity-90 leading-relaxed"
+						>
 							Theo dõi lớp học, chấm điểm bài tập tự động và tổng hợp kết quả
 							trực quan.
 						</Text>
@@ -260,7 +263,10 @@ export default function AuthPage() {
 						<h2 className="text-2xl font-black tracking-tight text-m3-on-surface">
 							{isLogin ? "Đăng nhập" : "Đăng ký tài khoản"}
 						</h2>
-						<Text variant="body-md" className="mt-1 text-sm text-m3-on-surface-variant">
+						<Text
+							variant="body-md"
+							className="mt-1 text-sm text-m3-on-surface-variant"
+						>
 							{isLogin
 								? "Chào mừng bạn quay lại MOS Grader."
 								: "Tạo tài khoản mới để bắt đầu sử dụng."}

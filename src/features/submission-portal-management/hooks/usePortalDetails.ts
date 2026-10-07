@@ -63,6 +63,20 @@ export const usePortalDetails = () => {
 		Map<string, { alerts: SubmissionAlert[]; logs: SubmissionLog[] }>
 	>(new Map());
 
+	const notify = useCallback(
+		(message: string) => {
+			void showSnackbar({ message, withDismissAction: true });
+		},
+		[showSnackbar],
+	);
+
+	const notifyError = useCallback(
+		(error: unknown, fallback: string) => {
+			notify(error instanceof Error ? error.message : fallback);
+		},
+		[notify],
+	);
+
 	const [selectedPortal, setSelectedPortal] = useState<SubmissionPortal | null>(
 		null,
 	);
@@ -97,19 +111,13 @@ export const usePortalDetails = () => {
 				setLogs(portalLogs);
 			} catch (error) {
 				if (!cached) {
-					void showSnackbar({
-						message:
-							error instanceof Error
-								? error.message
-								: "Không thể mở chi tiết cổng nộp bài",
-						withDismissAction: true,
-					});
+					notifyError(error, "Không thể mở chi tiết cổng nộp bài");
 				}
 			} finally {
 				setLoadingDetails(false);
 			}
 		},
-		[getAccessToken, showSnackbar],
+		[getAccessToken, notifyError],
 	);
 
 	const closeDetails = useCallback(() => {
@@ -154,15 +162,11 @@ export const usePortalDetails = () => {
 		a.click();
 		URL.revokeObjectURL(url);
 
-		void showSnackbar({
-			message: "Đã xuất file CSV thành công.",
-			withDismissAction: true,
-		});
-	}, [logs, selectedPortal?.publicToken, showSnackbar]);
+		notify("Đã xuất file CSV thành công.");
+	}, [logs, selectedPortal?.publicToken, notify]);
 
 	return {
 		selectedPortal,
-		setSelectedPortal,
 		alerts,
 		logs,
 		loadingDetails,

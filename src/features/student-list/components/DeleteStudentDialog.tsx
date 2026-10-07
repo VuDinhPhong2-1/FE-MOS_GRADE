@@ -61,7 +61,10 @@ const DeleteStudentDialogComponent = ({
 							</div>
 						</div>
 
-						<Text variant="body-md" className="text-sm leading-relaxed text-m3-on-surface-variant">
+						<Text
+							variant="body-md"
+							className="text-sm leading-relaxed text-m3-on-surface-variant"
+						>
 							Bạn có chắc chắn muốn xóa học sinh{" "}
 							<strong className="font-semibold text-m3-on-surface">
 								"{fullName}"

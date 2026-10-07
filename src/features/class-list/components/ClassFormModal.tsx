@@ -114,7 +114,7 @@ export const ClassFormModal: React.FC<ClassFormModalProps> = ({
 					{/* Form */}
 					<form onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col">
 						<ScrollArea
-							type="scroll"
+							type="hover"
 							orientation="vertical"
 							className="flex-1 min-h-0"
 							viewportClassName="px-6 pt-3 pb-6"

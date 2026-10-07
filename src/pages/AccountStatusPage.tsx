@@ -56,7 +56,10 @@ const AccountStatusPage: React.FC = () => {
 						: "Tài khoản đang chờ duyệt"}
 				</h1>
 
-				<Text variant="body-md" className="mt-2.5 text-sm leading-relaxed text-m3-on-surface-variant">
+				<Text
+					variant="body-md"
+					className="mt-2.5 text-sm leading-relaxed text-m3-on-surface-variant"
+				>
 					{isRejected
 						? "Tài khoản của bạn hiện chưa được cấp quyền giáo viên. Vui lòng liên hệ Admin nếu cần hỗ trợ xem xét lại."
 						: "Tài khoản đã được khởi tạo thành công và đang chờ Quản trị viên phê duyệt quyền giáo viên. Bạn vẫn có thể đăng nhập để theo dõi trạng thái."}
@@ -68,7 +71,10 @@ const AccountStatusPage: React.FC = () => {
 							<Icon name="feedback" className="text-base text-m3-primary" />
 							<span>Ghi chú từ Quản trị viên</span>
 						</div>
-						<Text variant="body-sm" className="mt-1.5 whitespace-pre-wrap text-m3-on-surface-variant leading-relaxed">
+						<Text
+							variant="body-sm"
+							className="mt-1.5 whitespace-pre-wrap text-m3-on-surface-variant leading-relaxed"
+						>
 							{user.teacherApprovalNote}
 						</Text>
 					</div>

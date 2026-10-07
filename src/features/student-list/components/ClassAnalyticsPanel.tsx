@@ -115,7 +115,10 @@ const ClassAnalyticsPanelComponent = ({
 							<Icon name="bar_chart" className="text-m3-primary text-xl" />
 							Phân tích kết quả lớp học
 						</h2>
-						<Text variant="body-md" className="mt-1 text-sm text-m3-on-surface-variant">
+						<Text
+							variant="body-md"
+							className="mt-1 text-sm text-m3-on-surface-variant"
+						>
 							Tổng hợp theo từng lượt chấm để xác định xu hướng học tập và câu
 							hỏi cần củng cố.
 						</Text>
@@ -353,12 +356,15 @@ const ClassAnalyticsPanelComponent = ({
 								</div>
 
 								{assignments.length === 0 ? (
-									<Text variant="body-md" className="py-3 text-center text-sm text-m3-on-surface-variant">
+									<Text
+										variant="body-md"
+										className="py-3 text-center text-sm text-m3-on-surface-variant"
+									>
 										Lớp chưa có bài tập.
 									</Text>
 								) : (
 									<ScrollArea
-										type="scroll"
+										type="hover"
 										orientation="vertical"
 										className="max-h-56 pr-1 overflow-hidden"
 										viewportClassName="space-y-1"

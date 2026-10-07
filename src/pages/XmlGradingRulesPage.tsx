@@ -867,15 +867,18 @@ const defaultSpecialConditionFeedback = (
 			};
 		case "excelTableColumnFormula":
 			return {
-				successDetail: "Đã thiết lập đúng công thức tính toán cho cột trong bảng.",
-				errorMessage: "Cột trong bảng chưa có công thức hoặc công thức chưa đúng yêu cầu.",
+				successDetail:
+					"Đã thiết lập đúng công thức tính toán cho cột trong bảng.",
+				errorMessage:
+					"Cột trong bảng chưa có công thức hoặc công thức chưa đúng yêu cầu.",
 				fixAction:
 					"Nhập đúng công thức tính toán sử dụng tham chiếu bảng (ví dụ: =[@Total]-[@Commission] hoặc =RIGHT([@ID], 4)) cho cột yêu cầu.",
 			};
 		case "excelChartType":
 			return {
 				successDetail: "Đã tạo đúng loại biểu đồ yêu cầu trên trang tính.",
-				errorMessage: "Chưa tìm thấy biểu đồ đúng loại trên trang tính yêu cầu.",
+				errorMessage:
+					"Chưa tìm thấy biểu đồ đúng loại trên trang tính yêu cầu.",
 				fixAction:
 					"Chọn vùng dữ liệu -> Insert -> Charts và chọn đúng loại biểu đồ (ví dụ: 3-D Clustered Bar). Hoặc chọn biểu đồ -> Chart Design -> Change Chart Type.",
 			};
@@ -891,8 +894,7 @@ const defaultSpecialConditionFeedback = (
 				successDetail: "Đoạn văn đã được đưa vào hộp văn bản đúng yêu cầu.",
 				errorMessage:
 					"Hộp văn bản chưa chứa đúng nội dung hoặc đoạn văn chưa được chuyển khỏi thân tài liệu.",
-				fixAction:
-					"Bôi đen đoạn văn -> Cut -> Chọn vào hộp văn bản -> Paste.",
+				fixAction: "Bôi đen đoạn văn -> Cut -> Chọn vào hộp văn bản -> Paste.",
 			};
 		default:
 			return generic;
@@ -2509,7 +2511,9 @@ const ExcelProject02SpecialConditionEditor = ({
 						value={specialCondition.excelChartStyleConfig?.colorStyleId ?? ""}
 						onChange={(e) =>
 							updateConfig("excelChartStyleConfig", {
-								colorStyleId: e.target.value ? Number(e.target.value) : undefined,
+								colorStyleId: e.target.value
+									? Number(e.target.value)
+									: undefined,
 							})
 						}
 						placeholder="10"
@@ -2527,7 +2531,8 @@ const ExcelProject02SpecialConditionEditor = ({
 					Tên worksheet
 					<input
 						value={
-							specialCondition.excelTableColumnFormulaConfig?.worksheetName ?? ""
+							specialCondition.excelTableColumnFormulaConfig?.worksheetName ??
+							""
 						}
 						onChange={(e) =>
 							updateConfig("excelTableColumnFormulaConfig", {
@@ -2572,7 +2577,8 @@ const ExcelProject02SpecialConditionEditor = ({
 					Công thức kỳ vọng
 					<input
 						value={
-							specialCondition.excelTableColumnFormulaConfig?.expectedFormula ?? ""
+							specialCondition.excelTableColumnFormulaConfig?.expectedFormula ??
+							""
 						}
 						onChange={(e) =>
 							updateConfig("excelTableColumnFormulaConfig", {
@@ -2588,7 +2594,8 @@ const ExcelProject02SpecialConditionEditor = ({
 					<textarea
 						rows={2}
 						value={(
-							specialCondition.excelTableColumnFormulaConfig?.requiredReferences ?? []
+							specialCondition.excelTableColumnFormulaConfig
+								?.requiredReferences ?? []
 						).join("\n")}
 						onChange={(e) =>
 							updateConfig("excelTableColumnFormulaConfig", {
@@ -2607,7 +2614,8 @@ const ExcelProject02SpecialConditionEditor = ({
 					<textarea
 						rows={2}
 						value={(
-							specialCondition.excelTableColumnFormulaConfig?.requiredFunctions ?? []
+							specialCondition.excelTableColumnFormulaConfig
+								?.requiredFunctions ?? []
 						).join("\n")}
 						onChange={(e) =>
 							updateConfig("excelTableColumnFormulaConfig", {
@@ -2657,7 +2665,9 @@ const ExcelProject02SpecialConditionEditor = ({
 				<label className="text-xs font-semibold text-slate-600">
 					Loại biểu đồ kỳ vọng
 					<input
-						value={specialCondition.excelChartTypeConfig?.expectedChartType ?? ""}
+						value={
+							specialCondition.excelChartTypeConfig?.expectedChartType ?? ""
+						}
 						onChange={(e) =>
 							updateConfig("excelChartTypeConfig", {
 								expectedChartType: e.target.value,
@@ -2934,7 +2944,10 @@ const JsonConfigEditor = ({
 				}`}
 			/>
 			{hasError && (
-				<Text variant="label-sm" className="mt-1 text-[11px] font-medium text-red-600">
+				<Text
+					variant="label-sm"
+					className="mt-1 text-[11px] font-medium text-red-600"
+				>
 					JSON không hợp lệ. Vui lòng kiểm tra dấu ngoặc kép và dấu phẩy.
 				</Text>
 			)}
@@ -3406,7 +3419,7 @@ const XmlGradingRulesPage = () => {
 		if (!parsed) {
 			return (
 				<div className="mt-4 rounded-xl border border-slate-800 bg-slate-950 p-4 text-xs text-slate-100">
-					<ScrollArea type="scroll" orientation="both" className="max-h-96">
+					<ScrollArea type="hover" orientation="both" className="max-h-96">
 						<pre className="font-mono text-slate-300">{gradeJson}</pre>
 					</ScrollArea>
 				</div>
@@ -3476,7 +3489,7 @@ const XmlGradingRulesPage = () => {
 
 				{viewRawJson ? (
 					<div className="rounded-lg border border-slate-900 bg-slate-950 p-3 text-xs text-slate-100">
-						<ScrollArea type="scroll" orientation="both" className="max-h-96">
+						<ScrollArea type="hover" orientation="both" className="max-h-96">
 							<pre className="font-mono">{JSON.stringify(parsed, null, 2)}</pre>
 						</ScrollArea>
 					</div>
@@ -3526,7 +3539,7 @@ const XmlGradingRulesPage = () => {
 
 						{/* BẢNG KẾT QUẢ CHẤM ĐIỂM CHI TIẾT */}
 						<ScrollArea
-							type="scroll"
+							type="hover"
 							orientation="horizontal"
 							className="rounded-2xl border border-slate-200 bg-white shadow-sm"
 						>
@@ -3719,10 +3732,16 @@ const XmlGradingRulesPage = () => {
 				<aside className="h-fit rounded-3xl bg-m3-surface-container p-4 shadow-xs xl:sticky xl:top-24 mb-2">
 					<div className="mb-3 flex items-center justify-between px-1">
 						<div>
-							<Text variant="label-sm" className="text-[10px] font-bold uppercase tracking-wider text-m3-on-surface-variant">
+							<Text
+								variant="label-sm"
+								className="text-[10px] font-bold uppercase tracking-wider text-m3-on-surface-variant"
+							>
 								Rulesets
 							</Text>
-							<Text variant="body-md" className="text-sm font-bold text-m3-on-surface">
+							<Text
+								variant="body-md"
+								className="text-sm font-bold text-m3-on-surface"
+							>
 								{ruleSets.length} bộ luật
 							</Text>
 						</div>
@@ -3760,7 +3779,7 @@ const XmlGradingRulesPage = () => {
 					</div>
 
 					<ScrollArea
-						type="scroll"
+						type="hover"
 						orientation="vertical"
 						className="max-h-[calc(100vh-280px)] pr-1"
 						viewportClassName="space-y-1"
@@ -3816,10 +3835,16 @@ const XmlGradingRulesPage = () => {
 									name="code"
 									className="mx-auto mb-2 text-m3-on-surface-variant text-2xl"
 								/>
-								<Text variant="label-sm" className="text-xs font-bold text-m3-on-surface">
+								<Text
+									variant="label-sm"
+									className="text-xs font-bold text-m3-on-surface"
+								>
 									Chưa có ruleset
 								</Text>
-								<Text variant="label-sm" className="mt-1 text-[11px] text-m3-on-surface-variant">
+								<Text
+									variant="label-sm"
+									className="mt-1 text-[11px] text-m3-on-surface-variant"
+								>
 									Tạo ruleset đầu tiên để bắt đầu.
 								</Text>
 							</div>
@@ -3847,7 +3872,10 @@ const XmlGradingRulesPage = () => {
 										{selected.isActive ? "Đang hoạt động" : "Đang tắt"}
 									</span>
 								</div>
-								<Text variant="label-sm" className="text-xs text-m3-on-surface-variant">
+								<Text
+									variant="label-sm"
+									className="text-xs text-m3-on-surface-variant"
+								>
 									{selected.id
 										? `ID: ${selected.id}`
 										: "Ruleset mới chưa được lưu"}
@@ -3880,10 +3908,16 @@ const XmlGradingRulesPage = () => {
 									key={label}
 									className="group rounded-2xl bg-m3-surface-container-low px-4 py-3 transition-[border-radius,background-color] duration-300 ease-[cubic-bezier(0.2,0,0,1)] hover:rounded-lg hover:bg-m3-surface-container-high"
 								>
-									<Text variant="label-sm" className="text-[10px] font-bold uppercase tracking-wider text-m3-on-surface-variant">
+									<Text
+										variant="label-sm"
+										className="text-[10px] font-bold uppercase tracking-wider text-m3-on-surface-variant"
+									>
 										{label}
 									</Text>
-									<Text variant="headline-sm" className="mt-1 text-xl font-black text-m3-on-surface">
+									<Text
+										variant="headline-sm"
+										className="mt-1 text-xl font-black text-m3-on-surface"
+									>
 										{value}
 									</Text>
 								</div>
@@ -3892,7 +3926,7 @@ const XmlGradingRulesPage = () => {
 
 						{/* Tabs */}
 						<ScrollArea
-							type="scroll"
+							type="hover"
 							orientation="horizontal"
 							className="mt-5 border-b border-m3-outline-variant/40"
 							viewportClassName="flex gap-1"
@@ -3941,7 +3975,10 @@ const XmlGradingRulesPage = () => {
 									<h3 className="text-sm font-bold text-m3-on-surface">
 										Thông tin ruleset
 									</h3>
-									<Text variant="body-sm" className="mt-1 text-xs text-m3-on-surface-variant">
+									<Text
+										variant="body-sm"
+										className="mt-1 text-xs text-m3-on-surface-variant"
+									>
 										Các thiết lập chung cho toàn bộ bộ luật.
 									</Text>
 								</div>
@@ -3999,7 +4036,10 @@ const XmlGradingRulesPage = () => {
 										<h3 className="text-sm font-bold text-m3-on-surface">
 											Projects
 										</h3>
-										<Text variant="body-sm" className="mt-1 text-xs text-m3-on-surface-variant">
+										<Text
+											variant="body-sm"
+											className="mt-1 text-xs text-m3-on-surface-variant"
+										>
 											Mỗi project chứa các Task và điều kiện chấm tương ứng.
 										</Text>
 									</div>
@@ -4116,10 +4156,16 @@ const XmlGradingRulesPage = () => {
 														<div className="rounded-2xl bg-m3-surface-container p-5 shadow-xs">
 															<div className="mb-3 flex items-center justify-between gap-2">
 																<div>
-																	<Text variant="body-md" className="text-sm font-bold text-slate-800">
+																	<Text
+																		variant="body-md"
+																		className="text-sm font-bold text-slate-800"
+																	>
 																		Tasks
 																	</Text>
-																	<Text variant="body-sm" className="text-xs text-slate-500">
+																	<Text
+																		variant="body-sm"
+																		className="text-xs text-slate-500"
+																	>
 																		{project.tasks.length} nhiệm vụ trong
 																		project
 																	</Text>
@@ -4281,7 +4327,10 @@ const XmlGradingRulesPage = () => {
 																							>
 																								<div className="min-w-0 flex-1">
 																									<div className="flex flex-wrap items-center gap-2">
-																										<Text variant="body-md" className="text-sm font-bold text-slate-800">
+																										<Text
+																											variant="body-md"
+																											className="text-sm font-bold text-slate-800"
+																										>
 																											Điều kiện đặc biệt
 																										</Text>
 
@@ -4292,7 +4341,10 @@ const XmlGradingRulesPage = () => {
 																										)}
 																									</div>
 
-																									<Text variant="body-sm" className="mt-1 text-xs leading-5 text-slate-500">
+																									<Text
+																										variant="body-sm"
+																										className="mt-1 text-xs leading-5 text-slate-500"
+																									>
 																										Chỉ sử dụng khi Task cần
 																										kiểm tra thành phần đặc biệt
 																										trong file Word mà Condition
@@ -5988,7 +6040,8 @@ const XmlGradingRulesPage = () => {
 																																			"Qtr 2",
 																																		expectedChartType:
 																																			"3-D Clustered Bar",
-																																		barDir: "bar",
+																																		barDir:
+																																			"bar",
 																																		grouping:
 																																			"clustered",
 																																	},
@@ -6396,7 +6449,10 @@ const XmlGradingRulesPage = () => {
 																												className={inputClass}
 																											/>
 																										</label>
-																										<Text variant="label-sm" className="text-[11px] leading-4 text-slate-400">
+																										<Text
+																											variant="label-sm"
+																											className="text-[11px] leading-4 text-slate-400"
+																										>
 																											Tổng điểm (các Conditions
 																											XML + Điều kiện đặc biệt)
 																											phải bằng Điểm tối đa của
@@ -6517,7 +6573,10 @@ const XmlGradingRulesPage = () => {
 																										</div>
 
 																										<div>
-																											<Text variant="label-sm" className="text-xs font-bold text-violet-900">
+																											<Text
+																												variant="label-sm"
+																												className="text-xs font-bold text-violet-900"
+																											>
 																												{
 																													availableSpecialConditionOptions.find(
 																														(option) =>
@@ -6529,7 +6588,10 @@ const XmlGradingRulesPage = () => {
 																												}
 																											</Text>
 
-																											<Text variant="body-sm" className="mt-0.5 text-xs leading-5 text-violet-700/80">
+																											<Text
+																												variant="body-sm"
+																												className="mt-0.5 text-xs leading-5 text-violet-700/80"
+																											>
 																												{
 																													availableSpecialConditionOptions.find(
 																														(option) =>
@@ -6561,7 +6623,10 @@ const XmlGradingRulesPage = () => {
 																										"",
 																								) && (
 																									<div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
-																										<Text variant="label-sm" className="text-xs font-semibold text-slate-700">
+																										<Text
+																											variant="label-sm"
+																											className="text-xs font-semibold text-slate-700"
+																										>
 																											Cấu hình{" "}
 																											{
 																												specialConditionOptions.find(
@@ -6573,7 +6638,10 @@ const XmlGradingRulesPage = () => {
 																												)?.label
 																											}
 																										</Text>
-																										<Text variant="label-sm" className="mt-1 text-[11px] text-slate-500">
+																										<Text
+																											variant="label-sm"
+																											className="mt-1 text-[11px] text-slate-500"
+																										>
 																											Điền các trường theo biểu
 																											mẫu JSON. Các cấu hình mặc
 																											định phù hợp với Word
@@ -7243,7 +7311,10 @@ const XmlGradingRulesPage = () => {
 																											)}
 																									</select>
 																								</label>
-																								<Text variant="body-sm" className="text-xs text-slate-600 md:col-span-2">
+																								<Text
+																									variant="body-sm"
+																									className="text-xs text-slate-600 md:col-span-2"
+																								>
 																									Chỉ chấm kiểu màu. Nếu tài
 																									liệu có nhiều SmartArt, chọn
 																									đúng file colorsN.xml của đồ
@@ -7254,7 +7325,10 @@ const XmlGradingRulesPage = () => {
 																						{task.specialCondition?.type ===
 																							"wordMoveSmartArt" && (
 																							<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 p-4">
-																								<Text variant="body-sm" className="text-xs text-slate-600">
+																								<Text
+																									variant="body-sm"
+																									className="text-xs text-slate-600"
+																								>
 																									Nhập chính xác văn bản một
 																									node để nhận diện duy nhất
 																									SmartArt. Hỗ trợ In Line with
@@ -7335,7 +7409,10 @@ const XmlGradingRulesPage = () => {
 																						{task.specialCondition?.type ===
 																							"wordMoveText" && (
 																							<div className="mt-4 grid gap-3 rounded-2xl border border-violet-100 p-4">
-																								<Text variant="body-sm" className="text-xs text-slate-600">
+																								<Text
+																									variant="body-sm"
+																									className="text-xs text-slate-600"
+																								>
 																									Một đoạn hoàn chỉnh, xuất hiện
 																									duy nhất. Mốc phải duy nhất và
 																									liền kề, không bỏ qua đoạn
@@ -7476,7 +7553,10 @@ const XmlGradingRulesPage = () => {
 																						{task.specialCondition?.type ===
 																							"wordColumns" && (
 																							<div className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
-																								<Text variant="body-sm" className="mb-3 text-xs text-slate-600">
+																								<Text
+																									variant="body-sm"
+																									className="mb-3 text-xs text-slate-600"
+																								>
 																									Tính cả đoạn đầu và đoạn cuối.
 																									Mọi section trong phạm vi phải
 																									đúng số cột và không lấn sang
@@ -9554,7 +9634,10 @@ const XmlGradingRulesPage = () => {
 																										/>
 																									))}
 																								</div>
-																								<Text variant="label-sm" className="mt-2 text-xs text-slate-500">
+																								<Text
+																									variant="label-sm"
+																									className="mt-2 text-xs text-slate-500"
+																								>
 																									Nhập số mặc định là inch. Ví
 																									dụ: 1, 1 in, 1.5 in, 2.54 cm,
 																									3.81 cm.
@@ -9902,7 +9985,10 @@ const XmlGradingRulesPage = () => {
 																										Áp dụng cho tất cả section
 																									</label>
 																								</div>
-																								<Text variant="label-sm" className="mt-2 text-xs text-slate-500">
+																								<Text
+																									variant="label-sm"
+																									className="mt-2 text-xs text-slate-500"
+																								>
 																									Trong OpenXML, độ dày page
 																									border lưu theo 1/8 pt: 1.5 pt
 																									= 12.
@@ -10979,10 +11065,16 @@ const XmlGradingRulesPage = () => {
 																					<div className="mt-5">
 																						<div className="mb-3 flex items-center justify-between gap-2">
 																							<div>
-																								<Text variant="label-sm" className="text-xs font-bold uppercase tracking-wide text-slate-500">
+																								<Text
+																									variant="label-sm"
+																									className="text-xs font-bold uppercase tracking-wide text-slate-500"
+																								>
 																									Điều kiện
 																								</Text>
-																								<Text variant="label-sm" className="mt-1 text-xs text-slate-400">
+																								<Text
+																									variant="label-sm"
+																									className="mt-1 text-xs text-slate-400"
+																								>
 																									{task.conditions.length} điều
 																									kiện chấm điểm
 																								</Text>
@@ -11709,12 +11801,18 @@ const XmlGradingRulesPage = () => {
 
 																							{task.conditions.length === 0 && (
 																								<div className="rounded-xl border border-dashed border-slate-200 px-4 py-7 text-center">
-																									<Text variant="body-md" className="text-sm font-medium text-slate-500">
+																									<Text
+																										variant="body-md"
+																										className="text-sm font-medium text-slate-500"
+																									>
 																										{task.specialCondition
 																											? "Không có điều kiện XML — Task chỉ dùng điều kiện đặc biệt."
 																											: "Chưa có điều kiện"}
 																									</Text>
-																									<Text variant="body-sm" className="mt-1 text-xs text-slate-400">
+																									<Text
+																										variant="body-sm"
+																										className="mt-1 text-xs text-slate-400"
+																									>
 																										{task.specialCondition
 																											? "Hợp lệ nếu điểm Điều kiện đặc biệt bằng Điểm tối đa của Task."
 																											: "Thêm condition hoặc bật Điều kiện đặc biệt để ruleset có thể chấm Task này."}
@@ -11731,7 +11829,10 @@ const XmlGradingRulesPage = () => {
 
 																{project.tasks.length === 0 && (
 																	<div className="rounded-xl border border-dashed border-slate-200 px-4 py-8 text-center">
-																		<Text variant="body-md" className="text-sm font-medium text-slate-500">
+																		<Text
+																			variant="body-md"
+																			className="text-sm font-medium text-slate-500"
+																		>
 																			Project chưa có Task
 																		</Text>
 																		<button
@@ -11761,10 +11862,16 @@ const XmlGradingRulesPage = () => {
 												name="code"
 												className="mx-auto mb-3 text-4xl text-m3-on-surface-variant/40"
 											/>
-											<Text variant="body-md" className="font-semibold text-m3-on-surface">
+											<Text
+												variant="body-md"
+												className="font-semibold text-m3-on-surface"
+											>
 												Chưa có Project
 											</Text>
-											<Text variant="body-md" className="mt-1 text-sm text-m3-on-surface-variant">
+											<Text
+												variant="body-md"
+												className="mt-1 text-sm text-m3-on-surface-variant"
+											>
 												Tạo project đầu tiên để xây ruleset.
 											</Text>
 											<button
@@ -11794,7 +11901,10 @@ const XmlGradingRulesPage = () => {
 									<h3 className="text-sm font-bold text-m3-on-surface">
 										Validation
 									</h3>
-									<Text variant="body-sm" className="mt-1 text-xs text-m3-on-surface-variant">
+									<Text
+										variant="body-sm"
+										className="mt-1 text-xs text-m3-on-surface-variant"
+									>
 										Kiểm tra cấu trúc ruleset trước khi bật Active.
 									</Text>
 								</div>
@@ -11814,10 +11924,16 @@ const XmlGradingRulesPage = () => {
 										name="check_circle"
 										className="mx-auto mb-2 text-3xl text-m3-on-surface-variant/40"
 									/>
-									<Text variant="body-md" className="text-sm font-medium text-m3-on-surface">
+									<Text
+										variant="body-md"
+										className="text-sm font-medium text-m3-on-surface"
+									>
 										Chưa chạy validation
 									</Text>
-									<Text variant="body-sm" className="mt-1 text-xs text-m3-on-surface-variant">
+									<Text
+										variant="body-sm"
+										className="mt-1 text-xs text-m3-on-surface-variant"
+									>
 										Nên Validate trước khi bật Active.
 									</Text>
 								</div>
@@ -11855,7 +11971,10 @@ const XmlGradingRulesPage = () => {
 													? "Ruleset hợp lệ"
 													: "Ruleset có lỗi"}
 											</Text>
-											<Text variant="body-sm" className="text-xs text-m3-on-surface-variant">
+											<Text
+												variant="body-sm"
+												className="text-xs text-m3-on-surface-variant"
+											>
 												{validation.errors?.length || 0} lỗi ·{" "}
 												{validation.warnings?.length || 0} cảnh báo
 											</Text>
@@ -11923,7 +12042,10 @@ const XmlGradingRulesPage = () => {
 											Test chấm XML
 										</h3>
 									</div>
-									<Text variant="body-sm" className="mt-1 text-xs text-m3-on-surface-variant">
+									<Text
+										variant="body-sm"
+										className="mt-1 text-xs text-m3-on-surface-variant"
+									>
 										Chọn project và file Office để kiểm tra kết quả chấm trước
 										khi đưa ruleset vào sử dụng.
 									</Text>
@@ -12000,8 +12122,12 @@ const XmlGradingRulesPage = () => {
 									className="mt-0.5 shrink-0 text-base text-m3-error"
 								/>
 								<div className="min-w-0">
-									<Text variant="body-sm" className="font-bold">Không thể lưu ruleset</Text>
-									<Text variant="body-sm" className="mt-0.5">{saveError}</Text>
+									<Text variant="body-sm" className="font-bold">
+										Không thể lưu ruleset
+									</Text>
+									<Text variant="body-sm" className="mt-0.5">
+										{saveError}
+									</Text>
 								</div>
 								<button
 									type="button"

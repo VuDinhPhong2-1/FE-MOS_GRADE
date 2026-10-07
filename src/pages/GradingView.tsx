@@ -740,7 +740,7 @@ const GradingView = () => {
 
 					{/* Bug Notes List Scroll Area */}
 					<ScrollArea
-						type="scroll"
+						type="hover"
 						orientation="vertical"
 						className="max-h-115 pr-2"
 					>

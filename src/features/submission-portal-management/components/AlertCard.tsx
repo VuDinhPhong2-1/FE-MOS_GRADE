@@ -1,5 +1,6 @@
 import { Card, Chip, Icon, List, ListItem, Text } from "@bug-on/m3-expressive";
 import type React from "react";
+import { memo } from "react";
 import type { SubmissionAlert } from "../../../types/submission-portal.types";
 import { cn } from "../../../utils/utils";
 import {
@@ -12,7 +13,7 @@ interface AlertCardProps {
 	alert: SubmissionAlert;
 }
 
-export const AlertCard: React.FC<AlertCardProps> = ({ alert }) => {
+const AlertCardComponent: React.FC<AlertCardProps> = ({ alert }) => {
 	const colors = severityColors(alert.severity);
 
 	return (
@@ -20,7 +21,6 @@ export const AlertCard: React.FC<AlertCardProps> = ({ alert }) => {
 			variant="filled"
 			className={`${colors.containerClass} p-4 space-y-3 min-w-0 w-full overflow-hidden`}
 		>
-			{/* Header: Severity Badge & Timestamp */}
 			<div className="flex flex-wrap items-center justify-between gap-2 min-w-0">
 				<div className="flex flex-wrap items-center gap-1.5 min-w-0">
 					<Chip
@@ -36,14 +36,14 @@ export const AlertCard: React.FC<AlertCardProps> = ({ alert }) => {
 							variant="suggestion"
 							label={`Lặp lại ${alert.occurrences} lần`}
 							leadingIcon={
-								<Icon name="repeat" size={15} className="text-m3-error" />
+								<Icon name="repeat" size={15} className="text-m3-on-error" />
 							}
-							className="border border-m3-error/40 bg-m3-error/15 text-m3-error font-bold pointer-events-none select-none"
+							className="border border-m3-error/40 bg-m3-error/15 text-m3-on-error font-bold pointer-events-none select-none"
 						/>
 					) : null}
 				</div>
 				<span
-					className="text-xs opacity-80 shrink-0 ml-auto"
+					className="text-xs opacity-80 shrink-0"
 					title={
 						alert.latestAt
 							? `Phát hiện lần đầu: ${formatDateTime(alert.createdAt)}`
@@ -56,15 +56,12 @@ export const AlertCard: React.FC<AlertCardProps> = ({ alert }) => {
 				</span>
 			</div>
 
-			{/* Alert Message */}
 			<Text
 				variant="body-md"
-				className="font-semibold leading-relaxed wrap-break-word"
+				className="font-semibold leading-relaxed wrap-anywhere"
 			>
 				{alert.message}
 			</Text>
-
-			{/* Involved Students Sub-List */}
 			{alert.involvedStudents && alert.involvedStudents.length > 0 ? (
 				<div className="space-y-2 text-m3-on-surface min-w-0">
 					<Text
@@ -83,7 +80,7 @@ export const AlertCard: React.FC<AlertCardProps> = ({ alert }) => {
 							<ListItem
 								key={`${alert.id}-${student.studentId}-${student.submittedAt || "latest"}`}
 								value={`${alert.id}-${student.studentId}`}
-								className="bg-m3-surface-container-lowest min-w-0"
+								className="bg-m3-surface-container-lowest min-w-0 overflow-hidden"
 								supportingTextLines={2}
 								headline={
 									<span className="font-bold text-m3-on-surface block truncate">
@@ -91,7 +88,7 @@ export const AlertCard: React.FC<AlertCardProps> = ({ alert }) => {
 									</span>
 								}
 								supportingText={
-									<div className="space-y-0.5 min-w-0">
+									<div className="space-y-0.5 min-w-0 max-w-full overflow-hidden">
 										<span className="block text-xs text-m3-on-surface-variant truncate">
 											{student.className || "Chưa rõ lớp"}
 											{student.assignmentName
@@ -130,3 +127,5 @@ export const AlertCard: React.FC<AlertCardProps> = ({ alert }) => {
 		</Card>
 	);
 };
+
+export const AlertCard = memo(AlertCardComponent);

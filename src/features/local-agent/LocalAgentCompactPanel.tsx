@@ -1,4 +1,9 @@
-import { Icon, ProgressIndicator, ScrollArea, Text } from "@bug-on/m3-expressive";
+import {
+	Icon,
+	ProgressIndicator,
+	ScrollArea,
+	Text,
+} from "@bug-on/m3-expressive";
 import type { LocalAgentState } from "../../types/local-agent.types";
 
 type LocalAgentCompactPanelProps = {
@@ -112,7 +117,7 @@ export function LocalAgentCompactPanel({
 							Project instructions
 						</div>
 						<ScrollArea
-							type="scroll"
+							type="hover"
 							orientation="vertical"
 							className="max-h-48 whitespace-pre-wrap text-sm text-slate-700"
 							viewportClassName="px-3 py-2"
@@ -127,7 +132,7 @@ export function LocalAgentCompactPanel({
 							Help
 						</div>
 						<ScrollArea
-							type="scroll"
+							type="hover"
 							orientation="vertical"
 							className="max-h-40 whitespace-pre-wrap text-sm text-slate-700"
 							viewportClassName="px-3 py-2"
@@ -142,13 +147,15 @@ export function LocalAgentCompactPanel({
 							Task list
 						</div>
 						<ScrollArea
-							type="scroll"
+							type="hover"
 							orientation="vertical"
 							className="max-h-56"
 							viewportClassName="px-3 py-2"
 						>
 							{taskItems.length === 0 ? (
-								<Text variant="body-md" className="text-sm text-slate-500">Chưa có task snapshot.</Text>
+								<Text variant="body-md" className="text-sm text-slate-500">
+									Chưa có task snapshot.
+								</Text>
 							) : (
 								<ul className="space-y-2 text-sm">
 									{taskItems.map((task) => (

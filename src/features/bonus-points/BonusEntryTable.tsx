@@ -125,7 +125,7 @@ export const BonusEntryTable: React.FC<BonusEntryTableProps> = ({
 
 			{/* Table */}
 			<div className="rounded-m3-xl border border-m3-outline-variant/40 bg-m3-surface shadow-sm overflow-hidden">
-				<ScrollArea orientation="both" className="w-full">
+				<ScrollArea type="hover" orientation="both" className="w-full">
 					<table className="min-w-225 w-full text-left border-collapse text-sm">
 						<thead>
 							<tr className="bg-m3-surface-container border-b border-m3-outline-variant/40 text-xs font-semibold text-m3-on-surface-variant uppercase tracking-wider">
@@ -169,11 +169,17 @@ export const BonusEntryTable: React.FC<BonusEntryTableProps> = ({
 													{initial}
 												</div>
 												<div>
-													<Text variant="body-md" className="font-semibold text-m3-on-surface">
+													<Text
+														variant="body-md"
+														className="font-semibold text-m3-on-surface"
+													>
 														{fullName}
 													</Text>
 													{student.notes && (
-														<Text variant="body-sm" className="text-xs text-m3-on-surface-variant truncate max-w-xs">
+														<Text
+															variant="body-sm"
+															className="text-xs text-m3-on-surface-variant truncate max-w-xs"
+														>
 															{student.notes}
 														</Text>
 													)}

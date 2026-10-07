@@ -1,19 +1,14 @@
-import {
-	Button,
-	Card,
-	Icon,
-	LoadingIndicator,
-	ScrollArea,
-	Text,
-} from "@bug-on/m3-expressive";
+import { Chip, Icon, IconButton, ScrollArea } from "@bug-on/m3-expressive";
+import { SmallAppBar } from "@bug-on/m3-expressive/navigation";
 import type React from "react";
+import { memo, useRef } from "react";
 import type {
 	SubmissionAlert,
 	SubmissionLog,
 	SubmissionPortal,
 } from "../../../types/submission-portal.types";
-import { AlertCard } from "./AlertCard";
-import { SubmissionLogsTable } from "./SubmissionLogsTable";
+import { cn } from "../../../utils/utils";
+import { VirtualDetailList } from "./VirtualDetailList";
 
 interface PortalDetailsSectionProps {
 	selectedPortal: SubmissionPortal;
@@ -24,7 +19,7 @@ interface PortalDetailsSectionProps {
 	onExportLogsCsv: () => void;
 }
 
-export const PortalDetailsSection: React.FC<PortalDetailsSectionProps> = ({
+const PortalDetailsSectionComponent: React.FC<PortalDetailsSectionProps> = ({
 	selectedPortal,
 	alerts,
 	logs,
@@ -32,87 +27,63 @@ export const PortalDetailsSection: React.FC<PortalDetailsSectionProps> = ({
 	onClose,
 	onExportLogsCsv,
 }) => {
+	const scrollViewportRef = useRef<HTMLDivElement>(null);
+
 	return (
-		<section className="grid gap-4 lg:grid-cols-[1fr_1.35fr]">
-			{/* Left Column: Suspicious Alerts */}
-			<Card
-				variant="filled"
-				className="bg-m3-surface-container flex flex-col p-5 space-y-4 min-w-0"
-			>
-				<div className="flex items-start justify-between gap-3">
-					<div className="min-w-0">
-						<div className="flex items-center gap-2">
-							<Icon name="security" className="text-m3-primary" size={20} />
-							<h3 className="text-lg font-bold text-m3-on-surface">
-								Cảnh báo nghi vấn
-							</h3>
-						</div>
-						<Text
-							variant="body-sm"
-							className="mt-0.5 text-xs text-m3-on-surface-variant truncate max-w-sm"
-						>
-							Cổng: {selectedPortal.title}
-						</Text>
-					</div>
-
-					<Button
-						size="sm"
-						icon={<Icon name="close" size={18} />}
+		<div className="flex flex-col h-full bg-m3-surface-container-low text-m3-on-surface min-w-0 overflow-hidden relative">
+			<SmallAppBar
+				navigationIcon={
+					<IconButton
+						colorStyle="tonal"
+						aria-label="Đóng chi tiết"
 						onClick={onClose}
-						className="shrink-0"
+						size="sm"
 					>
-						Đóng
-					</Button>
-				</div>
-
-				{/* Loading indicator */}
-				{loadingDetails && (
-					<div className="flex flex-col items-center justify-center p-6 space-y-2">
-						<LoadingIndicator
-							aria-label="Đang tải cảnh báo và lịch sử nộp bài"
-							size={20}
-						/>
-						<span className="text-xs text-m3-on-surface-variant">
-							Đang tải chi tiết lượt nộp và cảnh báo...
+						<Icon name="close" size={20} />
+					</IconButton>
+				}
+				enableFadingBlur
+				blurIntensity={4}
+				fadingBlurColor="var(--md-sys-color-surface-container-low)"
+				scrollElement={scrollViewportRef}
+				title={
+					<div className="flex items-center ml-1 gap-2 min-w-0">
+						<span className="truncate text-base font-bold text-m3-on-surface">
+							{selectedPortal.title}
 						</span>
+						<Chip
+							variant="suggestion"
+							label={selectedPortal.isActive ? "Đang mở" : "Đã đóng"}
+							className={cn(
+								"pointer-events-none h-6 text-[11px] px-2 shrink-0",
+								selectedPortal.isActive
+									? "bg-m3-primary/10 text-m3-primary border-none"
+									: "bg-m3-surface-variant text-m3-on-surface-variant border-none",
+							)}
+						/>
 					</div>
-				)}
+				}
+				className="shrink-0 top-0 z-10 w-full pl-1 absolute"
+			/>
 
-				{/* Alerts List */}
-				<ScrollArea
-					type="scroll"
-					orientation="vertical"
-					className="max-h-150 overflow-hidden rounded-m3-md"
-					scrollbarSize={8}
-					viewportClassName="[&>div]:!block [&>div]:!w-full [&>div]:!min-w-0"
-				>
-					<div className="flex flex-col gap-3 min-w-0 w-full">
-						{alerts.map((alert) => (
-							<AlertCard key={alert.id} alert={alert} />
-						))}
-
-						{alerts.length === 0 && !loadingDetails && (
-							<Card
-								variant="filled"
-								className="bg-m3-primary-container text-m3-on-primary-container flex items-center gap-3 p-4"
-							>
-								<Icon name="verified" size={22} />
-								<span className="text-sm font-semibold">
-									Không có cảnh báo nghi vấn nào trên cổng này.
-								</span>
-							</Card>
-						)}
-					</div>
-				</ScrollArea>
-			</Card>
-
-			{/* Right Column: Submission Logs Table */}
-			<Card
-				variant="filled"
-				className="bg-m3-surface-container p-5 min-w-0 overflow-hidden"
+			{/* Scrollable Content Body - Fix Radix display: table horizontal expansion */}
+			<ScrollArea
+				viewportRef={scrollViewportRef}
+				type="hover"
+				orientation="vertical"
+				className="flex-1 min-h-0 w-full overflow-hidden"
+				viewportClassName="p-5 pt-16 [&>div]:!block [&>div]:!w-full [&>div]:!min-w-0 [&>div]:!max-w-full"
 			>
-				<SubmissionLogsTable logs={logs} onExportCsv={onExportLogsCsv} />
-			</Card>
-		</section>
+				<VirtualDetailList
+					alerts={alerts}
+					logs={logs}
+					loadingDetails={loadingDetails}
+					onExportLogsCsv={onExportLogsCsv}
+					scrollViewportRef={scrollViewportRef}
+				/>
+			</ScrollArea>
+		</div>
 	);
 };
+
+export const PortalDetailsSection = memo(PortalDetailsSectionComponent);

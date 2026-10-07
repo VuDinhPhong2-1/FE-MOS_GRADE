@@ -56,7 +56,10 @@ export const DeleteClassDialog: React.FC<DeleteClassDialogProps> = ({
 							</div>
 						</div>
 
-						<Text variant="body-md" className="text-sm text-m3-on-surface-variant leading-relaxed">
+						<Text
+							variant="body-md"
+							className="text-sm text-m3-on-surface-variant leading-relaxed"
+						>
 							Bạn có chắc chắn muốn xóa vĩnh viễn lớp{" "}
 							<strong className="font-semibold text-m3-on-surface">
 								"{classToDelete?.name}"

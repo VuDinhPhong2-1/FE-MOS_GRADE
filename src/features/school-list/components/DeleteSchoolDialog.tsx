@@ -47,7 +47,10 @@ export const DeleteSchoolDialog = ({
 							</div>
 						</div>
 
-						<Text variant="body-md" className="text-sm text-m3-on-surface-variant leading-relaxed">
+						<Text
+							variant="body-md"
+							className="text-sm text-m3-on-surface-variant leading-relaxed"
+						>
 							Bạn có chắc chắn muốn xóa trường{" "}
 							<strong className="font-semibold text-m3-on-surface">
 								"{schoolToDelete?.name}"

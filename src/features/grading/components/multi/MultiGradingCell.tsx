@@ -178,12 +178,18 @@ const MultiGradingCellComponent: React.FC<MultiGradingCellProps> = ({
 							</label>
 						</Button>
 
-						<Text variant="label-sm" className="text-[10px] text-m3-on-surface-variant/70">
+						<Text
+							variant="label-sm"
+							className="text-[10px] text-m3-on-surface-variant/70"
+						>
 							Kéo thả file vào đây
 						</Text>
 
 						{autoState?.studentFile && (
-							<Text variant="body-sm" className="text-[11px] text-m3-on-surface truncate max-w-37.5 mx-auto">
+							<Text
+								variant="body-sm"
+								className="text-[11px] text-m3-on-surface truncate max-w-37.5 mx-auto"
+							>
 								{autoState.studentFile.name}
 							</Text>
 						)}
@@ -203,13 +209,19 @@ const MultiGradingCellComponent: React.FC<MultiGradingCellProps> = ({
 						)}
 
 						{autoState?.gradingResult && (
-							<Text variant="body-sm" className="text-[11px] text-m3-tertiary font-medium">
+							<Text
+								variant="body-sm"
+								className="text-[11px] text-m3-tertiary font-medium"
+							>
 								Đã chấm tự động
 							</Text>
 						)}
 
 						{autoState?.error && (
-							<Text variant="body-sm" className="text-[11px] text-m3-error font-medium">
+							<Text
+								variant="body-sm"
+								className="text-[11px] text-m3-error font-medium"
+							>
 								Lỗi: {autoState.error}
 							</Text>
 						)}

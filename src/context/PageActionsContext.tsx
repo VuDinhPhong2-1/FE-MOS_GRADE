@@ -26,6 +26,7 @@ export interface PageHeaderConfig {
 	actions?: PageAction[];
 	searchSlot?: ReactNode;
 	disablePageScroll?: boolean;
+	transparentContainer?: boolean;
 }
 
 interface PageActionsContextType {
@@ -78,6 +79,7 @@ export const usePageHeader = (
 			actions: pageConfig.actions,
 			searchSlot: pageConfig.searchSlot,
 			disablePageScroll: pageConfig.disablePageScroll,
+			transparentContainer: pageConfig.transparentContainer,
 		});
 		// biome-ignore lint/correctness/useExhaustiveDependencies: Dynamic dependencies forwarded by caller
 	}, deps);

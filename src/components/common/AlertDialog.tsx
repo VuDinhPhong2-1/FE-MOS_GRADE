@@ -174,7 +174,7 @@ export const AlertDialogProvider: React.FC<{ children: React.ReactNode }> = ({
 							</div>
 
 							<ScrollArea
-								type="scroll"
+								type="hover"
 								orientation="vertical"
 								className="max-h-[60vh] pr-1"
 							>

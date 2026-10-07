@@ -9,6 +9,9 @@ import type { Class } from "../../../types/class.types";
 import type { SubmissionPortal } from "../../../types/submission-portal.types";
 import type { ScoringPolicy } from "../utils/portalFormatters";
 
+const DEFAULT_PORTAL_TITLE = "Link nộp bài thực hành";
+const DEFAULT_SCORING_POLICY: ScoringPolicy = "BestScore";
+
 export const usePortalManagement = () => {
 	const { user, getAccessToken } = useAuth();
 	const { showSnackbar } = useSnackbar();
@@ -17,26 +20,37 @@ export const usePortalManagement = () => {
 	const [portals, setPortals] = useState<SubmissionPortal[]>([]);
 	const [teacherClasses, setTeacherClasses] = useState<Class[]>([]);
 	const [loading, setLoading] = useState(false);
-	const [isRefreshing, setIsRefreshing] = useState(false);
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
 	const [editingPortal, setEditingPortal] = useState<SubmissionPortal | null>(
 		null,
 	);
 
-	// Filters & Search
 	const [scopeFilter, setScopeFilter] = useState<"all" | "teacher">("all");
 	const [selectedClassId, setSelectedClassId] = useState("");
 	const [searchQuery, setSearchQuery] = useState("");
 	const [isSearchActive, setIsSearchActive] = useState(false);
 
-	// Form fields
-	const [title, setTitle] = useState("Link nộp bài thực hành");
+	const [title, setTitle] = useState(DEFAULT_PORTAL_TITLE);
 	const [description, setDescription] = useState("");
 	const [maxSubmissions, setMaxSubmissions] = useState(0);
-	const [scoringPolicy, setScoringPolicy] =
-		useState<ScoringPolicy>("BestScore");
+	const [scoringPolicy, setScoringPolicy] = useState<ScoringPolicy>(
+		DEFAULT_SCORING_POLICY,
+	);
 	const [showLeaderboard, setShowLeaderboard] = useState(true);
 	const [showDetailedFeedback, setShowDetailedFeedback] = useState(true);
+
+	const notify = useCallback(
+		(message: string) => {
+			void showSnackbar({ message, withDismissAction: true });
+		},
+		[showSnackbar],
+	);
+
+	const notifyError = useCallback(
+		(error: unknown, fallback: string) =>
+			notify(error instanceof Error ? error.message : fallback),
+		[notify],
+	);
 
 	const visiblePortals = useMemo(
 		() => portals.filter((portal) => portal.isActive),
@@ -102,7 +116,6 @@ export const usePortalManagement = () => {
 
 	const handleScopeChange = useCallback((newScope: "all" | "teacher") => {
 		setScopeFilter(newScope);
-		// Reset class filter if not available in new scope
 		setSelectedClassId("");
 	}, []);
 
@@ -171,16 +184,12 @@ export const usePortalManagement = () => {
 			const classList = await classService.getAllClasses(getAccessToken, true);
 			setTeacherClasses(classList.filter((cls) => cls.isActive !== false));
 		} catch {
-			// Non-critical fallback
+			// Non-critical: teacher scope filter degrades gracefully
 		}
 	}, [getAccessToken]);
 
 	const fetchPortals = useCallback(async () => {
-		if (!hasLoadedOnceRef.current) {
-			setLoading(true);
-		} else {
-			setIsRefreshing(true);
-		}
+		if (!hasLoadedOnceRef.current) setLoading(true);
 
 		try {
 			const [portalList] = await Promise.all([
@@ -190,24 +199,17 @@ export const usePortalManagement = () => {
 			setPortals(portalList);
 			hasLoadedOnceRef.current = true;
 		} catch (error) {
-			void showSnackbar({
-				message:
-					error instanceof Error
-						? error.message
-						: "Không thể tải danh sách cổng nộp bài",
-				withDismissAction: true,
-			});
+			notifyError(error, "Không thể tải danh sách cổng nộp bài");
 		} finally {
 			setLoading(false);
-			setIsRefreshing(false);
 		}
-	}, [getAccessToken, fetchTeacherClasses, showSnackbar]);
+	}, [getAccessToken, fetchTeacherClasses, notifyError]);
 
 	const resetForm = useCallback(() => {
-		setTitle("Link nộp bài thực hành");
+		setTitle(DEFAULT_PORTAL_TITLE);
 		setDescription("");
 		setMaxSubmissions(0);
-		setScoringPolicy("BestScore");
+		setScoringPolicy(DEFAULT_SCORING_POLICY);
 		setShowLeaderboard(true);
 		setShowDetailedFeedback(true);
 	}, []);
@@ -239,11 +241,9 @@ export const usePortalManagement = () => {
 				classIds.length === 0 ||
 				assignmentIds.length === 0
 			) {
-				void showSnackbar({
-					message:
-						"Vui lòng nhập tiêu đề, chọn trường, ít nhất một lớp và một bài tập.",
-					withDismissAction: true,
-				});
+				notify(
+					"Vui lòng nhập tiêu đề, chọn trường, ít nhất một lớp và một bài tập.",
+				);
 				return false;
 			}
 
@@ -263,18 +263,11 @@ export const usePortalManagement = () => {
 					getAccessToken,
 				);
 				closeCreate();
-				void showSnackbar({
-					message: "Đã tạo link nộp bài thành công.",
-					withDismissAction: true,
-				});
+				notify("Đã tạo link nộp bài thành công.");
 				await fetchPortals();
 				return true;
 			} catch (error) {
-				void showSnackbar({
-					message:
-						error instanceof Error ? error.message : "Không thể tạo link",
-					withDismissAction: true,
-				});
+				notifyError(error, "Không thể tạo link");
 				return false;
 			} finally {
 				setLoading(false);
@@ -289,7 +282,8 @@ export const usePortalManagement = () => {
 			showDetailedFeedback,
 			getAccessToken,
 			closeCreate,
-			showSnackbar,
+			notify,
+			notifyError,
 			fetchPortals,
 		],
 	);
@@ -298,10 +292,7 @@ export const usePortalManagement = () => {
 		async (isActive: boolean) => {
 			if (!editingPortal) return false;
 			if (!title.trim()) {
-				void showSnackbar({
-					message: "Vui lòng nhập tiêu đề link nộp bài.",
-					withDismissAction: true,
-				});
+				notify("Vui lòng nhập tiêu đề link nộp bài.");
 				return false;
 			}
 
@@ -325,18 +316,11 @@ export const usePortalManagement = () => {
 					getAccessToken,
 				);
 				closeEdit();
-				void showSnackbar({
-					message: "Đã cập nhật link nộp bài.",
-					withDismissAction: true,
-				});
+				notify("Đã cập nhật link nộp bài.");
 				await fetchPortals();
 				return true;
 			} catch (error) {
-				void showSnackbar({
-					message:
-						error instanceof Error ? error.message : "Không thể cập nhật link",
-					withDismissAction: true,
-				});
+				notifyError(error, "Không thể cập nhật link");
 				return false;
 			} finally {
 				setLoading(false);
@@ -352,7 +336,8 @@ export const usePortalManagement = () => {
 			showDetailedFeedback,
 			getAccessToken,
 			closeEdit,
-			showSnackbar,
+			notify,
+			notifyError,
 			fetchPortals,
 		],
 	);
@@ -376,48 +361,41 @@ export const usePortalManagement = () => {
 			setLoading(true);
 			try {
 				await submissionPortalService.delete(portal.id, getAccessToken);
-				void showSnackbar({
-					message: "Đã đóng link nộp bài.",
-					withDismissAction: true,
-				});
+				notify("Đã đóng link nộp bài.");
 				await fetchPortals();
 				if (editingPortal?.id === portal.id) closeEdit();
 				onDeleted?.(portal.id);
 			} catch (error) {
-				void showSnackbar({
-					message:
-						error instanceof Error ? error.message : "Không thể đóng link",
-					withDismissAction: true,
-				});
+				notifyError(error, "Không thể đóng link");
 			} finally {
 				setLoading(false);
 			}
 		},
-		[getAccessToken, showSnackbar, fetchPortals, editingPortal?.id, closeEdit],
+		[
+			getAccessToken,
+			notify,
+			notifyError,
+			fetchPortals,
+			editingPortal?.id,
+			closeEdit,
+		],
 	);
 
 	const copyText = useCallback(
 		async (value: string) => {
 			try {
 				await navigator.clipboard.writeText(value);
-				void showSnackbar({
-					message: "Đã sao chép link vào bộ nhớ tạm.",
-					withDismissAction: true,
-				});
+				notify("Đã sao chép link vào bộ nhớ tạm.");
 			} catch {
-				void showSnackbar({
-					message:
-						"Trình duyệt không cho phép sao chép tự động. Hãy chọn link và sao chép thủ công.",
-					withDismissAction: true,
-				});
+				notify(
+					"Trình duyệt không cho phép sao chép tự động. Hãy chọn link và sao chép thủ công.",
+				);
 			}
 		},
-		[showSnackbar],
+		[notify],
 	);
 
 	return {
-		portals,
-		setPortals,
 		visiblePortals,
 		filteredPortals,
 		scopeFilter,
@@ -436,11 +414,8 @@ export const usePortalManagement = () => {
 			scopeFilter !== "all" ||
 			Boolean(selectedClassId) ||
 			Boolean(searchQuery.trim()),
-		userRole: user?.role,
 		stats,
 		loading,
-		setLoading,
-		isRefreshing,
 		isCreateOpen,
 		setIsCreateOpen,
 		editingPortal,

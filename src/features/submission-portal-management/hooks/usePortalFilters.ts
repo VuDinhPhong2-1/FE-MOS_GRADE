@@ -29,23 +29,27 @@ export const usePortalFilters = () => {
 	const [loadingClasses, setLoadingClasses] = useState(false);
 	const [loadingAssignments, setLoadingAssignments] = useState(false);
 
+	const notifyError = useCallback(
+		(error: unknown, fallback: string) => {
+			void showSnackbar({
+				message: error instanceof Error ? error.message : fallback,
+				withDismissAction: true,
+			});
+		},
+		[showSnackbar],
+	);
+
 	const loadSchools = useCallback(async () => {
 		setLoadingSchools(true);
 		try {
 			const schoolList = await schoolService.getSchools(getAccessToken);
 			setSchools(schoolList.filter((school) => school.isActive !== false));
 		} catch (error) {
-			void showSnackbar({
-				message:
-					error instanceof Error
-						? error.message
-						: "Không thể tải danh sách trường",
-				withDismissAction: true,
-			});
+			notifyError(error, "Không thể tải danh sách trường");
 		} finally {
 			setLoadingSchools(false);
 		}
-	}, [getAccessToken, showSnackbar]);
+	}, [getAccessToken, notifyError]);
 
 	const loadClassesBySelectedSchool = useCallback(async () => {
 		if (!selectedSchoolId) {
@@ -65,17 +69,11 @@ export const usePortalFilters = () => {
 			);
 			setClasses(classList.filter((cls) => cls.isActive !== false));
 		} catch (error) {
-			void showSnackbar({
-				message:
-					error instanceof Error
-						? error.message
-						: "Không thể tải danh sách lớp",
-				withDismissAction: true,
-			});
+			notifyError(error, "Không thể tải danh sách lớp");
 		} finally {
 			setLoadingClasses(false);
 		}
-	}, [getAccessToken, selectedSchoolId, showSnackbar]);
+	}, [getAccessToken, selectedSchoolId, notifyError]);
 
 	const loadAssignments = useCallback(async () => {
 		if (selectedClassIds.length === 0) {
@@ -100,11 +98,7 @@ export const usePortalFilters = () => {
 					assignmentCacheRef.current.set(classId, results[index]);
 				});
 			} catch (error) {
-				void showSnackbar({
-					message:
-						error instanceof Error ? error.message : "Không thể tải bài tập",
-					withDismissAction: true,
-				});
+				notifyError(error, "Không thể tải bài tập");
 			} finally {
 				setLoadingAssignments(false);
 			}
@@ -116,7 +110,7 @@ export const usePortalFilters = () => {
 		setAssignments(
 			allAssignments.filter((assignment) => hasAutoGradingEndpoint(assignment)),
 		);
-	}, [getAccessToken, selectedClassIds, showSnackbar]);
+	}, [getAccessToken, selectedClassIds, notifyError]);
 
 	useEffect(() => {
 		void loadClassesBySelectedSchool();
@@ -203,7 +197,6 @@ export const usePortalFilters = () => {
 	return {
 		schools,
 		classes,
-		assignments,
 		filteredAssignments,
 		selectedSchoolId,
 		selectedClassIds,
@@ -223,8 +216,5 @@ export const usePortalFilters = () => {
 		selectAllAssignments,
 		clearAssignments,
 		resetFilters,
-		setSelectedSchoolId,
-		setSelectedClassIds,
-		setSelectedAssignmentIds,
 	};
 };
