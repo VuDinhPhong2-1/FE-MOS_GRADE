@@ -449,6 +449,27 @@ export const specialConditionOptions: SpecialConditionOption[] = [
 			"Kiểm tra màu tab (tab color) của trang tính theo mã màu HEX (ví dụ: Blue #0070C0).",
 		subjects: ["excel"],
 	},
+	{
+		value: "excelTableTotalRow",
+		label: "Hàng tổng bảng tính (Total Row)",
+		description:
+			"Kiểm tra bảng Excel đã bật hàng tổng (Total Row) và tùy chọn hàm/tên cột tổng.",
+		subjects: ["excel"],
+	},
+	{
+		value: "excelTableCreate",
+		label: "Tạo bảng tính (Create Table)",
+		description:
+			"Kiểm tra vùng dữ liệu đã được chuyển thành bảng Excel đúng phạm vi, header và kiểu bảng.",
+		subjects: ["excel"],
+	},
+	{
+		value: "excelChartQuickLayout",
+		label: "Bố cục nhanh biểu đồ (Quick Layout)",
+		description:
+			"Kiểm tra biểu đồ Excel đã áp dụng Quick Layout yêu cầu, ví dụ Layout 2 có nhãn dữ liệu.",
+		subjects: ["excel"],
+	},
 	// PowerPoint Special Conditions
 	{
 		value: "pptPictureCropShape",

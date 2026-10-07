@@ -95,6 +95,9 @@ export type SpecialConditionType =
 	| "excelTableColumnFormula"
 	| "excelChartType"
 	| "excelWorksheetTabColor"
+	| "excelTableTotalRow"
+	| "excelTableCreate"
+	| "excelChartQuickLayout"
 	// PowerPoint (.pptx)
 	| "pptPictureCropShape"
 	| "pptShapeSize"
@@ -510,6 +513,10 @@ export interface ExcelChartTypeConfig {
 	expectedChartType?: string;
 	grouping?: string;
 	barDir?: string;
+	requiredFormulaFragments?: string[];
+	placedBelowRow?: number;
+	minRow?: number;
+	maxRow?: number;
 }
 
 export interface ExcelWorksheetTabColorConfig {
@@ -517,6 +524,32 @@ export interface ExcelWorksheetTabColorConfig {
 	sourceFile?: string;
 	expectedColor?: string;
 	allowedColors?: string[];
+}
+
+export interface ExcelTableTotalRowConfig {
+	worksheetName?: string;
+	tableName?: string;
+	tableSourceFile?: string;
+	requireTotalRow?: boolean;
+	columnName?: string;
+	totalsRowFunction?: string;
+	totalsRowLabel?: string;
+}
+
+export interface ExcelTableCreateConfig {
+	worksheetName?: string;
+	tableSourceFile?: string;
+	expectedRange?: string;
+	hasHeaderRow?: boolean;
+	expectedTableStyle?: string;
+}
+
+export interface ExcelChartQuickLayoutConfig {
+	worksheetName?: string;
+	chartSourceFile?: string;
+	layoutNumber?: number;
+	requireDataLabels?: boolean;
+	dataLabelPosition?: string;
 }
 
 export interface ExcelTextReplacementConfig {
@@ -733,6 +766,9 @@ export interface SpecialCondition {
 	excelTableColumnFormulaConfig?: ExcelTableColumnFormulaConfig;
 	excelChartTypeConfig?: ExcelChartTypeConfig;
 	excelWorksheetTabColorConfig?: ExcelWorksheetTabColorConfig;
+	excelTableTotalRowConfig?: ExcelTableTotalRowConfig;
+	excelTableCreateConfig?: ExcelTableCreateConfig;
+	excelChartQuickLayoutConfig?: ExcelChartQuickLayoutConfig;
 	// PowerPoint
 	pptPictureCropShapeConfig?: PptPictureCropShapeConfig;
 	pptShapeSizeConfig?: PptShapeSizeConfig;

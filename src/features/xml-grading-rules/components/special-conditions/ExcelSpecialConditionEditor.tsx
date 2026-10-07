@@ -1575,5 +1575,253 @@ export const ExcelSpecialConditionEditor: React.FC<
 		);
 	}
 
+	if (specialCondition.type === "excelTableTotalRow") {
+		return (
+			<div className="mt-4 grid gap-3 rounded-2xl bg-m3-surface-container p-4 md:grid-cols-2">
+				<label className="text-xs font-semibold text-m3-on-surface-variant">
+					Tên worksheet
+					<input
+						value={specialCondition.excelTableTotalRowConfig?.worksheetName ?? ""}
+						onChange={(e) =>
+							updateConfig("excelTableTotalRowConfig", {
+								worksheetName: e.target.value,
+							})
+						}
+						placeholder="Qtr 1"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-m3-on-surface-variant">
+					Tên bảng (tùy chọn)
+					<input
+						value={specialCondition.excelTableTotalRowConfig?.tableName ?? ""}
+						onChange={(e) =>
+							updateConfig("excelTableTotalRowConfig", {
+								tableName: e.target.value,
+							})
+						}
+						placeholder="Table1"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-m3-on-surface-variant">
+					File bảng nguồn
+					<input
+						value={specialCondition.excelTableTotalRowConfig?.tableSourceFile ?? ""}
+						onChange={(e) =>
+							updateConfig("excelTableTotalRowConfig", {
+								tableSourceFile: e.target.value,
+							})
+						}
+						placeholder="xl/tables/table1.xml"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-m3-on-surface-variant">
+					Tên cột kiểm tra
+					<input
+						value={specialCondition.excelTableTotalRowConfig?.columnName ?? ""}
+						onChange={(e) =>
+							updateConfig("excelTableTotalRowConfig", {
+								columnName: e.target.value,
+							})
+						}
+						placeholder="Entries"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-m3-on-surface-variant">
+					Hàm tính hàng tổng
+					<input
+						value={
+							specialCondition.excelTableTotalRowConfig?.totalsRowFunction ?? ""
+						}
+						onChange={(e) =>
+							updateConfig("excelTableTotalRowConfig", {
+								totalsRowFunction: e.target.value,
+							})
+						}
+						placeholder="sum, count, average..."
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-m3-on-surface-variant">
+					Nhãn hàng tổng
+					<input
+						value={specialCondition.excelTableTotalRowConfig?.totalsRowLabel ?? ""}
+						onChange={(e) =>
+							updateConfig("excelTableTotalRowConfig", {
+								totalsRowLabel: e.target.value,
+							})
+						}
+						placeholder="Total"
+						className={inputClass}
+					/>
+				</label>
+				<label className="flex items-center gap-2 text-xs font-medium text-m3-on-surface-variant md:col-span-2">
+					<input
+						type="checkbox"
+						checked={specialCondition.excelTableTotalRowConfig?.requireTotalRow !== false}
+						onChange={(e) =>
+							updateConfig("excelTableTotalRowConfig", {
+								requireTotalRow: e.target.checked,
+							})
+						}
+					/>
+					Bắt buộc bật hàng tổng
+				</label>
+			</div>
+		);
+	}
+
+	if (specialCondition.type === "excelTableCreate") {
+		return (
+			<div className="mt-4 grid gap-3 rounded-2xl bg-m3-surface-container p-4 md:grid-cols-2">
+				<label className="text-xs font-semibold text-m3-on-surface-variant">
+					Tên worksheet
+					<input
+						value={specialCondition.excelTableCreateConfig?.worksheetName ?? ""}
+						onChange={(e) =>
+							updateConfig("excelTableCreateConfig", {
+								worksheetName: e.target.value,
+							})
+						}
+						placeholder="Qtr 1"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-m3-on-surface-variant">
+					File bảng nguồn
+					<input
+						value={specialCondition.excelTableCreateConfig?.tableSourceFile ?? ""}
+						onChange={(e) =>
+							updateConfig("excelTableCreateConfig", {
+								tableSourceFile: e.target.value,
+							})
+						}
+						placeholder="xl/tables/table1.xml"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-m3-on-surface-variant">
+					Vùng bảng mong đợi
+					<input
+						value={specialCondition.excelTableCreateConfig?.expectedRange ?? ""}
+						onChange={(e) =>
+							updateConfig("excelTableCreateConfig", {
+								expectedRange: e.target.value,
+							})
+						}
+						placeholder="A2:E10"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-m3-on-surface-variant">
+					Kiểu bảng mong đợi
+					<input
+						value={specialCondition.excelTableCreateConfig?.expectedTableStyle ?? ""}
+						onChange={(e) =>
+							updateConfig("excelTableCreateConfig", {
+								expectedTableStyle: e.target.value,
+							})
+						}
+						placeholder="TableStyleLight14 hoặc Red, Table Style Light 14"
+						className={inputClass}
+					/>
+				</label>
+				<label className="flex items-center gap-2 text-xs font-medium text-m3-on-surface-variant md:col-span-2">
+					<input
+						type="checkbox"
+						checked={specialCondition.excelTableCreateConfig?.hasHeaderRow !== false}
+						onChange={(e) =>
+							updateConfig("excelTableCreateConfig", {
+								hasHeaderRow: e.target.checked,
+							})
+						}
+					/>
+					Bảng có hàng tiêu đề
+				</label>
+			</div>
+		);
+	}
+
+	if (specialCondition.type === "excelChartQuickLayout") {
+		return (
+			<div className="mt-4 grid gap-3 rounded-2xl bg-m3-surface-container p-4 md:grid-cols-2">
+				<label className="text-xs font-semibold text-m3-on-surface-variant">
+					Tên worksheet
+					<input
+						value={specialCondition.excelChartQuickLayoutConfig?.worksheetName ?? ""}
+						onChange={(e) =>
+							updateConfig("excelChartQuickLayoutConfig", {
+								worksheetName: e.target.value,
+							})
+						}
+						placeholder="Qtr 1"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-m3-on-surface-variant">
+					File biểu đồ nguồn
+					<input
+						value={
+							specialCondition.excelChartQuickLayoutConfig?.chartSourceFile ?? ""
+						}
+						onChange={(e) =>
+							updateConfig("excelChartQuickLayoutConfig", {
+								chartSourceFile: e.target.value,
+							})
+						}
+						placeholder="xl/charts/chart1.xml"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-m3-on-surface-variant">
+					Số Quick Layout
+					<input
+						type="number"
+						min={1}
+						value={specialCondition.excelChartQuickLayoutConfig?.layoutNumber ?? 2}
+						onChange={(e) =>
+							updateConfig("excelChartQuickLayoutConfig", {
+								layoutNumber: Number(e.target.value),
+							})
+						}
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-m3-on-surface-variant">
+					Vị trí nhãn dữ liệu
+					<input
+						value={
+							specialCondition.excelChartQuickLayoutConfig?.dataLabelPosition ?? ""
+						}
+						onChange={(e) =>
+							updateConfig("excelChartQuickLayoutConfig", {
+								dataLabelPosition: e.target.value,
+							})
+						}
+						placeholder="bestFit, outEnd..."
+						className={inputClass}
+					/>
+				</label>
+				<label className="flex items-center gap-2 text-xs font-medium text-m3-on-surface-variant md:col-span-2">
+					<input
+						type="checkbox"
+						checked={
+							specialCondition.excelChartQuickLayoutConfig?.requireDataLabels !== false
+						}
+						onChange={(e) =>
+							updateConfig("excelChartQuickLayoutConfig", {
+								requireDataLabels: e.target.checked,
+							})
+						}
+					/>
+					Bắt buộc có nhãn dữ liệu
+				</label>
+			</div>
+		);
+	}
+
 	return null;
 };
