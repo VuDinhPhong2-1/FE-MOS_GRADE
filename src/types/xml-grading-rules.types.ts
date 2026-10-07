@@ -94,7 +94,37 @@ export type SpecialConditionType =
 	| "excelPrintArea"
 	| "excelTableColumnFormula"
 	| "excelChartType"
-	| "excelWorksheetTabColor";
+	| "excelWorksheetTabColor"
+	// PowerPoint (.pptx)
+	| "pptPictureCropShape"
+	| "pptShapeSize"
+	| "pptShapeGroup"
+	| "pptChartLegend"
+	| "pptSmartArt"
+	| "pptComment"
+	| "pptSlideTitles"
+	| "pptVideo"
+	| "pptTable"
+	| "pptSection"
+	| "pptPictureStyle"
+	| "pptShapeArrange"
+	| "pptSummaryZoom"
+	| "pptExportedFile"
+	| "pptMasterPicture"
+	| "pptSlideTransition"
+	| "pptAnimation"
+	| "pptMarkAsFinal"
+	| "pptPrintSettings"
+	| "pptTextColumns"
+	| "pptNotesMasterPlaceholders"
+	| "pptSlideSize"
+	| "pptChartType"
+	| "pptAltText"
+	| "pptHyperlink"
+	| "pptTextBox"
+	| "pptSlideLayout"
+	| "pptShapeStyle"
+	| "pptSlideBackground";
 
 export type ImageWrapType =
 	| "inline"
@@ -703,6 +733,36 @@ export interface SpecialCondition {
 	excelTableColumnFormulaConfig?: ExcelTableColumnFormulaConfig;
 	excelChartTypeConfig?: ExcelChartTypeConfig;
 	excelWorksheetTabColorConfig?: ExcelWorksheetTabColorConfig;
+	// PowerPoint
+	pptPictureCropShapeConfig?: PptPictureCropShapeConfig;
+	pptShapeSizeConfig?: PptShapeSizeConfig;
+	pptShapeGroupConfig?: PptShapeGroupConfig;
+	pptChartLegendConfig?: PptChartLegendConfig;
+	pptSmartArtConfig?: PptSmartArtConfig;
+	pptCommentConfig?: PptCommentConfig;
+	pptSlideTitlesConfig?: PptSlideTitlesConfig;
+	pptVideoConfig?: PptVideoConfig;
+	pptTableConfig?: PptTableConfig;
+	pptSectionConfig?: PptSectionConfig;
+	pptPictureStyleConfig?: PptPictureStyleConfig;
+	pptShapeArrangeConfig?: PptShapeArrangeConfig;
+	pptSummaryZoomConfig?: PptSummaryZoomConfig;
+	pptExportedFileConfig?: PptExportedFileConfig;
+	pptMasterPictureConfig?: PptMasterPictureConfig;
+	pptSlideTransitionConfig?: PptSlideTransitionConfig;
+	pptAnimationConfig?: PptAnimationConfig;
+	pptMarkAsFinalConfig?: PptMarkAsFinalConfig;
+	pptPrintSettingsConfig?: PptPrintSettingsConfig;
+	pptTextColumnsConfig?: PptTextColumnsConfig;
+	pptNotesMasterPlaceholdersConfig?: PptNotesMasterPlaceholdersConfig;
+	pptSlideSizeConfig?: PptSlideSizeConfig;
+	pptChartTypeConfig?: PptChartTypeConfig;
+	pptAltTextConfig?: PptAltTextConfig;
+	pptHyperlinkConfig?: PptHyperlinkConfig;
+	pptTextBoxConfig?: PptTextBoxConfig;
+	pptSlideLayoutConfig?: PptSlideLayoutConfig;
+	pptShapeStyleConfig?: PptShapeStyleConfig;
+	pptSlideBackgroundConfig?: PptSlideBackgroundConfig;
 }
 
 export interface TaskXmlRule {
@@ -750,3 +810,191 @@ export interface XmlRuleValidationResult {
 }
 
 export type XmlRuleGradeResult = GradingResult;
+
+// PowerPoint Special Condition Config Interfaces
+export interface PptSlideRef {
+	slideIndex?: number;
+	slideTitle?: string;
+	anchorText?: string;
+}
+
+export interface PptShapeSelector {
+	shapeName?: string;
+	targetText?: string;
+	shapeType?: string;
+	ordinal?: number;
+}
+
+export interface PptPictureCropShapeConfig {
+	slide?: PptSlideRef;
+	shape?: PptShapeSelector;
+	expectedShapePreset?: string;
+}
+
+export interface PptShapeSizeConfig {
+	slide?: PptSlideRef;
+	shape?: PptShapeSelector;
+	expectedHeightInches?: number;
+	expectedWidthInches?: number;
+	toleranceInches?: number;
+}
+
+export interface PptShapeGroupConfig {
+	slide?: PptSlideRef;
+	requireGrouped?: boolean;
+	minChildCount?: number;
+	checkAlignCenter?: boolean;
+}
+
+export interface PptChartLegendConfig {
+	slide?: PptSlideRef;
+	expectedPosition?: "t" | "b" | "l" | "r" | "tr" | string;
+}
+
+export interface PptSmartArtConfig {
+	slide?: PptSlideRef;
+	expectedLayoutName?: string;
+	expectedLayoutIdEnding?: string;
+	expectedNodeTexts?: string[];
+	requireOrderedNodes?: boolean;
+}
+
+export interface PptCommentConfig {
+	slide?: PptSlideRef;
+	author?: string;
+	targetCommentText?: string;
+	expectAbsent?: boolean;
+}
+
+export interface PptSlideTitlesConfig {
+	expectedTitlesInOrder?: string[];
+	startSlideIndex?: number;
+}
+
+export interface PptVideoConfig {
+	slide?: PptSlideRef;
+	shape?: PptShapeSelector;
+	requireVideoOnly?: boolean;
+	expectedTrimEndMs?: number;
+	expectedTrimEndSeconds?: number;
+}
+
+export interface PptTableConfig {
+	slide?: PptSlideRef;
+	disallowedRowTexts?: string[];
+	requiredCellTexts?: string[];
+	expectedRowCount?: number;
+}
+
+export interface PptSectionConfig {
+	expectedSectionName?: string;
+	disallowedSectionNames?: string[];
+}
+
+export interface PptPictureStyleConfig {
+	slide?: PptSlideRef;
+	shape?: PptShapeSelector;
+	expectedStyleName?: string;
+}
+
+export interface PptShapeArrangeConfig {
+	slide?: PptSlideRef;
+	shape?: PptShapeSelector;
+	checkAlignMiddle?: boolean;
+	checkBringToFront?: boolean;
+}
+
+export interface PptSummaryZoomConfig {
+	slide?: PptSlideRef;
+	requireZoomItems?: boolean;
+	excludeFirstSlide?: boolean;
+}
+
+export interface PptExportedFileConfig {
+	expectedFileName?: string;
+	caseSensitive?: boolean;
+}
+
+export interface PptMasterPictureConfig {
+	expectedPlacement?: string;
+	expectedImageName?: string;
+}
+
+export interface PptSlideTransitionConfig {
+	slide?: PptSlideRef;
+	expectedTransition?: string;
+	expectedDurationSeconds?: number;
+	applyToAll?: boolean;
+}
+
+export interface PptAnimationConfig {
+	slide?: PptSlideRef;
+	shape?: PptShapeSelector;
+	expectedEffect?: string;
+	motionPathType?: string;
+}
+
+export interface PptMarkAsFinalConfig {
+	expectedMarkAsFinal?: boolean;
+}
+
+export interface PptPrintSettingsConfig {
+	expectedPrintWhat?: string;
+	expectedColorMode?: string;
+}
+
+export interface PptTextColumnsConfig {
+	slide?: PptSlideRef;
+	shape?: PptShapeSelector;
+	expectedColumnCount?: number;
+	expectedSpacingInches?: number;
+}
+
+export interface PptNotesMasterPlaceholdersConfig {
+	requireHeaderDisabled?: boolean;
+	requireFooterDisabled?: boolean;
+}
+
+export interface PptSlideSizeConfig {
+	expectedRatio?: string;
+}
+
+export interface PptChartTypeConfig {
+	slide?: PptSlideRef;
+	expectedChartType?: string;
+}
+
+export interface PptAltTextConfig {
+	slide?: PptSlideRef;
+	shape?: PptShapeSelector;
+	expectedAltText?: string;
+}
+
+export interface PptHyperlinkConfig {
+	slide?: PptSlideRef;
+	targetText?: string;
+	expectedUrl?: string;
+}
+
+export interface PptTextBoxConfig {
+	slide?: PptSlideRef;
+	expectedText?: string;
+	expectedWidthInches?: number;
+	expectedPlacement?: string;
+}
+
+export interface PptSlideLayoutConfig {
+	slide?: PptSlideRef;
+	expectedLayoutName?: string;
+}
+
+export interface PptShapeStyleConfig {
+	slide?: PptSlideRef;
+	shape?: PptShapeSelector;
+	expectedStyleName?: string;
+}
+
+export interface PptSlideBackgroundConfig {
+	slide?: PptSlideRef;
+	expectedColorHex?: string;
+}

@@ -11,13 +11,18 @@ import { AssignmentCard } from "./AssignmentCard";
 export interface AssignmentGridProps {
 	assignments: PublicPortalAssignment[];
 	files: Record<string, File | undefined>;
+	attachments?: Record<string, File | undefined>;
 	results: Record<string, PublicPortalSubmitResult>;
 	submittingAssignmentId: string | null;
 	previewingAssignmentId: string | null;
 	draggingAssignmentId: string | null;
 	confirmedIdentity: boolean;
 	showDetailedFeedback: boolean;
-	onFileSelect: (assignment: PublicPortalAssignment, file?: File) => void;
+	onFileSelect: (
+		assignment: PublicPortalAssignment,
+		file?: File,
+		attachmentFile?: File,
+	) => void;
 	onSubmit: (assignmentId: string) => void;
 	onDragChange: (assignmentId: string | null) => void;
 }
@@ -27,6 +32,7 @@ type FilterMode = "all" | "pending" | "completed";
 const AssignmentGridComponent = ({
 	assignments,
 	files,
+	attachments,
 	results,
 	submittingAssignmentId,
 	previewingAssignmentId,
@@ -220,6 +226,7 @@ const AssignmentGridComponent = ({
 							key={assignment.id}
 							assignment={assignment}
 							file={files[assignment.id]}
+							attachmentFile={attachments?.[assignment.id]}
 							result={results[assignment.id]}
 							isSubmitting={submittingAssignmentId === assignment.id}
 							isPreviewing={previewingAssignmentId === assignment.id}

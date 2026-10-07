@@ -15,6 +15,7 @@ export interface UseSubmissionProps {
 
 export interface UseSubmissionReturn {
 	files: Record<string, File | undefined>;
+	attachments: Record<string, File | undefined>;
 	results: Record<string, PublicPortalSubmitResult>;
 	savedResults: Record<string, PublicPortalSubmitResult>;
 	loadingSubmissions: boolean;
@@ -26,6 +27,7 @@ export interface UseSubmissionReturn {
 	handleFileSelected: (
 		assignment: PublicPortalAssignment,
 		file?: File,
+		attachmentFile?: File,
 	) => Promise<void>;
 	reloadSubmissions: () => Promise<void>;
 }
@@ -38,6 +40,9 @@ export const useSubmission = ({
 	onSubmissionSuccess,
 }: UseSubmissionProps): UseSubmissionReturn => {
 	const [files, setFiles] = useState<Record<string, File | undefined>>({});
+	const [attachments, setAttachments] = useState<
+		Record<string, File | undefined>
+	>({});
 	const [results, setResults] = useState<
 		Record<string, PublicPortalSubmitResult>
 	>({});
@@ -58,6 +63,7 @@ export const useSubmission = ({
 	const reloadSubmissions = useCallback(async () => {
 		if (!token || !classId || !studentId) {
 			setFiles({});
+			setAttachments({});
 			setResults({});
 			setSavedResults({});
 			return;
@@ -115,6 +121,7 @@ export const useSubmission = ({
 					studentId,
 					assignmentId,
 					file,
+					attachments[assignmentId],
 				);
 				const prevCount = results[assignmentId]?.submissionCount ?? 0;
 				const officialResult: PublicPortalSubmitResult = {
@@ -131,6 +138,11 @@ export const useSubmission = ({
 					[assignmentId]: officialResult,
 				}));
 				setFiles((prev) => {
+					const next = { ...prev };
+					delete next[assignmentId];
+					return next;
+				});
+				setAttachments((prev) => {
 					const next = { ...prev };
 					delete next[assignmentId];
 					return next;
@@ -168,6 +180,7 @@ export const useSubmission = ({
 			classId,
 			studentId,
 			files,
+			attachments,
 			results,
 			savedResults,
 			token,
@@ -177,8 +190,16 @@ export const useSubmission = ({
 	);
 
 	const handleFileSelected = useCallback(
-		async (assignment: PublicPortalAssignment, file?: File) => {
+		async (
+			assignment: PublicPortalAssignment,
+			file?: File,
+			attachmentFile?: File,
+		) => {
 			setFiles((prev) => ({ ...prev, [assignment.id]: file }));
+			setAttachments((prev) => ({
+				...prev,
+				[assignment.id]: attachmentFile,
+			}));
 			if (!file) {
 				if (savedResults[assignment.id]) {
 					setResults((prev) => ({
@@ -208,6 +229,7 @@ export const useSubmission = ({
 					studentId,
 					assignment.id,
 					file,
+					attachmentFile,
 				);
 				setResults((prev) => ({
 					...prev,
@@ -236,6 +258,7 @@ export const useSubmission = ({
 
 	return {
 		files,
+		attachments,
 		results,
 		savedResults,
 		loadingSubmissions,

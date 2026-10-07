@@ -174,12 +174,16 @@ export const submissionPortalService = {
 		studentId: string,
 		assignmentId: string,
 		file: File,
+		attachmentFile?: File | null,
 	) {
 		const body = new FormData();
 		body.append("classId", classId);
 		body.append("studentId", studentId);
 		body.append("assignmentId", assignmentId);
 		body.append("file", file);
+		if (attachmentFile) {
+			body.append("attachmentFile", attachmentFile);
+		}
 		const sessionId = getSessionId();
 		const headers: Record<string, string> = {};
 		if (sessionId) {
@@ -204,12 +208,16 @@ export const submissionPortalService = {
 		studentId: string,
 		assignmentId: string,
 		file: File,
+		attachmentFile?: File | null,
 	) {
 		const body = new FormData();
 		body.append("classId", classId);
 		body.append("studentId", studentId);
 		body.append("assignmentId", assignmentId);
 		body.append("file", file);
+		if (attachmentFile) {
+			body.append("attachmentFile", attachmentFile);
+		}
 		const res = await fetch(
 			`${API_BASE_URL}/public/portals/${token}/grade-preview`,
 			{ method: "POST", body },

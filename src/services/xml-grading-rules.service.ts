@@ -231,13 +231,23 @@ export const xmlGradingRulesService = {
 		projectCode: string,
 		file: File,
 		getAccessToken: AccessTokenGetter,
+		attachmentFile?: File | null,
 	) => {
 		const formData = new FormData();
 		formData.append("file", file);
+		if (attachmentFile) {
+			formData.append("attachmentFile", attachmentFile);
+		}
 		return requestJson<XmlRuleGradeResult>(
 			`${baseUrl}/grade/${encodeURIComponent(subject)}/${encodeURIComponent(projectCode)}`,
 			{ method: "POST", body: formData },
 			getAccessToken,
 		);
 	},
+	seedPptGm2: (getAccessToken: AccessTokenGetter) =>
+		requestJson<GradingRuleSet>(
+			`${baseUrl}/seed/ppt/gm2`,
+			{ method: "POST" },
+			getAccessToken,
+		),
 };
