@@ -26,7 +26,6 @@ export const useXmlGradingRules = () => {
 	const [loading, setLoading] = useState(false);
 	const [loadingRuleSetId, setLoadingRuleSetId] = useState("");
 	const [saving, setSaving] = useState(false);
-	const [saveError, setSaveError] = useState("");
 
 	const selectedRef = useRef(selected);
 	const saveScrollYRef = useRef(0);
@@ -161,26 +160,6 @@ export const useXmlGradingRules = () => {
 		[getAccessToken, loadRuleSets, replaceSelected],
 	);
 
-	const handleSeedPptGm2 = useCallback(async () => {
-		setLoading(true);
-		try {
-			const ruleSet = await xmlGradingRulesService.seedPptGm2(getAccessToken);
-			notify.success(
-				`Đã nạp thành công bộ luật mẫu PowerPoint GM2 (${ruleSet.projects?.length || 0} projects, 1000 điểm)!`,
-			);
-			await loadRuleSets();
-			replaceSelected(ruleSet);
-		} catch (err) {
-			notify.error(
-				err instanceof Error
-					? err.message
-					: "Không thể nạp dữ liệu mẫu PPT GM2.",
-			);
-		} finally {
-			setLoading(false);
-		}
-	}, [getAccessToken, loadRuleSets, replaceSelected]);
-
 	const handleExportJson = useCallback(() => {
 		if (!selected.subject && selected.projects.length === 0) {
 			notify.error("Không có dữ liệu ruleset để xuất.");
@@ -210,7 +189,6 @@ export const useXmlGradingRules = () => {
 		savingRef.current = true;
 
 		saveScrollYRef.current = window.scrollY;
-		setSaveError("");
 
 		const current = selectedRef.current;
 		setSaving(true);
@@ -237,7 +215,6 @@ export const useXmlGradingRules = () => {
 		} catch (error) {
 			const message =
 				error instanceof Error ? error.message : "Lưu ruleset thất bại.";
-			setSaveError(message);
 			notify.error(message);
 
 			requestAnimationFrame(() => {
@@ -306,8 +283,6 @@ export const useXmlGradingRules = () => {
 		canUsePage,
 		ruleSets,
 		selected,
-		selectedRef,
-		setSelected,
 		replaceSelected,
 		updateSelected,
 		subjectFilter,
@@ -317,14 +292,11 @@ export const useXmlGradingRules = () => {
 		loading,
 		loadingRuleSetId,
 		saving,
-		saveError,
-		setSaveError,
 		importInputRef,
 		loadRuleSets,
 		startNewRuleSet,
 		openRuleSet,
 		handleImportFile,
-		handleSeedPptGm2,
 		handleExportJson,
 		saveRuleSet,
 		deleteRuleSet,

@@ -41,7 +41,6 @@ export const XmlGradingRulesPage: React.FC = () => {
 		startNewRuleSet,
 		openRuleSet,
 		handleImportFile,
-		handleSeedPptGm2,
 		handleExportJson,
 		saveRuleSet,
 		deleteRuleSet,
@@ -101,7 +100,6 @@ export const XmlGradingRulesPage: React.FC = () => {
 					onActiveFilterChange={setActiveFilter}
 					onSelectRuleSet={openRuleSet}
 					onCreateNew={startNewRuleSet}
-					onSeedPptGm2={handleSeedPptGm2}
 					onImportClick={() => importInputRef.current?.click()}
 					loading={loading}
 					loadingRuleSetId={loadingRuleSetId}

@@ -48,14 +48,14 @@ export const ConditionItemCard: React.FC<ConditionItemCardProps> = ({
 	const variants = expectedVariantsForEdit(condition);
 
 	return (
-		<div className="rounded-2xl bg-m3-surface-container p-4 text-m3-on-surface">
+		<div className="min-w-0 overflow-hidden rounded-2xl bg-m3-surface-container p-4 text-m3-on-surface">
 			{/* Top Bar: Id, Score, Delete button */}
-			<div className="flex items-center justify-between gap-3">
+			<div className="flex min-w-0 items-center justify-between gap-3">
 				<div className="flex min-w-0 items-center gap-2">
-					<span className="rounded-xl bg-m3-primary/10 px-2.5 py-1 font-mono text-[11px] font-bold text-m3-primary">
+					<span className="shrink-0 rounded-xl bg-m3-primary/10 px-2.5 py-1 font-mono text-[11px] font-bold text-m3-primary">
 						{condition.conditionId || `C${String(index + 1).padStart(2, "0")}`}
 					</span>
-					<span className="text-xs font-semibold text-m3-on-surface-variant">
+					<span className="shrink-0 text-xs font-semibold text-m3-on-surface-variant">
 						{condition.score} điểm
 					</span>
 				</div>
@@ -65,22 +65,22 @@ export const ConditionItemCard: React.FC<ConditionItemCardProps> = ({
 					onClick={onDelete}
 					aria-label="Xóa điều kiện"
 					title="Xóa điều kiện"
-					className="inline-flex h-8 w-8 items-center justify-center rounded-xl text-m3-on-surface-variant transition hover:bg-m3-error-container hover:text-m3-error"
+					className="shrink-0 inline-flex h-8 w-8 items-center justify-center rounded-xl text-m3-on-surface-variant transition hover:bg-m3-error-container hover:text-m3-error"
 				>
 					<Icon name="delete" className="text-base" />
 				</button>
 			</div>
 
 			{/* Toggleable Basics info */}
-			<div className="mt-3 overflow-hidden rounded-xl bg-m3-surface-container-low">
+			<div className="mt-3 min-w-0 overflow-hidden rounded-xl bg-m3-surface-container-low">
 				<button
 					type="button"
 					onClick={onToggleBasics}
-					className="flex w-full items-center gap-2 px-3.5 py-2.5 text-left transition hover:bg-m3-surface-container-high/50"
+					className="flex w-full min-w-0 items-center gap-2 overflow-hidden px-3.5 py-2.5 text-left transition hover:bg-m3-surface-container-high/50"
 				>
 					<Icon
 						name="expand_more"
-						className={`text-lg text-m3-on-surface-variant transition-transform duration-200 ${
+						className={`shrink-0 text-lg text-m3-on-surface-variant transition-transform duration-200 ${
 							basicsExpanded ? "rotate-180" : ""
 						}`}
 					/>
@@ -95,9 +95,9 @@ export const ConditionItemCard: React.FC<ConditionItemCardProps> = ({
 				</button>
 
 				{basicsExpanded && (
-					<div className="p-3.5 pt-1 space-y-3">
-						<div className="grid gap-3 sm:grid-cols-[1fr_120px]">
-							<label className="text-xs font-semibold text-m3-on-surface-variant">
+					<div className="min-w-0 space-y-3 p-3.5 pt-1">
+						<div className="grid min-w-0 gap-3 sm:grid-cols-[minmax(0,1fr)_120px]">
+							<label className="min-w-0 block text-xs font-semibold text-m3-on-surface-variant">
 								Mã điều kiện
 								<input
 									value={condition.conditionId}
@@ -232,8 +232,8 @@ export const ConditionItemCard: React.FC<ConditionItemCardProps> = ({
 			</div>
 
 			{/* Match mode & Policy selects */}
-			<div className="mt-3 grid gap-3 sm:grid-cols-2">
-				<label className="text-xs font-semibold text-m3-on-surface-variant">
+			<div className="mt-3 grid min-w-0 gap-3 sm:grid-cols-2">
+				<label className="min-w-0 block text-xs font-semibold text-m3-on-surface-variant">
 					Cách so khớp
 					<select
 						value={condition.compareMode}
@@ -252,7 +252,7 @@ export const ConditionItemCard: React.FC<ConditionItemCardProps> = ({
 					</select>
 				</label>
 
-				<label className="text-xs font-semibold text-m3-on-surface-variant">
+				<label className="min-w-0 block text-xs font-semibold text-m3-on-surface-variant">
 					Quy tắc nhiều giá trị
 					<select
 						value={condition.matchPolicy}
@@ -291,9 +291,9 @@ export const ConditionItemCard: React.FC<ConditionItemCardProps> = ({
 
 			{/* Advanced options */}
 			{advancedExpanded && (
-				<div className="mt-3 rounded-2xl bg-m3-surface-container-low p-4 space-y-3">
-					<div className="grid gap-3 sm:grid-cols-2">
-						<label className="text-xs font-semibold text-m3-on-surface-variant">
+				<div className="mt-3 min-w-0 rounded-2xl bg-m3-surface-container-low p-4 space-y-3">
+					<div className="grid min-w-0 gap-3 sm:grid-cols-2">
+						<label className="min-w-0 block text-xs font-semibold text-m3-on-surface-variant">
 							Thông báo khi đúng
 							<input
 								value={condition.feedback?.successDetail || ""}
@@ -310,7 +310,7 @@ export const ConditionItemCard: React.FC<ConditionItemCardProps> = ({
 							/>
 						</label>
 
-						<label className="text-xs font-semibold text-m3-on-surface-variant">
+						<label className="min-w-0 block text-xs font-semibold text-m3-on-surface-variant">
 							Thông báo khi sai
 							<input
 								value={condition.feedback?.errorMessage || ""}
@@ -328,7 +328,7 @@ export const ConditionItemCard: React.FC<ConditionItemCardProps> = ({
 						</label>
 					</div>
 
-					<label className="block text-xs font-semibold text-m3-on-surface-variant">
+					<label className="min-w-0 block text-xs font-semibold text-m3-on-surface-variant">
 						Gợi ý cách sửa
 						<input
 							value={condition.feedback?.fixAction || ""}
@@ -345,7 +345,7 @@ export const ConditionItemCard: React.FC<ConditionItemCardProps> = ({
 						/>
 					</label>
 
-					<label className="block text-xs font-semibold text-m3-on-surface-variant">
+					<label className="min-w-0 block text-xs font-semibold text-m3-on-surface-variant">
 						Bỏ qua các thuộc tính (mỗi dòng 1 tên)
 						<textarea
 							value={(condition.ignoreAttributes ?? []).join("\n")}
@@ -364,8 +364,8 @@ export const ConditionItemCard: React.FC<ConditionItemCardProps> = ({
 					</label>
 
 					{condition.compareMode === "xmlMinOccurrences" && (
-						<div className="grid gap-3 sm:grid-cols-2">
-							<label className="text-xs font-semibold text-m3-on-surface-variant">
+						<div className="grid min-w-0 gap-3 sm:grid-cols-2">
+							<label className="min-w-0 block text-xs font-semibold text-m3-on-surface-variant">
 								Số lần xuất hiện tối thiểu
 								<input
 									type="number"
@@ -383,7 +383,7 @@ export const ConditionItemCard: React.FC<ConditionItemCardProps> = ({
 								/>
 							</label>
 
-							<label className="text-xs font-semibold text-m3-on-surface-variant">
+							<label className="min-w-0 block text-xs font-semibold text-m3-on-surface-variant">
 								Số lần xuất hiện tối đa
 								<input
 									type="number"

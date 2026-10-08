@@ -1,12 +1,12 @@
+import { Button, IconButton } from "@bug-on/m3-expressive/buttons";
+import { Icon } from "@bug-on/m3-expressive/core";
+import { TextField } from "@bug-on/m3-expressive/forms";
 import {
-	Button,
-	Icon,
-	IconButton,
+	List,
 	ListItem,
 	type ListItemComponent,
 	Text,
-	TextField,
-} from "@bug-on/m3-expressive";
+} from "@bug-on/m3-expressive/layout";
 import type React from "react";
 import type {
 	ProjectXmlRule,
@@ -101,6 +101,8 @@ export const ProjectCard: React.FC<ProjectCardProps> & ListItemComponent = ({
 			supportingText={`${project.projectCode || "project"} · ${project.tasks.length} task · ${project.maxScore} điểm`}
 			trailingType="custom"
 			trailingContent={
+				// biome-ignore lint/a11y/useKeyWithClickEvents: inner buttons handle interactions
+				// biome-ignore lint/a11y/noStaticElementInteractions: stops click propagation from triggering expand
 				<div
 					className="flex items-center gap-1"
 					onClick={(e) => e.stopPropagation()}
@@ -124,9 +126,9 @@ export const ProjectCard: React.FC<ProjectCardProps> & ListItemComponent = ({
 			}
 		>
 			{/* Project Body */}
-			<div className="space-y-4 p-4 pt-2">
+			<div className="w-full min-w-0 overflow-hidden space-y-4 p-4 pt-2">
 				{/* Project fields */}
-				<div className="grid gap-3 md:grid-cols-[1fr_2fr_130px]">
+				<div className="grid min-w-0 gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)_130px]">
 					<TextField
 						label="Mã project"
 						placeholder="VD: project01"
@@ -155,7 +157,7 @@ export const ProjectCard: React.FC<ProjectCardProps> & ListItemComponent = ({
 				</div>
 
 				{/* Tasks section */}
-				<div className="rounded-2xl bg-m3-surface-container p-4">
+				<div className="min-w-0 rounded-2xl bg-m3-surface-container p-4">
 					<div className="mb-4 flex items-center justify-between gap-3">
 						<div>
 							<Text
@@ -191,7 +193,7 @@ export const ProjectCard: React.FC<ProjectCardProps> & ListItemComponent = ({
 							</Text>
 						</div>
 					) : (
-						<div className="space-y-3">
+						<List variant="expressive" listStyle="segmented" className="w-full min-w-0">
 							{project.tasks.map((task, ti) => {
 								const taskKey = `${projectIndex}-${ti}`;
 								return (
@@ -227,7 +229,7 @@ export const ProjectCard: React.FC<ProjectCardProps> & ListItemComponent = ({
 									/>
 								);
 							})}
-						</div>
+						</List>
 					)}
 				</div>
 			</div>

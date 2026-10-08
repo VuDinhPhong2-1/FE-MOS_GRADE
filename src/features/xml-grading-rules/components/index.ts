@@ -14,6 +14,7 @@ export { RulesetSidebar } from "./ruleset-sidebar/RulesetSidebar";
 
 // Special Conditions
 export { ExcelSpecialConditionEditor } from "./special-conditions/ExcelSpecialConditionEditor";
+export { PptSpecialConditionEditor } from "./special-conditions/PptSpecialConditionForms";
 export { SpecialConditionDispatcher } from "./special-conditions/SpecialConditionDispatcher";
 export { WordSpecialConditionEditor } from "./special-conditions/WordSpecialConditionEditor";
 // Test Tab

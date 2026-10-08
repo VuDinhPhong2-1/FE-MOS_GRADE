@@ -71,7 +71,7 @@ export const ProjectListSection: React.FC<ProjectListSectionProps> = ({
 		<Card
 			variant="filled"
 			disableElevation
-			className="rounded-3xl bg-m3-surface-container p-6 text-m3-on-surface"
+			className="min-w-0 rounded-3xl bg-m3-surface-container p-6 text-m3-on-surface"
 		>
 			{/* Header */}
 			<div className="mb-6 flex flex-wrap items-center justify-between gap-3">
@@ -118,14 +118,10 @@ export const ProjectListSection: React.FC<ProjectListSectionProps> = ({
 					</Text>
 				</Card>
 			) : (
-				<List variant="expressive" listStyle="segmented" className="w-full">
+				<List variant="expressive" listStyle="segmented" className="w-full min-w-0">
 					{selected.projects.map((project, pi) => (
 						<ProjectCard
-							key={
-								project.projectCode
-									? `project-${project.projectCode}-${pi}`
-									: `project-idx-${pi}`
-							}
+							key={`project-${pi}`}
 							project={project}
 							projectIndex={pi}
 							subject={selected.subject}

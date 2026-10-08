@@ -29,7 +29,7 @@ import type {
 	PptTextColumnsConfig,
 	PptVideoConfig,
 	SpecialCondition,
-} from "../../types/xml-grading-rules.types";
+} from "../../../../types/xml-grading-rules.types";
 
 export interface PptSpecialConditionEditorProps {
 	specialCondition: SpecialCondition;

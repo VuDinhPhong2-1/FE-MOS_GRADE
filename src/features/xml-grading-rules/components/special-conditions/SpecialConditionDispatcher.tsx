@@ -1,5 +1,4 @@
 import type React from "react";
-import { PptSpecialConditionEditor } from "../../../../pages/xml-rules/PptSpecialConditionForms";
 import type {
 	ImageInsertConfig,
 	PictureBulletConfig,
@@ -13,7 +12,40 @@ import PictureStyleEditor from "../../PictureStyleEditor";
 import TextBoxContainsTextEditor from "../../TextBoxContainsTextEditor";
 import { JsonConfigEditor } from "../common/JsonConfigEditor";
 import { ExcelSpecialConditionEditor } from "./ExcelSpecialConditionEditor";
+import { PptSpecialConditionEditor } from "./PptSpecialConditionForms";
 import { WordSpecialConditionEditor } from "./WordSpecialConditionEditor";
+
+const WORD_SPECIAL_CONDITION_TYPES = new Set([
+	"convertTableToText",
+	"hyperlink",
+	"sectionBreakBeforeText",
+	"wordColumns",
+	"wordMoveText",
+	"wordMoveSmartArt",
+	"pageMargins",
+	"documentStyleSet",
+	"pageBorder",
+	"wordTableSort",
+	"wordParagraphList",
+	"wordBookmark",
+	"wordCustomToc",
+	"wordTextToTable",
+	"wordBulletStyle",
+	"wordResolveComment",
+	"wordCommentReply",
+	"wordDocumentInspector",
+	"wordParagraphStyle",
+	"wordTableAutoFit",
+	"wordViewSetting",
+	"wordEndnote",
+	"wordSmartArt",
+	"wordSmartArtColors",
+	"wordDocumentProperty",
+	"wordInsertSymbol",
+	"wordFontFormat",
+	"wordTrackChanges",
+	"wordInsertComment",
+]);
 
 export interface SpecialConditionDispatcherProps {
 	specialCondition?: SpecialCondition;
@@ -117,14 +149,13 @@ export const SpecialConditionDispatcher: React.FC<
 	}
 
 	// 4. Word Special Conditions
-	const wordComponent = (
-		<WordSpecialConditionEditor
-			specialCondition={specialCondition}
-			onChange={onChange}
-		/>
-	);
-	if (wordComponent) {
-		return wordComponent;
+	if (type.startsWith("word") || WORD_SPECIAL_CONDITION_TYPES.has(type)) {
+		return (
+			<WordSpecialConditionEditor
+				specialCondition={specialCondition}
+				onChange={onChange}
+			/>
+		);
 	}
 
 	// 5. Fallback JSON Editor

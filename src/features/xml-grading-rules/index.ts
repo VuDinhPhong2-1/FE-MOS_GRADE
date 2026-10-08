@@ -1,6 +1,4 @@
-// Legacy special condition components
-
-// All feature components
+// Components
 export * from "./components";
 // Hooks
 export * from "./hooks";

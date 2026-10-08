@@ -33,7 +33,6 @@ export const useRuleEditor = (
 		Record<string, boolean>
 	>({});
 	const [showAdvanced, setShowAdvanced] = useState<Record<string, boolean>>({});
-	const [viewRawJson, setViewRawJson] = useState(false);
 
 	const toggleProject = useCallback((index: number) => {
 		setExpandedProjects((prev) => ({
@@ -218,8 +217,6 @@ export const useRuleEditor = (
 		setExpandedConditionBasics,
 		showAdvanced,
 		setShowAdvanced,
-		viewRawJson,
-		setViewRawJson,
 		toggleProject,
 		toggleTask,
 		toggleSpecialCondition,
