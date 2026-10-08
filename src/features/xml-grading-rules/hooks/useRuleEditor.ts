@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import { useSnackbar } from "@bug-on/m3-expressive/feedback";
 import type {
 	GradingRuleSet,
 	ProjectXmlRule,
@@ -33,6 +34,7 @@ export const useRuleEditor = (
 		Record<string, boolean>
 	>({});
 	const [showAdvanced, setShowAdvanced] = useState<Record<string, boolean>>({});
+	const { showSnackbar } = useSnackbar();
 
 	const toggleProject = useCallback((index: number) => {
 		setExpandedProjects((prev) => ({
@@ -158,12 +160,40 @@ export const useRuleEditor = (
 
 	const removeProject = useCallback(
 		(pi: number) => {
+			const projectToDelete = selected.projects[pi];
+			if (!projectToDelete) return;
+
 			updateSelected((current) => ({
 				...current,
 				projects: current.projects.filter((_, i) => i !== pi),
 			}));
+
+			const projectName =
+				projectToDelete.projectName?.trim() ||
+				projectToDelete.projectCode?.trim() ||
+				`Project ${pi + 1}`;
+
+			void showSnackbar({
+				message: `Đã xóa project "${projectName}"`,
+				actionLabel: "Hoàn tác",
+				duration: "long",
+				withDismissAction: true,
+			}).then((result) => {
+				if (result === "action-performed") {
+					updateSelected((current) => {
+						const nextProjects = [...current.projects];
+						const insertIndex = Math.min(Math.max(0, pi), nextProjects.length);
+						nextProjects.splice(insertIndex, 0, projectToDelete);
+						return { ...current, projects: nextProjects };
+					});
+					setExpandedProjects((prev) => ({
+						...prev,
+						[pi]: true,
+					}));
+				}
+			});
 		},
-		[updateSelected],
+		[selected.projects, showSnackbar, updateSelected],
 	);
 
 	const addTask = useCallback(
@@ -177,11 +207,60 @@ export const useRuleEditor = (
 
 	const removeTask = useCallback(
 		(pi: number, ti: number) => {
+			const project = selected.projects[pi];
+			if (!project) return;
+			const taskToDelete = project.tasks[ti];
+			if (!taskToDelete) return;
+
 			mutateProject(pi, {
-				tasks: (selected.projects[pi]?.tasks ?? []).filter((_, i) => i !== ti),
+				tasks: project.tasks.filter((_, i) => i !== ti),
+			});
+
+			const taskName =
+				taskToDelete.taskName?.trim() ||
+				taskToDelete.taskId?.trim() ||
+				`Task ${ti + 1}`;
+
+			const targetProjectCode = project.projectCode;
+
+			void showSnackbar({
+				message: `Đã xóa task "${taskName}"`,
+				actionLabel: "Hoàn tác",
+				duration: "long",
+				withDismissAction: true,
+			}).then((result) => {
+				if (result === "action-performed") {
+					updateSelected((current) => {
+						let targetIndex = -1;
+						if (targetProjectCode) {
+							targetIndex = current.projects.findIndex(
+								(p) => p.projectCode === targetProjectCode,
+							);
+						}
+						if (targetIndex === -1) {
+							targetIndex = Math.min(Math.max(0, pi), current.projects.length - 1);
+						}
+						if (targetIndex === -1) return current;
+
+						return {
+							...current,
+							projects: current.projects.map((proj, pIdx) => {
+								if (pIdx !== targetIndex) return proj;
+								const nextTasks = [...proj.tasks];
+								const insertIndex = Math.min(Math.max(0, ti), nextTasks.length);
+								nextTasks.splice(insertIndex, 0, taskToDelete);
+								return { ...proj, tasks: nextTasks };
+							}),
+						};
+					});
+					setExpandedTasks((prev) => ({
+						...prev,
+						[`${pi}-${ti}`]: true,
+					}));
+				}
 			});
 		},
-		[mutateProject, selected.projects],
+		[mutateProject, selected.projects, showSnackbar, updateSelected],
 	);
 
 	const addCondition = useCallback(

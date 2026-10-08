@@ -31,9 +31,6 @@ export const Sidebar = ({ navItems, onNavigate }: SidebarProps) => {
 		if (path.startsWith("/assignments")) {
 			return location.pathname.startsWith("/assignments");
 		}
-		if (path === "/grading") {
-			return location.pathname === "/grading";
-		}
 		return location.pathname.startsWith(path);
 	};
 

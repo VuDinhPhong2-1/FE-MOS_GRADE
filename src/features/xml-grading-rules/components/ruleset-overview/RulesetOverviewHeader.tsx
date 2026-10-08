@@ -31,7 +31,7 @@ export const RulesetOverviewHeader: React.FC<RulesetOverviewHeaderProps> = ({
 	);
 
 	return (
-		<Card variant="filled" className="bg-m3-surface-container p-4">
+		<Card variant="filled" className="bg-m3-surface-container-highest p-4">
 			{/* Top bar: title, subject, version, status, actions */}
 			<div className="flex flex-wrap items-start justify-between gap-4">
 				<div>

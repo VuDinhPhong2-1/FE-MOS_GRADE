@@ -27,11 +27,8 @@ const Layout = ({ children, navItems }: LayoutProps) => {
 		if (path.startsWith("/assignments")) {
 			return location.pathname.startsWith("/assignments");
 		}
-		if (path === "/grading") {
-			return (
-				location.pathname.startsWith("/grading") ||
-				location.pathname.startsWith("/scores")
-			);
+		if (path.startsWith("/scores")) {
+			return location.pathname.startsWith("/scores");
 		}
 		return location.pathname.startsWith(path);
 	};

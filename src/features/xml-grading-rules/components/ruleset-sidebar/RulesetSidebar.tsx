@@ -5,11 +5,12 @@ import {
 	type SelectOption,
 	TextField,
 } from "@bug-on/m3-expressive/forms";
-import { List, ListItem, ScrollArea, Text } from "@bug-on/m3-expressive/layout";
+import { Card, List, ListItem, ScrollArea, Text } from "@bug-on/m3-expressive/layout";
 import type React from "react";
 import { useMemo, useState } from "react";
 import type { GradingRuleSetSummary } from "../../../../types/xml-grading-rules.types";
 import { getSubjectMeta } from "../../utils/xml-rule-helpers";
+import { ShapeIcon } from "@bug-on/m3-expressive";
 
 export interface RulesetSidebarProps {
 	ruleSets: GradingRuleSetSummary[];
@@ -60,13 +61,13 @@ export const RulesetSidebar: React.FC<RulesetSidebarProps> = ({
 
 	return (
 		<aside className="w-full shrink-0 md:w-88 lg:w-96">
-			<div className="flex h-full flex-col rounded-3xl bg-m3-surface-container p-4">
+			<Card variant="filled" disableElevation className="flex h-fit flex-col bg-m3-surface-container-highest p-4">
 				{/* Header actions */}
 				<div className="mb-4 flex items-center justify-between gap-2">
 					<div className="flex items-center gap-2">
-						<div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-m3-surface-container-high text-m3-primary">
-							<Icon name="rule" className="text-xl" />
-						</div>
+						<ShapeIcon shape="cookie6Sided" size={44} className="flex items-center justify-center rounded-2xl bg-m3-surface-container-low text-m3-on-surface">
+							<Icon name="rule" size={20} className="text-m3-on-surface" />
+						</ShapeIcon>
 						<div>
 							<h3 className="text-sm font-bold text-m3-on-surface">
 								Bộ luật XML
@@ -96,7 +97,7 @@ export const RulesetSidebar: React.FC<RulesetSidebarProps> = ({
 				<div className="mb-3 flex flex-col items-center gap-3">
 					{/* Ô tìm kiếm */}
 					<TextField
-						variant="filled"
+						variant="outlined"
 						dense
 						placeholder="Tìm ruleset..."
 						value={searchQuery}
@@ -109,7 +110,7 @@ export const RulesetSidebar: React.FC<RulesetSidebarProps> = ({
 
 					{/* Menu select loại file */}
 					<Select
-						variant="filled"
+						variant="outlined"
 						dense
 						options={SUBJECT_OPTIONS}
 						value={subjectFilter}
@@ -257,7 +258,7 @@ export const RulesetSidebar: React.FC<RulesetSidebarProps> = ({
 						Tải lên file JSON
 					</Button>
 				</div>
-			</div>
+			</Card>
 		</aside>
 	);
 };

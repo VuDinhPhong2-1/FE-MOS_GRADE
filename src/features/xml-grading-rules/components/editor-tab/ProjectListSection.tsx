@@ -71,7 +71,7 @@ export const ProjectListSection: React.FC<ProjectListSectionProps> = ({
 		<Card
 			variant="filled"
 			disableElevation
-			className="min-w-0 rounded-3xl bg-m3-surface-container p-6 text-m3-on-surface"
+			className="min-w-0 rounded-3xl bg-m3-surface-container-highest p-6 text-m3-on-surface"
 		>
 			{/* Header */}
 			<div className="mb-6 flex flex-wrap items-center justify-between gap-3">
@@ -106,7 +106,7 @@ export const ProjectListSection: React.FC<ProjectListSectionProps> = ({
 				<Card
 					variant="filled"
 					disableElevation
-					className="flex flex-col items-center justify-center rounded-3xl bg-m3-surface-container-low p-12 text-center text-m3-on-surface-variant"
+					className="flex flex-col items-center justify-center rounded-3xl bg-m3-surface-container p-12 text-center text-m3-on-surface-variant"
 				>
 					<Icon name="folder_open" className="text-4xl opacity-50" />
 					<Text variant="body-md" className="mt-3 text-sm font-semibold">
@@ -118,10 +118,15 @@ export const ProjectListSection: React.FC<ProjectListSectionProps> = ({
 					</Text>
 				</Card>
 			) : (
-				<List variant="expressive" listStyle="segmented" className="w-full min-w-0">
+				<List
+					variant="expressive"
+					listStyle="segmented"
+					selectionMode="multi-action"
+					className="w-full min-w-0"
+				>
 					{selected.projects.map((project, pi) => (
 						<ProjectCard
-							key={`project-${pi}`}
+							key={project.projectCode ? `project-${project.projectCode}` : `project-${pi}`}
 							project={project}
 							projectIndex={pi}
 							subject={selected.subject}

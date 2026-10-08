@@ -29,7 +29,7 @@ export const RulesetMetadataForm: React.FC<RulesetMetadataFormProps> = ({
 		<Card
 			variant="filled"
 			disableElevation
-			className="rounded-3xl bg-m3-surface-container p-6 text-m3-on-surface"
+			className="bg-m3-surface-container-highest p-6 text-m3-on-surface"
 		>
 			<div className="mb-4">
 				<Text
@@ -49,7 +49,7 @@ export const RulesetMetadataForm: React.FC<RulesetMetadataFormProps> = ({
 
 			<div className="grid gap-4 md:grid-cols-[1fr_1fr_auto] md:items-center">
 				<Select
-					variant="filled"
+					variant="outlined"
 					menuVariant="expressive"
 					colorVariant="vibrant"
 					label="Môn / Loại file"
@@ -63,9 +63,11 @@ export const RulesetMetadataForm: React.FC<RulesetMetadataFormProps> = ({
 					showDividers={false}
 					options={SUBJECT_OPTIONS}
 					fullWidth
+					dense
 				/>
 
 				<TextField
+					variant="outlined"
 					label="Phiên bản bộ luật"
 					placeholder="v1"
 					value={selected.version}
@@ -75,6 +77,7 @@ export const RulesetMetadataForm: React.FC<RulesetMetadataFormProps> = ({
 							version: val,
 						})
 					}
+					dense
 					fullWidth
 				/>
 

@@ -112,8 +112,8 @@ bun run build     # Type-check (tsc) & Vite production build
 - Local Agent service: `src/services/local-agent.service.ts`
 - Grading services: `src/services/grading.service.ts`
 - Analytics services: `src/services/analytics.service.ts`
-- Main grading UI: `src/pages/GradingView.tsx`
 - Class grading UI: `src/pages/ClassGradingPage.tsx`
+- XML rules grading UI: `src/pages/XmlGradingRulesPage.tsx`
 
 ## Related docs
 

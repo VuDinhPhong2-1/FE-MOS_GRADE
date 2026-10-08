@@ -93,40 +93,31 @@ export const ProjectCard: React.FC<ProjectCardProps> & ListItemComponent = ({
 			expandTrigger="row"
 			leadingType="icon"
 			leadingContent={<Icon name="folder" className="text-xl text-m3-primary" />}
-			headline={
-				<span className="truncate text-sm font-bold text-m3-on-surface">
-					{project.projectName || "Project chưa đặt tên"}
-				</span>
-			}
+			headline={project.projectName || "Project chưa đặt tên"}
 			supportingText={`${project.projectCode || "project"} · ${project.tasks.length} task · ${project.maxScore} điểm`}
 			trailingType="custom"
 			trailingContent={
-				// biome-ignore lint/a11y/useKeyWithClickEvents: inner buttons handle interactions
-				// biome-ignore lint/a11y/noStaticElementInteractions: stops click propagation from triggering expand
-				<div
-					className="flex items-center gap-1"
-					onClick={(e) => e.stopPropagation()}
+				<IconButton
+					type="button"
+					size="sm"
+					colorStyle="standard"
+					aria-label="Xóa project"
+					onClick={(e) => {
+						e.stopPropagation();
+						onDeleteProject();
+					}}
 				>
-					<IconButton
-						type="button"
-						size="sm"
-						colorStyle="standard"
-						aria-label="Xóa project"
-						onClick={onDeleteProject}
-					>
-						<Icon name="delete" className="text-base text-m3-error" />
-					</IconButton>
-					<Icon
-						name="expand_more"
-						className={`text-lg text-m3-on-surface-variant transition-transform duration-200 ${
-							expanded ? "rotate-180" : ""
-						}`}
-					/>
-				</div>
+					<Icon name="delete" className="text-base text-m3-error" />
+				</IconButton>
 			}
 		>
 			{/* Project Body */}
-			<div className="w-full min-w-0 overflow-hidden space-y-4 p-4 pt-2">
+			{/* biome-ignore lint/a11y/noStaticElementInteractions: prevent accordion collapse when interacting with inner controls */}
+			<div
+				className="w-full min-w-0 overflow-hidden space-y-4 p-4 pt-2"
+				onClick={(e) => e.stopPropagation()}
+				onKeyDown={(e) => e.stopPropagation()}
+			>
 				{/* Project fields */}
 				<div className="grid min-w-0 gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)_130px]">
 					<TextField
@@ -193,7 +184,12 @@ export const ProjectCard: React.FC<ProjectCardProps> & ListItemComponent = ({
 							</Text>
 						</div>
 					) : (
-						<List variant="expressive" listStyle="segmented" className="w-full min-w-0">
+						<List
+							variant="expressive"
+							listStyle="segmented"
+							selectionMode="multi-action"
+							className="w-full min-w-0"
+						>
 							{project.tasks.map((task, ti) => {
 								const taskKey = `${projectIndex}-${ti}`;
 								return (

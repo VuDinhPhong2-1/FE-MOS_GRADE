@@ -11,10 +11,12 @@ import type {
 	SpecialCondition,
 	SpecialConditionType,
 	TaskXmlRule,
+	XmlConditionFeedback,
 	XmlGradingCondition,
 } from "../../../../types/xml-grading-rules.types";
 import {
 	defaultSpecialConditionFeedback,
+	emptyFeedback,
 	groupSpecialConditionOptions,
 	specialConditionOptionsForSubject,
 } from "../../utils/xml-rule-helpers";
@@ -80,6 +82,17 @@ export const TaskCard: React.FC<TaskCardProps> & ListItemComponent = ({
 		? `task-${task.taskId}-${taskIndex}`
 		: `task-idx-${taskIndex}`;
 
+	const updateSpecialFeedback = (patch: Partial<XmlConditionFeedback>) => {
+		if (!task.specialCondition) return;
+		onUpdateSpecialCondition({
+			...task.specialCondition,
+			feedback: {
+				...(task.specialCondition.feedback ?? emptyFeedback()),
+				...patch,
+			},
+		});
+	};
+
 	return (
 		<ListItem
 			_listIndex={_listIndex}
@@ -93,20 +106,11 @@ export const TaskCard: React.FC<TaskCardProps> & ListItemComponent = ({
 			leadingContent={
 				<Icon name="task_alt" className="text-xl text-m3-secondary" />
 			}
-			headline={
-				<span className="truncate text-sm font-bold text-m3-on-surface">
-					{task.taskName || "Task chưa đặt tên"}
-				</span>
-			}
+			headline={task.taskName || "Task chưa đặt tên"}
 			supportingText={`${task.taskId || `TASK-${taskIndex + 1}`} · ${task.conditions.length} điều kiện · ${task.maxScore} điểm`}
 			trailingType="custom"
 			trailingContent={
-				// biome-ignore lint/a11y/useKeyWithClickEvents: inner buttons handle interactions
-				// biome-ignore lint/a11y/noStaticElementInteractions: stops click propagation from triggering expand
-				<div
-					className="flex items-center gap-1.5"
-					onClick={(e) => e.stopPropagation()}
-				>
+				<div className="flex items-center gap-1.5">
 					{task.taskId && (
 						<span className="hidden sm:inline-block rounded-lg bg-m3-surface-container px-2 py-0.5 font-mono text-[11px] font-bold text-m3-on-surface">
 							{task.taskId}
@@ -117,45 +121,54 @@ export const TaskCard: React.FC<TaskCardProps> & ListItemComponent = ({
 						size="sm"
 						colorStyle="standard"
 						aria-label="Xóa nhiệm vụ"
-						onClick={onDeleteTask}
+						onClick={(e) => {
+							e.stopPropagation();
+							onDeleteTask();
+						}}
 					>
 						<Icon name="delete" className="text-base text-m3-error" />
 					</IconButton>
-					<Icon
-						name="expand_more"
-						className={`text-lg text-m3-on-surface-variant transition-transform duration-200 ${
-							expanded ? "rotate-180" : ""
-						}`}
-					/>
 				</div>
 			}
 		>
 			{/* Task Body */}
-			<div className="w-full min-w-0 overflow-hidden space-y-4 p-4 pt-2">
+			{/* biome-ignore lint/a11y/noStaticElementInteractions: prevent accordion collapse when interacting with inner controls */}
+			<div
+				className="w-full min-w-0 overflow-hidden space-y-4 p-4 pt-2"
+				onClick={(e) => e.stopPropagation()}
+				onKeyDown={(e) => e.stopPropagation()}
+			>
 				{/* Basic Task metadata fields */}
-				<div className="grid min-w-0 gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)_120px]">
-					<TextField
-						label="Mã Task"
-						placeholder={`TASK-${taskIndex + 1}`}
-						value={task.taskId}
-						onChange={(val) => onMutateTask({ taskId: val })}
-						fullWidth
-					/>
+				<div className="flex flex-col min-w-0 gap-2">
+					<div className="flex w-full flex-row gap-2">
+						<TextField
+							label="Mã Task"
+							placeholder={`TASK-${taskIndex + 1}`}
+							value={task.taskId}
+							onChange={(val) => onMutateTask({ taskId: val })}
+							fullWidth
+							dense
+						/>
+
+						<TextField
+							dense
+							label="Điểm tối đa"
+							type="number"
+							value={String(task.maxScore ?? 0)}
+							onChange={(val) => onMutateTask({ maxScore: Number(val) || 0 })}
+							fullWidth
+						/>
+					</div>
+
 					<TextField
 						label="Tên Task"
 						placeholder="Nhập tên mô tả task..."
 						value={task.taskName}
 						onChange={(val) => onMutateTask({ taskName: val })}
 						fullWidth
-					/>
-					<TextField
-						label="Điểm tối đa"
-						type="number"
-						value={String(task.maxScore ?? 0)}
-						onChange={(val) =>
-							onMutateTask({ maxScore: Number(val) || 0 })
-						}
-						fullWidth
+						type="textarea"
+						scrollAreaType="always"
+						rows={4}
 					/>
 				</div>
 
@@ -183,9 +196,8 @@ export const TaskCard: React.FC<TaskCardProps> & ListItemComponent = ({
 							</div>
 							<Icon
 								name="expand_more"
-								className={`shrink-0 text-base text-m3-on-surface-variant transition-transform duration-200 ${
-									specialConditionExpanded ? "rotate-180" : ""
-								}`}
+								className={`shrink-0 text-base text-m3-on-surface-variant transition-transform duration-200 ${specialConditionExpanded ? "rotate-180" : ""
+									}`}
 							/>
 						</button>
 					</div>
@@ -248,6 +260,58 @@ export const TaskCard: React.FC<TaskCardProps> & ListItemComponent = ({
 									onChange={(next) => onUpdateSpecialCondition(next)}
 								/>
 							)}
+
+							{/* Feedback & Fix Action for Special Condition */}
+							{task.specialCondition?.type && (
+								<div className="space-y-3 rounded-2xl bg-m3-surface-container p-3.5">
+									<div className="flex items-center gap-2">
+										<Icon
+											name="tips_and_updates"
+											className="text-base text-m3-primary"
+										/>
+										<span className="text-xs font-bold text-m3-on-surface">
+											Phản hồi & Gợi ý cách sửa (Feedback & Fix Action)
+										</span>
+									</div>
+
+									<div className="grid min-w-0 gap-3 sm:grid-cols-2">
+										<TextField
+											label="Thông báo khi đạt điểm"
+											placeholder="Thành công..."
+											value={
+												task.specialCondition.feedback?.successDetail || ""
+											}
+											onChange={(val) =>
+												updateSpecialFeedback({ successDetail: val })
+											}
+											fullWidth
+										/>
+
+										<TextField
+											label="Thông báo khi mất điểm"
+											placeholder="Lỗi..."
+											value={task.specialCondition.feedback?.errorMessage || ""}
+											onChange={(val) =>
+												updateSpecialFeedback({ errorMessage: val })
+											}
+											fullWidth
+										/>
+									</div>
+
+									<TextField
+										label="Gợi ý cách sửa (Fix action)"
+										placeholder="Hướng dẫn thao tác để đạt điểm..."
+										value={task.specialCondition.feedback?.fixAction || ""}
+										onChange={(val) =>
+											updateSpecialFeedback({ fixAction: val })
+										}
+										fullWidth
+										type="textarea"
+										scrollAreaType="always"
+										rows={3}
+									/>
+								</div>
+							)}
 						</div>
 					)}
 				</div>
@@ -291,9 +355,7 @@ export const TaskCard: React.FC<TaskCardProps> & ListItemComponent = ({
 										basicsExpanded={
 											expandedConditionBasics[conditionKey] ?? false
 										}
-										onToggleBasics={() =>
-											onToggleConditionBasics(conditionKey)
-										}
+										onToggleBasics={() => onToggleConditionBasics(conditionKey)}
 										advancedExpanded={showAdvanced[conditionKey] ?? false}
 										onToggleAdvanced={() => onToggleAdvanced(conditionKey)}
 										onMutate={(patch) => onMutateCondition(ci, patch)}
@@ -310,4 +372,3 @@ export const TaskCard: React.FC<TaskCardProps> & ListItemComponent = ({
 };
 
 TaskCard._m3ListItem = true;
-

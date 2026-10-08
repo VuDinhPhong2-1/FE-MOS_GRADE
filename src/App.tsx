@@ -24,7 +24,6 @@ const SubmissionPortalManagementPage = lazy(
 );
 const XmlGradingRulesPage = lazy(() => import("./pages/XmlGradingRulesPage"));
 const PermissionManagement = lazy(() => import("./pages/PermissionManagement"));
-const GradingView = lazy(() => import("./pages/GradingView"));
 const ClassGradingPage = lazy(() => import("./pages/ClassGradingPage"));
 const ClassScoreboardPage = lazy(() => import("./pages/ClassScoreboardPage"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
@@ -101,12 +100,6 @@ const AppLayout: React.FC = () => {
 					label: "Bài tập",
 					icon: "assignment",
 					path: "/assignments",
-				},
-				{
-					id: "grading-test",
-					label: "Thử nghiệm",
-					icon: "science",
-					path: "/grading",
 				},
 			);
 		}
@@ -202,7 +195,10 @@ function App() {
 										/>
 									</Route>
 
-									<Route path="/grading" element={<GradingView />} />
+									<Route
+										path="/grading"
+										element={<Navigate to="/admin/xml-grading-rules" replace />}
+									/>
 									<Route
 										path="/classes/:classId/grading"
 										element={<ClassGradingPage />}
