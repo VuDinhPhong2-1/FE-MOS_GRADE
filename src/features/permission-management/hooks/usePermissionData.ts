@@ -5,7 +5,14 @@ import type {
 	TeacherApprovalRequest,
 	TeacherSummary,
 } from "../../../types/auth.types";
-import type { ActiveTab, TeacherRequestStatusFilter } from "../types";
+import {
+	ALL_KNOWN_PERMISSIONS,
+	type ActiveTab,
+	type TeacherRequestStatusFilter,
+} from "../types";
+
+const mergePermissionCatalog = (permissions?: string[]) =>
+	Array.from(new Set([...(permissions || []), ...ALL_KNOWN_PERMISSIONS]));
 
 export const usePermissionData = () => {
 	const { user, getAccessToken } = useAuth();
@@ -79,7 +86,7 @@ export const usePermissionData = () => {
 				]);
 
 				setTeachers(teacherList);
-				setPermissionCatalog(catalog.permissions || []);
+				setPermissionCatalog(mergePermissionCatalog(catalog.permissions));
 
 				if (teacherList.length === 0) {
 					setSelectedTeacherId("");
@@ -147,6 +154,24 @@ export const usePermissionData = () => {
 				: [...prev, permission],
 		);
 	}, []);
+
+	const togglePermissionGroup = useCallback(
+		(permissions: string[], select: boolean) => {
+			setSelectedPermissions((prev) => {
+				const allowedPermissions = permissions.filter((permission) =>
+					permissionCatalog.includes(permission),
+				);
+
+				if (select) {
+					return Array.from(new Set([...prev, ...allowedPermissions]));
+				}
+
+				const removeSet = new Set(allowedPermissions);
+				return prev.filter((permission) => !removeSet.has(permission));
+			});
+		},
+		[permissionCatalog],
+	);
 
 	const selectAllPermissions = useCallback(() => {
 		setSelectedPermissions([...permissionCatalog]);
@@ -277,6 +302,7 @@ export const usePermissionData = () => {
 		setTeacherKeyword,
 		selectTeacher,
 		togglePermission,
+		togglePermissionGroup,
 		selectAllPermissions,
 		clearAllPermissions,
 		savePermissions,

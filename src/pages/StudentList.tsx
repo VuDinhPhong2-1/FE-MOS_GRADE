@@ -23,6 +23,7 @@ import {
 	useStudentData,
 } from "../features/student-list";
 import type { Student } from "../types/student.types";
+import { hasPermission } from "../utils/permissions";
 
 const StudentList = ({
 	selectedClass,
@@ -30,7 +31,7 @@ const StudentList = ({
 	readOnly = false,
 	onBack,
 }: StudentListProps) => {
-	const { getAccessToken } = useAuth();
+	const { getAccessToken, user } = useAuth();
 	const { showSnackbar } = useSnackbar();
 	const navigate = useNavigate();
 	const location = useLocation();
@@ -50,6 +51,7 @@ const StudentList = ({
 	const [isPasteModalOpen, setIsPasteModalOpen] = useState(false);
 	const [studentToDelete, setStudentToDelete] = useState<Student | null>(null);
 	const [isDeletingStudent, setIsDeletingStudent] = useState(false);
+	const canSyncGoogleSheet = hasPermission(user, "googlesheet.sync");
 
 	const {
 		students,
@@ -357,6 +359,7 @@ const StudentList = ({
 				readOnly={readOnly}
 				isLoading={isLoading}
 				isStudentMetadataSyncing={isStudentMetadataSyncing}
+				canSyncGoogleSheet={canSyncGoogleSheet}
 				activeCount={activeStudents.length}
 				newCount={studentNewList.length}
 				searchQuery={searchKeyword}

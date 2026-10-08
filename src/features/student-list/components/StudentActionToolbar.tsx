@@ -24,6 +24,7 @@ export interface StudentActionToolbarProps {
 	readOnly: boolean;
 	isLoading: boolean;
 	isStudentMetadataSyncing: boolean;
+	canSyncGoogleSheet: boolean;
 	activeCount: number;
 	newCount: number;
 	searchQuery: string;
@@ -46,6 +47,7 @@ const StudentActionToolbarComponent = ({
 	readOnly,
 	isLoading,
 	isStudentMetadataSyncing,
+	canSyncGoogleSheet,
 	activeCount,
 	newCount,
 	searchQuery,
@@ -114,7 +116,7 @@ const StudentActionToolbarComponent = ({
 				)}
 
 				{/* Chấm điểm cho lớp */}
-				{!readOnly && (
+				{!readOnly && canSyncGoogleSheet && (
 					<TooltipBox
 						tooltip={
 							<PlainTooltip>
@@ -217,6 +219,7 @@ const StudentActionToolbarComponent = ({
 			onGrade,
 			onOpenViewScores,
 			isStudentMetadataSyncing,
+			canSyncGoogleSheet,
 			isLoading,
 			onSyncMetadata,
 			newCount,

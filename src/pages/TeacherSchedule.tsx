@@ -38,11 +38,13 @@ import type {
 	UpdateScheduleRequest,
 } from "../types/schedule.types";
 import { notify } from "../utils/notify";
+import { hasPermission } from "../utils/permissions";
 
 const TeacherSchedule = () => {
 	const navigate = useNavigate();
 	const { getAccessToken, user } = useAuth();
 	const teacherDisplayName = user?.fullName || user?.username || "";
+	const canSyncGoogleSheet = hasPermission(user, "googlesheet.sync");
 
 	// Timer tick for real-time lesson status (ongoing / upcoming / done)
 	const [nowTick, setNowTick] = useState<number>(() => Date.now());
@@ -473,6 +475,7 @@ const TeacherSchedule = () => {
 				onSyncToGoogleSheet={() => {
 					void handleSyncAttendanceToGoogleSheet();
 				}}
+				canSyncGoogleSheet={canSyncGoogleSheet}
 				bonusDraft={bonusDraft}
 				bonusSaving={bonusSaving}
 				onUpdateBonus={updateBonusDraft}

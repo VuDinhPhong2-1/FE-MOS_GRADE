@@ -29,6 +29,7 @@ export interface AttendanceTabContentProps {
 	attendanceSyncing: boolean;
 	attendanceSaving: boolean;
 	attendanceLoading: boolean;
+	canSyncGoogleSheet: boolean;
 	hasUnsavedAttendanceChanges: boolean;
 	filteredAttendanceStudents: ScheduleAttendanceStudent[];
 	onKeywordChange: (keyword: string) => void;
@@ -170,6 +171,7 @@ export const AttendanceTabContent = ({
 	attendanceSyncing,
 	attendanceSaving,
 	attendanceLoading,
+	canSyncGoogleSheet,
 	hasUnsavedAttendanceChanges,
 	filteredAttendanceStudents,
 	onKeywordChange,
@@ -383,7 +385,7 @@ export const AttendanceTabContent = ({
 					Tất cả vắng
 				</Button>
 
-				<Button
+				{canSyncGoogleSheet && <Button
 					colorStyle="tonal"
 					size="sm"
 					icon={
@@ -408,7 +410,7 @@ export const AttendanceTabContent = ({
 					}
 				>
 					{attendanceSyncing ? "Đang đồng bộ..." : "Đồng bộ GG Sheet"}
-				</Button>
+				</Button>}
 			</div>
 
 			<Text variant="body-sm" className="text-xs text-m3-on-surface-variant">

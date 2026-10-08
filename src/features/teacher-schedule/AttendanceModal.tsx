@@ -73,6 +73,7 @@ interface AttendanceModalProps {
 	) => void;
 	onSaveAttendance: () => void;
 	onSyncToGoogleSheet: () => void;
+	canSyncGoogleSheet: boolean;
 	bonusDraft?: Record<
 		string,
 		{ points: number; reason: string; category: string }
@@ -155,6 +156,7 @@ export const AttendanceModal = ({
 	onUpdateEndLessonField,
 	onSaveAttendance,
 	onSyncToGoogleSheet,
+	canSyncGoogleSheet,
 	bonusDraft = {},
 	onUpdateBonus = () => {},
 	onSaveBonus = () => {},
@@ -362,6 +364,7 @@ export const AttendanceModal = ({
 											attendanceSyncing={attendanceSyncing}
 											attendanceSaving={attendanceSaving}
 											attendanceLoading={attendanceLoading}
+											canSyncGoogleSheet={canSyncGoogleSheet}
 											hasUnsavedAttendanceChanges={hasUnsavedAttendanceChanges}
 											filteredAttendanceStudents={filteredAttendanceStudents}
 											onKeywordChange={onKeywordChange}

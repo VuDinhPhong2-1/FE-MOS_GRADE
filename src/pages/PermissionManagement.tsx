@@ -34,6 +34,7 @@ const PermissionManagement: React.FC = () => {
 		setTeacherKeyword,
 		selectTeacher,
 		togglePermission,
+		togglePermissionGroup,
 		selectAllPermissions,
 		clearAllPermissions,
 		savePermissions,
@@ -152,6 +153,7 @@ const PermissionManagement: React.FC = () => {
 						loading={loading}
 						saving={saving}
 						onTogglePermission={togglePermission}
+						onToggleGroup={togglePermissionGroup}
 						onSelectAll={selectAllPermissions}
 						onClearAll={clearAllPermissions}
 						onSave={savePermissions}
