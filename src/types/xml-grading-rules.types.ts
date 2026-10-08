@@ -98,6 +98,8 @@ export type SpecialConditionType =
 	| "excelTableTotalRow"
 	| "excelTableCreate"
 	| "excelChartQuickLayout"
+	| "excelSparkline"
+	| "excelTableRowDelete"
 	// PowerPoint (.pptx)
 	| "pptPictureCropShape"
 	| "pptShapeSize"
@@ -552,6 +554,21 @@ export interface ExcelChartQuickLayoutConfig {
 	dataLabelPosition?: string;
 }
 
+export interface ExcelSparklineConfig {
+	worksheetName?: string;
+	sourceFile?: string;
+	sparklineType?: string;
+	dataRange?: string;
+	locationRange?: string;
+}
+
+export interface ExcelTableRowDeleteConfig {
+	worksheetName?: string;
+	sourceFile?: string;
+	deletedText?: string;
+	matchWholeWord?: boolean;
+}
+
 export interface ExcelTextReplacementConfig {
 	worksheetName?: string;
 	sourceFile?: string;
@@ -769,6 +786,8 @@ export interface SpecialCondition {
 	excelTableTotalRowConfig?: ExcelTableTotalRowConfig;
 	excelTableCreateConfig?: ExcelTableCreateConfig;
 	excelChartQuickLayoutConfig?: ExcelChartQuickLayoutConfig;
+	excelSparklineConfig?: ExcelSparklineConfig;
+	excelTableRowDeleteConfig?: ExcelTableRowDeleteConfig;
 	// PowerPoint
 	pptPictureCropShapeConfig?: PptPictureCropShapeConfig;
 	pptShapeSizeConfig?: PptShapeSizeConfig;

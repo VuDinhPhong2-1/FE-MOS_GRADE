@@ -470,6 +470,20 @@ export const specialConditionOptions: SpecialConditionOption[] = [
 			"Kiểm tra biểu đồ Excel đã áp dụng Quick Layout yêu cầu, ví dụ Layout 2 có nhãn dữ liệu.",
 		subjects: ["excel"],
 	},
+	{
+		value: "excelSparkline",
+		label: "Biểu đồ Sparkline Excel",
+		description:
+			"Kiểm tra Sparkline đúng loại, vùng dữ liệu và vị trí ô/vùng đích.",
+		subjects: ["excel"],
+	},
+	{
+		value: "excelTableRowDelete",
+		label: "Xóa hàng chứa dữ liệu trong bảng",
+		description:
+			"Kiểm tra hàng chứa văn bản yêu cầu đã được xóa khỏi worksheet/bảng Excel.",
+		subjects: ["excel"],
+	},
 	// PowerPoint Special Conditions
 	{
 		value: "pptPictureCropShape",

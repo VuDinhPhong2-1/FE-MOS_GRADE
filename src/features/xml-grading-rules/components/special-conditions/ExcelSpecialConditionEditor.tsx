@@ -1823,5 +1823,140 @@ export const ExcelSpecialConditionEditor: React.FC<
 		);
 	}
 
+	if (specialCondition.type === "excelSparkline") {
+		return (
+			<div className="mt-4 grid gap-3 rounded-2xl bg-m3-surface-container p-4 md:grid-cols-2">
+				<label className="text-xs font-semibold text-m3-on-surface-variant">
+					Tên worksheet
+					<input
+						value={specialCondition.excelSparklineConfig?.worksheetName ?? ""}
+						onChange={(e) =>
+							updateConfig("excelSparklineConfig", {
+								worksheetName: e.target.value,
+							})
+						}
+						placeholder="Parts"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-m3-on-surface-variant">
+					File worksheet nguồn
+					<input
+						value={specialCondition.excelSparklineConfig?.sourceFile ?? ""}
+						onChange={(e) =>
+							updateConfig("excelSparklineConfig", {
+								sourceFile: e.target.value,
+							})
+						}
+						placeholder="xl/worksheets/sheet1.xml"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-m3-on-surface-variant">
+					Loại Sparkline
+					<select
+						value={specialCondition.excelSparklineConfig?.sparklineType ?? "line"}
+						onChange={(e) =>
+							updateConfig("excelSparklineConfig", {
+								sparklineType: e.target.value,
+							})
+						}
+						className={selectClass}
+					>
+						<option value="line">Line</option>
+						<option value="column">Column</option>
+						<option value="stacked">Win/Loss</option>
+					</select>
+				</label>
+				<label className="text-xs font-semibold text-m3-on-surface-variant">
+					Vị trí Sparkline
+					<input
+						value={specialCondition.excelSparklineConfig?.locationRange ?? ""}
+						onChange={(e) =>
+							updateConfig("excelSparklineConfig", {
+								locationRange: e.target.value,
+							})
+						}
+						placeholder="F4"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-m3-on-surface-variant md:col-span-2">
+					Vùng dữ liệu Sparkline
+					<input
+						value={specialCondition.excelSparklineConfig?.dataRange ?? ""}
+						onChange={(e) =>
+							updateConfig("excelSparklineConfig", {
+								dataRange: e.target.value,
+							})
+						}
+						placeholder="B4:D4"
+						className={inputClass}
+					/>
+				</label>
+			</div>
+		);
+	}
+
+	if (specialCondition.type === "excelTableRowDelete") {
+		return (
+			<div className="mt-4 grid gap-3 rounded-2xl bg-m3-surface-container p-4 md:grid-cols-2">
+				<label className="text-xs font-semibold text-m3-on-surface-variant">
+					Tên worksheet
+					<input
+						value={specialCondition.excelTableRowDeleteConfig?.worksheetName ?? ""}
+						onChange={(e) =>
+							updateConfig("excelTableRowDeleteConfig", {
+								worksheetName: e.target.value,
+							})
+						}
+						placeholder="Parts"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-m3-on-surface-variant">
+					File worksheet nguồn
+					<input
+						value={specialCondition.excelTableRowDeleteConfig?.sourceFile ?? ""}
+						onChange={(e) =>
+							updateConfig("excelTableRowDeleteConfig", {
+								sourceFile: e.target.value,
+							})
+						}
+						placeholder="xl/worksheets/sheet1.xml"
+						className={inputClass}
+					/>
+				</label>
+				<label className="text-xs font-semibold text-m3-on-surface-variant md:col-span-2">
+					Nội dung phải được xóa
+					<input
+						value={specialCondition.excelTableRowDeleteConfig?.deletedText ?? ""}
+						onChange={(e) =>
+							updateConfig("excelTableRowDeleteConfig", {
+								deletedText: e.target.value,
+							})
+						}
+						placeholder="Allen"
+						className={inputClass}
+					/>
+				</label>
+				<label className="flex items-center gap-2 text-xs font-medium text-m3-on-surface-variant md:col-span-2">
+					<input
+						type="checkbox"
+						checked={
+							specialCondition.excelTableRowDeleteConfig?.matchWholeWord !== false
+						}
+						onChange={(e) =>
+							updateConfig("excelTableRowDeleteConfig", {
+								matchWholeWord: e.target.checked,
+							})
+						}
+					/>
+					Khớp nguyên nội dung ô
+				</label>
+			</div>
+		);
+	}
+
 	return null;
 };
