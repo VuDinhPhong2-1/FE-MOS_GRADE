@@ -1,6 +1,6 @@
-import { ScrollArea } from "@bug-on/m3-expressive";
+import { Button, Icon, ScrollArea, Text } from "@bug-on/m3-expressive";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
 import { RouteLoadingFallback } from "../../components";
 import { usePageHeader } from "../../context/PageActionsContext";
 import { cn } from "../../utils/utils";
@@ -15,7 +15,9 @@ import { usePortalManagement } from "./hooks/usePortalManagement";
 
 export const SubmissionPortalManagementPage = () => {
 	const portalMgmt = usePortalManagement();
-	const filters = usePortalFilters();
+	const filters = usePortalFilters(
+		portalMgmt.isCreateOpen || Boolean(portalMgmt.editingPortal),
+	);
 	const details = usePortalDetails();
 	const shouldReduceMotion = useReducedMotion();
 
@@ -42,11 +44,6 @@ export const SubmissionPortalManagementPage = () => {
 		},
 		[portalMgmt.setIsCreateOpen],
 	);
-
-	useEffect(() => {
-		void portalMgmt.fetchPortals();
-		void filters.loadSchools();
-	}, [portalMgmt.fetchPortals, filters.loadSchools]);
 
 	const handleCreateSubmit = useCallback(async () => {
 		const success = await portalMgmt.createPortal(
@@ -80,15 +77,33 @@ export const SubmissionPortalManagementPage = () => {
 		[details],
 	);
 
-	if (portalMgmt.loading && portalMgmt.visiblePortals.length === 0) {
+	if (portalMgmt.isInitialLoading) {
 		return <RouteLoadingFallback message="Đang tải cổng nộp bài..." />;
+	}
+	if (portalMgmt.isInitialLoadError) {
+		const message =
+			portalMgmt.portalListError instanceof Error
+				? portalMgmt.portalListError.message
+				: "Không thể tải cổng nộp bài.";
+		return (
+			<div className="flex min-h-[50vh] w-full flex-col items-center justify-center gap-4 p-8 text-center">
+				<Icon name="error_outline" size={40} className="text-m3-error" />
+				<div className="space-y-1">
+					<Text variant="title-lg">Không thể tải cổng nộp bài</Text>
+					<Text variant="body-md" className="text-m3-on-surface-variant">
+						{message}
+					</Text>
+				</div>
+				<Button onClick={portalMgmt.retryPortals}>Thử lại</Button>
+			</div>
+		);
 	}
 
 	return (
 		<main className="flex-1 min-h-0 h-full w-full flex gap-3 lg:gap-4 overflow-hidden relative">
 			<div
 				className={cn(
-					"h-full flex flex-col min-w-0 overflow-hidden relative rounded-m3-xl-inc bg-m3-surface-container-low text-m3-on-surface",
+					"h-full flex flex-col min-w-0 overflow-hidden relative rounded-m3-xl-inc bg-m3-surface text-m3-on-surface",
 					"transition-[width] duration-300 ease-[cubic-bezier(0.2,0,0,1)] motion-reduce:transition-none",
 					isDetailOpen
 						? "w-full lg:w-[calc(60%-0.5rem)] shrink-0"
@@ -102,6 +117,15 @@ export const SubmissionPortalManagementPage = () => {
 					viewportClassName="p-5 lg:pb-26"
 				>
 					<div className="space-y-4">
+						{portalMgmt.isBackgroundRefreshError && (
+							<div className="flex flex-wrap items-center justify-between gap-3 rounded-m3-md bg-m3-error-container px-4 py-3 text-m3-on-error-container">
+								<Text variant="body-md">
+									Không thể cập nhật danh sách mới nhất. Đang hiển thị dữ liệu
+									đã lưu.
+								</Text>
+								<Button onClick={portalMgmt.retryPortals}>Thử lại</Button>
+							</div>
+						)}
 						<StatsBanner
 							activeCount={portalMgmt.stats.active}
 							scopedAssignmentsCount={portalMgmt.stats.scopedAssignments}
@@ -161,8 +185,12 @@ export const SubmissionPortalManagementPage = () => {
 							selectedPortal={details.selectedPortal}
 							alerts={details.alerts}
 							logs={details.logs}
+							totalLogs={details.totalLogs}
 							loadingDetails={details.loadingDetails}
+							hasNextLogsPage={details.hasNextLogsPage}
+							loadingMoreLogs={details.loadingMoreLogs}
 							onClose={details.closeDetails}
+							onLoadMoreLogs={details.loadMoreLogs}
 							onExportLogsCsv={details.exportLogsCsv}
 						/>
 					</motion.div>

@@ -26,6 +26,7 @@ type DetailRow =
 	| { id: "section-divider"; type: "divider" }
 	| { id: "logs-header"; type: "logs-header"; logCount: number }
 	| { id: "logs-empty"; type: "logs-empty" }
+	| { id: "load-more-logs"; type: "load-more-logs" }
 	| {
 			id: string;
 			type: "log";
@@ -37,8 +38,12 @@ type DetailRow =
 interface VirtualDetailListProps {
 	alerts: SubmissionAlert[];
 	logs: SubmissionLog[];
+	totalLogs: number;
 	loadingDetails: boolean;
+	hasNextLogsPage: boolean;
+	loadingMoreLogs: boolean;
 	onExportLogsCsv: () => void;
+	onLoadMoreLogs: () => void;
 	scrollViewportRef: React.RefObject<HTMLDivElement | null>;
 }
 
@@ -51,14 +56,19 @@ const ESTIMATED_SIZES: Record<DetailRow["type"], number> = {
 	divider: 24,
 	"logs-header": 44,
 	"logs-empty": 130,
+	"load-more-logs": 56,
 	log: 72,
 };
 
 const VirtualDetailListComponent: React.FC<VirtualDetailListProps> = ({
 	alerts,
 	logs,
+	totalLogs,
 	loadingDetails,
+	hasNextLogsPage,
+	loadingMoreLogs,
 	onExportLogsCsv,
+	onLoadMoreLogs,
 	scrollViewportRef,
 }) => {
 	const rows = useMemo<DetailRow[]>(() => {
@@ -97,7 +107,7 @@ const VirtualDetailListComponent: React.FC<VirtualDetailListProps> = ({
 		result.push({
 			id: "logs-header",
 			type: "logs-header",
-			logCount: logs.length,
+			logCount: totalLogs,
 		});
 
 		if (logs.length === 0) {
@@ -115,9 +125,11 @@ const VirtualDetailListComponent: React.FC<VirtualDetailListProps> = ({
 				});
 			}
 		}
+		if (hasNextLogsPage)
+			result.push({ id: "load-more-logs", type: "load-more-logs" });
 
 		return result;
-	}, [alerts, logs, loadingDetails]);
+	}, [alerts, logs, totalLogs, loadingDetails, hasNextLogsPage]);
 
 	const rowVirtualizer = useVirtualizer({
 		count: rows.length,
@@ -286,6 +298,19 @@ const VirtualDetailListComponent: React.FC<VirtualDetailListProps> = ({
 									đây.
 								</Text>
 							</Card>
+						)}
+
+						{row.type === "load-more-logs" && (
+							<div className="flex justify-center py-2">
+								<Button
+									size="sm"
+									colorStyle="tonal"
+									disabled={loadingMoreLogs}
+									onClick={onLoadMoreLogs}
+								>
+									{loadingMoreLogs ? "Đang tải..." : "Tải thêm lượt nộp"}
+								</Button>
+							</div>
 						)}
 
 						{row.type === "log" && (

@@ -14,8 +14,12 @@ interface PortalDetailsSectionProps {
 	selectedPortal: SubmissionPortal;
 	alerts: SubmissionAlert[];
 	logs: SubmissionLog[];
+	totalLogs: number;
 	loadingDetails: boolean;
+	hasNextLogsPage: boolean;
+	loadingMoreLogs: boolean;
 	onClose: () => void;
+	onLoadMoreLogs: () => void;
 	onExportLogsCsv: () => void;
 }
 
@@ -23,8 +27,12 @@ const PortalDetailsSectionComponent: React.FC<PortalDetailsSectionProps> = ({
 	selectedPortal,
 	alerts,
 	logs,
+	totalLogs,
 	loadingDetails,
+	hasNextLogsPage,
+	loadingMoreLogs,
 	onClose,
+	onLoadMoreLogs,
 	onExportLogsCsv,
 }) => {
 	const scrollViewportRef = useRef<HTMLDivElement>(null);
@@ -77,8 +85,12 @@ const PortalDetailsSectionComponent: React.FC<PortalDetailsSectionProps> = ({
 				<VirtualDetailList
 					alerts={alerts}
 					logs={logs}
+					totalLogs={totalLogs}
 					loadingDetails={loadingDetails}
+					hasNextLogsPage={hasNextLogsPage}
+					loadingMoreLogs={loadingMoreLogs}
 					onExportLogsCsv={onExportLogsCsv}
+					onLoadMoreLogs={onLoadMoreLogs}
 					scrollViewportRef={scrollViewportRef}
 				/>
 			</ScrollArea>

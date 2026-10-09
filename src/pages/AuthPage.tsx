@@ -9,7 +9,7 @@ import {
 	useThemeMode,
 } from "@bug-on/m3-expressive";
 import { type CredentialResponse, GoogleLogin } from "@react-oauth/google";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AUTH_API_BASE_URL } from "../config/api";
 import { useAuth } from "../context/AuthContext";
@@ -36,6 +36,18 @@ export default function AuthPage() {
 	const { login } = useAuth();
 	const navigate = useNavigate();
 	const isAuthBusy = isSubmitting || isGoogleSubmitting;
+
+	useEffect(() => {
+		const noticeKey = "auth_session_ended_notice";
+		try {
+			const notice = sessionStorage.getItem(noticeKey);
+			if (!notice) return;
+			sessionStorage.removeItem(noticeKey);
+			notify.warning(notice);
+		} catch {
+			// Ignore unavailable session storage; authentication still works.
+		}
+	}, []);
 
 	const handleFieldChange =
 		(field: keyof RegisterFormData) =>
@@ -74,7 +86,7 @@ export default function AuthPage() {
 	};
 
 	const handleAuthSuccess = (data: LoginResponse) => {
-		if (!data.accessToken || !data.refreshToken) {
+		if (!data.accessToken) {
 			throw new Error("Máy chủ không trả về token");
 		}
 
@@ -95,7 +107,6 @@ export default function AuthPage() {
 				teacherApprovalNote: data.teacherApprovalNote,
 			},
 			data.accessToken,
-			data.refreshToken,
 		);
 
 		navigate(getPostLoginPath(data));
@@ -120,6 +131,7 @@ export default function AuthPage() {
 
 			const response = await fetch(endpoint, {
 				method: "POST",
+				credentials: "include",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify(body),
 			});
@@ -165,6 +177,7 @@ export default function AuthPage() {
 
 			const response = await fetch(`${AUTH_API_BASE_URL}/google-login`, {
 				method: "POST",
+				credentials: "include",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ idToken }),
 			});

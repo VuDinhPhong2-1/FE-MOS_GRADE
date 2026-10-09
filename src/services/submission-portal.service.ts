@@ -1,6 +1,7 @@
 import { API_BASE_URL } from "../config/api";
 import type {
 	CreateSubmissionPortalRequest,
+	PagedSubmissionLogs,
 	PublicPortalInfo,
 	PublicPortalStudent,
 	PublicPortalStudentSubmission,
@@ -50,10 +51,11 @@ const errorMessage = async (response: Response, fallback: string) => {
 export const submissionPortalService = {
 	async getAll(
 		getAccessToken: (forceRefresh?: boolean) => Promise<string | null>,
+		signal?: AbortSignal,
 	) {
 		const res = await authFetch(
 			`${API_BASE_URL}/submission-portals`,
-			{ headers: jsonHeaders },
+			{ headers: jsonHeaders, signal },
 			getAccessToken,
 		);
 		if (!res.ok)
@@ -133,6 +135,40 @@ export const submissionPortalService = {
 		if (!res.ok)
 			throw new Error(await errorMessage(res, "Không thể lấy lịch sử nộp"));
 		return res.json() as Promise<SubmissionLog[]>;
+	},
+
+	async getLogsPage(
+		portalId: string,
+		page: number,
+		pageSize: number,
+		getAccessToken: (forceRefresh?: boolean) => Promise<string | null>,
+	) {
+		const params = new URLSearchParams({
+			page: String(page),
+			pageSize: String(pageSize),
+		});
+		const res = await authFetch(
+			`${API_BASE_URL}/submission-portals/${portalId}/submission-logs/paged?${params}`,
+			{ headers: jsonHeaders },
+			getAccessToken,
+		);
+		if (!res.ok)
+			throw new Error(await errorMessage(res, "Không thể lấy lịch sử nộp"));
+		return res.json() as Promise<PagedSubmissionLogs>;
+	},
+
+	async exportLogsCsv(
+		portalId: string,
+		getAccessToken: (forceRefresh?: boolean) => Promise<string | null>,
+	) {
+		const res = await authFetch(
+			`${API_BASE_URL}/submission-portals/${portalId}/submission-logs/export`,
+			undefined,
+			getAccessToken,
+		);
+		if (!res.ok)
+			throw new Error(await errorMessage(res, "Không thể xuất lịch sử nộp"));
+		return res.blob();
 	},
 
 	async getPublicInfo(token: string) {

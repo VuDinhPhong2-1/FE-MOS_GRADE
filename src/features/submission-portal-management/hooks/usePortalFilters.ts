@@ -1,21 +1,22 @@
 import { useSnackbar } from "@bug-on/m3-expressive";
+import { useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../../../context/AuthContext";
+import { queryKeys } from "../../../lib/queryKeys";
 import { assignmentService } from "../../../services/assignment.service";
 import { classService } from "../../../services/class.service";
 import { schoolService } from "../../../services/school.service";
 import type { Assignment } from "../../../types/assignment.types";
 import type { Class } from "../../../types/class.types";
-import type { School } from "../../../types/school.types";
 import { hasAutoGradingEndpoint } from "../utils/portalFormatters";
 
-export const usePortalFilters = () => {
-	const { getAccessToken } = useAuth();
+export const usePortalFilters = (enabled = false) => {
+	const { user, getAccessToken } = useAuth();
 	const { showSnackbar } = useSnackbar();
 
 	const assignmentCacheRef = useRef<Map<string, Assignment[]>>(new Map());
+	const userId = user?.userId ?? "anonymous";
 
-	const [schools, setSchools] = useState<School[]>([]);
 	const [classes, setClasses] = useState<Class[]>([]);
 	const [assignments, setAssignments] = useState<Assignment[]>([]);
 
@@ -25,7 +26,6 @@ export const usePortalFilters = () => {
 		[],
 	);
 
-	const [loadingSchools, setLoadingSchools] = useState(false);
 	const [loadingClasses, setLoadingClasses] = useState(false);
 	const [loadingAssignments, setLoadingAssignments] = useState(false);
 
@@ -39,17 +39,15 @@ export const usePortalFilters = () => {
 		[showSnackbar],
 	);
 
-	const loadSchools = useCallback(async () => {
-		setLoadingSchools(true);
-		try {
+	const schoolsQuery = useQuery({
+		queryKey: queryKeys.submissionPortals.schools(userId),
+		queryFn: async () => {
 			const schoolList = await schoolService.getSchools(getAccessToken);
-			setSchools(schoolList.filter((school) => school.isActive !== false));
-		} catch (error) {
-			notifyError(error, "Không thể tải danh sách trường");
-		} finally {
-			setLoadingSchools(false);
-		}
-	}, [getAccessToken, notifyError]);
+			return schoolList.filter((school) => school.isActive !== false);
+		},
+		enabled,
+	});
+	const schools = schoolsQuery.data ?? [];
 
 	const loadClassesBySelectedSchool = useCallback(async () => {
 		if (!selectedSchoolId) {
@@ -204,10 +202,10 @@ export const usePortalFilters = () => {
 		selectedSchoolName,
 		selectedClassNames,
 		classNameById,
-		loadingSchools,
+		loadingSchools: schoolsQuery.isLoading,
 		loadingClasses,
 		loadingAssignments,
-		loadSchools,
+		loadSchools: schoolsQuery.refetch,
 		handleSchoolChange,
 		handleClassChange,
 		handleAssignmentChange,

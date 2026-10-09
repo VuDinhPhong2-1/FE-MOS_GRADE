@@ -18,12 +18,11 @@ export interface User {
 
 export interface AuthContextType {
 	user: User | null;
-	login: (userData: User, accessToken: string, refreshToken: string) => void;
+	login: (userData: User, accessToken: string) => void;
 	updateUser: (userData: Partial<User>) => void;
 	logout: () => void;
 	loading: boolean;
 	getAccessToken: (forceRefresh?: boolean) => Promise<string | null>;
-	getRefreshToken: () => string | null;
 }
 
 export interface LoginFormData {
@@ -37,7 +36,6 @@ export interface RegisterFormData extends LoginFormData {
 
 export interface LoginResponse {
 	accessToken: string;
-	refreshToken: string;
 	userId: string;
 	username: string;
 	email?: string;
@@ -135,4 +133,14 @@ export interface TeacherApprovalRequest extends TeacherSummary {
 export interface TeacherApprovalDecisionRequest {
 	decision: "approve" | "reject";
 	note?: string;
+}
+
+export interface UserSession {
+	sessionId: string;
+	deviceName: string;
+	ipAddress?: string;
+	createdAt: string;
+	lastSeenAt: string;
+	expiresAt: string;
+	isCurrent: boolean;
 }

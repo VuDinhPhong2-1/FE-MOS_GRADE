@@ -10,7 +10,6 @@ import type { AuthContextType, User } from "../types/auth.types";
 interface JwtPayload {
 	exp?: number;
 }
-
 interface AuthProviderProps {
 	children: ReactNode;
 }
@@ -20,14 +19,23 @@ const REFRESH_LOCK_KEY = "auth_refresh_lock";
 const REFRESH_BROADCAST_KEY = "auth_refresh_broadcast";
 const REFRESH_LOCK_TTL_MS = 12_000;
 const REFRESH_WAIT_TIMEOUT_MS = 12_500;
-const REFRESH_WAIT_INTERVAL_MS = 250;
-const REFRESH_MAX_ATTEMPTS = 2;
-
+const REFRESH_REQUEST_TIMEOUT_MS = 10_000;
+const LEGACY_REFRESH_TOKEN_KEY = "refreshToken";
+const SESSION_INVALIDATION_BROADCAST_KEY = "auth_session_invalidated";
+const SESSION_ENDED_NOTICE_KEY = "auth_session_ended_notice";
+const SESSION_ENDED_MESSAGE =
+	"Phiên đăng nhập đã kết thúc hoặc bạn đã bị đăng xuất từ thiết bị khác. Vui lòng đăng nhập lại.";
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+interface RefreshRequest {
+	id: string;
+	generation: number;
+	controller: AbortController;
+	promise: Promise<string | null>;
+}
 
 const getTokenExpiryMs = (token: string | null): number | null => {
 	if (!token) return null;
-
 	try {
 		const { exp } = jwtDecode<JwtPayload>(token);
 		return exp ? exp * 1000 : null;
@@ -36,22 +44,20 @@ const getTokenExpiryMs = (token: string | null): number | null => {
 	}
 };
 
-const isTokenExpired = (token: string | null): boolean => {
+const isTokenExpired = (token: string | null) => {
 	const expiryMs = getTokenExpiryMs(token);
-	if (!expiryMs) return true;
-	return expiryMs <= Date.now();
+	return !expiryMs || expiryMs <= Date.now();
 };
 
 const clearSession = () => {
 	localStorage.removeItem("accessToken");
-	localStorage.removeItem("refreshToken");
+	localStorage.removeItem(LEGACY_REFRESH_TOKEN_KEY);
 	localStorage.removeItem("user");
 };
 
 const getInitialUser = (): User | null => {
 	const savedUser = localStorage.getItem("user");
 	if (!savedUser) return null;
-
 	try {
 		return JSON.parse(savedUser) as User;
 	} catch {
@@ -62,445 +68,273 @@ const getInitialUser = (): User | null => {
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
 	const [user, setUser] = useState<User | null>(() => getInitialUser());
-	const [loading, setLoading] = useState<boolean>(() => {
+	const [loading, setLoading] = useState(() => {
 		const savedUser = getInitialUser();
-		const token = localStorage.getItem("accessToken");
-		// Nếu có user session và token còn hạn, sẵn sàng hiển thị ngay không cần block loading
-		if (savedUser && token && !isTokenExpired(token)) {
-			return false;
-		}
-		// Nếu có user nhưng token đã hết hạn, giữ loading để chờ refresh token
-		if (savedUser && localStorage.getItem("refreshToken")) {
-			return true;
-		}
-		return false;
+		return Boolean(savedUser);
 	});
-
-	const refreshPromiseRef = useRef<Promise<string | null> | null>(null);
+	const authGenerationRef = useRef(0);
+	const refreshRequestRef = useRef<RefreshRequest | null>(null);
+	const refreshRequestSequenceRef = useRef(0);
 	const proactiveTimerRef = useRef<number | null>(null);
-	const tabIdRef = useRef<string>(
-		typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-			? crypto.randomUUID()
-			: `${Date.now()}_${Math.random().toString(36).slice(2)}`,
+	const tabIdRef = useRef(
+		crypto.randomUUID?.() ?? `${Date.now()}_${Math.random()}`,
 	);
 
 	const scheduleProactiveRefresh = (token: string | null) => {
-		if (proactiveTimerRef.current) {
+		if (proactiveTimerRef.current)
 			window.clearTimeout(proactiveTimerRef.current);
-			proactiveTimerRef.current = null;
-		}
-
 		const expiryMs = getTokenExpiryMs(token);
 		if (!expiryMs) return;
-
-		const delay = Math.max(0, expiryMs - Date.now() - REFRESH_EARLY_MS);
-		proactiveTimerRef.current = window.setTimeout(() => {
-			void getAccessToken(true);
-		}, delay);
+		proactiveTimerRef.current = window.setTimeout(
+			() => void getAccessToken(true),
+			Math.max(0, expiryMs - Date.now() - REFRESH_EARLY_MS),
+		);
 	};
 
-	const isAccessTokenUsable = (token: string | null): token is string =>
-		Boolean(token) && !isTokenExpired(token);
-
-	const readRefreshLock = (): { owner: string; expiresAt: number } | null => {
-		const raw = localStorage.getItem(REFRESH_LOCK_KEY);
-		if (!raw) return null;
-
-		try {
-			const parsed = JSON.parse(raw) as {
-				owner?: unknown;
-				expiresAt?: unknown;
-			};
-			if (
-				typeof parsed.owner !== "string" ||
-				typeof parsed.expiresAt !== "number"
-			) {
-				return null;
-			}
-			return { owner: parsed.owner, expiresAt: parsed.expiresAt };
-		} catch {
-			return null;
-		}
-	};
-
-	const tryAcquireRefreshLock = (): boolean => {
+	const acquireRefreshLock = (owner: string) => {
 		const now = Date.now();
-		const currentLock = readRefreshLock();
-		if (
-			currentLock &&
-			currentLock.owner !== tabIdRef.current &&
-			currentLock.expiresAt > now
-		) {
-			return false;
+		try {
+			const raw = localStorage.getItem(REFRESH_LOCK_KEY);
+			const lock = raw
+				? (JSON.parse(raw) as { owner?: string; expiresAt?: number })
+				: null;
+			if (lock?.owner && lock.owner !== owner && (lock.expiresAt ?? 0) > now)
+				return false;
+		} catch {
+			/* replace malformed lock */
 		}
-
-		const newLock = JSON.stringify({
-			owner: tabIdRef.current,
-			expiresAt: now + REFRESH_LOCK_TTL_MS,
-		});
-
-		localStorage.setItem(REFRESH_LOCK_KEY, newLock);
-		const confirmedLock = readRefreshLock();
-		return confirmedLock?.owner === tabIdRef.current;
+		localStorage.setItem(
+			REFRESH_LOCK_KEY,
+			JSON.stringify({
+				owner,
+				expiresAt: now + REFRESH_LOCK_TTL_MS,
+			}),
+		);
+		return true;
 	};
 
-	const releaseRefreshLock = () => {
-		const currentLock = readRefreshLock();
-		if (currentLock?.owner === tabIdRef.current) {
+	const releaseRefreshLock = (owner: string) => {
+		try {
+			const lock = JSON.parse(
+				localStorage.getItem(REFRESH_LOCK_KEY) || "{}",
+			) as { owner?: string };
+			if (lock.owner === owner) localStorage.removeItem(REFRESH_LOCK_KEY);
+		} catch {
 			localStorage.removeItem(REFRESH_LOCK_KEY);
 		}
 	};
 
-	const broadcastRefreshSuccess = () => {
-		localStorage.setItem(
-			REFRESH_BROADCAST_KEY,
-			JSON.stringify({ at: Date.now(), by: tabIdRef.current }),
-		);
-	};
-
-	const waitForAnotherTabRefresh = async (
-		previousRefreshToken: string | null,
-	): Promise<string | null> => {
-		const nowUsableToken = localStorage.getItem("accessToken");
-		const nowRefreshToken = localStorage.getItem("refreshToken");
-		if (
-			isAccessTokenUsable(nowUsableToken) &&
-			nowRefreshToken &&
-			nowRefreshToken !== previousRefreshToken
-		) {
-			return nowUsableToken;
-		}
-
-		return new Promise((resolve) => {
+	const waitForRefresh = (generation: number) =>
+		new Promise<string | null>((resolve) => {
 			const startedAt = Date.now();
-			let intervalId: number | null = null;
-
+			let intervalId = 0;
 			const finish = (token: string | null) => {
 				window.removeEventListener("storage", onStorage);
-				if (intervalId !== null) {
-					window.clearInterval(intervalId);
-				}
+				window.clearInterval(intervalId);
 				resolve(token);
 			};
-
-			const tryResolveFromStorage = () => {
-				const latestAccessToken = localStorage.getItem("accessToken");
-				const latestRefreshToken = localStorage.getItem("refreshToken");
-				if (
-					isAccessTokenUsable(latestAccessToken) &&
-					latestRefreshToken &&
-					latestRefreshToken !== previousRefreshToken
-				) {
-					finish(latestAccessToken);
+			const check = () => {
+				if (generation !== authGenerationRef.current) {
+					finish(null);
 					return;
 				}
-
-				if (Date.now() - startedAt >= REFRESH_WAIT_TIMEOUT_MS) {
+				const token = localStorage.getItem("accessToken");
+				if (token && !isTokenExpired(token)) finish(token);
+				else if (Date.now() - startedAt >= REFRESH_WAIT_TIMEOUT_MS)
 					finish(null);
-				}
 			};
-
 			const onStorage = (event: StorageEvent) => {
+				if (event.key === SESSION_INVALIDATION_BROADCAST_KEY) {
+					finish(null);
+					return;
+				}
 				if (
-					event.key === "accessToken" ||
-					event.key === "refreshToken" ||
-					event.key === REFRESH_BROADCAST_KEY ||
-					event.key === REFRESH_LOCK_KEY
-				) {
-					tryResolveFromStorage();
-				}
+					["accessToken", REFRESH_BROADCAST_KEY, REFRESH_LOCK_KEY].includes(
+						event.key || "",
+					)
+				)
+					check();
 			};
-
 			window.addEventListener("storage", onStorage);
-			intervalId = window.setInterval(
-				tryResolveFromStorage,
-				REFRESH_WAIT_INTERVAL_MS,
-			);
-			tryResolveFromStorage();
+			intervalId = window.setInterval(check, 250);
+			check();
 		});
+
+	const cancelRefreshRequest = () => {
+		refreshRequestRef.current?.controller.abort();
+		refreshRequestRef.current = null;
 	};
 
-	const callRefreshEndpoint = async (
-		refreshToken: string,
-	): Promise<
-		| { type: "success"; accessToken: string; refreshToken: string }
-		| { type: "unauthorized" }
-		| { type: "error" }
-	> => {
-		try {
-			const response = await fetch(`${AUTH_API_BASE_URL}/refresh-token`, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ refreshToken }),
-			});
-
-			if (response.status === 401) {
-				return { type: "unauthorized" };
-			}
-
-			if (!response.ok) {
-				console.warn(
-					"Refresh token API error:",
-					response.status,
-					response.statusText,
-				);
-				return { type: "error" };
-			}
-
-			const data = await response.json();
-			if (!data?.accessToken || !data?.refreshToken) {
-				console.warn(
-					"Invalid refresh token response: missing accessToken or refreshToken",
-				);
-				return { type: "error" };
-			}
-
-			return {
-				type: "success",
-				accessToken: data.accessToken as string,
-				refreshToken: data.refreshToken as string,
-			};
-		} catch (error) {
-			console.warn(
-				"Network error when refreshing token:",
-				error instanceof Error ? error.message : "Unknown error",
-			);
-			return { type: "error" };
-		}
+	const advanceAuthGeneration = () => {
+		authGenerationRef.current += 1;
+		cancelRefreshRequest();
+		return authGenerationRef.current;
 	};
 
-	const refreshAccessToken = async (): Promise<string | null> => {
-		if (refreshPromiseRef.current) {
-			return refreshPromiseRef.current;
-		}
-
-		refreshPromiseRef.current = (async () => {
-			const currentAccessToken = localStorage.getItem("accessToken");
-			if (isAccessTokenUsable(currentAccessToken)) {
-				scheduleProactiveRefresh(currentAccessToken);
-				return currentAccessToken;
-			}
-
-			if (!localStorage.getItem("refreshToken")) {
-				clearSession();
-				setUser(null);
-				return null;
-			}
-
-			for (let attempt = 0; attempt < REFRESH_MAX_ATTEMPTS; attempt += 1) {
-				const previousRefreshToken = localStorage.getItem("refreshToken");
-				if (!previousRefreshToken) {
-					clearSession();
-					setUser(null);
-					return null;
-				}
-
-				if (!tryAcquireRefreshLock()) {
-					const tokenFromOtherTab =
-						await waitForAnotherTabRefresh(previousRefreshToken);
-					if (tokenFromOtherTab) {
-						scheduleProactiveRefresh(tokenFromOtherTab);
-						return tokenFromOtherTab;
-					}
-
-					continue;
-				}
-
-				try {
-					const latestRefreshToken = localStorage.getItem("refreshToken");
-					if (!latestRefreshToken) {
-						clearSession();
-						setUser(null);
-						return null;
-					}
-
-					const refreshResult = await callRefreshEndpoint(latestRefreshToken);
-					if (refreshResult.type === "success") {
-						localStorage.setItem("accessToken", refreshResult.accessToken);
-						localStorage.setItem("refreshToken", refreshResult.refreshToken);
-						broadcastRefreshSuccess();
-						scheduleProactiveRefresh(refreshResult.accessToken);
-						return refreshResult.accessToken;
-					}
-
-					if (refreshResult.type === "unauthorized") {
-						const tokenFromOtherTab =
-							await waitForAnotherTabRefresh(previousRefreshToken);
-						if (tokenFromOtherTab) {
-							scheduleProactiveRefresh(tokenFromOtherTab);
-							return tokenFromOtherTab;
-						}
-
-						if (attempt === REFRESH_MAX_ATTEMPTS - 1) {
-							clearSession();
-							setUser(null);
-							return null;
-						}
-					} else {
-						return null;
-					}
-				} finally {
-					releaseRefreshLock();
-				}
-			}
-
-			return null;
-		})();
-
-		try {
-			return await refreshPromiseRef.current;
-		} finally {
-			refreshPromiseRef.current = null;
-		}
-	};
-
-	const getAccessToken = async (
+	const refreshAccessToken = async (
 		forceRefresh = false,
 	): Promise<string | null> => {
-		const accessToken = localStorage.getItem("accessToken");
-
-		if (!forceRefresh && accessToken && !isTokenExpired(accessToken)) {
-			return accessToken;
-		}
-
-		return refreshAccessToken();
+		if (refreshRequestRef.current) return refreshRequestRef.current.promise;
+		const currentToken = localStorage.getItem("accessToken");
+		if (!forceRefresh && currentToken && !isTokenExpired(currentToken))
+			return currentToken;
+		const generation = authGenerationRef.current;
+		const requestId = `${tabIdRef.current}:${++refreshRequestSequenceRef.current}`;
+		const lockOwner = requestId;
+		const controller = new AbortController();
+		const timeoutId = window.setTimeout(
+			() => controller.abort(),
+			REFRESH_REQUEST_TIMEOUT_MS,
+		);
+		let acquiredLock = false;
+		const promise = (async () => {
+			await Promise.resolve();
+			try {
+				acquiredLock = acquireRefreshLock(lockOwner);
+				if (!acquiredLock) return await waitForRefresh(generation);
+				const legacyRefreshToken = localStorage.getItem(
+					LEGACY_REFRESH_TOKEN_KEY,
+				);
+				const response = await fetch(`${AUTH_API_BASE_URL}/refresh-token`, {
+					method: "POST",
+					credentials: "include",
+					signal: controller.signal,
+					headers: { "Content-Type": "application/json" },
+					body: legacyRefreshToken
+						? JSON.stringify({ refreshToken: legacyRefreshToken })
+						: "{}",
+				});
+				if (generation !== authGenerationRef.current) return null;
+				if (response.status === 401 || response.status === 400) {
+					invalidateSession(true, generation);
+					return null;
+				}
+				if (!response.ok) return null;
+				const data = (await response.json()) as { accessToken?: string };
+				if (generation !== authGenerationRef.current) return null;
+				if (!data.accessToken) return null;
+				localStorage.setItem("accessToken", data.accessToken);
+				localStorage.removeItem(LEGACY_REFRESH_TOKEN_KEY);
+				localStorage.setItem(
+					REFRESH_BROADCAST_KEY,
+					JSON.stringify({ at: Date.now(), by: tabIdRef.current }),
+				);
+				scheduleProactiveRefresh(data.accessToken);
+				return data.accessToken;
+			} catch {
+				return null;
+			} finally {
+				window.clearTimeout(timeoutId);
+				if (acquiredLock) releaseRefreshLock(lockOwner);
+				if (refreshRequestRef.current?.id === requestId)
+					refreshRequestRef.current = null;
+			}
+		})();
+		refreshRequestRef.current = {
+			id: requestId,
+			generation,
+			controller,
+			promise,
+		};
+		return promise;
 	};
 
-	const getRefreshToken = (): string | null =>
-		localStorage.getItem("refreshToken");
+	const invalidateSession = (broadcast = true, generation?: number) => {
+		if (generation !== undefined && generation !== authGenerationRef.current)
+			return;
+		advanceAuthGeneration();
+		clearSession();
+		if (proactiveTimerRef.current)
+			window.clearTimeout(proactiveTimerRef.current);
+		proactiveTimerRef.current = null;
+		try {
+			if (broadcast)
+				localStorage.setItem(
+					SESSION_INVALIDATION_BROADCAST_KEY,
+					String(Date.now()),
+				);
+			sessionStorage.setItem(SESSION_ENDED_NOTICE_KEY, SESSION_ENDED_MESSAGE);
+		} catch {
+			// Ignore unavailable session storage; the redirect still protects the app.
+		}
+		setUser(null);
+	};
 
-	const login = (
-		userData: User,
-		accessToken: string,
-		refreshToken: string,
-	): void => {
+	const getAccessToken = (forceRefresh = false) =>
+		refreshAccessToken(forceRefresh);
+	const login = (userData: User, accessToken: string) => {
+		advanceAuthGeneration();
 		localStorage.setItem("accessToken", accessToken);
-		localStorage.setItem("refreshToken", refreshToken);
+		localStorage.removeItem(LEGACY_REFRESH_TOKEN_KEY);
 		localStorage.setItem("user", JSON.stringify(userData));
+		try {
+			sessionStorage.removeItem(SESSION_ENDED_NOTICE_KEY);
+		} catch {
+			// Ignore unavailable session storage.
+		}
 		setUser(userData);
 		scheduleProactiveRefresh(accessToken);
 	};
-
-	const updateUser = (userData: Partial<User>): void => {
-		setUser((prevUser) => {
-			if (!prevUser) return prevUser;
-			const nextUser = { ...prevUser, ...userData };
-			localStorage.setItem("user", JSON.stringify(nextUser));
-			return nextUser;
+	const updateUser = (userData: Partial<User>) =>
+		setUser((previous) => {
+			if (!previous) return previous;
+			const next = { ...previous, ...userData };
+			localStorage.setItem("user", JSON.stringify(next));
+			return next;
 		});
-	};
-
 	const logout = () => {
 		const accessToken = localStorage.getItem("accessToken");
+		advanceAuthGeneration();
 		clearSession();
 		setUser(null);
-
+		if (proactiveTimerRef.current)
+			window.clearTimeout(proactiveTimerRef.current);
 		void fetch(`${AUTH_API_BASE_URL}/logout`, {
 			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-				...(accessToken && { Authorization: `Bearer ${accessToken}` }),
-			},
-		}).finally(() => {
-			if (proactiveTimerRef.current) {
-				window.clearTimeout(proactiveTimerRef.current);
-				proactiveTimerRef.current = null;
-			}
+			credentials: "include",
+			headers: accessToken
+				? { Authorization: `Bearer ${accessToken}` }
+				: undefined,
 		});
 	};
 
-	// biome-ignore lint/correctness/useExhaustiveDependencies: Run session initialization only once on mount
+	// biome-ignore lint/correctness/useExhaustiveDependencies: Initialize the persisted session once per app mount.
 	useEffect(() => {
 		let mounted = true;
-
-		const initializeSession = async () => {
+		const initialize = async () => {
 			const savedUser = getInitialUser();
-			const refreshToken = localStorage.getItem("refreshToken");
-			if (!savedUser || !refreshToken) {
-				if (mounted) {
-					setUser(null);
-					setLoading(false);
-				}
+			if (!savedUser) {
+				if (mounted) setLoading(false);
 				return;
 			}
-
 			setUser(savedUser);
-
-			let token = localStorage.getItem("accessToken");
-			let refreshFailed = false;
-
-			if (!token || isTokenExpired(token)) {
-				const refreshedToken = await refreshAccessToken();
-				if (refreshedToken) {
-					token = refreshedToken;
-				} else {
-					// ✅ Refresh thất bại → đừng gọi /me vì token đã expire
-					// Giữ session, user sẽ được refresh token lại ở lần request tiếp theo
-					console.warn(
-						"Failed to refresh access token on init, keeping session for next request",
-					);
-					refreshFailed = true;
-					// Không lấy lại accessToken cũ vì nó đã expire
-					token = null;
-				}
-			}
-
-			scheduleProactiveRefresh(token);
-
-			// ✅ Giải phóng loading ngay sau khi hoàn tất kiểm tra/refresh token
-			// để người dùng thấy giao diện ngay lập tức thay vì phải chờ thêm lượt gọi /me
+			await refreshAccessToken(true);
 			if (mounted) setLoading(false);
-
-			// ✅ Kiểm tra /me ở background để xác nhận tính hợp lệ của tài khoản trên server
-			if (!refreshFailed) {
-				try {
-					const headers: HeadersInit = {};
-					if (token) {
-						headers.Authorization = `Bearer ${token}`;
-					}
-
-					const meResponse = await fetch(`${AUTH_API_BASE_URL}/me`, {
-						method: "GET",
-						headers,
-					});
-
-					// ✅ Chỉ logout khi server xác nhận token không hợp lệ (401)
-					if (meResponse.status === 401) {
-						clearSession();
-						if (mounted) setUser(null);
-					}
-					// Các lỗi khác (500, 503, network...) → giữ session, không logout
-				} catch {
-					// ✅ Lỗi mạng → KHÔNG logout, giữ nguyên session
-					console.warn(
-						"Không thể kết nối server khi khởi tạo session, giữ session hiện tại.",
-					);
-				}
-			}
 		};
-
-		void initializeSession();
-
+		const refreshWhenActive = () => {
+			if (document.visibilityState === "visible") void getAccessToken(true);
+		};
+		void initialize();
+		window.addEventListener("online", refreshWhenActive);
+		document.addEventListener("visibilitychange", refreshWhenActive);
+		const onSessionInvalidated = (event: StorageEvent) => {
+			if (event.key === SESSION_INVALIDATION_BROADCAST_KEY)
+				invalidateSession(false);
+		};
+		window.addEventListener("storage", onSessionInvalidated);
 		return () => {
 			mounted = false;
-			if (proactiveTimerRef.current) {
+			window.removeEventListener("online", refreshWhenActive);
+			document.removeEventListener("visibilitychange", refreshWhenActive);
+			window.removeEventListener("storage", onSessionInvalidated);
+			if (proactiveTimerRef.current)
 				window.clearTimeout(proactiveTimerRef.current);
-				proactiveTimerRef.current = null;
-			}
 		};
 	}, []);
 
 	return (
 		<AuthContext.Provider
-			value={{
-				user,
-				login,
-				updateUser,
-				logout,
-				loading,
-				getAccessToken,
-				getRefreshToken,
-			}}
+			value={{ user, login, updateUser, logout, loading, getAccessToken }}
 		>
 			{loading ? (
 				<RouteLoadingFallback
