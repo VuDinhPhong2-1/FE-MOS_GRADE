@@ -18,11 +18,12 @@ export interface User {
 
 export interface AuthContextType {
 	user: User | null;
-	login: (userData: User, accessToken: string) => void;
+	login: (userData: User, accessToken: string, refreshToken: string) => void;
 	updateUser: (userData: Partial<User>) => void;
 	logout: () => void;
 	loading: boolean;
 	getAccessToken: (forceRefresh?: boolean) => Promise<string | null>;
+	getRefreshToken?: () => string | null;
 }
 
 export interface LoginFormData {
@@ -36,6 +37,7 @@ export interface RegisterFormData extends LoginFormData {
 
 export interface LoginResponse {
 	accessToken: string;
+	refreshToken: string;
 	userId: string;
 	username: string;
 	email?: string;

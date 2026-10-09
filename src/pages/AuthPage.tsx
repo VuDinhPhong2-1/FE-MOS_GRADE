@@ -86,8 +86,8 @@ export default function AuthPage() {
 	};
 
 	const handleAuthSuccess = (data: LoginResponse) => {
-		if (!data.accessToken) {
-			throw new Error("Máy chủ không trả về token");
+		if (!data.accessToken || !data.refreshToken) {
+			throw new Error("Máy chủ không trả về đủ token hoặc refresh token");
 		}
 
 		login(
@@ -107,6 +107,7 @@ export default function AuthPage() {
 				teacherApprovalNote: data.teacherApprovalNote,
 			},
 			data.accessToken,
+			data.refreshToken,
 		);
 
 		navigate(getPostLoginPath(data));

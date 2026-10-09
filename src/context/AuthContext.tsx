@@ -20,11 +20,41 @@ const REFRESH_BROADCAST_KEY = "auth_refresh_broadcast";
 const REFRESH_LOCK_TTL_MS = 12_000;
 const REFRESH_WAIT_TIMEOUT_MS = 12_500;
 const REFRESH_REQUEST_TIMEOUT_MS = 10_000;
-const LEGACY_REFRESH_TOKEN_KEY = "refreshToken";
+const ACCESS_TOKEN_KEY = "accessToken";
+const REFRESH_TOKEN_KEY = "refreshToken";
+const USER_KEY = "user";
+const AUTH_SYNC_CHANNEL = "mos_auth_sync_channel";
 const SESSION_INVALIDATION_BROADCAST_KEY = "auth_session_invalidated";
 const SESSION_ENDED_NOTICE_KEY = "auth_session_ended_notice";
 const SESSION_ENDED_MESSAGE =
 	"Phiên đăng nhập đã kết thúc hoặc bạn đã bị đăng xuất từ thiết bị khác. Vui lòng đăng nhập lại.";
+
+type AuthSyncMessage =
+	| {
+			type: "LOGIN";
+			user: User;
+			accessToken: string;
+			refreshToken: string;
+			fromTabId: string;
+	  }
+	| {
+			type: "TOKEN_REFRESH";
+			accessToken: string;
+			refreshToken?: string;
+			fromTabId: string;
+	  }
+	| { type: "UPDATE_USER"; user: User; fromTabId: string }
+	| { type: "LOGOUT"; fromTabId: string }
+	| { type: "INVALIDATE_SESSION"; fromTabId: string }
+	| { type: "REQUEST_SESSION"; fromTabId: string }
+	| {
+			type: "SESSION_SYNC";
+			user: User;
+			accessToken: string;
+			refreshToken: string;
+			fromTabId: string;
+	  };
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 interface RefreshRequest {
@@ -50,15 +80,41 @@ const isTokenExpired = (token: string | null) => {
 };
 
 const clearSession = () => {
-	localStorage.removeItem("accessToken");
-	localStorage.removeItem(LEGACY_REFRESH_TOKEN_KEY);
-	localStorage.removeItem("user");
+	try {
+		sessionStorage.removeItem(ACCESS_TOKEN_KEY);
+		sessionStorage.removeItem(REFRESH_TOKEN_KEY);
+		sessionStorage.removeItem(USER_KEY);
+	} catch {
+		// Ignore storage errors.
+	}
+	try {
+		localStorage.removeItem(ACCESS_TOKEN_KEY);
+		localStorage.removeItem(REFRESH_TOKEN_KEY);
+		localStorage.removeItem(USER_KEY);
+	} catch {
+		// Ignore storage errors.
+	}
 };
 
 const getInitialUser = (): User | null => {
-	const savedUser = localStorage.getItem("user");
-	if (!savedUser) return null;
 	try {
+		let savedUser = sessionStorage.getItem(USER_KEY);
+		if (!savedUser) {
+			const legacyUser = localStorage.getItem(USER_KEY);
+			if (legacyUser) {
+				savedUser = legacyUser;
+				sessionStorage.setItem(USER_KEY, legacyUser);
+				const legacyAccess = localStorage.getItem(ACCESS_TOKEN_KEY);
+				if (legacyAccess) sessionStorage.setItem(ACCESS_TOKEN_KEY, legacyAccess);
+				const legacyRefresh = localStorage.getItem(REFRESH_TOKEN_KEY);
+				if (legacyRefresh)
+					sessionStorage.setItem(REFRESH_TOKEN_KEY, legacyRefresh);
+				localStorage.removeItem(ACCESS_TOKEN_KEY);
+				localStorage.removeItem(REFRESH_TOKEN_KEY);
+				localStorage.removeItem(USER_KEY);
+			}
+		}
+		if (!savedUser) return null;
 		return JSON.parse(savedUser) as User;
 	} catch {
 		clearSession();
@@ -76,9 +132,44 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 	const refreshRequestRef = useRef<RefreshRequest | null>(null);
 	const refreshRequestSequenceRef = useRef(0);
 	const proactiveTimerRef = useRef<number | null>(null);
+	const channelRef = useRef<BroadcastChannel | null>(null);
 	const tabIdRef = useRef(
 		crypto.randomUUID?.() ?? `${Date.now()}_${Math.random()}`,
 	);
+
+	const broadcastMessage = (
+		msg:
+			| {
+					type: "LOGIN";
+					user: User;
+					accessToken: string;
+					refreshToken: string;
+			  }
+			| {
+					type: "TOKEN_REFRESH";
+					accessToken: string;
+					refreshToken?: string;
+			  }
+			| { type: "UPDATE_USER"; user: User }
+			| { type: "LOGOUT" }
+			| { type: "INVALIDATE_SESSION" }
+			| { type: "REQUEST_SESSION" }
+			| {
+					type: "SESSION_SYNC";
+					user: User;
+					accessToken: string;
+					refreshToken: string;
+			  },
+	) => {
+		try {
+			channelRef.current?.postMessage({
+				...msg,
+				fromTabId: tabIdRef.current,
+			} as AuthSyncMessage);
+		} catch {
+			// Ignore if channel is closed.
+		}
+	};
 
 	const scheduleProactiveRefresh = (token: string | null) => {
 		if (proactiveTimerRef.current)
@@ -103,13 +194,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 		} catch {
 			/* replace malformed lock */
 		}
-		localStorage.setItem(
-			REFRESH_LOCK_KEY,
-			JSON.stringify({
-				owner,
-				expiresAt: now + REFRESH_LOCK_TTL_MS,
-			}),
-		);
+		try {
+			localStorage.setItem(
+				REFRESH_LOCK_KEY,
+				JSON.stringify({
+					owner,
+					expiresAt: now + REFRESH_LOCK_TTL_MS,
+				}),
+			);
+		} catch {
+			// Ignore lock write failure.
+		}
 		return true;
 	};
 
@@ -120,7 +215,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 			) as { owner?: string };
 			if (lock.owner === owner) localStorage.removeItem(REFRESH_LOCK_KEY);
 		} catch {
-			localStorage.removeItem(REFRESH_LOCK_KEY);
+			try {
+				localStorage.removeItem(REFRESH_LOCK_KEY);
+			} catch {
+				// Ignore storage errors.
+			}
 		}
 	};
 
@@ -128,7 +227,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 		new Promise<string | null>((resolve) => {
 			const startedAt = Date.now();
 			let intervalId = 0;
+			let resolved = false;
 			const finish = (token: string | null) => {
+				if (resolved) return;
+				resolved = true;
 				window.removeEventListener("storage", onStorage);
 				window.clearInterval(intervalId);
 				resolve(token);
@@ -138,7 +240,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 					finish(null);
 					return;
 				}
-				const token = localStorage.getItem("accessToken");
+				const token = sessionStorage.getItem(ACCESS_TOKEN_KEY);
 				if (token && !isTokenExpired(token)) finish(token);
 				else if (Date.now() - startedAt >= REFRESH_WAIT_TIMEOUT_MS)
 					finish(null);
@@ -149,14 +251,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 					return;
 				}
 				if (
-					["accessToken", REFRESH_BROADCAST_KEY, REFRESH_LOCK_KEY].includes(
-						event.key || "",
-					)
+					[REFRESH_BROADCAST_KEY, REFRESH_LOCK_KEY].includes(event.key || "")
 				)
 					check();
 			};
 			window.addEventListener("storage", onStorage);
-			intervalId = window.setInterval(check, 250);
+			intervalId = window.setInterval(check, 200);
 			check();
 		});
 
@@ -175,9 +275,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 		forceRefresh = false,
 	): Promise<string | null> => {
 		if (refreshRequestRef.current) return refreshRequestRef.current.promise;
-		const currentToken = localStorage.getItem("accessToken");
+		const currentToken = sessionStorage.getItem(ACCESS_TOKEN_KEY);
 		if (!forceRefresh && currentToken && !isTokenExpired(currentToken))
 			return currentToken;
+		const currentRefreshToken = sessionStorage.getItem(REFRESH_TOKEN_KEY);
+		if (!currentRefreshToken) {
+			if (!currentToken || isTokenExpired(currentToken)) {
+				invalidateSession(true, authGenerationRef.current);
+			}
+			return null;
+		}
 		const generation = authGenerationRef.current;
 		const requestId = `${tabIdRef.current}:${++refreshRequestSequenceRef.current}`;
 		const lockOwner = requestId;
@@ -192,17 +299,20 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 			try {
 				acquiredLock = acquireRefreshLock(lockOwner);
 				if (!acquiredLock) return await waitForRefresh(generation);
-				const legacyRefreshToken = localStorage.getItem(
-					LEGACY_REFRESH_TOKEN_KEY,
-				);
+				const refreshTokenToSend = sessionStorage.getItem(REFRESH_TOKEN_KEY);
+				if (!refreshTokenToSend) {
+					const latestToken = sessionStorage.getItem(ACCESS_TOKEN_KEY);
+					if (!latestToken || isTokenExpired(latestToken)) {
+						invalidateSession(true, generation);
+					}
+					return null;
+				}
 				const response = await fetch(`${AUTH_API_BASE_URL}/refresh-token`, {
 					method: "POST",
 					credentials: "include",
 					signal: controller.signal,
 					headers: { "Content-Type": "application/json" },
-					body: legacyRefreshToken
-						? JSON.stringify({ refreshToken: legacyRefreshToken })
-						: "{}",
+					body: JSON.stringify({ refreshToken: refreshTokenToSend }),
 				});
 				if (generation !== authGenerationRef.current) return null;
 				if (response.status === 401 || response.status === 400) {
@@ -210,15 +320,29 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 					return null;
 				}
 				if (!response.ok) return null;
-				const data = (await response.json()) as { accessToken?: string };
+				const data = (await response.json()) as {
+					accessToken?: string;
+					refreshToken?: string;
+				};
 				if (generation !== authGenerationRef.current) return null;
 				if (!data.accessToken) return null;
-				localStorage.setItem("accessToken", data.accessToken);
-				localStorage.removeItem(LEGACY_REFRESH_TOKEN_KEY);
-				localStorage.setItem(
-					REFRESH_BROADCAST_KEY,
-					JSON.stringify({ at: Date.now(), by: tabIdRef.current }),
-				);
+				sessionStorage.setItem(ACCESS_TOKEN_KEY, data.accessToken);
+				if (data.refreshToken) {
+					sessionStorage.setItem(REFRESH_TOKEN_KEY, data.refreshToken);
+				}
+				try {
+					localStorage.setItem(
+						REFRESH_BROADCAST_KEY,
+						JSON.stringify({ at: Date.now(), by: tabIdRef.current }),
+					);
+				} catch {
+					// Ignore storage errors.
+				}
+				broadcastMessage({
+					type: "TOKEN_REFRESH",
+					accessToken: data.accessToken,
+					refreshToken: data.refreshToken,
+				});
 				scheduleProactiveRefresh(data.accessToken);
 				return data.accessToken;
 			} catch {
@@ -248,25 +372,42 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 			window.clearTimeout(proactiveTimerRef.current);
 		proactiveTimerRef.current = null;
 		try {
-			if (broadcast)
+			sessionStorage.setItem(SESSION_ENDED_NOTICE_KEY, SESSION_ENDED_MESSAGE);
+		} catch {
+			// Ignore unavailable session storage; the redirect still protects the app.
+		}
+		if (broadcast) {
+			broadcastMessage({ type: "INVALIDATE_SESSION" });
+			try {
 				localStorage.setItem(
 					SESSION_INVALIDATION_BROADCAST_KEY,
 					String(Date.now()),
 				);
-			sessionStorage.setItem(SESSION_ENDED_NOTICE_KEY, SESSION_ENDED_MESSAGE);
-		} catch {
-			// Ignore unavailable session storage; the redirect still protects the app.
+			} catch {
+				// Ignore storage errors.
+			}
 		}
 		setUser(null);
 	};
 
 	const getAccessToken = (forceRefresh = false) =>
 		refreshAccessToken(forceRefresh);
-	const login = (userData: User, accessToken: string) => {
+	const login = (
+		userData: User,
+		accessToken: string,
+		refreshToken: string,
+	) => {
 		advanceAuthGeneration();
-		localStorage.setItem("accessToken", accessToken);
-		localStorage.removeItem(LEGACY_REFRESH_TOKEN_KEY);
-		localStorage.setItem("user", JSON.stringify(userData));
+		sessionStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
+		sessionStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+		sessionStorage.setItem(USER_KEY, JSON.stringify(userData));
+		try {
+			localStorage.removeItem(ACCESS_TOKEN_KEY);
+			localStorage.removeItem(REFRESH_TOKEN_KEY);
+			localStorage.removeItem(USER_KEY);
+		} catch {
+			// Ignore storage errors.
+		}
 		try {
 			sessionStorage.removeItem(SESSION_ENDED_NOTICE_KEY);
 		} catch {
@@ -274,21 +415,32 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 		}
 		setUser(userData);
 		scheduleProactiveRefresh(accessToken);
+		broadcastMessage({
+			type: "LOGIN",
+			user: userData,
+			accessToken,
+			refreshToken,
+		});
 	};
 	const updateUser = (userData: Partial<User>) =>
 		setUser((previous) => {
 			if (!previous) return previous;
 			const next = { ...previous, ...userData };
-			localStorage.setItem("user", JSON.stringify(next));
+			sessionStorage.setItem(USER_KEY, JSON.stringify(next));
+			broadcastMessage({
+				type: "UPDATE_USER",
+				user: next,
+			});
 			return next;
 		});
 	const logout = () => {
-		const accessToken = localStorage.getItem("accessToken");
+		const accessToken = sessionStorage.getItem(ACCESS_TOKEN_KEY);
 		advanceAuthGeneration();
 		clearSession();
 		setUser(null);
 		if (proactiveTimerRef.current)
 			window.clearTimeout(proactiveTimerRef.current);
+		broadcastMessage({ type: "LOGOUT" });
 		void fetch(`${AUTH_API_BASE_URL}/logout`, {
 			method: "POST",
 			credentials: "include",
@@ -301,18 +453,84 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 	// biome-ignore lint/correctness/useExhaustiveDependencies: Initialize the persisted session once per app mount.
 	useEffect(() => {
 		let mounted = true;
+		if (typeof BroadcastChannel !== "undefined") {
+			try {
+				const channel = new BroadcastChannel(AUTH_SYNC_CHANNEL);
+				channelRef.current = channel;
+				channel.onmessage = (event: MessageEvent<AuthSyncMessage>) => {
+					const data = event.data;
+					if (!data || data.fromTabId === tabIdRef.current) return;
+					if (data.type === "LOGIN" || data.type === "SESSION_SYNC") {
+						sessionStorage.setItem(ACCESS_TOKEN_KEY, data.accessToken);
+						sessionStorage.setItem(REFRESH_TOKEN_KEY, data.refreshToken);
+						sessionStorage.setItem(USER_KEY, JSON.stringify(data.user));
+						if (mounted) {
+							setUser(data.user);
+							scheduleProactiveRefresh(data.accessToken);
+						}
+					} else if (data.type === "TOKEN_REFRESH") {
+						sessionStorage.setItem(ACCESS_TOKEN_KEY, data.accessToken);
+						if (data.refreshToken) {
+							sessionStorage.setItem(REFRESH_TOKEN_KEY, data.refreshToken);
+						}
+						if (mounted) {
+							scheduleProactiveRefresh(data.accessToken);
+						}
+					} else if (data.type === "UPDATE_USER") {
+						sessionStorage.setItem(USER_KEY, JSON.stringify(data.user));
+						if (mounted) setUser(data.user);
+					} else if (data.type === "LOGOUT") {
+						advanceAuthGeneration();
+						clearSession();
+						if (mounted) setUser(null);
+					} else if (data.type === "INVALIDATE_SESSION") {
+						invalidateSession(false);
+					} else if (data.type === "REQUEST_SESSION") {
+						const currentToken = sessionStorage.getItem(ACCESS_TOKEN_KEY);
+						const currentRefresh = sessionStorage.getItem(REFRESH_TOKEN_KEY);
+						const currentUser = sessionStorage.getItem(USER_KEY);
+						if (currentToken && currentRefresh && currentUser) {
+							try {
+								const parsedUser = JSON.parse(currentUser) as User;
+								broadcastMessage({
+									type: "SESSION_SYNC",
+									user: parsedUser,
+									accessToken: currentToken,
+									refreshToken: currentRefresh,
+								});
+							} catch {
+								// Ignore malformed user JSON.
+							}
+						}
+					}
+				};
+			} catch {
+				// BroadcastChannel initialization failed, continue with single-tab session.
+			}
+		}
+
 		const initialize = async () => {
-			const savedUser = getInitialUser();
+			let savedUser = getInitialUser();
+			if (!savedUser && channelRef.current) {
+				broadcastMessage({ type: "REQUEST_SESSION" });
+				await new Promise((resolve) => setTimeout(resolve, 120));
+				savedUser = getInitialUser();
+			}
 			if (!savedUser) {
 				if (mounted) setLoading(false);
 				return;
 			}
 			setUser(savedUser);
-			await refreshAccessToken(true);
+			const currentToken = sessionStorage.getItem(ACCESS_TOKEN_KEY);
+			if (!currentToken || isTokenExpired(currentToken)) {
+				await refreshAccessToken(true);
+			} else {
+				scheduleProactiveRefresh(currentToken);
+			}
 			if (mounted) setLoading(false);
 		};
 		const refreshWhenActive = () => {
-			if (document.visibilityState === "visible") void getAccessToken(true);
+			if (document.visibilityState === "visible") void getAccessToken(false);
 		};
 		void initialize();
 		window.addEventListener("online", refreshWhenActive);
@@ -329,12 +547,26 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 			window.removeEventListener("storage", onSessionInvalidated);
 			if (proactiveTimerRef.current)
 				window.clearTimeout(proactiveTimerRef.current);
+			try {
+				channelRef.current?.close();
+			} catch {
+				// Ignore channel close error.
+			}
+			channelRef.current = null;
 		};
 	}, []);
 
 	return (
 		<AuthContext.Provider
-			value={{ user, login, updateUser, logout, loading, getAccessToken }}
+			value={{
+				user,
+				login,
+				updateUser,
+				logout,
+				loading,
+				getAccessToken,
+				getRefreshToken: () => sessionStorage.getItem(REFRESH_TOKEN_KEY),
+			}}
 		>
 			{loading ? (
 				<RouteLoadingFallback
