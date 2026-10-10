@@ -11,6 +11,20 @@ import type {
 import type { AccessTokenGetter } from "./auth-fetch";
 import { authFetch } from "./auth-fetch";
 
+export interface ExcelExam02EvidenceSummary {
+	id: string;
+	projectCode: string;
+	scope: string;
+	workbookSha256: string;
+	fileName: string;
+	availableTaskIds: string[];
+	decisions: Record<string, string>;
+	submittedAtUtc: string;
+	reviewedAtUtc?: string;
+	reviewedBy?: string;
+	reviewNote?: string;
+}
+
 const jsonHeaders = { "Content-Type": "application/json" };
 const baseUrl = `${API_BASE_URL}/admin/xml-grading-rules`;
 
@@ -62,6 +76,22 @@ const requestJson = async <T>(
 };
 
 export const xmlGradingRulesService = {
+	listExam02Evidence: (getAccessToken: AccessTokenGetter) =>
+		requestJson<ExcelExam02EvidenceSummary[]>(
+			`${baseUrl}/evidence?projectCode=exam02%2Fproject11`,
+			{ method: "GET" }, getAccessToken,
+		),
+	reviewExam02Evidence: (id: string, taskId: string, approved: boolean, getAccessToken: AccessTokenGetter) =>
+		requestJson<ExcelExam02EvidenceSummary>(
+			`${baseUrl}/evidence/${encodeURIComponent(id)}/review`,
+			{ method: "POST", headers: jsonHeaders, body: JSON.stringify({ taskId, approved }) }, getAccessToken,
+		),
+	downloadExam02Evidence: async (id: string, getAccessToken: AccessTokenGetter) => {
+		const response = await authFetch(`${baseUrl}/evidence/${encodeURIComponent(id)}/download`,
+			{ method: "GET" }, getAccessToken);
+		if (!response.ok) throw new Error(await readError(response));
+		return response.blob();
+	},
 	list: (
 		getAccessToken: AccessTokenGetter,
 		filters?: { subject?: string; isActive?: boolean },
@@ -239,7 +269,7 @@ export const xmlGradingRulesService = {
 			formData.append("attachmentFile", attachmentFile);
 		}
 		return requestJson<XmlRuleGradeResult>(
-			`${baseUrl}/grade/${encodeURIComponent(subject)}/${encodeURIComponent(projectCode)}`,
+			`${baseUrl}/grade/${encodeURIComponent(subject)}/${projectCode.split("/").map(encodeURIComponent).join("/")}`,
 			{ method: "POST", body: formData },
 			getAccessToken,
 		);

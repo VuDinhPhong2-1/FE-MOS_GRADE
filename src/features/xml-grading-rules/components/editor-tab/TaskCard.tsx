@@ -312,6 +312,50 @@ export const TaskCard: React.FC<TaskCardProps> & ListItemComponent = ({
 									/>
 								</div>
 							)}
+							{task.specialCondition?.type && (
+								<div className="space-y-3 border-t border-m3-outline-variant pt-3">
+									<div className="flex items-center justify-between gap-2">
+										<span className="text-xs font-bold text-m3-on-surface">Điều kiện bổ sung</span>
+										<Button
+											colorStyle="filled"
+											size="xs"
+											icon={<Icon name="add" />}
+											onClick={() => onMutateTask({ additionalSpecialConditions: [
+												...(task.additionalSpecialConditions ?? []),
+												{ type: "excelWorksheetPageSetup", score: 0, feedback: defaultSpecialConditionFeedback("excelWorksheetPageSetup") },
+											] })}
+										>Thêm điều kiện</Button>
+									</div>
+									{(task.additionalSpecialConditions ?? []).map((gate, index) => {
+										const updateGate = (next: SpecialCondition) => onMutateTask({ additionalSpecialConditions:
+											(task.additionalSpecialConditions ?? []).map((item, itemIndex) => itemIndex === index ? { ...next, score: 0 } : item) });
+										// biome-ignore lint/suspicious/noArrayIndexKey: gates have no persisted identifier.
+										return <div key={`${index}-${gate.type}`} className="space-y-3 border-t border-m3-outline-variant pt-3">
+											<div className="flex items-end gap-2">
+												<label className="min-w-0 flex-1 text-xs font-semibold text-m3-on-surface-variant">Loại kiểm tra
+													<select value={gate.type} className={selectClass} onChange={(event) => {
+														const type = event.target.value as SpecialConditionType;
+														updateGate({ type, score: 0, feedback: defaultSpecialConditionFeedback(type) });
+													}}>
+													{groupedSpecialOptions.map((group) => <optgroup key={group.label} label={group.label}>
+														{group.options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+													</optgroup>)}
+													</select>
+												</label>
+												<button type="button" title="Xóa điều kiện bổ sung" aria-label="Xóa điều kiện bổ sung"
+													onClick={() => onMutateTask({ additionalSpecialConditions: (task.additionalSpecialConditions ?? []).filter((_, itemIndex) => itemIndex !== index) })}
+													className="p-2 text-m3-on-surface-variant"><Icon name="delete" /></button>
+											</div>
+											<SpecialConditionDispatcher specialCondition={gate} getAccessToken={getAccessToken} onChange={updateGate} />
+											<div className="grid gap-3 sm:grid-cols-2">
+												<TextField label="Thông báo khi đạt" value={gate.feedback?.successDetail ?? ""} onChange={(value) => updateGate({ ...gate, feedback: { ...gate.feedback, successDetail: value, errorMessage: gate.feedback?.errorMessage ?? "", fixAction: gate.feedback?.fixAction ?? "" } })} fullWidth />
+												<TextField label="Thông báo khi chưa đạt" value={gate.feedback?.errorMessage ?? ""} onChange={(value) => updateGate({ ...gate, feedback: { ...gate.feedback, successDetail: gate.feedback?.successDetail ?? "", errorMessage: value, fixAction: gate.feedback?.fixAction ?? "" } })} fullWidth />
+											</div>
+											<TextField label="Gợi ý cách sửa" value={gate.feedback?.fixAction ?? ""} onChange={(value) => updateGate({ ...gate, feedback: { ...gate.feedback, successDetail: gate.feedback?.successDetail ?? "", errorMessage: gate.feedback?.errorMessage ?? "", fixAction: value } })} fullWidth />
+										</div>;
+									})}
+								</div>
+							)}
 						</div>
 					)}
 				</div>

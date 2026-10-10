@@ -100,6 +100,21 @@ export type SpecialConditionType =
 	| "excelChartQuickLayout"
 	| "excelSparkline"
 	| "excelTableRowDelete"
+	| "excelClearContents"
+	| "excelRowHeight"
+	| "excelCellStyle"
+	| "excelHeaderFooter"
+	| "excelTextImport"
+	| "excelRemoveHyperlink"
+	| "excelCellText"
+	| "excelCellFormatMatch"
+	| "excelAboveAverageFilter"
+	| "excelQuickAccessEvidence"
+	| "excelWebExportEvidence"
+	| "excelWrapText"
+	| "excelInsertColumn"
+	| "excelSplitPanes"
+	| "excelChartSheetLocation"
 	// PowerPoint (.pptx)
 	| "pptPictureCropShape"
 	| "pptShapeSize"
@@ -430,6 +445,9 @@ export interface ExcelWorksheetPageSetupConfig {
 	worksheetName?: string;
 	sourceFile?: string;
 	orientation?: "portrait" | "landscape";
+	view?: string;
+	pageBreakRow?: number;
+	showFormulas?: boolean;
 }
 
 export interface ExcelClearCellFormattingConfig {
@@ -519,6 +537,7 @@ export interface ExcelChartTypeConfig {
 	placedBelowRow?: number;
 	minRow?: number;
 	maxRow?: number;
+	minColumn?: number;
 }
 
 export interface ExcelWorksheetTabColorConfig {
@@ -544,6 +563,7 @@ export interface ExcelTableCreateConfig {
 	expectedRange?: string;
 	hasHeaderRow?: boolean;
 	expectedTableStyle?: string;
+	requireRowStripes?: boolean;
 }
 
 export interface ExcelChartQuickLayoutConfig {
@@ -560,6 +580,10 @@ export interface ExcelSparklineConfig {
 	sparklineType?: string;
 	dataRange?: string;
 	locationRange?: string;
+	locationEnd?: string;
+	dataRangeEnd?: string;
+	colorTheme?: number;
+	colorTint?: number;
 }
 
 export interface ExcelTableRowDeleteConfig {
@@ -598,6 +622,7 @@ export interface ExcelNumberFormatConfig {
 		| "date"
 		| "time"
 		| "custom";
+	allowedCategories?: string[];
 	decimalPlaces?: number;
 	symbol?: string;
 	requireThousandsSeparator?: boolean;
@@ -631,7 +656,24 @@ export interface ExcelNoConditionalFormattingConfig {
 	worksheetName?: string;
 	sourceFile?: string;
 	requireAllWorksheets?: boolean;
+	range?: string;
 }
+
+export interface ExcelClearContentsConfig { worksheetName?: string; definedName?: string; range?: string }
+export interface ExcelRowHeightConfig { worksheetName?: string; row?: number; height?: number }
+export interface ExcelCellStyleConfig { worksheetName?: string; cell?: string; styleName?: string }
+export interface ExcelHeaderFooterConfig { worksheetName?: string; rightFooterToken?: string }
+export interface ExcelTextImportConfig { worksheetName?: string; expectedRange?: string; sourceFileName?: string }
+export interface ExcelRemoveHyperlinkConfig { worksheetName?: string; cell?: string; expectedText?: string }
+export interface ExcelCellTextConfig { worksheetName?: string; cell?: string; expectedText?: string }
+export interface ExcelCellFormatMatchConfig { sourceWorksheet?: string; sourceCell?: string; targetWorksheet?: string; targetCell?: string }
+export interface ExcelAboveAverageFilterConfig { worksheetName?: string; columnName?: string }
+export interface ExcelQuickAccessEvidenceConfig { command?: string }
+export interface ExcelWebExportEvidenceConfig { fileName?: string }
+export interface ExcelWrapTextConfig { worksheetName?: string; range?: string }
+export interface ExcelInsertColumnConfig { worksheetName?: string; shiftedTableRange?: string }
+export interface ExcelSplitPanesConfig { worksheetName?: string; ySplit?: number }
+export interface ExcelChartSheetLocationConfig { chartSheetName?: string; chartType?: string }
 
 export interface ExcelTextRotationConfig {
 	worksheetName?: string;
@@ -788,6 +830,21 @@ export interface SpecialCondition {
 	excelChartQuickLayoutConfig?: ExcelChartQuickLayoutConfig;
 	excelSparklineConfig?: ExcelSparklineConfig;
 	excelTableRowDeleteConfig?: ExcelTableRowDeleteConfig;
+	excelClearContentsConfig?: ExcelClearContentsConfig;
+	excelRowHeightConfig?: ExcelRowHeightConfig;
+	excelCellStyleConfig?: ExcelCellStyleConfig;
+	excelHeaderFooterConfig?: ExcelHeaderFooterConfig;
+	excelTextImportConfig?: ExcelTextImportConfig;
+	excelRemoveHyperlinkConfig?: ExcelRemoveHyperlinkConfig;
+	excelCellTextConfig?: ExcelCellTextConfig;
+	excelCellFormatMatchConfig?: ExcelCellFormatMatchConfig;
+	excelAboveAverageFilterConfig?: ExcelAboveAverageFilterConfig;
+	excelQuickAccessEvidenceConfig?: ExcelQuickAccessEvidenceConfig;
+	excelWebExportEvidenceConfig?: ExcelWebExportEvidenceConfig;
+	excelWrapTextConfig?: ExcelWrapTextConfig;
+	excelInsertColumnConfig?: ExcelInsertColumnConfig;
+	excelSplitPanesConfig?: ExcelSplitPanesConfig;
+	excelChartSheetLocationConfig?: ExcelChartSheetLocationConfig;
 	// PowerPoint
 	pptPictureCropShapeConfig?: PptPictureCropShapeConfig;
 	pptShapeSizeConfig?: PptShapeSizeConfig;
@@ -830,6 +887,7 @@ export interface TaskXmlRule {
 	 * Điều kiện đặc biệt của riêng Task này (không dùng chung toàn trang).
 	 */
 	specialCondition?: SpecialCondition;
+	additionalSpecialConditions?: SpecialCondition[];
 }
 
 export interface ProjectXmlRule {
