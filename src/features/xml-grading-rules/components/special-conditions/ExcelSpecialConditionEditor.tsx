@@ -14,6 +14,25 @@ const selectClass =
 const textareaClass =
 	"w-full rounded-xl bg-m3-surface-container-high px-3.5 py-2.5 text-sm text-m3-on-surface outline-none transition focus:bg-m3-surface-container-highest min-h-[96px] resize-y";
 
+type Exam02Field = { key: string; label: string; numeric?: boolean };
+const EXAM02_FIELDS: Record<string, Exam02Field[]> = {
+	excelClearContents: [{ key: "worksheetName", label: "Trang tính" }, { key: "definedName", label: "Tên vùng" }, { key: "range", label: "Phạm vi" }],
+	excelRowHeight: [{ key: "worksheetName", label: "Trang tính" }, { key: "row", label: "Hàng", numeric: true }, { key: "height", label: "Chiều cao", numeric: true }],
+	excelCellStyle: [{ key: "worksheetName", label: "Trang tính" }, { key: "cell", label: "Ô" }, { key: "styleName", label: "Tên kiểu ô" }],
+	excelHeaderFooter: [{ key: "worksheetName", label: "Trang tính" }, { key: "rightFooterToken", label: "Trường Footer bên phải" }],
+	excelTextImport: [{ key: "worksheetName", label: "Trang tính mới" }, { key: "expectedRange", label: "Phạm vi bảng" }, { key: "sourceFileName", label: "Tên tệp nguồn" }],
+	excelRemoveHyperlink: [{ key: "worksheetName", label: "Trang tính" }, { key: "cell", label: "Ô" }, { key: "expectedText", label: "Văn bản giữ lại (tùy chọn)" }],
+	excelCellText: [{ key: "worksheetName", label: "Trang tính" }, { key: "cell", label: "Ô" }, { key: "expectedText", label: "Văn bản yêu cầu" }],
+	excelCellFormatMatch: [{ key: "sourceWorksheet", label: "Trang tính nguồn" }, { key: "sourceCell", label: "Ô nguồn" }, { key: "targetWorksheet", label: "Trang tính đích" }, { key: "targetCell", label: "Ô đích" }],
+	excelAboveAverageFilter: [{ key: "worksheetName", label: "Trang tính" }, { key: "columnName", label: "Tên cột" }],
+	excelQuickAccessEvidence: [{ key: "command", label: "Lệnh cần thêm" }],
+	excelWebExportEvidence: [{ key: "fileName", label: "Tên tệp xuất" }],
+	excelWrapText: [{ key: "worksheetName", label: "Trang tính" }, { key: "range", label: "Phạm vi" }],
+	excelInsertColumn: [{ key: "worksheetName", label: "Trang tính" }, { key: "shiftedTableRange", label: "Phạm vi bảng sau khi chèn" }],
+	excelSplitPanes: [{ key: "worksheetName", label: "Trang tính" }, { key: "ySplit", label: "Vị trí tách dọc", numeric: true }],
+	excelChartSheetLocation: [{ key: "chartSheetName", label: "Tên chart sheet" }, { key: "chartType", label: "Loại biểu đồ XML" }],
+};
+
 export const ExcelSpecialConditionEditor: React.FC<
 	ExcelSpecialConditionEditorProps
 > = ({ specialCondition, onChange }) => {
@@ -1958,5 +1977,29 @@ export const ExcelSpecialConditionEditor: React.FC<
 		);
 	}
 
+	const fields = EXAM02_FIELDS[specialCondition.type];
+	if (fields) {
+		const configKey = `${specialCondition.type}Config` as keyof SpecialCondition;
+		const config = (specialCondition[configKey] ?? {}) as Record<string, string | number | undefined>;
+		return (
+			<div className="mt-4 grid gap-3 rounded-2xl bg-m3-surface-container p-4 md:grid-cols-2">
+				{fields.map((field) => (
+					<label key={field.key} className="text-xs font-semibold text-m3-on-surface-variant">
+						{field.label}
+						<input
+							type={field.numeric ? "number" : "text"}
+							value={config[field.key] ?? ""}
+							onChange={(event) => updateConfig(configKey, {
+								[field.key]: field.numeric
+									? event.target.value === "" ? undefined : Number(event.target.value)
+									: event.target.value,
+							})}
+							className={inputClass}
+						/>
+					</label>
+				))}
+			</div>
+		);
+	}
 	return null;
 };

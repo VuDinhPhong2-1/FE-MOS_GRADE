@@ -23,7 +23,7 @@ export interface AuthContextType {
 	logout: () => void;
 	loading: boolean;
 	getAccessToken: (forceRefresh?: boolean) => Promise<string | null>;
-	getRefreshToken: () => string | null;
+	getRefreshToken?: () => string | null;
 }
 
 export interface LoginFormData {
@@ -135,4 +135,14 @@ export interface TeacherApprovalRequest extends TeacherSummary {
 export interface TeacherApprovalDecisionRequest {
 	decision: "approve" | "reject";
 	note?: string;
+}
+
+export interface UserSession {
+	sessionId: string;
+	deviceName: string;
+	ipAddress?: string;
+	createdAt: string;
+	lastSeenAt: string;
+	expiresAt: string;
+	isCurrent: boolean;
 }

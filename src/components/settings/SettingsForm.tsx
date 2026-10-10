@@ -1,5 +1,6 @@
 import { AccountSection } from "./AccountSection";
 import { DataExportSection } from "./DataExportSection";
+import { DeviceSessionsSection } from "./DeviceSessionsSection";
 import { ThemePaletteSection } from "./ThemePaletteSection";
 
 interface SettingsFormProps {
@@ -11,6 +12,8 @@ export const SettingsForm = (_props: SettingsFormProps) => {
 		<div className="space-y-5">
 			{/* Phần thông tin tài khoản & Đăng xuất */}
 			<AccountSection />
+
+			<DeviceSessionsSection />
 
 			{/* Phần chọn Palette màu Microsoft Office */}
 			<ThemePaletteSection />

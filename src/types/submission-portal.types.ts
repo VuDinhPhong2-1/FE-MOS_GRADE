@@ -167,3 +167,11 @@ export interface SubmissionLog {
 	alerts: string[];
 	submittedAt: string;
 }
+
+export interface PagedSubmissionLogs {
+	items: SubmissionLog[];
+	page: number;
+	pageSize: number;
+	totalCount: number;
+	hasNextPage: boolean;
+}

@@ -1,11 +1,12 @@
 import type { SelectOption } from "@bug-on/m3-expressive";
 import { useSnackbar } from "@bug-on/m3-expressive";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useCallback, useMemo, useState } from "react";
 import { showConfirm } from "../../../components/common";
 import { useAuth } from "../../../context/AuthContext";
+import { queryKeys } from "../../../lib/queryKeys";
 import { classService } from "../../../services/class.service";
 import { submissionPortalService } from "../../../services/submission-portal.service";
-import type { Class } from "../../../types/class.types";
 import type { SubmissionPortal } from "../../../types/submission-portal.types";
 import type { ScoringPolicy } from "../utils/portalFormatters";
 
@@ -15,21 +16,35 @@ const DEFAULT_SCORING_POLICY: ScoringPolicy = "BestScore";
 export const usePortalManagement = () => {
 	const { user, getAccessToken } = useAuth();
 	const { showSnackbar } = useSnackbar();
-
-	const hasLoadedOnceRef = useRef(false);
-	const [portals, setPortals] = useState<SubmissionPortal[]>([]);
-	const [teacherClasses, setTeacherClasses] = useState<Class[]>([]);
+	const queryClient = useQueryClient();
+	const userId = user?.userId ?? "anonymous";
+	const portalListKey = queryKeys.submissionPortals.list(userId);
+	const portalsQuery = useQuery({
+		queryKey: portalListKey,
+		queryFn: ({ signal }) =>
+			submissionPortalService.getAll(getAccessToken, signal),
+		enabled: Boolean(user?.userId),
+		retry: false,
+	});
+	const teacherClassesQuery = useQuery({
+		queryKey: queryKeys.submissionPortals.teacherClasses(userId),
+		queryFn: async () => {
+			const classes = await classService.getAllClasses(getAccessToken, true);
+			return classes.filter((cls) => cls.isActive !== false);
+		},
+		enabled: Boolean(user?.userId),
+	});
+	const portals = portalsQuery.data ?? [];
+	const teacherClasses = teacherClassesQuery.data ?? [];
 	const [loading, setLoading] = useState(false);
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
 	const [editingPortal, setEditingPortal] = useState<SubmissionPortal | null>(
 		null,
 	);
-
 	const [scopeFilter, setScopeFilter] = useState<"all" | "teacher">("all");
 	const [selectedClassId, setSelectedClassId] = useState("");
 	const [searchQuery, setSearchQuery] = useState("");
 	const [isSearchActive, setIsSearchActive] = useState(false);
-
 	const [title, setTitle] = useState(DEFAULT_PORTAL_TITLE);
 	const [description, setDescription] = useState("");
 	const [maxSubmissions, setMaxSubmissions] = useState(0);
@@ -45,33 +60,34 @@ export const usePortalManagement = () => {
 		},
 		[showSnackbar],
 	);
-
 	const notifyError = useCallback(
 		(error: unknown, fallback: string) =>
 			notify(error instanceof Error ? error.message : fallback),
 		[notify],
 	);
+	const refreshPortalsInBackground = useCallback(() => {
+		void queryClient.invalidateQueries({ queryKey: portalListKey });
+	}, [portalListKey, queryClient]);
+	const retryPortals = useCallback(() => {
+		void portalsQuery.refetch();
+	}, [portalsQuery.refetch]);
 
 	const visiblePortals = useMemo(
 		() => portals.filter((portal) => portal.isActive),
 		[portals],
 	);
-
 	const teacherClassIdSet = useMemo(() => {
 		const set = new Set<string>();
-		const currentUserId = user?.userId;
 		for (const cls of teacherClasses) {
 			if (
-				!currentUserId ||
-				cls.ownerId === currentUserId ||
-				cls.managerTeacherIds?.includes(currentUserId)
-			) {
+				!user?.userId ||
+				cls.ownerId === user.userId ||
+				cls.managerTeacherIds?.includes(user.userId)
+			)
 				set.add(cls.id);
-			}
 		}
 		return set;
 	}, [teacherClasses, user?.userId]);
-
 	const isTeacherPortal = useCallback(
 		(portal: SubmissionPortal) => {
 			if (user?.userId && portal.createdBy === user.userId) return true;
@@ -79,82 +95,58 @@ export const usePortalManagement = () => {
 		},
 		[teacherClassIdSet, user?.userId],
 	);
-
 	const classOptions = useMemo<SelectOption[]>(() => {
 		const scopedPortals =
 			scopeFilter === "teacher"
 				? visiblePortals.filter(isTeacherPortal)
 				: visiblePortals;
-
 		const classMap = new Map<string, string>();
-
 		for (const portal of scopedPortals) {
-			if (portal.classes && portal.classes.length > 0) {
-				for (const c of portal.classes) {
-					classMap.set(c.id, c.name);
-				}
+			if (portal.classes?.length) {
+				for (const cls of portal.classes) classMap.set(cls.id, cls.name);
 			} else {
-				for (const cId of portal.classIds) {
-					const found = teacherClasses.find((tc) => tc.id === cId);
-					if (found) {
-						classMap.set(found.id, found.name);
-					}
+				for (const classId of portal.classIds) {
+					const found = teacherClasses.find((cls) => cls.id === classId);
+					if (found) classMap.set(found.id, found.name);
 				}
 			}
 		}
-
 		return [
 			{ value: "", label: "Tất cả các lớp" },
 			...Array.from(classMap.entries())
 				.sort((a, b) => a[1].localeCompare(b[1], "vi"))
-				.map(([id, name]) => ({
-					value: id,
-					label: name,
-				})),
+				.map(([id, name]) => ({ value: id, label: name })),
 		];
 	}, [scopeFilter, visiblePortals, isTeacherPortal, teacherClasses]);
-
 	const handleScopeChange = useCallback((newScope: "all" | "teacher") => {
 		setScopeFilter(newScope);
 		setSelectedClassId("");
 	}, []);
-
 	const openSearch = useCallback(() => setIsSearchActive(true), []);
 	const closeSearch = useCallback(() => {
 		setIsSearchActive(false);
 		setSearchQuery("");
 	}, []);
-
 	const resetFilters = useCallback(() => {
 		setScopeFilter("all");
 		setSelectedClassId("");
 		setSearchQuery("");
 	}, []);
-
 	const filteredPortals = useMemo(() => {
 		let list = visiblePortals;
-
-		if (scopeFilter === "teacher") {
-			list = list.filter(isTeacherPortal);
-		}
-
-		if (selectedClassId) {
-			list = list.filter((p) => p.classIds.includes(selectedClassId));
-		}
-
+		if (scopeFilter === "teacher") list = list.filter(isTeacherPortal);
+		if (selectedClassId)
+			list = list.filter((portal) => portal.classIds.includes(selectedClassId));
 		if (searchQuery.trim()) {
-			const q = searchQuery.trim().toLowerCase();
-			list = list.filter((p) => {
-				const matchesTitle = p.title.toLowerCase().includes(q);
-				const matchesDesc = p.description?.toLowerCase().includes(q);
-				const matchesToken = p.publicToken?.toLowerCase().includes(q);
-				const matchesClasses = p.classes?.some((c) =>
-					c.name.toLowerCase().includes(q),
-				);
-				return matchesTitle || matchesDesc || matchesToken || matchesClasses;
-			});
+			const query = searchQuery.trim().toLowerCase();
+			list = list.filter(
+				(portal) =>
+					portal.title.toLowerCase().includes(query) ||
+					portal.description?.toLowerCase().includes(query) ||
+					portal.publicToken.toLowerCase().includes(query) ||
+					portal.classes?.some((cls) => cls.name.toLowerCase().includes(query)),
+			);
 		}
-
 		return list;
 	}, [
 		visiblePortals,
@@ -163,48 +155,20 @@ export const usePortalManagement = () => {
 		selectedClassId,
 		searchQuery,
 	]);
-
 	const stats = useMemo(
 		() => ({
 			active: filteredPortals.length,
 			totalAlerts: filteredPortals.reduce(
-				(s, p) => s + (p.unreadAlertCount || 0),
+				(total, portal) => total + (portal.unreadAlertCount || 0),
 				0,
 			),
 			scopedAssignments: filteredPortals.reduce(
-				(s, p) => s + p.assignmentIds.length,
+				(total, portal) => total + portal.assignmentIds.length,
 				0,
 			),
 		}),
 		[filteredPortals],
 	);
-
-	const fetchTeacherClasses = useCallback(async () => {
-		try {
-			const classList = await classService.getAllClasses(getAccessToken, true);
-			setTeacherClasses(classList.filter((cls) => cls.isActive !== false));
-		} catch {
-			// Non-critical: teacher scope filter degrades gracefully
-		}
-	}, [getAccessToken]);
-
-	const fetchPortals = useCallback(async () => {
-		if (!hasLoadedOnceRef.current) setLoading(true);
-
-		try {
-			const [portalList] = await Promise.all([
-				submissionPortalService.getAll(getAccessToken),
-				fetchTeacherClasses(),
-			]);
-			setPortals(portalList);
-			hasLoadedOnceRef.current = true;
-		} catch (error) {
-			notifyError(error, "Không thể tải danh sách cổng nộp bài");
-		} finally {
-			setLoading(false);
-		}
-	}, [getAccessToken, fetchTeacherClasses, notifyError]);
-
 	const resetForm = useCallback(() => {
 		setTitle(DEFAULT_PORTAL_TITLE);
 		setDescription("");
@@ -213,7 +177,6 @@ export const usePortalManagement = () => {
 		setShowLeaderboard(true);
 		setShowDetailedFeedback(true);
 	}, []);
-
 	const openEdit = useCallback((portal: SubmissionPortal) => {
 		setEditingPortal(portal);
 		setTitle(portal.title);
@@ -223,12 +186,10 @@ export const usePortalManagement = () => {
 		setShowLeaderboard(portal.showLeaderboard);
 		setShowDetailedFeedback(portal.showDetailedFeedback);
 	}, []);
-
 	const closeEdit = useCallback(() => {
 		setEditingPortal(null);
 		resetForm();
 	}, [resetForm]);
-
 	const closeCreate = useCallback(() => {
 		setIsCreateOpen(false);
 		resetForm();
@@ -246,10 +207,9 @@ export const usePortalManagement = () => {
 				);
 				return false;
 			}
-
 			setLoading(true);
 			try {
-				await submissionPortalService.create(
+				const created = await submissionPortalService.create(
 					{
 						title: title.trim(),
 						description: description.trim(),
@@ -262,9 +222,13 @@ export const usePortalManagement = () => {
 					},
 					getAccessToken,
 				);
+				queryClient.setQueryData<SubmissionPortal[]>(
+					portalListKey,
+					(old = []) => [created, ...old],
+				);
 				closeCreate();
 				notify("Đã tạo link nộp bài thành công.");
-				await fetchPortals();
+				refreshPortalsInBackground();
 				return true;
 			} catch (error) {
 				notifyError(error, "Không thể tạo link");
@@ -281,10 +245,12 @@ export const usePortalManagement = () => {
 			showLeaderboard,
 			showDetailedFeedback,
 			getAccessToken,
+			queryClient,
+			portalListKey,
 			closeCreate,
 			notify,
 			notifyError,
-			fetchPortals,
+			refreshPortalsInBackground,
 		],
 	);
 
@@ -295,10 +261,9 @@ export const usePortalManagement = () => {
 				notify("Vui lòng nhập tiêu đề link nộp bài.");
 				return false;
 			}
-
 			setLoading(true);
 			try {
-				await submissionPortalService.update(
+				const updated = await submissionPortalService.update(
 					editingPortal.id,
 					{
 						title: title.trim(),
@@ -315,9 +280,14 @@ export const usePortalManagement = () => {
 					},
 					getAccessToken,
 				);
+				queryClient.setQueryData<SubmissionPortal[]>(
+					portalListKey,
+					(old = []) =>
+						old.map((portal) => (portal.id === updated.id ? updated : portal)),
+				);
 				closeEdit();
 				notify("Đã cập nhật link nộp bài.");
-				await fetchPortals();
+				refreshPortalsInBackground();
 				return true;
 			} catch (error) {
 				notifyError(error, "Không thể cập nhật link");
@@ -335,10 +305,12 @@ export const usePortalManagement = () => {
 			showLeaderboard,
 			showDetailedFeedback,
 			getAccessToken,
+			queryClient,
+			portalListKey,
 			closeEdit,
 			notify,
 			notifyError,
-			fetchPortals,
+			refreshPortalsInBackground,
 		],
 	);
 
@@ -357,12 +329,26 @@ export const usePortalManagement = () => {
 				icon: "link_off",
 			});
 			if (!ok) return;
-
 			setLoading(true);
 			try {
 				await submissionPortalService.delete(portal.id, getAccessToken);
+				queryClient.setQueryData<SubmissionPortal[]>(
+					portalListKey,
+					(old = []) =>
+						old.map((current) =>
+							current.id === portal.id
+								? { ...current, isActive: false }
+								: current,
+						),
+				);
+				queryClient.removeQueries({
+					queryKey: queryKeys.submissionPortals.alerts(userId, portal.id),
+				});
+				queryClient.removeQueries({
+					queryKey: queryKeys.submissionPortals.logs(userId, portal.id),
+				});
 				notify("Đã đóng link nộp bài.");
-				await fetchPortals();
+				refreshPortalsInBackground();
 				if (editingPortal?.id === portal.id) closeEdit();
 				onDeleted?.(portal.id);
 			} catch (error) {
@@ -373,14 +359,16 @@ export const usePortalManagement = () => {
 		},
 		[
 			getAccessToken,
+			queryClient,
+			portalListKey,
+			userId,
 			notify,
 			notifyError,
-			fetchPortals,
+			refreshPortalsInBackground,
 			editingPortal?.id,
 			closeEdit,
 		],
 	);
-
 	const copyText = useCallback(
 		async (value: string) => {
 			try {
@@ -416,6 +404,13 @@ export const usePortalManagement = () => {
 			Boolean(searchQuery.trim()),
 		stats,
 		loading,
+		isInitialLoading: portalsQuery.isLoading && !portalsQuery.data,
+		isInitialLoadError: portalsQuery.isError && !portalsQuery.data,
+		portalListError: portalsQuery.error,
+		isBackgroundRefreshError:
+			portalsQuery.isError && Boolean(portalsQuery.data),
+		retryPortals,
+		isRefreshing: portalsQuery.isFetching && Boolean(portalsQuery.data),
 		isCreateOpen,
 		setIsCreateOpen,
 		editingPortal,
@@ -434,7 +429,6 @@ export const usePortalManagement = () => {
 		setShowLeaderboard,
 		showDetailedFeedback,
 		setShowDetailedFeedback,
-		fetchPortals,
 		createPortal,
 		updatePortal,
 		deletePortal,

@@ -9,6 +9,7 @@ import type {
 	TeacherSummary,
 	UpdateProfileRequest,
 	UpdateTeacherPermissionsRequest,
+	UserSession,
 } from "../types/auth.types";
 import { authFetch } from "./auth-fetch";
 
@@ -23,6 +24,55 @@ const parseErrorMessage = async (
 };
 
 class AuthService {
+	async getSessions(
+		getAccessToken: (forceRefresh?: boolean) => Promise<string | null>,
+	): Promise<UserSession[]> {
+		const response = await authFetch(
+			`${AUTH_API_BASE_URL}/sessions`,
+			{ method: "GET", headers: jsonHeaders },
+			getAccessToken,
+		);
+		if (!response.ok)
+			throw new Error(
+				await parseErrorMessage(response, "Không thể tải thiết bị đăng nhập"),
+			);
+		return response.json();
+	}
+
+	async revokeSession(
+		sessionId: string,
+		getAccessToken: (forceRefresh?: boolean) => Promise<string | null>,
+	): Promise<void> {
+		const response = await authFetch(
+			`${AUTH_API_BASE_URL}/sessions/${encodeURIComponent(sessionId)}`,
+			{ method: "DELETE", headers: jsonHeaders },
+			getAccessToken,
+		);
+		if (!response.ok)
+			throw new Error(
+				await parseErrorMessage(response, "Không thể đăng xuất thiết bị"),
+			);
+	}
+
+	async revokeOtherSessions(
+		getAccessToken: (forceRefresh?: boolean) => Promise<string | null>,
+	): Promise<number> {
+		const response = await authFetch(
+			`${AUTH_API_BASE_URL}/sessions/revoke-others`,
+			{ method: "POST", headers: jsonHeaders },
+			getAccessToken,
+		);
+		if (!response.ok)
+			throw new Error(
+				await parseErrorMessage(
+					response,
+					"Không thể đăng xuất các thiết bị khác",
+				),
+			);
+		const data = (await response.json()) as { revokedCount?: number };
+		return data.revokedCount ?? 0;
+	}
+
 	async getTeachers(
 		getAccessToken: (forceRefresh?: boolean) => Promise<string | null>,
 		includeInactive = false,

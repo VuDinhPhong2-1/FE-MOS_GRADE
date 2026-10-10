@@ -35,4 +35,17 @@ export const queryKeys = {
 				[...new Set(assignmentIds)].sort(),
 			] as const,
 	},
+	submissionPortals: {
+		all: (userId: string) => ["submission-portals", userId] as const,
+		list: (userId: string) =>
+			[...queryKeys.submissionPortals.all(userId), "list"] as const,
+		teacherClasses: (userId: string) =>
+			[...queryKeys.submissionPortals.all(userId), "teacher-classes"] as const,
+		schools: (userId: string) =>
+			[...queryKeys.submissionPortals.all(userId), "schools"] as const,
+		alerts: (userId: string, portalId: string) =>
+			[...queryKeys.submissionPortals.all(userId), "alerts", portalId] as const,
+		logs: (userId: string, portalId: string) =>
+			[...queryKeys.submissionPortals.all(userId), "logs", portalId] as const,
+	},
 };

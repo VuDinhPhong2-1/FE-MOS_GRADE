@@ -20,6 +20,7 @@ import type {
 } from "../../../../types/grading-test-bug-note.types";
 import type { GradingRuleSet } from "../../../../types/xml-grading-rules.types";
 import { notify } from "../../../../utils/notify";
+import { Exam02EvidenceReview } from "./Exam02EvidenceReview";
 
 export interface TestGradingTabContentProps {
 	selected: GradingRuleSet;
@@ -363,6 +364,8 @@ export const TestGradingTabContent: React.FC<TestGradingTabContentProps> = ({
 
 	return (
 		<div className="space-y-6">
+			{selected.subject === "excel" && effectiveProjectCode === "exam02/project11" &&
+				<Exam02EvidenceReview key={gradeJson} />}
 			{/* Main Test Grading Section */}
 			<section className="rounded-3xl bg-m3-surface-container p-6 text-m3-on-surface">
 				{/* Header */}

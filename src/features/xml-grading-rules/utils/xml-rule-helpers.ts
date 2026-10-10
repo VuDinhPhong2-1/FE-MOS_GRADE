@@ -537,6 +537,9 @@ export const prepareRuleSet = (ruleSet: GradingRuleSet): GradingRuleSet => ({
 		tasks: project.tasks.map((task) => ({
 			...task,
 			specialCondition: prepareSpecialCondition(task.specialCondition),
+			additionalSpecialConditions: task.additionalSpecialConditions?.map(
+				(condition) => ({ ...prepareSpecialCondition(condition)!, score: 0 }),
+			),
 			conditions: task.conditions.map(prepareCondition),
 		})),
 	})),
